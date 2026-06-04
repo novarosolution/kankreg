@@ -51,3 +51,25 @@ Until these are set, Login and Register show disabled social buttons with a “C
 **Backend `backend/.env`:** `GOOGLE_OAUTH_CLIENT_ID` (comma-separated client IDs), optional `APPLE_CLIENT_ID` / `APPLE_BUNDLE_ID`. See `backend/.env.example`.
 
 Restart Expo with `npx expo start --clear` after changing env vars.
+
+## Deploy (Vercel — web storefront)
+
+The web app is a static export (`npm run export:web` → `dist/`). `vercel.json` is already set for that build and SPA deep links (`/shop`, `/cart`, `/admin`, etc.).
+
+1. Import the GitHub repo in [Vercel](https://vercel.com) (root directory `.`, framework **Other**).
+2. Set **Environment variables** for Production (and Preview if needed). They are baked in at build time:
+   - `EXPO_PUBLIC_API_URL` — your live API base (e.g. `https://novarosolution.com/api`)
+   - `EXPO_PUBLIC_RAZORPAY_KEY_ID` — Razorpay Key ID (same as backend `RAZORPAY_KEY_ID`)
+   - `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` — optional; enables Google sign-in on web
+3. Deploy. Vercel runs `npm run export:web` and serves `dist/`.
+
+**Backend** (Node + MongoDB in `backend/`) is not deployed by this project config — host it separately (VPS, Railway, Render, etc.) and point `EXPO_PUBLIC_API_URL` at it.
+
+**After first deploy:** add your Vercel URL to Google OAuth authorized JavaScript origins / redirect URIs if you use Google login.
+
+Local check before pushing:
+
+```bash
+npm run export:web
+npx serve dist
+```
