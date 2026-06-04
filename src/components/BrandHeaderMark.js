@@ -38,6 +38,13 @@ const styles = StyleSheet.create({
   hit: {
     alignItems: "center",
     justifyContent: "center",
+    borderRadius: 999,
+    ...Platform.select({
+      web: {
+        transition: "opacity 0.18s ease, transform 0.18s ease",
+      },
+      default: {},
+    }),
   },
   logoMark: {
     flexShrink: 0,

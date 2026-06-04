@@ -57,9 +57,29 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
-      minlength: 6,
+      default: "",
+      validate: {
+        validator(v) {
+          if (!v) return true;
+          return String(v).length >= 6;
+        },
+        message: "Password must be at least 6 characters.",
+      },
     },
+    authProviders: [
+      {
+        provider: {
+          type: String,
+          enum: ["google", "apple"],
+          required: true,
+        },
+        providerId: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+      },
+    ],
     phone: {
       type: String,
       default: "",
@@ -84,6 +104,18 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    /** Set by admin — can open delivery dashboard and complete assigned orders. */
+    isDeliveryPartner: {
+      type: Boolean,
+      default: false,
+    },
+    /** Last GPS ping from delivery partner app (foreground “share location”). Not shown to other users except via live-location API on active deliveries. */
+    deliveryLiveLocation: {
+      latitude: { type: Number, default: null },
+      longitude: { type: Number, default: null },
+      accuracyMeters: { type: Number, default: null },
+      updatedAt: { type: Date, default: null },
+    },
     expoPushTokens: {
       type: [String],
       default: [],
@@ -91,6 +123,12 @@ const userSchema = new mongoose.Schema(
     cartItems: {
       type: [cartItemSchema],
       default: [],
+    },
+    /** Loyalty balance — increased when claiming delivered-order rewards; spent in Rewards redeem shop. */
+    rewardPoints: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
   },
   { timestamps: true }

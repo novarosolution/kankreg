@@ -6,9 +6,9 @@ import BrandHeaderMark from "./BrandHeaderMark";
 import LocationIconButton from "./LocationIconButton";
 import { useTheme } from "../context/ThemeContext";
 import { BRAND_LOGO_SIZE } from "../constants/brand";
-import { fonts, radius, spacing, typography } from "../theme/tokens";
+import { getSemanticColors, icon, lineHeight, semanticRadius, spacing, typography } from "../theme/tokens";
 import { customerContentWidth } from "../theme/screenLayout";
-import { ALCHEMY, FONT_DISPLAY } from "../theme/customerAlchemy";
+import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../theme/customerAlchemy";
 
 const HEADER_LOGO = BRAND_LOGO_SIZE.headerCompact;
 /** Row height follows logo only — extra space was making the bar feel tall. */
@@ -27,8 +27,14 @@ export default function ScreenPageHeader({
   right,
   showBrand = true,
   showLocation = true,
+  compact = false,
+  titleColor,
+  subtitleColor,
 }) {
   const { colors: c, shadowPremium, isDark } = useTheme();
+  const semantic = getSemanticColors(c);
+  const styles = useMemo(() => createStyles(ROW_MIN_H, isDark, compact), [isDark, compact]);
+
   const canGoBack = typeof navigation?.canGoBack === "function" && navigation.canGoBack();
   const backVisible = showBack !== undefined ? showBack : canGoBack;
 
@@ -42,26 +48,42 @@ export default function ScreenPageHeader({
     }
   };
 
-  const styles = useMemo(() => createStyles(ROW_MIN_H), []);
-
   return (
     <View style={[styles.headerOuter, customerContentWidth]}>
       <View
         style={[
           styles.headerCard,
           {
-            backgroundColor: isDark ? c.surface : ALCHEMY.cardBg,
-            borderColor: isDark ? c.border : ALCHEMY.pillInactive,
+            backgroundColor: isDark ? c.surfaceOverlay || c.surface : ALCHEMY.cardBg,
+            borderColor: isDark ? semantic.border.divider || semantic.border.subtle : ALCHEMY.pillInactive,
           },
           shadowPremium,
+          Platform.OS === "web" && shadowPremium?.boxShadow
+            ? {
+                boxShadow: `${shadowPremium.boxShadow}, ${
+                  isDark
+                    ? "inset 0 1px 0 rgba(255,255,255,0.06)"
+                    : "inset 0 1px 0 rgba(255,253,251,0.95), inset 0 0 0 1px rgba(255,253,249,0.45)"
+                }`,
+              }
+            : null,
         ]}
       >
         <LinearGradient
-          colors={[ALCHEMY.gold, "#D4AF37", ALCHEMY.brown]}
+          colors={[ALCHEMY.goldBright, ALCHEMY.gold, ALCHEMY.goldDeep, ALCHEMY.brown]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
-          style={styles.headerGoldAccent}
-          pointerEvents="none"
+          style={[styles.headerGoldAccent, styles.peNone]}
+        />
+        <LinearGradient
+          colors={
+            isDark
+              ? ["rgba(255,255,255,0.045)", "transparent"]
+              : ["rgba(255,255,255,0.82)", "rgba(255,255,255,0.18)"]
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[StyleSheet.absoluteFillObject, styles.peNone]}
         />
         <View style={[styles.row, styles.rowBelowAccent]}>
           {backVisible ? (
@@ -72,23 +94,63 @@ export default function ScreenPageHeader({
               accessibilityRole="button"
               accessibilityLabel="Go back"
             >
-              <Ionicons name="chevron-back" size={22} color={isDark ? c.textPrimary : ALCHEMY.brown} />
+              <Ionicons name="chevron-back" size={icon.lg} color={isDark ? c.primaryBright : ALCHEMY.brown} />
             </TouchableOpacity>
           ) : null}
           {showBrand ? <BrandHeaderMark navigation={navigation} compact /> : null}
           {!backVisible && !showBrand ? <View style={[styles.leadSpacer, styles.leadSpacerCompact]} /> : null}
           <View style={styles.titleCol}>
-            <Text style={[styles.title, { color: c.textPrimary, fontFamily: FONT_DISPLAY }]} numberOfLines={2}>
+            <Text
+              style={[
+                styles.title,
+                { color: titleColor || c.textPrimary, fontFamily: FONT_DISPLAY },
+              ]}
+              numberOfLines={2}
+            >
               {title}
             </Text>
             {subtitle ? (
-              <Text style={[styles.sub, { color: c.textSecondary, fontFamily: fonts.medium }]} numberOfLines={2}>
-                {subtitle}
-              </Text>
+              compact ? (
+                <Text
+                  style={[
+                    styles.sub,
+                    styles.subCompact,
+                    { color: subtitleColor || c.textSecondary, fontFamily: FONT_DISPLAY_SEMI },
+                  ]}
+                  numberOfLines={2}
+                >
+                  {subtitle}
+                </Text>
+              ) : (
+                <View
+                  style={[
+                    styles.subtitlePill,
+                    titleColor
+                      ? {
+                          borderColor: "rgba(214, 173, 91, 0.35)",
+                          backgroundColor: "rgba(255, 255, 255, 0.08)",
+                        }
+                      : {
+                          borderColor: isDark ? "rgba(232, 200, 90, 0.28)" : "rgba(116, 79, 28, 0.14)",
+                          backgroundColor: isDark ? "rgba(201, 162, 39, 0.09)" : "rgba(255, 252, 248, 0.9)",
+                        },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.sub,
+                      { color: subtitleColor || c.textSecondary, fontFamily: FONT_DISPLAY_SEMI },
+                    ]}
+                    numberOfLines={2}
+                  >
+                    {subtitle}
+                  </Text>
+                </View>
+              )
             ) : null}
           </View>
           <View style={styles.rightCluster}>
-            {showLocation ? <LocationIconButton navigation={navigation} size={20} /> : null}
+            {showLocation ? <LocationIconButton navigation={navigation} size={icon.webNav} /> : null}
             {right ? <View style={styles.rightSlot}>{right}</View> : null}
           </View>
         </View>
@@ -97,43 +159,67 @@ export default function ScreenPageHeader({
   );
 }
 
-function createStyles(rowMinH) {
+function createStyles(rowMinH, isDark, compact) {
   return StyleSheet.create({
     headerOuter: {
-      marginBottom: spacing.sm,
+      /** Spacing to the next block comes from parent scroll `gap` (`customerInnerPageScrollContent`). */
+      marginBottom: 0,
       ...Platform.select({ web: { maxWidth: "100%" }, default: {} }),
     },
     headerCard: {
       width: "100%",
-      borderRadius: radius.xxl,
+      borderRadius: compact ? semanticRadius.lg : semanticRadius.panel,
       borderWidth: StyleSheet.hairlineWidth,
-      paddingHorizontal: spacing.sm,
-      paddingBottom: 6,
-      overflow: "hidden",
+      paddingHorizontal: compact ? spacing.md : spacing.lg - 2,
+      paddingBottom: compact ? 10 : 14,
+      overflow: Platform.OS === "web" ? "visible" : "hidden",
+      position: "relative",
       ...Platform.select({
-        web: { boxSizing: "border-box", cursor: "default" },
+        web: {
+          boxSizing: "border-box",
+          cursor: "default",
+          boxShadow: isDark
+            ? "0 18px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)"
+            : "0 14px 34px rgba(61, 42, 18, 0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
+        },
         default: {},
       }),
     },
     headerGoldAccent: {
       width: "100%",
       height: 3,
-      opacity: 0.95,
+      opacity: 0.98,
     },
     rowBelowAccent: {
-      paddingTop: 6,
+      paddingTop: compact ? 10 : 14,
     },
     row: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
-      minHeight: rowMinH,
+      gap: compact ? 6 : 8,
+      minHeight: compact ? Math.max(rowMinH - 4, 36) : rowMinH,
+      ...Platform.select({
+        web: {
+          flexWrap: "wrap",
+          rowGap: 10,
+        },
+        default: {},
+      }),
     },
     backBtn: {
       marginLeft: -2,
-      padding: 2,
+      width: 38,
+      height: 38,
+      borderRadius: semanticRadius.full,
+      alignItems: "center",
       justifyContent: "center",
-      ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(116, 79, 28, 0.14)",
+      backgroundColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.68)",
+      ...Platform.select({
+        web: { cursor: "pointer", transition: "background 0.2s ease, border-color 0.2s ease, transform 0.2s ease" },
+        default: {},
+      }),
     },
     leadSpacer: {
       flexShrink: 0,
@@ -148,25 +234,52 @@ function createStyles(rowMinH) {
       justifyContent: "center",
     },
     title: {
-      fontSize: typography.h2,
-      letterSpacing: -0.35,
-      lineHeight: 28,
+      fontSize: compact ? typography.h3 : typography.h3 + 1,
+      letterSpacing: -0.48,
+      lineHeight: compact ? lineHeight.h3 - 2 : lineHeight.h3,
+      ...Platform.select({
+        web: compact ? {} : { fontSize: typography.h2 },
+        default: {},
+      }),
+    },
+    subCompact: {
+      marginTop: 4,
     },
     sub: {
-      marginTop: 3,
+      marginTop: 0,
       fontSize: typography.bodySmall,
-      lineHeight: 20,
-      opacity: 0.9,
+      lineHeight: lineHeight.bodySmall,
+      letterSpacing: 0.04,
+      opacity: 0.92,
+    },
+    subtitlePill: {
+      marginTop: 8,
+      alignSelf: "flex-start",
+      borderRadius: semanticRadius.control,
+      borderWidth: StyleSheet.hairlineWidth,
+      paddingHorizontal: spacing.sm + 1,
+      paddingVertical: 7,
+      maxWidth: "100%",
     },
     rightCluster: {
       flexDirection: "row",
       alignItems: "center",
       gap: spacing.xs,
       flexShrink: 0,
+      ...Platform.select({
+        web: {
+          marginLeft: "auto",
+        },
+        default: {},
+      }),
     },
     rightSlot: {
       alignItems: "flex-end",
       justifyContent: "center",
+      maxWidth: "100%",
+    },
+    peNone: {
+      pointerEvents: "none",
     },
   });
 }

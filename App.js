@@ -1,17 +1,24 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Appearance, Platform, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
+import * as ExpoLinking from "expo-linking";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Inter_800ExtraBold } from "@expo-google-fonts/inter";
 import {
-  PlayfairDisplay_600SemiBold,
-  PlayfairDisplay_700Bold,
-  PlayfairDisplay_400Regular_Italic,
-} from "@expo-google-fonts/playfair-display";
+  HankenGrotesk_400Regular,
+  HankenGrotesk_500Medium,
+  HankenGrotesk_600SemiBold,
+  HankenGrotesk_700Bold,
+  HankenGrotesk_800ExtraBold,
+} from "@expo-google-fonts/hanken-grotesk";
+import {
+  Fraunces_600SemiBold,
+  Fraunces_700Bold,
+  Fraunces_400Regular_Italic,
+} from "@expo-google-fonts/fraunces";
+import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import Constants from "expo-constants";
 import { isRunningInExpoGo } from "expo";
 import { CartProvider } from "./src/context/CartContext";
 import { AuthProvider } from "./src/context/AuthContext";
@@ -28,22 +35,47 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 const safeAreaRootStyle = { flex: 1, width: "100%" };
 
 const navigationRef = createNavigationContainerRef();
-
-function getActiveRouteName() {
-  return navigationRef.getCurrentRoute()?.name;
-}
+const linking = {
+  prefixes: [ExpoLinking.createURL("/")],
+  config: {
+    screens: {
+      Home: "",
+      Shop: "shop",
+      Product: "product/:productId",
+      Cart: "cart",
+      Checkout: "checkout",
+      RedeemRewards: "rewards",
+      Login: "login",
+      Register: "register",
+      Profile: "profile",
+      EditProfile: "profile/edit",
+      MyOrders: "orders",
+      Notifications: "notifications",
+      Settings: "settings",
+      ManageAddress: "address",
+      Support: "support",
+      DeliveryDashboard: "delivery/dashboard",
+      AdminDashboard: "admin",
+      AdminProducts: "admin/products",
+      AdminInventory: "admin/inventory",
+      AdminAddProduct: "admin/products/new",
+      AdminOrders: "admin/orders",
+      AdminUsers: "admin/users",
+      AdminNotifications: "admin/notifications",
+      AdminAnalytics: "admin/analytics",
+      AdminCoupons: "admin/coupons",
+      AdminSupport: "admin/support",
+      AdminHomeView: "admin/home-view",
+    },
+  },
+};
 
 function setupNotificationHandlerIfSupported() {
   if (Platform.OS === "web") {
     return;
   }
-  const isUnsupportedEnv =
-    isRunningInExpoGo() ||
-    (Platform.OS === "android" &&
-      (Constants?.appOwnership === "expo" ||
-        Constants?.executionEnvironment === "storeClient" ||
-        Constants?.appOwnership !== "standalone"));
-  if (isUnsupportedEnv) return;
+  // Avoid duplicate/conflicting handlers in Expo Go only (supported on standalone Android/iOS).
+  if (isRunningInExpoGo()) return;
 
   try {
     const Notifications = require("expo-notifications");
@@ -76,18 +108,18 @@ function ThemedStatusBar() {
 }
 
 function AppNavigationShell() {
-  const [currentRouteName, setCurrentRouteName] = useState(undefined);
-
-  const syncActiveRoute = useCallback(() => {
-    setCurrentRouteName(getActiveRouteName());
-  }, []);
+  const [navReady, setNavReady] = useState(false);
 
   return (
     <>
       <WebBodySync />
       <ThemedStatusBar />
-      <NavigationContainer ref={navigationRef} onReady={syncActiveRoute} onStateChange={syncActiveRoute}>
-        <AppNavigator currentRouteName={currentRouteName} navigationRef={navigationRef} />
+      <NavigationContainer
+        ref={navigationRef}
+        linking={linking}
+        onReady={() => setNavReady(true)}
+      >
+        <AppNavigator navigationRef={navigationRef} navReady={navReady} />
       </NavigationContainer>
     </>
   );
@@ -95,14 +127,14 @@ function AppNavigationShell() {
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
-    PlayfairDisplay_600SemiBold,
-    PlayfairDisplay_700Bold,
-    PlayfairDisplay_400Regular_Italic,
+    HankenGrotesk_400Regular,
+    HankenGrotesk_500Medium,
+    HankenGrotesk_600SemiBold,
+    HankenGrotesk_700Bold,
+    HankenGrotesk_800ExtraBold,
+    Fraunces_600SemiBold,
+    Fraunces_700Bold,
+    Fraunces_400Regular_Italic,
   });
   const [bootFootnote, setBootFootnote] = useState("Loading…");
 

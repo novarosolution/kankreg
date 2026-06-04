@@ -2,6 +2,7 @@
   "expo": {
     "name": "KankreG",
     "slug": "kankreg",
+    "scheme": "kankreg",
     "version": "1.0.0",
     "orientation": "portrait",
     "platforms": [
@@ -25,6 +26,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFCF8"
       },
+      "softwareKeyboardLayoutMode": "resize",
       "permissions": [
         "INTERNET",
         "POST_NOTIFICATIONS",
@@ -41,7 +43,16 @@
       ],
       "expo-notifications",
       "expo-asset",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
+      "expo-video"
     ]
   }
 }

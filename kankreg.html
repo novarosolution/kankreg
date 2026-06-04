@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>kankreg — Premium Web</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..600&family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#19140f; --ink-soft:#574d42; --ink-faint:#938778;
+  --paper:#f5efe4; --paper-2:#ece3d2; --card:#fffdf8;
+  --line:#e3d8c4; --line-soft:#eee5d5;
+  --gold:#a9772e; --gold-bright:#d6ad5b; --gold-deep:#8a5f22;
+  --green:#3c6248; --danger:#a8442f;
+  --shadow:0 1px 2px rgba(25,20,15,.04), 0 14px 38px -20px rgba(25,20,15,.28);
+  --shadow-lg:0 2px 8px rgba(25,20,15,.06), 0 50px 90px -40px rgba(25,20,15,.40);
+  --r:20px; --r-sm:13px;
+  --display:"Fraunces",Georgia,serif; --body:"Hanken Grotesk",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:var(--body);color:var(--ink);background:var(--paper);
+  background-image:radial-gradient(1100px 560px at 88% -8%,rgba(214,173,91,.12),transparent 60%),
+  radial-gradient(900px 500px at -8% 108%,rgba(60,98,72,.06),transparent 55%);
+  -webkit-font-smoothing:antialiased;line-height:1.55;letter-spacing:.005em}
+img{display:block;max-width:100%}a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+::selection{background:var(--gold-bright);color:#fff}
+
+.wrap{max-width:1280px;margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+.eyebrow{font-size:11px;letter-spacing:.36em;text-transform:uppercase;color:var(--gold);font-weight:600}
+.serif{font-family:var(--display)}
+.hairline{height:1px;border:0;background:linear-gradient(90deg,transparent,var(--gold) 16%,var(--gold) 84%,transparent);opacity:.45}
+.hl-short{height:1.5px;width:58px;border:0;background:linear-gradient(90deg,var(--gold),transparent);margin:14px 0 0;border-radius:2px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:14px 27px;border-radius:999px;font-weight:600;font-size:14px;letter-spacing:.01em;transition:transform .25s cubic-bezier(.2,.7,.3,1),background .25s,box-shadow .25s,color .2s;white-space:nowrap}
+.btn-primary{background:var(--ink);color:var(--paper);box-shadow:0 12px 26px -14px rgba(25,20,15,.7)}
+.btn-primary:hover{transform:translateY(-2px);background:#000}
+.btn-gold{background:linear-gradient(135deg,#cba24e,#9c6b27);color:#fff;box-shadow:0 14px 28px -14px rgba(169,119,46,.75)}
+.btn-gold:hover{transform:translateY(-2px);filter:brightness(1.06)}
+.btn-ghost{border:1px solid var(--line);color:var(--ink);background:var(--card)}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+.btn-sm{padding:9px 17px;font-size:12.5px}
+.btn-block{width:100%}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:5px 11px;border-radius:999px;background:var(--paper-2);color:var(--ink-soft)}
+.tag.gold{background:rgba(169,119,46,.13);color:var(--gold-deep)}
+.tag.green{background:rgba(60,98,72,.13);color:var(--green)}
+
+.section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:30px;flex-wrap:wrap}
+.section-head h2{font-family:var(--display);font-weight:380;font-size:clamp(27px,3.6vw,42px);line-height:1.02;letter-spacing:-.015em}
+.section-head p{color:var(--ink-faint);max-width:46ch;font-size:14.5px;margin-top:9px}
+
+/* topbar */
+.topbar{position:sticky;top:0;z-index:80;backdrop-filter:blur(16px);background:rgba(245,239,228,.85);border-bottom:1px solid var(--line)}
+.topbar .wrap{display:flex;align-items:center;gap:26px;height:76px}
+.brand{font-family:var(--display);font-size:25px;font-weight:600;letter-spacing:.01em;display:flex;align-items:center;gap:10px;cursor:pointer}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:linear-gradient(135deg,#d9b463,#9c6b27);box-shadow:0 0 0 4px rgba(169,119,46,.16)}
+.nav{display:flex;gap:3px;margin-left:6px}
+.nav button{font-size:13.5px;font-weight:500;color:var(--ink-soft);padding:8px 13px;border-radius:999px;transition:.2s}
+.nav button:hover{color:var(--ink);background:rgba(169,119,46,.1)}
+.nav button.active{color:var(--ink);background:var(--card);box-shadow:var(--shadow)}
+.nav-actions{margin-left:auto;display:flex;align-items:center;gap:12px}
+.icon-btn{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--ink-soft);position:relative;transition:.2s}
+.icon-btn:hover{color:var(--gold);border-color:var(--gold)}
+.icon-btn svg{width:18px;height:18px}
+.icon-btn .badge{position:absolute;top:-5px;right:-5px;background:var(--gold);color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:grid;place-items:center;padding:0 4px}
+.hamb{display:none;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);place-items:center;flex-direction:column;gap:4px}
+.hamb span{width:18px;height:2px;background:var(--ink);border-radius:2px;transition:.25s}
+.mobile-nav{display:none;flex-direction:column;background:var(--card);border-bottom:1px solid var(--line);padding:10px clamp(18px,4vw,40px) 18px}
+.mobile-nav button{text-align:left;padding:13px 8px;font-size:15px;border-bottom:1px solid var(--line-soft);color:var(--ink-soft)}
+.mobile-nav.open{display:flex}
+
+.page{display:none;animation:fade .5s cubic-bezier(.2,.7,.3,1)}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+section.block{padding:clamp(44px,7vw,76px) 0}
+.reveal{opacity:0;transform:translateY(22px);animation:rise .75s forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+
+/* product illustration tile */
+.ptile{position:relative;aspect-ratio:1;overflow:hidden}
+.ptile .pad{position:absolute;inset:0;display:grid;place-items:center;padding:16%}
+.ptile svg.illo{width:100%;height:100%;overflow:visible}
+.ptile .floor{position:absolute;left:18%;right:18%;bottom:13%;height:13px;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(25,20,15,.20),transparent 80%);filter:blur(2px)}
+.bg-1{background:radial-gradient(125% 100% at 32% 18%,#f3e7cc,#e3cfa6 70%)}
+.bg-2{background:radial-gradient(125% 100% at 32% 18%,#e7eee6,#cdddcf 70%)}
+.bg-3{background:radial-gradient(125% 100% at 32% 18%,#f1e3d6,#dcc3ad 70%)}
+.bg-4{background:radial-gradient(125% 100% at 32% 18%,#eee7dd,#d6c7b1 70%)}
+.bg-5{background:radial-gradient(125% 100% at 32% 18%,#e8e9ee,#cdd2dc 70%)}
+.bg-6{background:radial-gradient(125% 100% at 32% 18%,#f4e6d2,#e0b98f 70%)}
+.bg-7{background:radial-gradient(125% 100% at 32% 18%,#efe7da,#d3c4ac 70%)}
+.bg-8{background:radial-gradient(125% 100% at 32% 18%,#ece2d4,#cdb89c 70%)}
+
+/* ===== HOME ===== */
+.hero{padding:clamp(48px,7vw,82px) 0 30px;overflow:hidden}
+.hero-grid{display:grid;grid-template-columns:1.04fr .96fr;gap:clamp(28px,5vw,60px);align-items:center}
+.hero h1{font-family:var(--display);font-weight:330;font-size:clamp(40px,6.4vw,78px);line-height:.97;letter-spacing:-.025em}
+.hero h1 em{font-style:italic;color:var(--gold)}
+.hero .lead{margin-top:22px;font-size:clamp(15px,1.6vw,17.5px);color:var(--ink-soft);max-width:43ch}
+.hero-cta{display:flex;gap:13px;margin-top:32px;flex-wrap:wrap}
+.hero-stats{display:flex;gap:clamp(20px,4vw,40px);margin-top:42px;flex-wrap:wrap}
+.hero-stats .n{font-family:var(--display);font-size:clamp(24px,3vw,32px);font-weight:500}
+.hero-stats .l{font-size:11.5px;color:var(--ink-faint);letter-spacing:.05em;text-transform:uppercase}
+.hero-visual{position:relative;aspect-ratio:5/6;border-radius:26px;overflow:hidden;box-shadow:var(--shadow-lg)}
+.hero-visual .scene{position:absolute;inset:0;background:radial-gradient(120% 95% at 30% 12%,#f1e4c6,#d9c096 48%,#2c2620 135%)}
+.hero-visual .grain{position:absolute;inset:0;opacity:.32;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence baseFrequency='.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/></svg>")}
+.hero-visual .heroillo{position:absolute;inset:0;display:grid;place-items:center;padding:18%}
+.hero-visual .float{position:absolute;background:rgba(255,253,248,.94);backdrop-filter:blur(6px);border-radius:15px;padding:13px 15px;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.6)}
+.hero-visual .float.a{top:22px;left:22px}
+.hero-visual .float.b{bottom:22px;right:22px;display:flex;align-items:center;gap:12px}
+.swatch{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#d9b463,#9c6b27)}
+
+.trust{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:24px clamp(20px,3vw,34px);margin-top:46px;border-radius:var(--r);background:var(--ink);color:var(--paper)}
+.trust div{display:flex;align-items:center;gap:11px;font-size:13.5px;font-weight:500}
+.trust .ic{width:34px;height:34px;border-radius:9px;background:rgba(214,173,91,.18);display:grid;place-items:center;color:var(--gold-bright)}
+.trust .ic svg{width:17px;height:17px}
+
+.cats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.cat-card{position:relative;border-radius:var(--r);overflow:hidden;aspect-ratio:3/4;display:flex;align-items:flex-end;padding:18px;color:#fff;transition:.3s;border:1px solid var(--line)}
+.cat-card:hover{transform:translateY(-5px);box-shadow:var(--shadow-lg)}
+.cat-card .ov{position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(25,20,15,.62))}
+.cat-card .nm{position:relative;font-family:var(--display);font-size:19px;font-weight:500}
+.cat-card .ct{position:relative;font-size:11px;opacity:.85;margin-left:auto}
+
+.pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
+.product{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;transition:transform .3s,box-shadow .3s,border-color .3s;position:relative;cursor:pointer}
+.product:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg);border-color:rgba(169,119,46,.4)}
+.product .fav{position:absolute;top:13px;right:13px;width:34px;height:34px;border-radius:50%;background:rgba(255,253,248,.92);display:grid;place-items:center;color:var(--ink-soft);z-index:3;transition:.2s}
+.product .fav:hover{color:var(--danger);transform:scale(1.1)}
+.product .fav svg{width:16px;height:16px}
+.product .pill{position:absolute;top:13px;left:13px;z-index:3}
+.product .quick{position:absolute;left:13px;right:13px;bottom:13px;z-index:3;opacity:0;transform:translateY(10px);transition:.3s}
+.product:hover .quick{opacity:1;transform:none}
+.product .body{padding:16px 17px 18px}
+.product .cat{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:600}
+.product h3{font-family:var(--display);font-weight:500;font-size:18px;margin:6px 0 4px;line-height:1.15}
+.product .rate{font-size:12px;color:var(--ink-faint);display:flex;align-items:center;gap:5px}
+.product .rate .stars{color:var(--gold-bright);letter-spacing:1px}
+.product .priceRow{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
+.product .price{font-family:var(--display);font-size:20px;font-weight:600}
+.product .price s{font-family:var(--body);font-size:13px;color:var(--ink-faint);font-weight:400;margin-left:6px}
+.add{width:40px;height:40px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;transition:.3s}
+.add svg{width:17px;height:17px}
+.add:hover{background:var(--gold);transform:rotate(90deg)}
+
+.quote{background:linear-gradient(135deg,#211c16,#3a322a);color:var(--paper);border-radius:26px;padding:clamp(34px,6vw,56px);position:relative;overflow:hidden}
+.quote .mark{font-family:var(--display);font-size:150px;line-height:.6;color:rgba(214,173,91,.2);position:absolute;top:26px;left:30px}
+.quote blockquote{font-family:var(--display);font-style:italic;font-weight:330;font-size:clamp(21px,3vw,32px);line-height:1.32;max-width:25ch;margin:0 auto;text-align:center;position:relative}
+.quote .who{text-align:center;margin-top:22px;font-size:12.5px;letter-spacing:.08em;color:var(--gold-bright)}
+
+.foot{background:var(--ink);color:#c8bdaf;padding:clamp(44px,6vw,64px) 0 32px;margin-top:46px}
+.foot .cols{display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:36px}
+.foot .brand{color:var(--paper)}
+.foot h4{font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-bright);margin-bottom:15px}
+.foot ul{list-style:none}
+.foot li{margin:9px 0;font-size:14px;transition:.2s;cursor:pointer}
+.foot li:hover{color:var(--paper)}
+.foot .bottom{border-top:1px solid rgba(255,255,255,.1);margin-top:42px;padding-top:22px;display:flex;justify-content:space-between;font-size:12.5px;color:#8a8076;flex-wrap:wrap;gap:10px}
+
+/* SHOP */
+.shop-grid{display:grid;grid-template-columns:248px 1fr;gap:34px;align-items:start}
+.filters{position:sticky;top:96px}
+.filters .group{padding:20px 0;border-bottom:1px solid var(--line)}
+.filters h5{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:14px}
+.chk{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--ink-soft);margin:11px 0;cursor:pointer}
+.chk .box{width:18px;height:18px;border:1.5px solid var(--line);border-radius:5px;transition:.2s;flex:0 0 auto}
+.chk:hover .box{border-color:var(--gold)}
+.chk.on .box{background:var(--gold);border-color:var(--gold);box-shadow:inset 0 0 0 3px var(--card)}
+.range{height:4px;border-radius:2px;background:var(--line);position:relative;margin:18px 4px}
+.range .fill{position:absolute;left:18%;right:32%;top:0;bottom:0;background:var(--gold);border-radius:2px}
+.range .knob{position:absolute;top:50%;width:16px;height:16px;border-radius:50%;background:var(--card);border:2px solid var(--gold);transform:translate(-50%,-50%);box-shadow:var(--shadow)}
+.shop-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:14px;flex-wrap:wrap}
+.pills{display:flex;gap:8px;flex-wrap:wrap}
+.fpill{padding:8px 16px;border-radius:999px;border:1px solid var(--line);font-size:13px;color:var(--ink-soft);background:var(--card);transition:.2s}
+.fpill:hover{border-color:var(--gold);color:var(--gold)}
+.fpill.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.select{padding:9px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:13px;color:var(--ink-soft);font-family:inherit}
+
+/* PRODUCT DETAIL */
+.pd{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(28px,4vw,48px);align-items:start}
+.pd-gallery{display:grid;grid-template-columns:72px 1fr;gap:14px}
+.thumbs{display:flex;flex-direction:column;gap:12px}
+.thumb{aspect-ratio:1;border-radius:12px;overflow:hidden;border:2px solid transparent;cursor:pointer;transition:.2s;position:relative}
+.thumb.on{border-color:var(--gold)}
+.pd-main{aspect-ratio:1;border-radius:22px;overflow:hidden;position:relative;box-shadow:var(--shadow)}
+.pd-info h1{font-family:var(--display);font-weight:400;font-size:clamp(28px,4vw,46px);line-height:1.02;margin:12px 0}
+.pd-price{display:flex;align-items:baseline;gap:14px;margin:18px 0;flex-wrap:wrap}
+.pd-price .now{font-family:var(--display);font-size:clamp(28px,4vw,34px);font-weight:600}
+.pd-price s{color:var(--ink-faint)}
+.pd-desc{color:var(--ink-soft);font-size:15px;margin:16px 0 24px;max-width:48ch}
+.opt-row{margin:20px 0}
+.opt-row .lbl{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:10px}
+.opts{display:flex;gap:10px;flex-wrap:wrap}
+.opt{min-width:48px;padding:11px 16px;border:1px solid var(--line);border-radius:10px;font-size:14px;text-align:center;transition:.2s;background:var(--card)}
+.opt.on{border-color:var(--ink);background:var(--ink);color:var(--paper)}
+.qty{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--card)}
+.qty button{width:44px;height:46px;font-size:20px;color:var(--ink-soft)}
+.qty button:hover{color:var(--gold)}
+.qty span{width:42px;text-align:center;font-weight:600}
+.pd-actions{display:flex;gap:13px;margin-top:26px;flex-wrap:wrap}
+.pd-feat{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-top:30px}
+.pd-feat .it{padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.pd-feat .it .ic{color:var(--gold);margin-bottom:8px}
+.pd-feat .it .ic svg{width:20px;height:20px}
+.pd-feat .it b{font-size:13.5px}
+.pd-feat .it p{font-size:12px;color:var(--ink-faint);margin-top:3px}
+
+/* CART / CHECKOUT */
+.split{display:grid;grid-template-columns:1fr 380px;gap:34px;align-items:start}
+.lineitem{display:grid;grid-template-columns:96px 1fr auto;gap:18px;padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--card);margin-bottom:14px;align-items:center}
+.lineitem .img{aspect-ratio:1;border-radius:12px;overflow:hidden;position:relative}
+.lineitem h4{font-family:var(--display);font-size:18px;font-weight:500}
+.lineitem .meta{font-size:12.5px;color:var(--ink-faint);margin-top:3px}
+.lineitem .li-price{font-family:var(--display);font-size:20px;font-weight:600;text-align:right}
+.lineitem .rm{font-size:12px;color:var(--ink-faint);margin-top:8px;text-align:right;cursor:pointer}
+.lineitem .rm:hover{color:var(--danger)}
+.summary{position:sticky;top:96px;padding:26px;border-radius:20px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
+.summary h3{font-family:var(--display);font-size:22px;font-weight:500;margin-bottom:18px}
+.srow{display:flex;justify-content:space-between;font-size:14.5px;color:var(--ink-soft);margin:11px 0}
+.srow.total{font-family:var(--display);font-size:24px;font-weight:600;color:var(--ink);margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.coupon{display:flex;gap:10px;margin:16px 0}
+.coupon input{flex:1;min-width:0;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-family:inherit;font-size:14px;background:var(--paper)}
+.coupon input:focus{outline:none;border-color:var(--gold)}
+.checkout-steps{display:flex;gap:8px;margin-bottom:30px}
+.step{flex:1;text-align:center;padding-bottom:12px;border-bottom:2px solid var(--line);color:var(--ink-faint);font-size:13px;font-weight:600}
+.step .num{display:inline-grid;place-items:center;width:25px;height:25px;border-radius:50%;background:var(--paper-2);margin-right:7px;font-size:12px;vertical-align:middle}
+.step.done{color:var(--green);border-color:var(--green)}
+.step.done .num{background:var(--green);color:#fff}
+.step.on{color:var(--ink);border-color:var(--gold)}
+.step.on .num{background:var(--gold);color:#fff}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:7px}
+.field input,.field textarea{width:100%;padding:13px 15px;border:1px solid var(--line);border-radius:11px;font-family:inherit;font-size:14.5px;background:var(--card);transition:.2s}
+.field input:focus,.field textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px rgba(169,119,46,.1)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.pay-opt{display:flex;align-items:center;gap:14px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--card);margin-bottom:12px;cursor:pointer;transition:.2s}
+.pay-opt.on{border-color:var(--gold);box-shadow:0 0 0 4px rgba(169,119,46,.1)}
+.pay-opt .radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);flex:0 0 auto}
+.pay-opt.on .radio{border-color:var(--gold);box-shadow:inset 0 0 0 4px var(--gold)}
+.pay-opt .razor{margin-left:auto;font-weight:700;color:#3395ff;font-size:13px}
+
+/* ORDERS */
+.order-card{padding:22px;border:1px solid var(--line);border-radius:18px;background:var(--card);margin-bottom:18px}
+.order-top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.order-top .oid{font-size:12px;color:var(--ink-faint);letter-spacing:.04em}
+.order-top h4{font-family:var(--display);font-size:19px;font-weight:500;margin-top:2px}
+.track{margin-top:22px;overflow-x:auto}
+.track-bar{display:flex;align-items:center;min-width:340px}
+.track-node{display:flex;flex-direction:column;align-items:center;flex:0 0 auto;width:74px;text-align:center}
+.track-node .dot{width:30px;height:30px;border-radius:50%;background:var(--paper-2);border:2px solid var(--line);display:grid;place-items:center;color:var(--ink-faint);font-size:12px}
+.track-node.done .dot{background:var(--green);border-color:var(--green);color:#fff}
+.track-node.active .dot{background:var(--gold);border-color:var(--gold);color:#fff;box-shadow:0 0 0 6px rgba(169,119,46,.18);animation:pulse 1.8s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 11px rgba(169,119,46,0)}}
+.track-node .t{font-size:11px;margin-top:8px;color:var(--ink-faint)}
+.track-node.done .t,.track-node.active .t{color:var(--ink)}
+.track-line{flex:1;height:2px;background:var(--line);min-width:18px}
+.track-line.done{background:var(--green)}
+.map-card{margin-top:18px;border-radius:16px;overflow:hidden;border:1px solid var(--line);position:relative;height:230px}
+.map-bg{position:absolute;inset:0;background:linear-gradient(0deg,rgba(60,98,72,.05),rgba(60,98,72,.05)),
+  repeating-linear-gradient(0deg,#ece5d4 0 1px,transparent 1px 38px),
+  repeating-linear-gradient(90deg,#ece5d4 0 1px,transparent 1px 38px),#f3ecdb}
+.map-route{position:absolute;inset:0}
+.map-pin{position:absolute;display:flex;flex-direction:column;align-items:center;font-size:11px;font-weight:600}
+.map-pin .p{width:24px;height:24px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);box-shadow:var(--shadow)}
+.map-driver{position:absolute;left:46%;top:54%;width:38px;height:38px;border-radius:50%;background:var(--card);border:2px solid var(--gold);display:grid;place-items:center;box-shadow:var(--shadow);animation:bob 2.4s ease-in-out infinite}
+.map-driver svg{width:20px;height:20px;color:var(--gold-deep)}
+@keyframes bob{50%{transform:translateY(-6px)}}
+.eta{position:absolute;left:14px;top:14px;background:rgba(25,20,15,.9);color:var(--paper);padding:9px 14px;border-radius:12px;font-size:12.5px;display:flex;align-items:center;gap:8px}
+.eta b{color:var(--gold-bright)}
+
+/* REWARDS */
+.reward-hero{background:linear-gradient(135deg,#221d17,#3b332a);color:var(--paper);border-radius:24px;padding:clamp(28px,5vw,40px);display:flex;justify-content:space-between;align-items:center;gap:30px;flex-wrap:wrap}
+.reward-hero .pts{font-family:var(--display);font-size:clamp(44px,8vw,64px);font-weight:500;line-height:1;color:var(--gold-bright)}
+.reward-hero .ring{width:120px;height:120px;border-radius:50%;background:conic-gradient(var(--gold-bright) 0 68%,rgba(255,255,255,.12) 68% 100%);display:grid;place-items:center;flex:0 0 auto}
+.reward-hero .ring .inner{width:92px;height:92px;border-radius:50%;background:#2a241e;display:grid;place-items:center;text-align:center;font-size:12px}
+.reward-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:26px}
+.reward{padding:22px;border:1px solid var(--line);border-radius:18px;background:var(--card);transition:.25s}
+.reward:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+.reward .ic{width:48px;height:48px;border-radius:14px;background:rgba(169,119,46,.12);display:grid;place-items:center;color:var(--gold);margin-bottom:14px}
+.reward .ic svg{width:22px;height:22px}
+.reward h4{font-family:var(--display);font-size:18px;font-weight:500}
+.reward .cost{margin-top:16px;display:flex;align-items:center;justify-content:space-between}
+.reward .cost b{color:var(--gold);font-weight:700}
+
+/* PROFILE */
+.prof-grid{display:grid;grid-template-columns:300px 1fr;gap:32px;align-items:start}
+.prof-side{padding:26px;border:1px solid var(--line);border-radius:20px;background:var(--card);text-align:center}
+.avatar{width:88px;height:88px;border-radius:50%;margin:0 auto 14px;background:linear-gradient(135deg,#d9b463,#9c6b27);display:grid;place-items:center;font-family:var(--display);font-size:34px;color:#fff}
+.prof-menu{margin-top:22px;text-align:left}
+.prof-menu a{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:11px;color:var(--ink-soft);font-size:14px;transition:.2s;cursor:pointer}
+.prof-menu a svg{width:17px;height:17px;flex:0 0 auto}
+.prof-menu a:hover,.prof-menu a.on{background:var(--paper-2);color:var(--ink)}
+.prof-menu a.on{font-weight:600}
+.info-card{padding:24px;border:1px solid var(--line);border-radius:18px;background:var(--card);margin-bottom:18px}
+.info-card h3{font-family:var(--display);font-size:20px;font-weight:500;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.kv .k{font-size:11.5px;color:var(--ink-faint);letter-spacing:.04em;text-transform:uppercase}
+.kv .v{font-size:15px;margin-top:3px}
+
+/* AUTH */
+.auth{display:grid;grid-template-columns:1fr 1fr;min-height:74vh;gap:0;border-radius:24px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow-lg)}
+.auth-art{position:relative;background:radial-gradient(120% 100% at 20% 0%,#ead9b2,#b6985c 50%,#2a241e 130%);min-height:320px}
+.auth-art .grain{position:absolute;inset:0;opacity:.28;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><filter id='n'><feTurbulence baseFrequency='.9'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
+.auth-art .heroillo{position:absolute;inset:0;display:grid;place-items:center;padding:22%}
+.auth-art .copy{position:absolute;bottom:36px;left:36px;right:36px;color:#fff}
+.auth-art .copy h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,3vw,38px);line-height:1.05}
+.auth-form{padding:clamp(30px,5vw,52px);display:flex;flex-direction:column;justify-content:center;background:var(--card)}
+.auth-form h1{font-family:var(--display);font-weight:400;font-size:clamp(30px,4vw,40px);margin-bottom:6px}
+.auth-toggle{display:inline-flex;background:var(--paper-2);border-radius:999px;padding:4px;margin:22px 0;width:fit-content}
+.auth-toggle button{padding:9px 22px;border-radius:999px;font-size:13.5px;font-weight:600;color:var(--ink-faint);transition:.2s}
+.auth-toggle button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+
+/* ADMIN */
+.admin{display:grid;grid-template-columns:240px 1fr;min-height:80vh;border-radius:22px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow-lg)}
+.admin-side{background:var(--ink);color:#bcb1a3;padding:26px 18px}
+.admin-side .brand{color:var(--paper);font-size:21px;margin-bottom:30px;padding:0 8px;display:block}
+.admin-side a{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;font-size:13.5px;margin:4px 0;transition:.2s;color:#bcb1a3;cursor:pointer}
+.admin-side a svg{width:17px;height:17px;flex:0 0 auto}
+.admin-side a:hover{background:rgba(255,255,255,.06);color:var(--paper)}
+.admin-side a.on{background:rgba(214,173,91,.16);color:var(--gold-bright);font-weight:600}
+.admin-main{background:var(--paper);padding:clamp(20px,3vw,30px)}
+.admin-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px;flex-wrap:wrap;gap:14px}
+.admin-head h2{font-family:var(--display);font-weight:400;font-size:30px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:26px}
+.kpi{padding:20px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+.kpi .lbl{font-size:11.5px;color:var(--ink-faint);letter-spacing:.06em;text-transform:uppercase}
+.kpi .n{font-family:var(--display);font-size:30px;font-weight:600;margin-top:8px}
+.kpi .delta{font-size:12px;font-weight:600;margin-top:6px}
+.kpi .delta.up{color:var(--green)}
+.kpi .delta.down{color:var(--danger)}
+.admin-2{display:grid;grid-template-columns:1.5fr 1fr;gap:20px}
+.panel{padding:22px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+.panel h3{font-family:var(--display);font-size:19px;font-weight:500;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center}
+.chart{display:flex;align-items:flex-end;gap:12px;height:180px;padding-top:10px}
+.bar{flex:1;background:linear-gradient(180deg,#d9b463,#9c6b27);border-radius:7px 7px 0 0;position:relative;transition:.3s;min-height:8px}
+.bar:hover{filter:brightness(1.08)}
+.bar span{position:absolute;bottom:-22px;left:0;right:0;text-align:center;font-size:11px;color:var(--ink-faint)}
+.dtable{width:100%;border-collapse:collapse;font-size:13.5px}
+.dtable th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);padding:10px 12px;border-bottom:1px solid var(--line)}
+.dtable td{padding:13px 12px;border-bottom:1px solid var(--line);color:var(--ink-soft)}
+.dtable tr:hover td{background:var(--paper)}
+.st{font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.st.paid{background:rgba(60,98,72,.12);color:var(--green)}
+.st.pend{background:rgba(169,119,46,.14);color:var(--gold)}
+.st.cancel{background:rgba(168,68,47,.12);color:var(--danger)}
+.tablewrap{overflow-x:auto}
+
+/* DELIVERY */
+.deliv-grid{display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:start}
+.assign{padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--card);margin-bottom:14px}
+.assign .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px}
+.deliv-addr{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:12px;background:var(--paper)}
+.deliv-addr .ln{display:flex;gap:10px;font-size:13.5px;color:var(--ink-soft);align-items:flex-start}
+.deliv-addr .ln .ic{color:var(--gold);flex:0 0 auto;margin-top:1px}
+.deliv-addr .ln .ic svg{width:16px;height:16px}
+.deliv-actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+
+.banner{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:14px;margin-bottom:20px;font-size:14px;font-weight:500}
+.banner.ok{background:rgba(60,98,72,.1);color:var(--green);border:1px solid rgba(60,98,72,.25)}
+
+@media (max-width:1080px){
+  .nav{display:none}.hamb{display:grid}
+  .pgrid,.cats{grid-template-columns:repeat(3,1fr)}
+}
+@media (max-width:900px){
+  .hero-grid,.pd,.split,.prof-grid,.shop-grid,.admin,.auth,.deliv-grid,.admin-2{grid-template-columns:1fr}
+  .pgrid,.cats{grid-template-columns:repeat(2,1fr)}
+  .reward-grid,.kpis{grid-template-columns:repeat(2,1fr)}
+  .foot .cols{grid-template-columns:1fr 1fr}
+  .admin-side{display:flex;gap:6px;overflow-x:auto;padding:14px}
+  .admin-side .brand{display:none}
+  .admin-side a{white-space:nowrap;margin:0}
+  .filters{position:static}
+  .pd-feat{grid-template-columns:1fr}
+  .hero-visual{max-width:440px;margin:0 auto}
+  .summary{position:static}
+}
+@media (max-width:560px){
+  .pgrid,.cats,.reward-grid,.kpis,.row2,.kv{grid-template-columns:1fr 1fr}
+  .lineitem{grid-template-columns:72px 1fr;grid-template-areas:"img info" "img price"}
+  .lineitem .img{grid-area:img}.lineitem>div:nth-child(2){grid-area:info}.lineitem>div:nth-child(3){grid-area:price;text-align:left}
+  .lineitem .li-price,.lineitem .rm{text-align:left}
+  .hero-stats{gap:22px}
+  .pd-feat,.kv{grid-template-columns:1fr}
+}
+@media (max-width:420px){.pgrid,.cats{grid-template-columns:1fr}}
+
+/* ===== premium polish layer ===== */
+/* page grain texture for tactile depth */
+.grain-overlay{position:fixed;inset:0;z-index:200;pointer-events:none;opacity:.045;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
+
+/* announcement bar */
+.announce{background:var(--ink);color:var(--paper);font-size:12px;letter-spacing:.04em;text-align:center;padding:9px 16px;display:flex;align-items:center;justify-content:center;gap:8px}
+.announce b{color:var(--gold-bright);font-weight:600}
+.announce .sep{opacity:.4}
+@media(max-width:560px){.announce .hide-sm{display:none}}
+
+/* button sheen */
+.btn-primary,.btn-gold{position:relative;overflow:hidden}
+.btn-primary::after,.btn-gold::after{content:"";position:absolute;top:0;left:-130%;width:60%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.28),transparent);transform:skewX(-18deg);transition:.6s}
+.btn-primary:hover::after,.btn-gold:hover::after{left:140%}
+
+/* scroll reveal */
+.sr{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.2,.7,.3,1),transform .8s cubic-bezier(.2,.7,.3,1)}
+.sr.in{opacity:1;transform:none}
+.sr-2{transition-delay:.08s}.sr-3{transition-delay:.16s}.sr-4{transition-delay:.24s}
+
+/* section index numbers */
+.section-head .ix{font-family:var(--display);font-size:13px;font-weight:500;color:var(--gold);opacity:.7;display:block;margin-bottom:6px;letter-spacing:.04em}
+
+/* marquee ticker */
+.marquee{overflow:hidden;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:rgba(255,253,248,.5);margin-top:18px}
+.marquee .track{display:flex;gap:46px;white-space:nowrap;padding:16px 0;width:max-content;animation:slide 28s linear infinite;font-family:var(--display);font-size:18px;font-style:italic;color:var(--ink-soft)}
+.marquee .track span{display:flex;align-items:center;gap:46px}
+.marquee .track .star{color:var(--gold);font-style:normal}
+@keyframes slide{to{transform:translateX(-50%)}}
+
+/* editorial featured banner */
+.feature{display:grid;grid-template-columns:1fr 1fr;border-radius:26px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow)}
+.feature .art{position:relative;min-height:340px;background:radial-gradient(120% 100% at 70% 10%,#f0e3c5,#cdb079 55%,#2c2620 140%)}
+.feature .art .grain{position:absolute;inset:0;opacity:.3;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><filter id='n'><feTurbulence baseFrequency='.9'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
+.feature .art .heroillo{position:absolute;inset:0;display:grid;place-items:center;padding:24%;color:#fff;opacity:.9}
+.feature .copy{padding:clamp(30px,4vw,52px);display:flex;flex-direction:column;justify-content:center;background:var(--card)}
+.feature .copy h3{font-family:var(--display);font-weight:380;font-size:clamp(26px,3.4vw,40px);line-height:1.04;letter-spacing:-.015em;margin:12px 0 14px}
+.feature .copy p{color:var(--ink-soft);font-size:15px;max-width:42ch;margin-bottom:24px}
+@media(max-width:760px){.feature{grid-template-columns:1fr}}
+
+/* newsletter */
+.news{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;background:rgba(214,173,91,.12);border:1px solid rgba(169,119,46,.25);border-radius:18px;padding:26px 30px;margin-top:10px}
+.news h4{font-family:var(--display);font-size:22px;font-weight:500;color:var(--paper);margin:0 0 4px}
+.news p{font-size:13.5px;color:#c8bdaf}
+.news .form{display:flex;gap:10px}
+.news input{padding:13px 16px;border-radius:11px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:var(--paper);font-family:inherit;font-size:14px;min-width:220px}
+.news input::placeholder{color:#9a9082}
+.news input:focus{outline:none;border-color:var(--gold-bright)}
+@media(max-width:760px){.news{grid-template-columns:1fr}.news input{min-width:0;flex:1}}
+
+/* sticky mobile buy bar on product */
+.buybar{position:fixed;left:0;right:0;bottom:0;z-index:90;display:none;gap:12px;align-items:center;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(255,253,248,.94);backdrop-filter:blur(12px);border-top:1px solid var(--line)}
+.buybar .pr{font-family:var(--display);font-size:20px;font-weight:600}
+.buybar .btn{flex:1}
+@media(max-width:760px){body:has(#product.active) .buybar{display:flex}}
+
+/* refined product hover ring */
+.product::before{content:"";position:absolute;inset:0;border-radius:var(--r);box-shadow:inset 0 0 0 1px rgba(169,119,46,0);transition:.3s;pointer-events:none;z-index:4}
+.product:hover::before{box-shadow:inset 0 0 0 1px rgba(169,119,46,.35)}
+</style>
+</head>
+<body>
+<div class="grain-overlay"></div>
+<div class="announce">
+  <span>Free delivery over ₹1,499</span><span class="sep">·</span>
+  <span class="hide-sm">Earn rewards on every order</span><span class="sep hide-sm">·</span>
+  <b>New season edit is live →</b>
+</div>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand" data-go="home"><span class="dot"></span>kankreg</div>
+    <nav class="nav" id="nav">
+      <button data-go="home" class="active">Home</button>
+      <button data-go="shop">Shop</button>
+      <button data-go="product">Product</button>
+      <button data-go="cart">Cart</button>
+      <button data-go="checkout">Checkout</button>
+      <button data-go="orders">Orders</button>
+      <button data-go="rewards">Rewards</button>
+      <button data-go="profile">Account</button>
+      <button data-go="admin">Admin</button>
+      <button data-go="delivery">Delivery</button>
+    </nav>
+    <div class="nav-actions">
+      <button class="icon-btn" title="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
+      <button class="icon-btn" data-go="cart" title="Cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6 5 3H2"/></svg><span class="badge">3</span></button>
+      <button class="btn btn-gold btn-sm" data-go="auth">Sign in</button>
+      <button class="hamb" id="hamb"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+  <div class="mobile-nav" id="mnav"></div>
+</header>
+
+<main>
+
+<!-- HOME -->
+<div class="page active" id="home">
+  <div class="hero wrap">
+    <div class="hero-grid">
+      <div class="reveal" style="animation-delay:.05s">
+        <span class="eyebrow">Curated essentials · Est. 2025</span>
+        <h1>Everyday goods,<br>made <em>extraordinary</em>.</h1>
+        <p class="lead">A considered marketplace of design-led home, wellness and lifestyle pieces — delivered with live tracking, secured by Razorpay, and rewarded with every order.</p>
+        <div class="hero-cta">
+          <button class="btn btn-primary" data-go="shop">Explore the collection →</button>
+          <button class="btn btn-ghost" data-go="rewards">Join rewards</button>
+        </div>
+        <div class="hero-stats">
+          <div><div class="n serif">12k+</div><div class="l">Happy customers</div></div>
+          <div><div class="n serif">4.9★</div><div class="l">Avg. rating</div></div>
+          <div><div class="n serif">38 min</div><div class="l">Avg. delivery</div></div>
+        </div>
+      </div>
+      <div class="hero-visual reveal" style="animation-delay:.18s">
+        <div class="scene"></div><div class="grain"></div>
+        <div class="heroillo" id="heroIllo" style="color:#fff;opacity:.94"></div>
+        <div class="float a"><div class="eyebrow">Featured</div><div class="serif" style="font-size:18px;margin-top:2px">Brass Pour-Over Set</div></div>
+        <div class="float b"><div class="swatch"></div><div><div style="font-size:11px;color:var(--ink-faint)">From</div><div class="serif" style="font-size:19px;font-weight:600">₹2,450</div></div></div>
+      </div>
+    </div>
+    <div class="trust">
+      <div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span> Live order tracking</div>
+      <div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5z"/></svg></span> Razorpay secure pay</div>
+      <div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2.6 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.4-.5z"/></svg></span> Rewards on all orders</div>
+      <div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4"/></svg></span> 7-day easy returns</div>
+    </div>
+    <div class="marquee">
+      <div class="track" id="marquee"></div>
+    </div>
+  </div>
+
+  <section class="block wrap">
+    <div class="section-head"><div><span class="ix">01 — Collections</span><span class="eyebrow">Shop by room</span><h2 class="serif">Browse the categories</h2><hr class="hl-short"></div></div>
+    <div class="cats sr" id="catGrid"></div>
+  </section>
+
+  <section class="block wrap" style="padding-top:0">
+    <div class="section-head">
+      <div><span class="ix">02 — The edit</span><span class="eyebrow">Bestsellers</span><h2 class="serif">Loved this season</h2><hr class="hl-short"></div>
+      <button class="btn btn-ghost btn-sm" data-go="shop">View all</button>
+    </div>
+    <div class="pgrid" id="homeGrid"></div>
+  </section>
+
+  <section class="block wrap" style="padding-top:0">
+    <div class="feature sr">
+      <div class="art"><div class="grain"></div><div class="heroillo" id="featIllo"></div></div>
+      <div class="copy">
+        <span class="ix">03 — Featured</span>
+        <span class="eyebrow">The morning ritual</span>
+        <h3 class="serif">Slow coffee, beautifully made.</h3>
+        <p>Our hand-finished brass pour-over set turns a daily habit into a small ceremony. Designed to live on the counter — and to last for years.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap"><button class="btn btn-primary" data-go="product">Shop the set →</button><button class="btn btn-ghost" data-go="shop">Browse kitchen</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block wrap" style="padding-top:0">
+    <div class="quote sr">
+      <div class="mark">“</div>
+      <blockquote>The packaging alone felt like a gift. kankreg has quietly become the only place I shop for the home.</blockquote>
+      <div class="who">— ANANYA R., MUMBAI · VERIFIED BUYER</div>
+    </div>
+  </section>
+</div>
+
+<!-- SHOP -->
+<div class="page" id="shop">
+  <section class="block wrap">
+    <div class="section-head"><div><span class="eyebrow">Catalog</span><h2 class="serif">Shop everything</h2><hr class="hl-short"></div></div>
+    <div class="shop-grid">
+      <aside class="filters">
+        <div class="group"><h5>Category</h5>
+          <div class="chk on"><span class="box"></span> Home &amp; Kitchen</div>
+          <div class="chk"><span class="box"></span> Lifestyle</div>
+          <div class="chk"><span class="box"></span> Wellness</div>
+          <div class="chk"><span class="box"></span> Accessories</div>
+        </div>
+        <div class="group"><h5>Price</h5>
+          <div class="range"><div class="fill"></div><div class="knob" style="left:18%"></div><div class="knob" style="left:68%"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink-faint)"><span>₹500</span><span>₹8,000</span></div>
+        </div>
+        <div class="group"><h5>Rating</h5>
+          <div class="chk on"><span class="box"></span> 4★ &amp; above</div>
+          <div class="chk"><span class="box"></span> 3★ &amp; above</div>
+        </div>
+      </aside>
+      <div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <span style="font-size:13.5px;color:var(--ink-faint)">Showing <b style="color:var(--ink)">16</b> of 115 products</span>
+          <span class="eyebrow">Home &amp; Kitchen</span>
+        </div>
+        <div class="shop-toolbar">
+          <div class="pills"><button class="fpill on">All</button><button class="fpill">New in</button><button class="fpill">On sale</button><button class="fpill">Premium</button></div>
+          <select class="select"><option>Sort: Featured</option><option>Price: Low to High</option><option>Newest</option></select>
+        </div>
+        <div class="pgrid" id="shopGrid"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- PRODUCT -->
+<div class="page" id="product">
+  <section class="block wrap">
+    <div style="font-size:13px;color:var(--ink-faint);margin-bottom:24px">Shop · Home &amp; Kitchen · <span style="color:var(--ink)">Brass Pour-Over Set</span></div>
+    <div class="pd">
+      <div class="pd-gallery">
+        <div class="thumbs" id="thumbs"></div>
+        <div class="pd-main ptile bg-1"><div class="pad" id="pdMain"></div><div class="floor"></div></div>
+      </div>
+      <div class="pd-info">
+        <span class="tag gold">Bestseller</span>
+        <h1 class="serif">Brass Pour-Over Coffee Set</h1>
+        <div class="rate" style="color:var(--ink-faint);font-size:13px"><span style="color:var(--gold-bright);letter-spacing:1px">★★★★★</span> 4.9 · 214 reviews</div>
+        <div class="pd-price"><span class="now serif">₹2,450</span><s>₹3,200</s><span class="tag green">Save 23%</span></div>
+        <p class="pd-desc">A hand-finished brass dripper paired with a borosilicate carafe. Slow-bloom geometry for a cleaner, sweeter cup — designed to live on the counter, not in a cupboard.</p>
+        <div class="opt-row"><div class="lbl">Finish</div><div class="opts"><div class="opt on">Brushed</div><div class="opt">Polished</div><div class="opt">Matte</div></div></div>
+        <div class="opt-row"><div class="lbl">Quantity</div><div class="qty"><button>−</button><span>1</span><button>+</button></div></div>
+        <div class="pd-actions">
+          <button class="btn btn-primary" data-go="cart">Add to cart · ₹2,450</button>
+          <button class="btn btn-gold" data-go="checkout">Buy now</button>
+          <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-9.5-9C1 8.5 3 5 6.5 5 9 5 12 8 12 8s3-3 5.5-3C21 5 23 8.5 21.5 12 19 16.5 12 21 12 21z"/></svg></button>
+        </div>
+        <div class="pd-feat">
+          <div class="it"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></div><b>Fast delivery</b><p>Live-tracked, ~38 min</p></div>
+          <div class="it"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2.6 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.4-.5z"/></svg></div><b>Earn 245 pts</b><p>Toward rewards</p></div>
+          <div class="it"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4"/></svg></div><b>7-day returns</b><p>No questions asked</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="block" style="padding-bottom:0">
+      <div class="section-head"><div><span class="eyebrow">What people say</span><h2 class="serif" style="font-size:28px">Reviews · 4.9 / 5</h2><hr class="hl-short"></div></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px" id="reviews"></div>
+    </div>
+
+    <div class="block" style="padding-bottom:0">
+      <div class="section-head"><div><span class="eyebrow">Complete the look</span><h2 class="serif" style="font-size:28px">You may also like</h2><hr class="hl-short"></div></div>
+      <div class="pgrid" id="alsoGrid"></div>
+    </div>
+  </section>
+</div>
+<div class="page" id="cart">
+  <section class="block wrap">
+    <div class="section-head"><div><span class="eyebrow">Your bag</span><h2 class="serif">Shopping cart</h2><hr class="hl-short"></div></div>
+    <div class="split">
+      <div id="cartItems"></div>
+      <div class="summary">
+        <h3 class="serif">Order summary</h3>
+        <div class="coupon"><input placeholder="Coupon code"><button class="btn btn-ghost btn-sm">Apply</button></div>
+        <div class="srow"><span>Subtotal</span><span>₹5,330</span></div>
+        <div class="srow"><span>Coupon (WELCOME10)</span><span style="color:var(--green)">−₹533</span></div>
+        <div class="srow"><span>Delivery</span><span>₹49</span></div>
+        <div class="srow"><span>Rewards points</span><span style="color:var(--gold)">+533 pts</span></div>
+        <div class="srow total"><span>Total</span><span>₹4,846</span></div>
+        <button class="btn btn-primary btn-block" style="margin-top:18px" data-go="checkout">Proceed to checkout →</button>
+        <div style="text-align:center;font-size:12px;color:var(--ink-faint);margin-top:12px">Secured by Razorpay</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- CHECKOUT -->
+<div class="page" id="checkout">
+  <section class="block wrap">
+    <div class="section-head"><div><span class="eyebrow">Almost there</span><h2 class="serif">Checkout</h2><hr class="hl-short"></div></div>
+    <div class="checkout-steps">
+      <div class="step done"><span class="num">✓</span>Bag</div>
+      <div class="step done"><span class="num">✓</span>Address</div>
+      <div class="step on"><span class="num">3</span>Payment</div>
+      <div class="step"><span class="num">4</span>Confirm</div>
+    </div>
+    <div class="split">
+      <div>
+        <div class="info-card"><h3 class="serif">Delivery address</h3>
+          <div class="field"><label>Full name</label><input value="Ananya Rao"></div>
+          <div class="field"><label>Address line</label><input value="14 Marine Drive, Sea View Apartments"></div>
+          <div class="row2"><div class="field"><label>City</label><input value="Mumbai"></div><div class="field"><label>PIN code</label><input value="400020"></div></div>
+          <div class="field"><label>Phone</label><input value="+91 98765 43210"></div>
+        </div>
+        <div class="info-card"><h3 class="serif">Payment method</h3>
+          <div class="pay-opt on"><span class="radio"></span><div><b>Pay online</b><div style="font-size:12px;color:var(--ink-faint)">UPI · Cards · Netbanking · Wallets</div></div><span class="razor">Razorpay</span></div>
+          <div class="pay-opt"><span class="radio"></span><div><b>Cash on delivery</b><div style="font-size:12px;color:var(--ink-faint)">Pay when it arrives</div></div></div>
+        </div>
+      </div>
+      <div class="summary">
+        <h3 class="serif">Order total</h3>
+        <div class="srow"><span>Items (3)</span><span>₹5,330</span></div>
+        <div class="srow"><span>Discount</span><span style="color:var(--green)">−₹533</span></div>
+        <div class="srow"><span>Delivery</span><span>₹49</span></div>
+        <div class="srow total"><span>Pay now</span><span>₹4,846</span></div>
+        <button class="btn btn-gold btn-block" style="margin-top:18px" data-go="orders">Pay ₹4,846 securely</button>
+        <div style="text-align:center;font-size:12px;color:var(--ink-faint);margin-top:12px">Powered by <b style="color:#3395ff">Razorpay</b></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ORDERS -->
+<div class="page" id="orders">
+  <section class="block wrap">
+    <div class="banner ok">✓ Payment successful — your order is on its way.</div>
+    <div class="section-head"><div><span class="eyebrow">In transit</span><h2 class="serif">My orders</h2><hr class="hl-short"></div></div>
+    <div class="order-card">
+      <div class="order-top"><div><div class="oid">ORDER #KG-20451</div><h4 class="serif">Brass Pour-Over Set + 2 items</h4></div><span class="tag gold">Out for delivery</span></div>
+      <div class="track"><div class="track-bar">
+        <div class="track-node done"><div class="dot">✓</div><div class="t">Placed</div></div><div class="track-line done"></div>
+        <div class="track-node done"><div class="dot">✓</div><div class="t">Packed</div></div><div class="track-line done"></div>
+        <div class="track-node active"><div class="dot">●</div><div class="t">On the way</div></div><div class="track-line"></div>
+        <div class="track-node"><div class="dot"></div><div class="t">Delivered</div></div>
+      </div></div>
+      <div class="map-card"><div class="map-bg"></div>
+        <svg class="map-route" viewBox="0 0 600 230" preserveAspectRatio="none"><path d="M70,180 C180,150 220,90 320,110 C420,130 470,70 540,60" fill="none" stroke="#a9772e" stroke-width="3.5" stroke-dasharray="2 9" stroke-linecap="round"/></svg>
+        <div class="eta">⚡ Arriving in <b>&nbsp;12 min</b></div>
+        <div class="map-pin" style="left:6%;top:68%"><div class="p" style="background:var(--green)"></div></div>
+        <div class="map-driver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5.5" cy="17" r="2.5"/><circle cx="18.5" cy="17" r="2.5"/><path d="M8 17h7l3-6h-4l-2-3H8"/></svg></div>
+        <div class="map-pin" style="right:8%;top:14%"><div class="p" style="background:var(--gold)"></div></div>
+      </div>
+    </div>
+    <div class="section-head" style="margin-top:38px"><div><h2 class="serif" style="font-size:24px">Past orders</h2></div></div>
+    <div class="order-card">
+      <div class="order-top"><div><div class="oid">ORDER #KG-20390 · 18 May</div><h4 class="serif">Linen Table Runner</h4></div><span class="tag green">Delivered</span></div>
+      <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm">Reorder</button><button class="btn btn-ghost btn-sm">Rate</button><button class="btn btn-ghost btn-sm">Invoice</button></div>
+    </div>
+  </section>
+</div>
+
+<!-- REWARDS -->
+<div class="page" id="rewards">
+  <section class="block wrap">
+    <div class="section-head"><div><span class="eyebrow">Loyalty</span><h2 class="serif">Rewards</h2><hr class="hl-short"></div></div>
+    <div class="reward-hero">
+      <div><div class="eyebrow" style="color:var(--gold-bright)">Your balance</div>
+        <div class="pts">2,480 <span style="font-size:20px;font-family:var(--body)">pts</span></div>
+        <p style="opacity:.82;margin-top:6px;max-width:36ch">You're 520 points away from <b style="color:var(--gold-bright)">Gold tier</b> — unlocking free delivery on every order.</p>
+      </div>
+      <div class="ring"><div class="inner"><div><b style="font-size:18px">68%</b><br>to Gold</div></div></div>
+    </div>
+    <div class="reward-grid" id="rewardGrid"></div>
+  </section>
+</div>
+
+<!-- PROFILE -->
+<div class="page" id="profile">
+  <section class="block wrap">
+    <div class="section-head"><div><span class="eyebrow">Account</span><h2 class="serif">My profile</h2><hr class="hl-short"></div></div>
+    <div class="prof-grid">
+      <aside class="prof-side">
+        <div class="avatar serif">A</div>
+        <div class="serif" style="font-size:20px">Ananya Rao</div>
+        <div style="font-size:13px;color:var(--ink-faint)">ananya.rao@email.com</div>
+        <span class="tag gold" style="margin-top:12px">Silver member · 2,480 pts</span>
+        <div class="prof-menu" id="profMenu"></div>
+      </aside>
+      <div>
+        <div class="info-card"><h3 class="serif">Personal details <button class="btn btn-ghost btn-sm">Edit</button></h3>
+          <div class="kv">
+            <div><div class="k">Full name</div><div class="v">Ananya Rao</div></div>
+            <div><div class="k">Phone</div><div class="v">+91 98765 43210</div></div>
+            <div><div class="k">Email</div><div class="v">ananya.rao@email.com</div></div>
+            <div><div class="k">Member since</div><div class="v">March 2025</div></div>
+          </div>
+        </div>
+        <div class="info-card"><h3 class="serif">Default address <button class="btn btn-ghost btn-sm">Manage</button></h3>
+          <div class="v" style="color:var(--ink-soft);line-height:1.7">Ananya Rao<br>14 Marine Drive, Sea View Apartments<br>Mumbai, Maharashtra 400020<br>+91 98765 43210</div>
+        </div>
+        <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+          <div class="kpi"><div class="lbl">Orders</div><div class="n">24</div></div>
+          <div class="kpi"><div class="lbl">Saved</div><div class="n">₹4.2k</div></div>
+          <div class="kpi"><div class="lbl">Points</div><div class="n">2,480</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- AUTH -->
+<div class="page" id="auth">
+  <section class="block wrap">
+    <div class="auth">
+      <div class="auth-art"><div class="grain"></div>
+        <div class="heroillo" id="authIllo" style="color:#fff;opacity:.9"></div>
+        <div class="copy"><span class="eyebrow" style="color:var(--gold-bright)">Welcome to kankreg</span><h2 class="serif">Goods worth<br>coming back for.</h2></div>
+      </div>
+      <div class="auth-form">
+        <h1 class="serif">Sign in</h1>
+        <p style="color:var(--ink-faint)">Access your orders, rewards and saved items.</p>
+        <div class="auth-toggle"><button class="on">Sign in</button><button>Create account</button></div>
+        <div class="field"><label>Email</label><input placeholder="you@email.com"></div>
+        <div class="field"><label>Password</label><input type="password" placeholder="••••••••"></div>
+        <button class="btn btn-primary btn-block" data-go="home">Sign in →</button>
+        <div style="text-align:center;color:var(--ink-faint);font-size:12px;margin:18px 0">or continue with</div>
+        <div style="display:flex;gap:12px"><button class="btn btn-ghost" style="flex:1">Google</button><button class="btn btn-ghost" style="flex:1">Apple</button></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ADMIN -->
+<div class="page" id="admin">
+  <section class="block wrap">
+    <div class="admin">
+      <aside class="admin-side" id="adminSide"></aside>
+      <div class="admin-main">
+        <div class="admin-head"><h2 class="serif">Dashboard</h2>
+          <div style="display:flex;gap:10px;flex-wrap:wrap"><select class="select"><option>Last 30 days</option><option>Last 7 days</option></select><button class="btn btn-ghost btn-sm">Export CSV</button><button class="btn btn-gold btn-sm">Export PDF</button></div>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><div class="lbl">Revenue</div><div class="n">₹8.4L</div><div class="delta up">▲ 18.2%</div></div>
+          <div class="kpi"><div class="lbl">Orders</div><div class="n">1,284</div><div class="delta up">▲ 9.1%</div></div>
+          <div class="kpi"><div class="lbl">Avg. order</div><div class="n">₹654</div><div class="delta up">▲ 4.4%</div></div>
+          <div class="kpi"><div class="lbl">Refunds</div><div class="n">2.1%</div><div class="delta down">▼ 0.6%</div></div>
+        </div>
+        <div class="admin-2">
+          <div class="panel"><h3 class="serif">Revenue <span style="font-size:12px;color:var(--ink-faint);font-weight:400">Mon–Sun</span></h3><div class="chart" id="chart"></div></div>
+          <div class="panel"><h3 class="serif">Top categories</h3>
+            <div style="display:flex;flex-direction:column;gap:16px;margin-top:6px">
+              <div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span>Home &amp; Kitchen</span><b>42%</b></div><div class="range" style="margin:0"><div class="fill" style="left:0;right:58%"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span>Lifestyle</span><b>28%</b></div><div class="range" style="margin:0"><div class="fill" style="left:0;right:72%"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span>Wellness</span><b>19%</b></div><div class="range" style="margin:0"><div class="fill" style="left:0;right:81%"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span>Accessories</span><b>11%</b></div><div class="range" style="margin:0"><div class="fill" style="left:0;right:89%"></div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:20px"><h3 class="serif">Recent orders <button class="btn btn-ghost btn-sm">View all</button></h3>
+          <div class="tablewrap"><table class="dtable">
+            <thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>#KG-20451</td><td>Ananya Rao</td><td>3</td><td>₹4,846</td><td><span class="st pend">Out for delivery</span></td></tr>
+              <tr><td>#KG-20450</td><td>Rohit Mehta</td><td>1</td><td>₹2,450</td><td><span class="st paid">Delivered</span></td></tr>
+              <tr><td>#KG-20449</td><td>Priya Nair</td><td>2</td><td>₹1,890</td><td><span class="st paid">Delivered</span></td></tr>
+              <tr><td>#KG-20448</td><td>Karan Shah</td><td>4</td><td>₹7,120</td><td><span class="st cancel">Cancelled</span></td></tr>
+              <tr><td>#KG-20447</td><td>Meera Iyer</td><td>1</td><td>₹990</td><td><span class="st pend">Packed</span></td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- DELIVERY -->
+<div class="page" id="delivery">
+  <section class="block wrap">
+    <div class="section-head"><div><span class="eyebrow">Partner</span><h2 class="serif">Delivery dashboard</h2><hr class="hl-short"></div>
+      <div style="display:flex;align-items:center;gap:10px"><span class="tag green">● Online</span><span style="font-size:13px;color:var(--ink-faint)">3 assigned</span></div>
+    </div>
+    <div class="deliv-grid">
+      <div>
+        <div class="assign">
+          <div class="top"><div><div class="oid" style="font-size:12px;color:var(--ink-faint)">ORDER #KG-20451</div><h4 class="serif" style="font-size:18px">Active drop-off</h4></div><span class="tag gold">Picked up</span></div>
+          <div class="deliv-addr">
+            <div class="ln"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11 12 3l9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span><div><b style="color:var(--ink)">Ananya Rao</b><br>14 Marine Drive, Sea View Apartments<br>Mumbai, Maharashtra 400020</div></div>
+            <div class="ln"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h4l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></span><div>+91 98765 43210</div></div>
+          </div>
+          <div class="deliv-actions"><button class="btn btn-gold btn-sm">Navigate →</button><button class="btn btn-ghost btn-sm">Call</button><button class="btn btn-ghost btn-sm">Mark delivered</button></div>
+        </div>
+        <div class="assign" style="opacity:.72">
+          <div class="top"><div><div class="oid" style="font-size:12px;color:var(--ink-faint)">ORDER #KG-20453</div><h4 class="serif" style="font-size:18px">Next in queue</h4></div><span class="tag">Assigned</span></div>
+          <div class="deliv-addr"><div class="ln"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11 12 3l9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span><div><b style="color:var(--ink)">Rohit Mehta</b><br>7 Carter Road, Bandra West<br>Mumbai 400050</div></div></div>
+        </div>
+      </div>
+      <div class="map-card" style="height:420px">
+        <div class="map-bg"></div>
+        <svg class="map-route" viewBox="0 0 360 420" preserveAspectRatio="none"><path d="M60,360 C120,300 90,200 180,180 C270,160 250,90 300,60" fill="none" stroke="#a9772e" stroke-width="3.5" stroke-dasharray="2 9" stroke-linecap="round"/></svg>
+        <div class="eta">⚡ Drop-off in <b>&nbsp;12 min</b></div>
+        <div class="map-pin" style="left:12%;bottom:12%"><div class="p" style="background:var(--green)"></div></div>
+        <div class="map-driver" style="left:46%;top:40%"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5.5" cy="17" r="2.5"/><circle cx="18.5" cy="17" r="2.5"/><path d="M8 17h7l3-6h-4l-2-3H8"/></svg></div>
+        <div class="map-pin" style="right:14%;top:10%"><div class="p" style="background:var(--gold)"></div></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+</main>
+
+<div class="buybar">
+  <div class="pr">₹2,450</div>
+  <button class="btn btn-primary" data-go="cart">Add to cart</button>
+  <button class="btn btn-gold" data-go="checkout">Buy now</button>
+</div>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="news">
+      <div><h4>Join the list</h4><p>First access to new drops, member-only offers, and 100 bonus points on signup.</p></div>
+      <div class="form"><input placeholder="your@email.com"><button class="btn btn-gold">Subscribe</button></div>
+    </div>
+    <div class="cols" style="margin-top:48px">
+      <div><div class="brand serif" style="font-size:26px;margin-bottom:14px"><span class="dot"></span>kankreg</div>
+        <p style="max-width:34ch;font-size:14px">Design-led essentials, delivered with care. Live tracking, secure payments, rewarded every time.</p>
+      </div>
+      <div><h4>Shop</h4><ul><li>New arrivals</li><li>Bestsellers</li><li>On sale</li><li>Gift cards</li></ul></div>
+      <div><h4>Account</h4><ul><li>My orders</li><li>Rewards</li><li>Addresses</li><li>Support</li></ul></div>
+      <div><h4>Company</h4><ul><li>About</li><li>Careers</li><li>Privacy</li><li>Terms</li></ul></div>
+    </div>
+    <div class="bottom"><span>© 2025 kankreg. Crafted in India.</span><span>Payments secured by Razorpay · Built on Expo + Express</span></div>
+  </div>
+</footer>
+
+<script>
+/* ====== product illustration system (inline SVG line-art) ====== */
+const S='stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"';
+const illos={
+  coffee:`<svg class="illo" viewBox="0 0 200 200"><g ${S}><path d="M70 70h60l-12 34a14 14 0 0 1-13 9H95a14 14 0 0 1-13-9z"/><path d="M82 70c0-16 8-26 18-26s18 10 18 26"/><path d="M100 44V30"/><path d="M70 122h60v34a10 10 0 0 1-10 10H80a10 10 0 0 1-10-10z"/><path d="M130 132h12a10 10 0 0 1 0 20h-8"/></g></svg>`,
+  diffuser:`<svg class="illo" viewBox="0 0 200 200"><g ${S}><path d="M74 96a26 30 0 1 0 52 0c0-18-12-26-12-40h-28c0 14-12 22-12 40z"/><path d="M86 56h28"/><path d="M100 56V40"/><path d="M118 60c8-10 6-22 6-22M82 60c-8-10-6-22-6-22M100 40c0-12 0-18 0-18"/></g></svg>`,
+  runner:`<svg class="illo" viewBox="0 0 200 200"><g ${S}><path d="M40 80c14-8 28-8 42 0s28 8 42 0 28-8 36-3"/><path d="M40 104c14-8 28-8 42 0s28 8 42 0 28-8 36-3"/><path d="M40 128c14-8 28-8 42 0s28 8 42 0 28-8 36-3"/><path d="M48 144v14M64 148v14M80 150v14M96 150v14"/></g></svg>`,
+  tray:`<svg class="illo" viewBox="0 0 200 200"><g ${S}><ellipse cx="100" cy="118" rx="62" ry="22"/><path d="M38 118c0 14 28 26 62 26s62-12 62-26"/><circle cx="84" cy="112" r="9"/><circle cx="112" cy="116" r="7"/></g></svg>`,
+  mug:`<svg class="illo" viewBox="0 0 200 200"><g ${S}><rect x="58" y="78" width="48" height="56" rx="10"/><path d="M106 90h12a14 14 0 0 1 0 28h-6"/><path d="M120 72c6-8 4-16 4-16M100 72c6-8 4-16 4-16"/></g></svg>`,
+  candle:`<svg class="illo" viewBox="0 0 200 200"><g ${S}><rect x="66" y="92" width="68" height="58" rx="10"/><path d="M66 110h68"/><path d="M100 92V78"/><path d="M100 78c-8-6-8-16 0-26 8 10 8 20 0 26z"/></g></svg>`,
+  blanket:`<svg class="illo" viewBox="0 0 200 200"><g ${S}><rect x="54" y="84" width="92" height="22" rx="6"/><rect x="50" y="106" width="100" height="22" rx="6"/><rect x="58" y="128" width="84" height="22" rx="6"/><path d="M58 150v12M74 150v12M90 150v12M106 150v12M122 150v12"/></g></svg>`,
+  wallet:`<svg class="illo" viewBox="0 0 200 200"><g ${S}><rect x="56" y="72" width="88" height="56" rx="10"/><path d="M56 90h88"/><rect x="96" y="98" width="40" height="22" rx="5"/><path d="M120 72l-8-14-44 14"/></g></svg>`
+};
+function tile(bg,key){return `<div class="ptile ${bg}"><div class="pad" style="color:#5a4326">${illos[key]}</div><div class="floor"></div></div>`}
+
+/* ====== products ====== */
+const products=[
+  {cat:'Home & Kitchen',name:'Brass Pour-Over Set',price:'₹2,450',was:'₹3,200',rate:'4.9',sold:'214',bg:'bg-1',illo:'coffee',sale:true},
+  {cat:'Wellness',name:'Ceramic Reed Diffuser',price:'₹1,890',rate:'4.8',sold:'180',bg:'bg-2',illo:'diffuser'},
+  {cat:'Lifestyle',name:'Linen Table Runner',price:'₹990',was:'₹1,250',rate:'4.7',sold:'320',bg:'bg-3',illo:'runner',sale:true},
+  {cat:'Accessories',name:'Walnut Catch-All Tray',price:'₹1,350',rate:'4.9',sold:'140',bg:'bg-4',illo:'tray'},
+  {cat:'Home & Kitchen',name:'Stoneware Mug Duo',price:'₹1,150',was:'₹1,400',rate:'4.8',sold:'260',bg:'bg-5',illo:'mug',sale:true},
+  {cat:'Wellness',name:'Soy Candle · Amber',price:'₹780',rate:'4.9',sold:'410',bg:'bg-6',illo:'candle'},
+  {cat:'Lifestyle',name:'Cotton Throw Blanket',price:'₹2,990',was:'₹3,600',rate:'4.6',sold:'95',bg:'bg-7',illo:'blanket',sale:true},
+  {cat:'Accessories',name:'Leather Card Holder',price:'₹1,250',rate:'4.8',sold:'205',bg:'bg-8',illo:'wallet'},
+];
+const heart='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-9.5-9C1 8.5 3 5 6.5 5 9 5 12 8 12 8s3-3 5.5-3C21 5 23 8.5 21.5 12 19 16.5 12 21 12 21z"/></svg>';
+const plus='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>';
+const stars=n=>'★★★★★';
+function card(p){
+  return `<div class="product" data-go="product">
+    <div class="ptile ${p.bg}">
+      <button class="fav">${heart}</button>
+      ${p.sale?`<span class="pill tag green">Sale</span>`:`<span class="pill tag gold">New</span>`}
+      <div class="pad" style="color:#5a4326">${illos[p.illo]}</div><div class="floor"></div>
+      <div class="quick"><button class="btn btn-primary btn-sm btn-block">Quick add +</button></div>
+    </div>
+    <div class="body">
+      <div class="cat">${p.cat}</div>
+      <h3 class="serif">${p.name}</h3>
+      <div class="rate"><span class="stars">${stars()}</span> ${p.rate} · ${p.sold} sold</div>
+      <div class="priceRow"><div class="price serif">${p.price}${p.was?`<s>${p.was}</s>`:''}</div><button class="add">${plus}</button></div>
+    </div>
+  </div>`;
+}
+document.getElementById('homeGrid').innerHTML=products.slice(0,4).map(card).join('');
+document.getElementById('shopGrid').innerHTML=products.concat(products).map(card).join('');
+const also=document.getElementById('alsoGrid'); if(also) also.innerHTML=products.slice(1,5).map(card).join('');
+
+/* marquee ticker */
+const mq=document.getElementById('marquee');
+if(mq){const items=['Free delivery over ₹1,499','Live order tracking','Razorpay secure checkout','7-day easy returns','Earn rewards every order','Crafted in India'];
+  const run='<span>'+items.map(i=>i).join(' <em class="star">✦</em> ')+' <em class="star">✦</em> </span>';
+  mq.innerHTML=run+run;}
+
+/* featured illustration */
+const fi=document.getElementById('featIllo'); if(fi) fi.innerHTML=illos.coffee;
+
+/* reviews */
+const rv=document.getElementById('reviews');
+if(rv){const data=[
+  ['Ananya R.','Honestly the best coffee setup I have owned. Feels like a ritual now.','Mumbai'],
+  ['Rohit M.','Beautiful object, fast delivery, and the tracking was spot on.','Pune'],
+  ['Priya N.','Gift-worthy packaging and it just works. Buying the diffuser next.','Bengaluru']];
+  rv.innerHTML=data.map(d=>`<div class="info-card" style="margin:0">
+    <div style="color:var(--gold-bright);letter-spacing:2px;font-size:14px">★★★★★</div>
+    <p style="font-size:14.5px;color:var(--ink-soft);margin:10px 0 14px">"${d[1]}"</p>
+    <div style="display:flex;align-items:center;gap:10px"><div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#d9b463,#9c6b27);display:grid;place-items:center;color:#fff;font-family:var(--display)">${d[0][0]}</div><div><b style="font-size:13.5px">${d[0]}</b><div style="font-size:11.5px;color:var(--ink-faint)">${d[2]} · Verified</div></div></div>
+  </div>`).join('');}
+
+/* categories */
+const cats=[['Home & Kitchen','42 items','bg-1','coffee'],['Lifestyle','31 items','bg-3','runner'],['Wellness','24 items','bg-2','diffuser'],['Accessories','18 items','bg-8','wallet']];
+document.getElementById('catGrid').innerHTML=cats.map(c=>`
+  <div class="cat-card ${c[2]}" data-go="shop">
+    <div class="pad" style="position:absolute;inset:0;display:grid;place-items:center;color:#5a4326;opacity:.85;padding:22%">${illos[c[3]]}</div>
+    <div class="ov"></div><div class="nm">${c[0]}</div><div class="ct">${c[1]}</div>
+  </div>`).join('');
+
+/* hero + auth illustration */
+document.getElementById('heroIllo').innerHTML=illos.coffee;
+document.getElementById('authIllo').innerHTML=illos.candle;
+
+/* product detail */
+document.getElementById('pdMain').innerHTML=`<div style="color:#5a4326;width:100%;height:100%">${illos.coffee}</div>`;
+const pdThumbs=[['bg-1','coffee'],['bg-3','runner'],['bg-5','mug'],['bg-6','candle']];
+document.getElementById('thumbs').innerHTML=pdThumbs.map((t,i)=>
+  `<div class="thumb ptile ${t[0]} ${i===0?'on':''}" data-illo="${t[1]}"><div class="pad" style="color:#5a4326;padding:18%">${illos[t[1]]}</div></div>`).join('');
+document.querySelectorAll('#thumbs .thumb').forEach(t=>t.onclick=function(){
+  document.querySelectorAll('#thumbs .thumb').forEach(x=>x.classList.remove('on'));this.classList.add('on');
+  document.querySelector('.pd-main').className='pd-main ptile '+[...this.classList].find(c=>c.startsWith('bg-'));
+  document.getElementById('pdMain').innerHTML=`<div style="color:#5a4326;width:100%;height:100%">${illos[this.dataset.illo]}</div>`;
+});
+
+/* cart */
+const cart=[['Brass Pour-Over Set','Finish: Brushed','₹2,450','bg-1','coffee'],['Ceramic Reed Diffuser','White','₹1,890','bg-2','diffuser'],['Linen Table Runner','Sand','₹990','bg-3','runner']];
+document.getElementById('cartItems').innerHTML=cart.map(c=>`
+  <div class="lineitem">
+    <div class="img ptile ${c[3]}"><div class="pad" style="color:#5a4326;padding:18%">${illos[c[4]]}</div></div>
+    <div><h4 class="serif">${c[0]}</h4><div class="meta">${c[1]} · Qty 1</div>
+      <div class="qty" style="margin-top:10px;transform:scale(.82);transform-origin:left"><button>−</button><span>1</span><button>+</button></div></div>
+    <div><div class="li-price serif">${c[2]}</div><div class="rm">Remove</div></div>
+  </div>`).join('');
+
+/* rewards */
+const giftIc='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M3 12h18M12 8v13M12 8S9 3 6.5 4.5 9 8 12 8zM12 8s3-5 5.5-3.5S15 8 12 8z"/></svg>';
+const rewards=[
+  ['₹100 off','Any order above ₹1,500','500 pts'],
+  ['Free delivery','On your next 3 orders','350 pts'],
+  ['₹250 voucher','Storewide','1,000 pts'],
+  ['Early access','New drops 24h early','800 pts'],
+  ['Free gift wrap','Premium ribbon set','200 pts'],
+  ['Gold tier','Free delivery forever','3,000 pts'],
+];
+document.getElementById('rewardGrid').innerHTML=rewards.map(r=>`
+  <div class="reward"><div class="ic">${giftIc}</div>
+    <h4 class="serif">${r[0]}</h4>
+    <div style="font-size:13px;color:var(--ink-faint);margin-top:4px">${r[1]}</div>
+    <div class="cost"><b>${r[2]}</b><button class="btn btn-ghost btn-sm">Redeem</button></div>
+  </div>`).join('');
+
+/* profile menu */
+const ic=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${p}</svg>`;
+document.getElementById('profMenu').innerHTML=[
+  ['<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>','Account overview','',true],
+  ['<path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/>','My orders','orders'],
+  ['<path d="M3 11 12 3l9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>','Saved addresses',''],
+  ['<path d="M12 3l2.6 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.4-.5z"/>','Rewards','rewards'],
+  ['<path d="M12 21s-7-4.5-9.5-9C1 8.5 3 5 6.5 5 9 5 12 8 12 8s3-3 5.5-3C21 5 23 8.5 21.5 12 19 16.5 12 21 12 21z"/>','Wishlist',''],
+  ['<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 0 0-1.7-1l-.3-2.6h-4l-.3 2.6a7 7 0 0 0-1.7 1l-2.3-1-2 3.4 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 1.7 1l.3 2.6h4l.3-2.6a7 7 0 0 0 1.7-1l2.3 1 2-3.4-2-1.5a7 7 0 0 0 .1-1z"/>','Settings',''],
+  ['<path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>','Sign out','auth'],
+].map(m=>`<a class="${m[3]?'on':''}" ${m[2]?`data-go="${m[2]}"`:''}>${ic(m[0])}${m[1]}</a>`).join('');
+
+/* admin side */
+document.getElementById('adminSide').innerHTML=`<span class="brand serif">kankreg<span style="font-size:11px;color:var(--gold-bright);display:block;letter-spacing:.2em">ADMIN</span></span>`+[
+  ['Dashboard',true],['Orders'],['Products'],['Inventory'],['Analytics'],['Users'],['Coupons'],['Rewards'],['Support']
+].map(a=>`<a class="${a[1]?'on':''}">${ic('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>')}${a[0]}</a>`).join('');
+
+/* admin chart */
+const vals=[58,72,49,88,64,95,78],days=['M','T','W','T','F','S','S'];
+document.getElementById('chart').innerHTML=vals.map((v,i)=>`<div class="bar" style="height:${v}%"><span>${days[i]}</span></div>`).join('');
+
+/* ====== nav / router ====== */
+const order=['home','shop','product','cart','checkout','orders','rewards','profile','admin','delivery','auth'];
+const labels={home:'Home',shop:'Shop',product:'Product',cart:'Cart',checkout:'Checkout',orders:'Orders',rewards:'Rewards',profile:'Account',admin:'Admin',delivery:'Delivery',auth:'Sign in'};
+document.getElementById('mnav').innerHTML=order.map(id=>`<button data-go="${id}">${labels[id]}</button>`).join('');
+const pages=document.querySelectorAll('.page'),navBtns=document.querySelectorAll('#nav button');
+function go(id){
+  pages.forEach(p=>p.classList.toggle('active',p.id===id));
+  navBtns.forEach(b=>b.classList.toggle('active',b.dataset.go===id));
+  document.getElementById('mnav').classList.remove('open');
+  document.getElementById('hamb').classList.remove('on');
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.querySelectorAll('#'+id+' .reveal').forEach(el=>{el.style.animation='none';el.offsetHeight;el.style.animation=''});
+  if(window._reveal) setTimeout(window._reveal,60);
+}
+document.body.addEventListener('click',e=>{const t=e.target.closest('[data-go]');if(t){go(t.dataset.go);}});
+document.getElementById('hamb').onclick=()=>document.getElementById('mnav').classList.toggle('open');
+
+/* toggles */
+document.querySelectorAll('.auth-toggle button').forEach(b=>b.onclick=function(){document.querySelectorAll('.auth-toggle button').forEach(x=>x.classList.remove('on'));this.classList.add('on');document.querySelector('#auth h1').textContent=this.textContent;});
+document.querySelectorAll('.pay-opt').forEach(o=>o.onclick=function(){document.querySelectorAll('.pay-opt').forEach(x=>x.classList.remove('on'));this.classList.add('on');});
+document.querySelectorAll('#product .opt').forEach(o=>o.onclick=function(){this.parentNode.querySelectorAll('.opt').forEach(x=>x.classList.remove('on'));this.classList.add('on');});
+document.querySelectorAll('.fpill').forEach(o=>o.onclick=function(){this.parentNode.querySelectorAll('.fpill').forEach(x=>x.classList.remove('on'));this.classList.add('on');});
+document.querySelectorAll('.chk').forEach(o=>o.onclick=function(){this.classList.toggle('on');});
+
+/* ====== scroll reveal ====== */
+(function(){
+  // tag cards/blocks for staggered reveal
+  document.querySelectorAll('#homeGrid .product, #shopGrid .product, #alsoGrid .product, #catGrid .cat-card, #rewardGrid .reward, #reviews .info-card').forEach((el,i)=>{
+    el.classList.add('sr'); el.style.transitionDelay=((i%4)*0.07)+'s';
+  });
+  document.querySelectorAll('.order-card, #orders .banner, .kpi, .feature, .news').forEach(el=>el.classList.add('sr'));
+  const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}})},{threshold:.12,rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('.sr').forEach(el=>io.observe(el));
+  window._reveal=()=>document.querySelectorAll('.page.active .sr').forEach(el=>{
+    const r=el.getBoundingClientRect(); if(r.top<window.innerHeight*0.95){el.classList.add('in');}
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,18 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Platform,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
-} from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+  View} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import AppFooter from "../../components/AppFooter";
+import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
 import CustomerScreenShell from "../../components/CustomerScreenShell";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -20,7 +17,20 @@ import { fetchAdminOrders, fetchAdminProducts, fetchAdminUsers } from "../../ser
 import { adminModuleSection, adminPanel } from "../../theme/adminLayout";
 import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../../theme/customerAlchemy";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, layout, radius, spacing, typography } from "../../theme/tokens";
+import { fonts, layout, semanticRadius, spacing, typography } from "../../theme/tokens";
+import PremiumLoader from "../../components/ui/PremiumLoader";
+import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import PremiumButton from "../../components/ui/PremiumButton";
+import PremiumCard from "../../components/ui/PremiumCard";
+import PremiumStatCard from "../../components/ui/PremiumStatCard";
+import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
+
+/** Group icon shown on each collapsible admin module header. */
+const SECTION_GROUP_ICONS = {
+  catalog: "library-outline",
+  orders: "people-circle-outline",
+  growth: "megaphone-outline",
+  insights: "sparkles-outline"};
 
 const MANAGE_SECTIONS = [
   {
@@ -31,28 +41,23 @@ const MANAGE_SECTIONS = [
         title: "Manage products",
         subtitle: "List, edit, and remove items",
         icon: "cube-outline",
-        route: "AdminProducts",
-      },
+        route: "AdminProducts"},
       {
         title: "Inventory & stock",
         subtitle: "Set quantities, low-stock view, in / out of stock (admin only)",
         icon: "layers-outline",
-        route: "AdminInventory",
-      },
+        route: "AdminInventory"},
       {
         title: "Add product",
         subtitle: "Create new catalog entries",
         icon: "add-circle-outline",
-        route: "AdminAddProduct",
-      },
+        route: "AdminAddProduct"},
       {
         title: "Manage storefront content",
         subtitle: "Hero, sections, layout & links to products",
         icon: "home-outline",
-        route: "AdminHomeView",
-      },
-    ],
-  },
+        route: "AdminHomeView"},
+    ]},
   {
     id: "orders",
     label: "Orders & customers",
@@ -61,16 +66,13 @@ const MANAGE_SECTIONS = [
         title: "Manage orders",
         subtitle: "Status, details, and fulfillment",
         icon: "receipt-outline",
-        route: "AdminOrders",
-      },
+        route: "AdminOrders"},
       {
         title: "Manage users",
         subtitle: "Roles and account controls",
         icon: "people-outline",
-        route: "AdminUsers",
-      },
-    ],
-  },
+        route: "AdminUsers"},
+    ]},
   {
     id: "growth",
     label: "Marketing & engagement",
@@ -79,22 +81,23 @@ const MANAGE_SECTIONS = [
         title: "Send notification",
         subtitle: "Broadcast messages to customers",
         icon: "notifications-outline",
-        route: "AdminNotifications",
-      },
+        route: "AdminNotifications"},
       {
         title: "Manage coupons",
         subtitle: "Discount codes and visibility",
         icon: "pricetag-outline",
-        route: "AdminCoupons",
-      },
+        route: "AdminCoupons"},
+      {
+        title: "Loyalty rewards",
+        subtitle: "Point-cost catalog → customer redeem coupons",
+        icon: "gift-outline",
+        route: "AdminRewards"},
       {
         title: "Support inbox",
         subtitle: "Threads and replies",
         icon: "chatbubbles-outline",
-        route: "AdminSupport",
-      },
-    ],
-  },
+        route: "AdminSupport"},
+    ]},
   {
     id: "insights",
     label: "Insights",
@@ -103,52 +106,60 @@ const MANAGE_SECTIONS = [
         title: "Analytics",
         subtitle: "Revenue, stock, carts, and trends",
         icon: "bar-chart-outline",
-        route: "AdminAnalytics",
-      },
-    ],
-  },
+        route: "AdminAnalytics"},
+    ]},
 ];
 
-export default function AdminDashboardScreen({ navigation }) {
+export default function AdminDashboardScreen({ navigation, route }) {
   const { colors: c, shadowLift, shadowPremium, isDark } = useTheme();
-  const insets = useSafeAreaInsets();
-  const styles = useMemo(() => createAdminDashboardStyles(c, shadowLift, shadowPremium), [c, shadowLift, shadowPremium]);
+    const styles = useMemo(
+    () => createAdminDashboardStyles(c, shadowLift, shadowPremium, isDark),
+    [c, shadowLift, shadowPremium, isDark]
+  );
   const { user, token } = useAuth();
   const [stats, setStats] = useState({
     products: 0,
     orders: 0,
     users: 0,
     admins: 0,
-    pendingOrders: 0,
-  });
+    pendingOrders: 0});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-
-  const heroGradient = useMemo(
-    () =>
-      isDark
-        ? ["#0C0A08", "#2A2118", "#14532D"]
-        : [ALCHEMY.creamAlt, ALCHEMY.cardBg, "#EDE4D4"],
-    [isDark]
+  const [openSections, setOpenSections] = useState(() =>
+    Object.fromEntries(MANAGE_SECTIONS.map((s) => [s.id, true]))
   );
+
+  const toggleSection = useCallback((id) => {
+    setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
+  }, []);
+
+  const setAllSectionsOpen = useCallback((open) => {
+    setOpenSections(Object.fromEntries(MANAGE_SECTIONS.map((s) => [s.id, open])));
+  }, []);
 
   function StatCard({ icon, label, value, warnHighlight }) {
     return (
-      <View style={[styles.statCard, warnHighlight ? styles.statCardWarn : null, !isDark ? styles.statCardLight : null]}>
-        <View style={[styles.statIconWrap, !isDark ? styles.statIconWrapLight : null]}>
-          <Ionicons name={icon} size={18} color={isDark ? c.primary : ALCHEMY.brown} />
-        </View>
-        <Text style={[styles.statValue, !isDark ? styles.statValueLight : null]}>{value}</Text>
-        <Text style={styles.statLabel}>{label}</Text>
-      </View>
+      <PremiumStatCard
+        compact
+        align="center"
+        iconName={icon}
+        label={label}
+        value={String(value)}
+        tone={warnHighlight ? "rose" : "gold"}
+        style={styles.statPremiumTile}
+      />
     );
   }
 
-  function ActionRow({ title, subtitle, icon, onPress }) {
+  function ActionRow({ title, subtitle, icon, onPress, isLast }) {
     return (
       <TouchableOpacity
-        style={[styles.actionRow, !isDark ? styles.actionRowLight : null]}
+        style={[
+          styles.actionRow,
+          !isDark ? styles.actionRowLight : null,
+          isLast ? styles.actionRowLast : null,
+        ]}
         onPress={onPress}
         activeOpacity={0.82}
       >
@@ -163,6 +174,75 @@ export default function AdminDashboardScreen({ navigation }) {
       </TouchableOpacity>
     );
   }
+
+  function ManageSectionBlock({ section }) {
+    const open = openSections[section.id] !== false;
+    const groupIcon = SECTION_GROUP_ICONS[section.id] || "folder-outline";
+    return (
+      <View style={[adminModuleSection(isDark, c), styles.manageSectionWrap]}>
+        <Pressable
+          onPress={() => toggleSection(section.id)}
+          style={({ pressed }) => [
+            styles.sectionHeaderRow,
+            !isDark ? styles.sectionHeaderRowLight : null,
+            pressed ? styles.sectionHeaderPressed : null,
+          ]}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: open }}
+          accessibilityLabel={`${section.label}, ${section.items.length} tools. ${open ? "Collapse" : "Expand"}`}
+        >
+          <View style={[styles.sectionHeaderIcon, !isDark ? styles.sectionHeaderIconLight : null]}>
+            <Ionicons name={groupIcon} size={22} color={isDark ? c.primaryBright : ALCHEMY.brown} />
+          </View>
+          <View style={styles.sectionHeaderTextCol}>
+            <Text style={[styles.sectionHeaderTitle, !isDark ? styles.sectionHeaderTitleLight : null]}>
+              {section.label}
+            </Text>
+            <Text style={styles.sectionHeaderMeta}>
+              {section.items.length} {section.items.length === 1 ? "shortcut" : "shortcuts"}
+            </Text>
+          </View>
+          <View
+            style={[
+              styles.sectionBadge,
+              section.id === "orders" && stats.pendingOrders > 0 ? styles.sectionBadgeHot : null,
+            ]}
+          >
+            <Text style={styles.sectionBadgeText}>{section.items.length}</Text>
+          </View>
+          <Ionicons name={open ? "chevron-up" : "chevron-down"} size={22} color={c.textMuted} />
+        </Pressable>
+        {open ? (
+          <View style={styles.sectionBody}>
+            {section.items.map((item, idx) => (
+              <ActionRow
+                key={item.route}
+                title={item.title}
+                subtitle={item.subtitle}
+                icon={item.icon}
+                onPress={() => navigation.navigate(item.route)}
+                isLast={idx === section.items.length - 1}
+              />
+            ))}
+          </View>
+        ) : null}
+      </View>
+    );
+  }
+
+  const quickActions = useMemo(
+    () => [
+      {
+        route: "AdminOrders",
+        label: "Orders",
+        icon: "receipt-outline",
+        badge: stats.pendingOrders},
+      { route: "AdminProducts", label: "Products", icon: "cube-outline", badge: null },
+      { route: "AdminAnalytics", label: "Analytics", icon: "bar-chart-outline", badge: null },
+      { route: "AdminNotifications", label: "Notify", icon: "notifications-outline", badge: null },
+    ],
+    [stats.pendingOrders]
+  );
 
   const loadStats = useCallback(
     async ({ isPullRefresh = false } = {}) => {
@@ -183,8 +263,7 @@ export default function AdminDashboardScreen({ navigation }) {
           orders: orders.length,
           users: users.length,
           admins: users.filter((item) => item.isAdmin).length,
-          pendingOrders: orders.filter((item) => item.status === "pending").length,
-        });
+          pendingOrders: orders.filter((item) => item.status === "pending").length});
       } catch (err) {
         setError(err.message || "Unable to load admin dashboard.");
       } finally {
@@ -204,40 +283,43 @@ export default function AdminDashboardScreen({ navigation }) {
     }
     if (!user.isAdmin) return;
     loadStats();
-  }, [user?.isAdmin, loadStats]);
+  }, [user, user?.isAdmin, loadStats]);
 
   if (user && !user.isAdmin) {
     return (
       <CustomerScreenShell style={styles.screen}>
-        <ScrollView
+        <KankregScrollPage
+        scrollVariant="inner"
+        showFooter={false}
           style={customerScrollFill}
-          contentContainerStyle={[styles.scrollContent, { paddingTop: Math.max(insets.top, spacing.md) }]}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.deniedCard}>
-            <View style={styles.deniedIconWrap}>
-              <Ionicons name="shield-half-outline" size={40} color={c.primary} />
-            </View>
-            <Text style={styles.deniedTitle}>Admin access required</Text>
-            <Text style={styles.deniedSub}>This account does not have admin privileges.</Text>
-            <TouchableOpacity style={styles.primaryBtn} onPress={() => navigation.navigate("Home")}>
-              <Ionicons name="home-outline" size={18} color={c.onPrimary} />
-              <Text style={styles.primaryBtnText}>Back to home</Text>
-            </TouchableOpacity>
+            <PremiumErrorBanner
+              severity="warning"
+              title="Admin access required"
+              message="This account does not have admin privileges."
+            />
+            <PremiumButton
+              label="Back to home"
+              iconLeft="home-outline"
+              variant="primary"
+              size="md"
+              onPress={() => navigation.navigate("Home")}
+              style={styles.deniedCta}
+            />
           </View>
-        </ScrollView>
+        </KankregScrollPage>
       </CustomerScreenShell>
     );
   }
 
   return (
     <CustomerScreenShell style={styles.screen}>
-      <ScrollView
+      <KankregScrollPage
+        scrollVariant="admin"
+        showFooter={false}
         style={customerScrollFill}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: Math.max(insets.top, Platform.OS === "web" ? spacing.md : spacing.sm) },
-        ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           Platform.OS === "web" ? undefined : (
@@ -251,107 +333,158 @@ export default function AdminDashboardScreen({ navigation }) {
           )
         }
       >
-        <LinearGradient colors={heroGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
-          <View style={styles.heroGoldHairline} />
-          <View style={[styles.heroBlobA, isDark ? null : styles.heroBlobALight]} />
-          <View style={[styles.heroBlobB, isDark ? null : styles.heroBlobBLight]} />
-          <View style={styles.heroInner}>
-            <TouchableOpacity
-              style={[styles.heroBack, isDark ? null : styles.heroBackLight]}
-              onPress={() => navigation.navigate("Home")}
-              activeOpacity={0.88}
-            >
-              <Ionicons name="arrow-back" size={18} color={isDark ? "#f8fafc" : ALCHEMY.brown} />
-              <Text style={[styles.heroBackText, isDark ? null : styles.heroBackTextLight]}>Storefront</Text>
-            </TouchableOpacity>
-            <View style={styles.heroTitleRow}>
-              <View style={[styles.heroShield, isDark ? null : styles.heroShieldLight]}>
-                <Ionicons name="shield-checkmark" size={26} color={isDark ? c.primaryBright : ALCHEMY.brown} />
-              </View>
-              <View style={styles.heroTitleBlock}>
-                <Text style={[styles.heroKicker, isDark ? null : styles.heroKickerLight]}>KankreG · Admin</Text>
-                <Text style={[styles.heroTitle, isDark ? null : styles.heroTitleLight]}>Control center</Text>
-                <Text style={[styles.heroSub, isDark ? null : styles.heroSubLight]}>
-                  Catalog, orders, home view, coupons, and support — one premium dashboard.
-                </Text>
-              </View>
-            </View>
-          </View>
-        </LinearGradient>
-
+        <KankregAdminShell
+          navigation={navigation}
+          route={route || { name: "AdminDashboard" }}
+          title="Dashboard"
+          headerRight={
+            <PremiumButton
+              label="Refresh"
+              iconLeft="refresh-outline"
+              variant="ghost"
+              size="sm"
+              onPress={() => loadStats()}
+            />
+          }
+        >
         <View style={[styles.mainCard, isDark ? null : styles.mainCardLight]}>
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {error ? (
+            <View style={styles.bannerSpacer}>
+              <PremiumErrorBanner severity="error" message={error} compact />
+            </View>
+          ) : null}
 
           {loading ? (
             <View style={styles.loaderWrap}>
-              <ActivityIndicator color={c.primary} size="large" />
-              <Text style={styles.loaderHint}>Loading live stats…</Text>
+              <PremiumLoader size="md" caption="Loading live stats…" hint="Pull down to refresh anytime." />
             </View>
           ) : (
             <>
-              <Text style={[styles.sectionOverline, !isDark ? styles.sectionOverlineLight : null]}>Overview</Text>
-              <View style={styles.statsRow}>
-                <StatCard icon="cube-outline" label="Products" value={stats.products} />
-                <StatCard icon="receipt-outline" label="Orders" value={stats.orders} />
-                <StatCard icon="people-outline" label="Users" value={stats.users} />
-                <StatCard icon="shield-checkmark-outline" label="Admins" value={stats.admins} />
-                <StatCard
-                  icon="hourglass-outline"
-                  label="Pending"
-                  value={stats.pendingOrders}
-                  warnHighlight={stats.pendingOrders > 0}
-                />
+              <View style={styles.overviewHeaderRow}>
+                <Text style={[styles.sectionOverline, !isDark ? styles.sectionOverlineLight : null]}>Overview</Text>
+                <View style={styles.expandToggleRow}>
+                  <PremiumButton
+                    label="Expand all"
+                    iconLeft="expand-outline"
+                    variant="ghost"
+                    size="sm"
+                    onPress={() => setAllSectionsOpen(true)}
+                  />
+                  <PremiumButton
+                    label="Collapse all"
+                    iconLeft="contract-outline"
+                    variant="subtle"
+                    size="sm"
+                    onPress={() => setAllSectionsOpen(false)}
+                  />
+                </View>
               </View>
 
-              {MANAGE_SECTIONS.map((section) => (
-                <View key={section.id} style={[adminModuleSection(isDark, c)]}>
-                  <Text style={[styles.sectionLabel, !isDark ? styles.sectionLabelLight : null]}>{section.label}</Text>
-                  {section.items.map((item) => (
-                    <ActionRow
-                      key={item.route}
-                      title={item.title}
-                      subtitle={item.subtitle}
-                      icon={item.icon}
-                      onPress={() => navigation.navigate(item.route)}
-                    />
-                  ))}
+              {Platform.OS === "web" ? (
+                <View style={styles.statsRowWrap}>
+                  <StatCard icon="cube-outline" label="Products" value={stats.products} />
+                  <StatCard icon="receipt-outline" label="Orders" value={stats.orders} />
+                  <StatCard icon="people-outline" label="Users" value={stats.users} />
+                  <StatCard icon="shield-checkmark-outline" label="Admins" value={stats.admins} />
+                  <StatCard
+                    icon="hourglass-outline"
+                    label="Pending"
+                    value={stats.pendingOrders}
+                    warnHighlight={stats.pendingOrders > 0}
+                  />
                 </View>
+              ) : (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.statsScrollInner}
+                  style={styles.statsScroll}
+                >
+                  <StatCard icon="cube-outline" label="Products" value={stats.products} />
+                  <StatCard icon="receipt-outline" label="Orders" value={stats.orders} />
+                  <StatCard icon="people-outline" label="Users" value={stats.users} />
+                  <StatCard icon="shield-checkmark-outline" label="Admins" value={stats.admins} />
+                  <StatCard
+                    icon="hourglass-outline"
+                    label="Pending"
+                    value={stats.pendingOrders}
+                    warnHighlight={stats.pendingOrders > 0}
+                  />
+                </ScrollView>
+              )}
+
+              <Text style={[styles.quickOverline, !isDark ? styles.sectionOverlineLight : null]}>Quick open</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.quickScrollInner}
+                style={styles.quickScroll}
+              >
+                {quickActions.map((qa) => (
+                  <PremiumCard
+                    key={qa.route}
+                    interactive
+                    padding="md"
+                    variant="muted"
+                    onPress={() => navigation.navigate(qa.route)}
+                    accessibilityLabel={`Open ${qa.label}`}
+                    style={[styles.quickTileCard, !isDark ? styles.quickTileCardLight : null]}
+                  >
+                    <View style={[styles.quickIconWrap, !isDark ? styles.quickIconWrapLight : null]}>
+                      <Ionicons name={qa.icon} size={22} color={isDark ? c.primary : ALCHEMY.brown} />
+                      {qa.badge != null && qa.badge > 0 ? (
+                        <View style={styles.quickBadge}>
+                          <Text style={styles.quickBadgeText}>{qa.badge > 99 ? "99+" : qa.badge}</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    <Text style={[styles.quickLabel, !isDark ? styles.quickLabelLight : null]} numberOfLines={1}>
+                      {qa.label}
+                    </Text>
+                  </PremiumCard>
+                ))}
+              </ScrollView>
+
+              <Text style={[styles.modulesOverline, !isDark ? styles.sectionOverlineLight : null]}>All tools by area</Text>
+              <Text style={styles.modulesHint}>Tap a section header to expand or collapse tools by area.</Text>
+
+              {MANAGE_SECTIONS.map((section) => (
+                <ManageSectionBlock key={section.id} section={section} />
               ))}
 
-              <TouchableOpacity style={styles.refreshBtn} onPress={() => loadStats()} activeOpacity={0.9}>
-                <Ionicons name="refresh" size={18} color={c.onPrimary} />
-                <Text style={styles.refreshBtnText}>Refresh dashboard</Text>
-              </TouchableOpacity>
+              <View style={styles.footerActions}>
+                <PremiumButton
+                  label="Refresh stats"
+                  iconLeft="refresh-outline"
+                  variant="primary"
+                  size="md"
+                  onPress={() => loadStats()}
+                  style={styles.refreshBtn}
+                />
+              </View>
             </>
           )}
         </View>
-
-        <AppFooter />
-      </ScrollView>
+        </KankregAdminShell>
+</KankregScrollPage>
     </CustomerScreenShell>
   );
 }
 
-function createAdminDashboardStyles(c, shadowLift, shadowPremium) {
+function createAdminDashboardStyles(c, shadowLift, shadowPremium, isDark) {
   return StyleSheet.create({
     screen: {
       flex: 1,
       width: "100%",
       alignSelf: "center",
-      maxWidth: Platform.select({ web: layout.maxContentWidth, default: "100%" }),
-    },
-    scrollContent: {
-      paddingHorizontal: spacing.lg,
-      paddingBottom: spacing.xxl,
-    },
+      maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" })},
     hero: {
-      borderRadius: radius.xxl,
+      borderRadius: semanticRadius.panel,
       overflow: "hidden",
       marginBottom: spacing.lg,
       minHeight: 176,
       position: "relative",
-      ...shadowPremium,
-    },
+      ...shadowPremium},
     heroGoldHairline: {
       position: "absolute",
       top: 0,
@@ -360,8 +493,7 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium) {
       height: 3,
       backgroundColor: ALCHEMY.gold,
       opacity: 0.95,
-      zIndex: 2,
-    },
+      zIndex: 2},
     heroBlobA: {
       position: "absolute",
       width: 140,
@@ -369,8 +501,7 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium) {
       borderRadius: 70,
       backgroundColor: "rgba(212,175,55,0.12)",
       top: -36,
-      right: -24,
-    },
+      right: -24},
     heroBlobB: {
       position: "absolute",
       width: 100,
@@ -378,18 +509,14 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium) {
       borderRadius: 50,
       backgroundColor: "rgba(52,211,153,0.14)",
       bottom: 20,
-      left: -16,
-    },
+      left: -16},
     heroBlobALight: {
-      backgroundColor: "rgba(201, 162, 39, 0.14)",
-    },
+      backgroundColor: "rgba(201, 162, 39, 0.14)"},
     heroBlobBLight: {
-      backgroundColor: "rgba(116, 79, 28, 0.07)",
-    },
+      backgroundColor: "rgba(116, 79, 28, 0.07)"},
     heroInner: {
       padding: spacing.lg,
-      paddingVertical: spacing.xl,
-    },
+      paddingVertical: spacing.xl},
     heroBack: {
       flexDirection: "row",
       alignItems: "center",
@@ -398,288 +525,370 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium) {
       marginBottom: spacing.md,
       paddingVertical: 6,
       paddingHorizontal: 10,
-      borderRadius: radius.pill,
+      borderRadius: semanticRadius.full,
       borderWidth: 1,
       borderColor: "rgba(255,255,255,0.22)",
-      backgroundColor: "rgba(0,0,0,0.2)",
-    },
+      backgroundColor: "rgba(0,0,0,0.2)"},
     heroBackText: {
       color: "#f8fafc",
       fontSize: typography.caption,
-      fontFamily: fonts.bold,
-    },
+      fontFamily: fonts.bold},
     heroBackLight: {
       borderColor: ALCHEMY.pillInactive,
-      backgroundColor: ALCHEMY.creamAlt,
-    },
+      backgroundColor: ALCHEMY.creamAlt},
     heroBackTextLight: {
-      color: ALCHEMY.brown,
-    },
+      color: ALCHEMY.brown},
     heroTitleRow: {
       flexDirection: "row",
       alignItems: "flex-start",
-      gap: spacing.md,
-    },
+      gap: spacing.md},
     heroShield: {
       width: 52,
       height: 52,
-      borderRadius: radius.lg,
+      borderRadius: semanticRadius.control,
       backgroundColor: "rgba(255,255,255,0.1)",
       borderWidth: 1,
       borderColor: "rgba(255,255,255,0.2)",
       alignItems: "center",
-      justifyContent: "center",
-    },
+      justifyContent: "center"},
     heroShieldLight: {
       backgroundColor: ALCHEMY.creamAlt,
-      borderColor: ALCHEMY.pillInactive,
-    },
+      borderColor: ALCHEMY.pillInactive},
     heroTitleBlock: {
       flex: 1,
-      minWidth: 0,
-    },
+      minWidth: 0},
     heroKicker: {
       color: "rgba(248,250,252,0.85)",
       fontSize: typography.overline,
       fontFamily: fonts.bold,
       letterSpacing: 1.2,
       textTransform: "uppercase",
-      marginBottom: spacing.xs,
-    },
+      marginBottom: spacing.xs},
     heroKickerLight: {
       color: ALCHEMY.brownMuted,
-      fontFamily: FONT_DISPLAY_SEMI,
-    },
+      fontFamily: FONT_DISPLAY_SEMI},
     heroTitle: {
       color: "#f8fafc",
       fontSize: typography.h1,
       fontFamily: FONT_DISPLAY,
-      letterSpacing: -0.5,
-    },
+      letterSpacing: -0.5},
     heroTitleLight: {
-      color: ALCHEMY.brown,
-    },
+      color: ALCHEMY.brown},
     heroSub: {
       marginTop: spacing.sm,
       color: "rgba(248,250,252,0.88)",
       fontSize: typography.bodySmall,
       fontFamily: fonts.regular,
-      lineHeight: 20,
-    },
+      lineHeight: 20},
     heroSubLight: {
-      color: "#5C534A",
-    },
+      color: "#5C534A"},
     mainCard: {
-      ...adminPanel(c, shadowPremium),
-    },
+      ...adminPanel(c, shadowPremium)},
     mainCardLight: {
       backgroundColor: ALCHEMY.cardBg,
       borderColor: ALCHEMY.pillInactive,
-      borderTopColor: ALCHEMY.gold,
-    },
+      borderTopColor: ALCHEMY.gold},
     sectionOverline: {
       fontSize: typography.overline,
       fontFamily: fonts.bold,
       color: c.primary,
       letterSpacing: 1,
       textTransform: "uppercase",
-      marginBottom: spacing.sm,
-    },
+      marginBottom: spacing.sm},
     sectionOverlineLight: {
       color: ALCHEMY.brownMuted,
-      fontFamily: FONT_DISPLAY_SEMI,
-    },
-    errorText: {
-      color: c.danger,
-      fontFamily: fonts.semibold,
-      fontSize: typography.caption,
+      fontFamily: FONT_DISPLAY_SEMI},
+    overviewHeaderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.sm,
       marginBottom: spacing.sm,
-    },
+      flexWrap: "wrap"},
+    expandToggleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs},
+    expandChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingVertical: 6,
+      paddingHorizontal: spacing.sm,
+      borderRadius: semanticRadius.full,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border,
+      backgroundColor: c.surfaceMuted},
+    expandChipText: {
+      fontSize: typography.caption,
+      fontFamily: fonts.semibold},
+    quickOverline: {
+      fontSize: typography.overline,
+      fontFamily: fonts.bold,
+      color: c.primary,
+      letterSpacing: 1,
+      textTransform: "uppercase",
+      marginTop: spacing.md,
+      marginBottom: spacing.sm},
+    quickScroll: {
+      marginHorizontal: -4,
+      marginBottom: spacing.lg},
+    quickScrollInner: {
+      flexDirection: "row",
+      gap: spacing.sm,
+      paddingHorizontal: 4,
+      paddingBottom: 2},
+    quickTileCard: {
+      width: 104,
+      minHeight: 108,
+      alignItems: "center",
+      justifyContent: "center"},
+    quickTileCardLight: {
+      opacity: 1},
+    quickIconWrap: {
+      position: "relative",
+      width: 48,
+      height: 48,
+      borderRadius: semanticRadius.control,
+      backgroundColor: c.primarySoft,
+      borderWidth: 1,
+      borderColor: c.primaryBorder,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: spacing.xs},
+    quickIconWrapLight: {
+      backgroundColor: ALCHEMY.creamDeep,
+      borderColor: ALCHEMY.pillInactive},
+    quickBadge: {
+      position: "absolute",
+      top: -6,
+      right: -6,
+      minWidth: 18,
+      height: 18,
+      borderRadius: 9,
+      backgroundColor: c.danger,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 4,
+      borderWidth: 2,
+      borderColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt},
+    quickBadgeText: {
+      color: "#fff",
+      fontSize: 10,
+      fontFamily: fonts.extrabold},
+    quickLabel: {
+      fontSize: typography.caption,
+      fontFamily: fonts.bold,
+      color: c.textPrimary,
+      textAlign: "center"},
+    quickLabelLight: {
+      color: ALCHEMY.brown,
+      fontFamily: FONT_DISPLAY_SEMI},
+    modulesOverline: {
+      fontSize: typography.overline,
+      fontFamily: fonts.bold,
+      color: c.primary,
+      letterSpacing: 1,
+      textTransform: "uppercase",
+      marginBottom: spacing.xs},
+    modulesHint: {
+      fontSize: typography.caption,
+      fontFamily: fonts.regular,
+      color: c.textSecondary,
+      marginBottom: spacing.md,
+      lineHeight: 18},
+    manageSectionWrap: {
+      marginBottom: spacing.lg},
+    sectionHeaderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.sm,
+      marginHorizontal: -spacing.sm - 4,
+      marginTop: -spacing.sm,
+      borderRadius: semanticRadius.card},
+    sectionHeaderRowLight: {},
+    sectionHeaderPressed: {
+      opacity: Platform.OS === "web" ? 0.92 : 0.88},
+    sectionHeaderIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: semanticRadius.control,
+      backgroundColor: "rgba(255,255,255,0.08)",
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.12)",
+      alignItems: "center",
+      justifyContent: "center"},
+    sectionHeaderIconLight: {
+      backgroundColor: ALCHEMY.creamDeep,
+      borderColor: ALCHEMY.pillInactive},
+    sectionHeaderTextCol: {
+      flex: 1,
+      minWidth: 0},
+    sectionHeaderTitle: {
+      color: c.textPrimary,
+      fontFamily: fonts.bold,
+      fontSize: typography.body},
+    sectionHeaderTitleLight: {
+      fontFamily: FONT_DISPLAY,
+      color: ALCHEMY.brown},
+    sectionHeaderMeta: {
+      marginTop: 2,
+      fontSize: typography.caption,
+      fontFamily: fonts.regular,
+      color: c.textSecondary},
+    sectionBadge: {
+      minWidth: 28,
+      height: 28,
+      paddingHorizontal: 8,
+      borderRadius: semanticRadius.full,
+      backgroundColor: c.primarySoft,
+      borderWidth: 1,
+      borderColor: c.primaryBorder,
+      alignItems: "center",
+      justifyContent: "center"},
+    sectionBadgeHot: {
+      borderWidth: 2,
+      borderColor: c.danger},
+    sectionBadgeText: {
+      fontSize: typography.caption,
+      fontFamily: fonts.extrabold,
+      color: c.primary},
+    sectionBody: {
+      paddingTop: spacing.sm,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+      marginTop: spacing.xs},
+    footerActions: {
+      marginTop: spacing.md,
+      alignItems: "stretch"},
+    bannerSpacer: {
+      marginBottom: spacing.sm},
     loaderWrap: {
       paddingVertical: spacing.xl,
-      alignItems: "center",
-    },
-    loaderHint: {
-      marginTop: spacing.sm,
-      color: c.textSecondary,
-      fontSize: typography.caption,
-      fontFamily: fonts.medium,
-    },
-    statsRow: {
+      alignItems: "center"},
+    statsRowWrap: {
       flexDirection: "row",
       flexWrap: "wrap",
       gap: spacing.sm,
+      marginBottom: spacing.lg},
+    statsScroll: {
       marginBottom: spacing.lg,
-    },
-    statCard: {
+      marginHorizontal: -4},
+    statsScrollInner: {
+      flexDirection: "row",
+      gap: spacing.sm,
+      paddingHorizontal: 4,
+      paddingBottom: 2},
+    statPremiumTile: {
       flexGrow: 1,
       flexBasis: "30%",
-      minWidth: 100,
-      maxWidth: Platform.OS === "web" ? 160 : "47%",
-      backgroundColor: c.surfaceMuted,
-      borderWidth: 1,
-      borderColor: c.border,
-      borderRadius: radius.lg,
-      alignItems: "center",
-      paddingVertical: spacing.md,
-      paddingHorizontal: spacing.xs,
-    },
-    statCardLight: {
-      backgroundColor: ALCHEMY.creamAlt,
-      borderColor: ALCHEMY.pillInactive,
-    },
-    statCardWarn: {
-      borderColor: c.primaryBorder,
-      backgroundColor: c.primarySoft,
-    },
-    statIconWrap: {
-      width: 36,
-      height: 36,
-      borderRadius: radius.pill,
-      borderWidth: 1,
-      borderColor: c.primaryBorder,
-      backgroundColor: c.primarySoft,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: spacing.xs,
-    },
-    statIconWrapLight: {
-      borderColor: ALCHEMY.pillInactive,
-      backgroundColor: ALCHEMY.creamDeep,
-    },
-    statValue: {
-      color: c.primary,
-      fontSize: typography.h2,
-      fontFamily: fonts.extrabold,
-    },
-    statValueLight: {
-      color: ALCHEMY.brown,
-    },
-    statLabel: {
-      color: c.textSecondary,
-      fontSize: typography.overline + 1,
-      fontFamily: fonts.semibold,
-      marginTop: 2,
-      textAlign: "center",
-    },
+      minWidth: 108,
+      flexShrink: 0,
+      maxWidth: Platform.OS === "web" ? 168 : 140},
     sectionLabel: {
       fontSize: typography.caption,
       fontFamily: fonts.bold,
       color: c.textMuted,
       textTransform: "uppercase",
       letterSpacing: 0.8,
-      marginBottom: spacing.sm,
-    },
+      marginBottom: spacing.sm},
     sectionLabelLight: {
       color: ALCHEMY.brownMuted,
-      fontFamily: FONT_DISPLAY_SEMI,
-    },
+      fontFamily: FONT_DISPLAY_SEMI},
     actionRow: {
       flexDirection: "row",
       alignItems: "center",
       gap: spacing.md,
       paddingVertical: spacing.md,
       paddingHorizontal: spacing.sm,
-      marginBottom: spacing.xs,
-      borderRadius: radius.lg,
+      marginBottom: spacing.sm,
+      borderRadius: semanticRadius.control,
       borderWidth: 1,
       borderColor: c.border,
       backgroundColor: c.surfaceMuted,
-    },
+      ...Platform.select({
+        web: {
+          boxShadow: "0 8px 18px rgba(61, 42, 18, 0.08), inset 0 1px 0 rgba(255,255,255,0.8)",
+          transition: "background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease"},
+        default: {}})},
+    actionRowLast: {
+      marginBottom: 0},
     actionRowLight: {
       backgroundColor: ALCHEMY.creamAlt,
-      borderColor: ALCHEMY.pillInactive,
-    },
+      borderColor: ALCHEMY.pillInactive},
     actionIconWrap: {
       width: 44,
       height: 44,
-      borderRadius: radius.md,
+      borderRadius: semanticRadius.control,
       backgroundColor: c.primarySoft,
       borderWidth: 1,
       borderColor: c.primaryBorder,
       alignItems: "center",
-      justifyContent: "center",
-    },
+      justifyContent: "center"},
     actionIconWrapRowLight: {
       backgroundColor: ALCHEMY.creamDeep,
-      borderColor: ALCHEMY.pillInactive,
-    },
+      borderColor: ALCHEMY.pillInactive},
     actionTextCol: {
       flex: 1,
-      minWidth: 0,
-    },
+      minWidth: 0},
     actionTitle: {
       color: c.textPrimary,
       fontFamily: fonts.bold,
-      fontSize: typography.body,
-    },
+      fontSize: typography.body},
     actionTitleLight: {
       fontFamily: FONT_DISPLAY,
-      color: ALCHEMY.brown,
-    },
+      color: ALCHEMY.brown},
     actionSubtitle: {
       marginTop: 2,
       color: c.textSecondary,
       fontSize: typography.caption,
       fontFamily: fonts.regular,
-      lineHeight: 18,
-    },
+      lineHeight: 18},
     refreshBtn: {
       marginTop: spacing.sm,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
       gap: spacing.sm,
-      backgroundColor: c.primary,
-      borderRadius: radius.pill,
-      paddingVertical: 14,
-    },
+      paddingVertical: spacing.md},
     refreshBtnText: {
       color: c.onPrimary,
       fontFamily: fonts.bold,
-      fontSize: typography.bodySmall,
-    },
+      fontSize: typography.bodySmall},
     deniedCard: {
       backgroundColor: c.surface,
-      borderRadius: radius.xl,
+      borderRadius: semanticRadius.card,
       borderWidth: 1,
       borderColor: c.border,
       borderLeftWidth: 3,
       borderLeftColor: c.accentGold,
       padding: spacing.xl,
-      alignItems: "center",
-      ...shadowLift,
-    },
+      alignItems: "stretch",
+      ...shadowLift},
+    deniedCta: {
+      marginTop: spacing.md,
+      alignSelf: "center"},
     deniedIconWrap: {
-      marginBottom: spacing.md,
-    },
+      marginBottom: spacing.md},
     deniedTitle: {
       fontSize: typography.h2,
       fontFamily: fonts.extrabold,
       color: c.textPrimary,
-      textAlign: "center",
-    },
+      textAlign: "center"},
     deniedSub: {
       marginTop: spacing.sm,
       color: c.textSecondary,
       fontSize: typography.bodySmall,
       fontFamily: fonts.regular,
       textAlign: "center",
-      marginBottom: spacing.lg,
-    },
+      marginBottom: spacing.lg},
     primaryBtn: {
-      flexDirection: "row",
-      alignItems: "center",
       gap: spacing.sm,
-      backgroundColor: c.primary,
-      paddingVertical: 12,
-      paddingHorizontal: spacing.xl,
-      borderRadius: radius.pill,
-    },
+      paddingHorizontal: spacing.xl},
     primaryBtnText: {
       color: c.onPrimary,
       fontFamily: fonts.bold,
-      fontSize: typography.bodySmall,
-    },
-  });
+      fontSize: typography.bodySmall}});
 }

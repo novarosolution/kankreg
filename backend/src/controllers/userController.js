@@ -4,7 +4,57 @@ const { resolveProductLineFromRaw } = require("../utils/productLine");
 const cloudinary = require("../config/cloudinary");
 const Product = require("../models/Product");
 const User = require("../models/User");
-const generateToken = require("../utils/generateToken");
+const generateTokenModule = require("../utils/generateToken");
+
+const generateToken = generateTokenModule;
+const generateRefreshToken =
+  generateTokenModule.generateRefreshToken || generateTokenModule;
+const verifyRefreshToken = generateTokenModule.verifyRefreshToken;
+const { verifyGoogleIdToken, verifyAppleIdentityToken } = require("../services/oauthService");
+
+function hasProvider(user, provider, providerId) {
+  return (user.authProviders || []).some(
+    (p) => p.provider === provider && p.providerId === providerId
+  );
+}
+
+async function findOrCreateOAuthUser(profile) {
+  const { provider, providerId, email, name, avatar } = profile;
+  let user = await User.findOne({
+    $or: [{ email }, { authProviders: { $elemMatch: { provider, providerId } } }],
+  });
+
+  if (user) {
+    if (!hasProvider(user, provider, providerId)) {
+      user.authProviders = [...(user.authProviders || []), { provider, providerId }];
+    }
+    if (avatar && !user.avatar) user.avatar = avatar;
+    if (name && (!user.name || user.name === user.email)) user.name = name;
+    await user.save();
+    return user;
+  }
+
+  const userCount = await User.countDocuments();
+  user = await User.create({
+    name: name || email.split("@")[0],
+    email,
+    password: "",
+    avatar: avatar || "",
+    isAdmin: userCount === 0,
+    authProviders: [{ provider, providerId }],
+  });
+  return user;
+}
+
+function issueAuthResponse(user, res) {
+  const token = generateToken(user._id);
+  const refreshToken = generateRefreshToken(user._id);
+  res.json({
+    token,
+    refreshToken,
+    user: serializePublicUser(user),
+  });
+}
 
 function serializePublicUser(user) {
   return {
@@ -14,8 +64,10 @@ function serializePublicUser(user) {
     phone: user.phone || "",
     defaultAddress: user.defaultAddress,
     isAdmin: user.isAdmin,
+    isDeliveryPartner: Boolean(user.isDeliveryPartner),
     cartItems: user.cartItems || [],
     avatar: user.avatar || "",
+    rewardPoints: Number(user.rewardPoints || 0),
   };
 }
 
@@ -44,9 +96,11 @@ async function registerUser(req, res, next) {
     });
 
     const token = generateToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
 
     res.status(201).json({
       token,
+      refreshToken,
       user: serializePublicUser(user),
       message: "User registered successfully.",
     });
@@ -68,13 +122,84 @@ async function loginUser(req, res, next) {
       return res.status(401).json({ message: "Invalid email or password." });
     }
 
+    if (!user.password) {
+      return res.status(401).json({
+        message: "This account uses Google or Apple sign-in. Use that method to continue.",
+      });
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid email or password." });
     }
 
     const token = generateToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
 
+    res.json({
+      token,
+      refreshToken,
+      user: serializePublicUser(user),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function authGoogle(req, res, next) {
+  try {
+    const profile = await verifyGoogleIdToken(req.body?.idToken);
+    const user = await findOrCreateOAuthUser(profile);
+    issueAuthResponse(user, res);
+  } catch (error) {
+    if (error.message && !error.statusCode) {
+      return res.status(401).json({ message: error.message });
+    }
+    next(error);
+  }
+}
+
+async function authApple(req, res, next) {
+  try {
+    const profile = await verifyAppleIdentityToken(req.body?.identityToken);
+    if (req.body?.fullName) {
+      const parts = [req.body.fullName.givenName, req.body.fullName.familyName].filter(Boolean);
+      if (parts.length) profile.name = parts.join(" ");
+    }
+    const user = await findOrCreateOAuthUser(profile);
+    issueAuthResponse(user, res);
+  } catch (error) {
+    if (error.message && !error.statusCode) {
+      return res.status(401).json({ message: error.message });
+    }
+    next(error);
+  }
+}
+
+async function refreshAccessToken(req, res, next) {
+  try {
+    const refreshToken = String(req.body?.refreshToken || "").trim();
+    if (!refreshToken) {
+      return res.status(400).json({ message: "refreshToken is required." });
+    }
+
+    let decoded;
+    try {
+      decoded = verifyRefreshToken(refreshToken);
+    } catch (err) {
+      return res.status(401).json({ message: "Invalid or expired refresh token." });
+    }
+
+    if (decoded.type && decoded.type !== "refresh") {
+      return res.status(401).json({ message: "Token is not a refresh token." });
+    }
+
+    const user = await User.findById(decoded.id).select("-password");
+    if (!user) {
+      return res.status(401).json({ message: "User no longer exists." });
+    }
+
+    const token = generateToken(user._id);
     res.json({
       token,
       user: serializePublicUser(user),
@@ -290,6 +415,35 @@ async function updateUserAdminStatus(req, res, next) {
         name: user.name,
         email: user.email,
         isAdmin: user.isAdmin,
+        isDeliveryPartner: Boolean(user.isDeliveryPartner),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateUserDeliveryPartnerStatus(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { isDeliveryPartner } = req.body;
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    user.isDeliveryPartner = Boolean(isDeliveryPartner);
+    await user.save();
+
+    res.json({
+      message: "Delivery partner flag updated successfully.",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        isDeliveryPartner: Boolean(user.isDeliveryPartner),
       },
     });
   } catch (error) {
@@ -320,11 +474,15 @@ async function deleteUser(req, res, next) {
 module.exports = {
   registerUser,
   loginUser,
+  authGoogle,
+  authApple,
+  refreshAccessToken,
   getProfile,
   updateProfile,
   uploadUserAvatar,
   getAllUsers,
   updateUserAdminStatus,
+  updateUserDeliveryPartnerStatus,
   deleteUser,
   upsertPushToken,
   getMyCart,

@@ -1,0 +1,276 @@
+import React, { memo, useMemo } from "react";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  fonts,
+  icon,
+  lineHeight,
+  radius,
+  spacing,
+  typography,
+} from "../../theme/tokens";
+import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { useTheme } from "../../context/ThemeContext";
+
+/**
+ * Generic premium section header used across customer screens. Same look as
+ * `HomeSectionHeader` (kept for back-compat). Use this in new code.
+ */
+function PremiumSectionHeaderBase({
+  overline,
+  title,
+  subtitle,
+  count,
+  onSeeAll,
+  seeAllLabel = "See all",
+  align = "left",
+  compact = false,
+}) {
+  const { colors: c, isDark } = useTheme();
+  const styles = useMemo(() => createStyles(c, isDark, align, compact), [c, isDark, align, compact]);
+  const showCount = count != null && count > 0;
+  const overlineText = String(overline || "").trim();
+
+  return (
+    <View style={styles.wrap}>
+      <View style={styles.row}>
+        <View style={styles.left}>
+          {overlineText ? (
+            <View style={styles.overlineRow}>
+              <View style={styles.overlineDot} />
+              <Text style={styles.overline} numberOfLines={1}>
+                {overlineText.toUpperCase()}
+              </Text>
+            </View>
+          ) : null}
+          <View style={styles.titleRow}>
+            <Text style={styles.title} numberOfLines={2}>
+              {title}
+            </Text>
+            {showCount ? (
+              <View style={styles.countChip}>
+                <Text style={styles.countText} numberOfLines={1}>
+                  {count}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+          {subtitle ? (
+            <Text style={styles.subtitle} numberOfLines={2}>
+              {subtitle}
+            </Text>
+          ) : null}
+        </View>
+
+        {onSeeAll ? (
+          <Pressable
+            onPress={onSeeAll}
+            hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+            accessibilityRole="button"
+            accessibilityLabel={`${seeAllLabel} ${title || ""}`.trim()}
+            style={({ pressed, hovered }) => [
+              styles.seeAllBtn,
+              hovered && Platform.OS === "web" ? styles.seeAllBtnHover : null,
+              pressed ? styles.seeAllBtnPressed : null,
+            ]}
+          >
+            <Text style={styles.seeAllText} numberOfLines={1}>
+              {seeAllLabel}
+            </Text>
+            <Ionicons
+              name="chevron-forward"
+              size={icon.sm}
+              color={isDark ? ALCHEMY.goldBright : ALCHEMY.brown}
+            />
+          </Pressable>
+        ) : null}
+      </View>
+
+      <View style={[styles.hairlineWrap, styles.peNone]}>
+        <LinearGradient
+          colors={
+            isDark
+              ? [
+                  "rgba(232, 200, 90, 0.46)",
+                  "rgba(201, 162, 39, 0.18)",
+                  "rgba(232, 200, 90, 0)",
+                ]
+              : [
+                  "rgba(201, 162, 39, 0.55)",
+                  "rgba(116, 79, 28, 0.18)",
+                  "rgba(201, 162, 39, 0)",
+                ]
+          }
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={styles.hairline}
+        />
+        <View style={[styles.hairlineDot, { backgroundColor: isDark ? ALCHEMY.goldBright : ALCHEMY.gold }]} />
+      </View>
+    </View>
+  );
+}
+
+function createStyles(c, isDark, align, compact) {
+  const titleSize = compact ? 20 : 24;
+  const titleSizeWeb = compact ? 22 : 26;
+
+  return StyleSheet.create({
+    wrap: {
+      width: "100%",
+      marginBottom: compact ? spacing.sm + 2 : spacing.md,
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "flex-end",
+      justifyContent: "space-between",
+      gap: spacing.md,
+      ...Platform.select({
+        web: {
+          flexWrap: "wrap",
+        },
+        default: {},
+      }),
+    },
+    left: {
+      flex: 1,
+      minWidth: 0,
+      gap: 4,
+      alignItems: align === "center" ? "center" : "flex-start",
+    },
+    overlineRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 2,
+    },
+    overlineDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: isDark ? ALCHEMY.goldBright : ALCHEMY.gold,
+      ...Platform.select({
+        web: {
+          boxShadow: isDark
+            ? "0 0 12px rgba(232, 200, 90, 0.55)"
+            : "0 0 10px rgba(201, 162, 39, 0.45)",
+        },
+        default: {},
+      }),
+    },
+    overline: {
+      fontFamily: fonts.semibold,
+      fontSize: typography.overline,
+      lineHeight: lineHeight.overline,
+      letterSpacing: 3.6,
+      textTransform: "uppercase",
+      color: isDark ? ALCHEMY.goldBright : ALCHEMY.gold,
+    },
+    titleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      flexWrap: "wrap",
+    },
+    title: {
+      fontFamily: FONT_DISPLAY,
+      fontSize: titleSize,
+      lineHeight: titleSize + 4,
+      letterSpacing: -0.4,
+      color: c.textPrimary,
+      ...Platform.select({
+        web: { fontSize: titleSizeWeb, lineHeight: titleSizeWeb + 4 },
+        default: {},
+      }),
+    },
+    countChip: {
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      borderRadius: radius.pill,
+      backgroundColor: isDark
+        ? "rgba(232, 200, 90, 0.22)"
+        : c.primarySoft,
+    },
+    countText: {
+      fontFamily: fonts.extrabold,
+      fontSize: 12,
+      letterSpacing: 0.4,
+      color: isDark ? ALCHEMY.goldBright : c.primaryDark,
+    },
+    subtitle: {
+      fontFamily: fonts.medium,
+      fontSize: 13,
+      lineHeight: 18,
+      color: c.textMuted,
+      marginTop: 2,
+    },
+    seeAllBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingHorizontal: spacing.md - 2,
+      paddingVertical: 8,
+      borderRadius: radius.pill,
+      borderWidth: 1,
+      borderColor: isDark
+        ? "rgba(232, 200, 90, 0.4)"
+        : "rgba(201, 162, 39, 0.45)",
+      backgroundColor: isDark
+        ? "rgba(201, 162, 39, 0.12)"
+        : "rgba(255, 246, 223, 0.78)",
+      ...Platform.select({
+        web: {
+          transition: "transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease",
+          cursor: "pointer",
+          marginLeft: "auto",
+        },
+        default: {},
+      }),
+    },
+    seeAllBtnHover: {
+      ...Platform.select({
+        web: {
+          transform: [{ translateY: -1 }],
+          boxShadow: isDark
+            ? "0 10px 22px rgba(0,0,0,0.4), inset 0 1px 0 rgba(232, 200, 90, 0.18)"
+            : "0 10px 22px rgba(98, 64, 20, 0.14), inset 0 1px 0 rgba(255,255,255,0.95)",
+        },
+        default: {},
+      }),
+    },
+    seeAllBtnPressed: {
+      opacity: 0.86,
+    },
+    seeAllText: {
+      fontFamily: fonts.extrabold,
+      fontSize: 12,
+      letterSpacing: 0.4,
+      color: isDark ? ALCHEMY.goldBright : ALCHEMY.brown,
+    },
+    hairlineWrap: {
+      marginTop: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    hairline: {
+      flex: 1,
+      height: 1.25,
+      borderRadius: 1,
+    },
+    hairlineDot: {
+      width: 5,
+      height: 5,
+      borderRadius: 2.5,
+      opacity: 0.85,
+    },
+    peNone: {
+      pointerEvents: "none",
+    },
+  });
+}
+
+const PremiumSectionHeader = memo(PremiumSectionHeaderBase);
+
+export default PremiumSectionHeader;

@@ -1,46 +1,13 @@
-# Zeevan (Expo React Native)
+# KankreG (Expo React Native)
 
-A beginner-friendly e-commerce starter app built with Expo and React Native.
+A premium e-commerce app built with Expo and React Native (iOS, Android, web).
 
 ## Features
 
-- Clean folder structure (`screens`, `components`, `navigation`, `services`, `context`, `data`)
-- Native stack navigation with React Navigation
-- Screens:
-  - `LoginScreen`
-  - `HomeScreen` (product list via `FlatList`)
-  - `ProductScreen`
-  - `CartScreen`
-- Reusable `ProductCard` component
-- Cart management with Context API (add/remove/clear)
-- Modern minimal UI styling
-- Web-friendly layout constraints for future React Native Web support
-
-## Project Structure
-
-```txt
-.
-├── App.js
-├── app.json
-├── index.js
-├── src
-│   ├── components
-│   │   └── ProductCard.js
-│   ├── context
-│   │   └── CartContext.js
-│   ├── data
-│   │   └── products.js
-│   ├── navigation
-│   │   └── AppNavigator.js
-│   ├── screens
-│   │   ├── CartScreen.js
-│   │   ├── HomeScreen.js
-│   │   ├── LoginScreen.js
-│   │   └── ProductScreen.js
-│   └── services
-│       └── productService.js
-└── package.json
-```
+- Customer storefront, cart/checkout, auth, rewards, delivery dashboard, and admin tools
+- React Navigation with role-based guards
+- Razorpay checkout integration
+- Responsive web layout aligned with `kankreg.html` design tokens
 
 ## Run
 
@@ -69,4 +36,18 @@ The server exposes routes at both `/products` and `/api/products` (same for user
 ### Razorpay (online checkout)
 
 Set **`EXPO_PUBLIC_RAZORPAY_KEY_ID`** in the app root `.env` to the same **Key ID** as backend `RAZORPAY_KEY_ID` (safe to expose — it is public). Restart Expo after changing. The backend still requires `RAZORPAY_KEY_SECRET` and `RAZORPAY_WEBHOOK_SECRET`; see `backend/README.md`.
-# zeevn
+
+### Google / Apple sign-in (optional)
+
+Until these are set, Login and Register show disabled social buttons with a “Coming soon” hint (email/password still works).
+
+**App root `.env`:**
+
+- `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` — required for Google on web
+- `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` / `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` — native Google
+- `EXPO_PUBLIC_GOOGLE_CLIENT_ID` — Expo Go fallback
+- `EXPO_PUBLIC_APPLE_CLIENT_ID` — Apple Sign In (iOS / web)
+
+**Backend `backend/.env`:** `GOOGLE_OAUTH_CLIENT_ID` (comma-separated client IDs), optional `APPLE_CLIENT_ID` / `APPLE_BUNDLE_ID`. See `backend/.env.example`.
+
+Restart Expo with `npx expo start --clear` after changing env vars.

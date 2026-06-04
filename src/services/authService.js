@@ -35,3 +35,17 @@ export function loginRequest({ email, password }) {
     body: JSON.stringify({ email, password }),
   });
 }
+
+export function googleAuthRequest({ idToken }) {
+  return request("/users/auth/google", {
+    method: "POST",
+    body: JSON.stringify({ idToken }),
+  });
+}
+
+export function appleAuthRequest({ identityToken, fullName }) {
+  return request("/users/auth/apple", {
+    method: "POST",
+    body: JSON.stringify({ identityToken, fullName }),
+  });
+}

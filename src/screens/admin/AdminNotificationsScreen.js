@@ -1,32 +1,28 @@
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import AppFooter from "../../components/AppFooter";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
+import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
 import CustomerScreenShell from "../../components/CustomerScreenShell";
-import AdminBackLink from "../../components/admin/AdminBackLink";
+import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import {
   fetchAdminNotifications,
-  sendAdminBroadcastNotification,
-} from "../../services/adminService";
+  sendAdminBroadcastNotification} from "../../services/adminService";
 import { adminPanel } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, layout, radius, spacing, typography } from "../../theme/tokens";
+import { spacing, typography } from "../../theme/tokens";
+import PremiumLoader from "../../components/ui/PremiumLoader";
+import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
+import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import PremiumInput from "../../components/ui/PremiumInput";
+import PremiumButton from "../../components/ui/PremiumButton";
+import PremiumCard from "../../components/ui/PremiumCard";
+import SectionReveal from "../../components/motion/SectionReveal";
 
-export default function AdminNotificationsScreen({ navigation }) {
+export default function AdminNotificationsScreen({ navigation, route }) {
   const { colors: c, shadowPremium } = useTheme();
   const styles = useMemo(() => createAdminNotificationsStyles(c, shadowPremium), [c, shadowPremium]);
-  const { user, token } = useAuth();
+    const { user, token } = useAuth();
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -35,7 +31,7 @@ export default function AdminNotificationsScreen({ navigation }) {
   const [success, setSuccess] = useState("");
   const [items, setItems] = useState([]);
 
-  async function loadNotifications() {
+  const loadNotifications = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -46,12 +42,12 @@ export default function AdminNotificationsScreen({ navigation }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
 
   useEffect(() => {
     if (!user?.isAdmin) return;
     loadNotifications();
-  }, [user?.isAdmin]);
+  }, [user, loadNotifications]);
 
   const handleSend = async () => {
     if (!title.trim() || !message.trim()) {
@@ -64,8 +60,7 @@ export default function AdminNotificationsScreen({ navigation }) {
       setSuccess("");
       await sendAdminBroadcastNotification(token, {
         title: title.trim(),
-        message: message.trim(),
-      });
+        message: message.trim()});
       setTitle("");
       setMessage("");
       setSuccess("Notification sent to all users.");
@@ -80,77 +75,137 @@ export default function AdminNotificationsScreen({ navigation }) {
   if (user && !user.isAdmin) {
     return (
       <CustomerScreenShell style={styles.screen}>
-        <View style={[styles.panel, { margin: spacing.lg }]}>
-          <Text style={styles.title}>Admin Access Required</Text>
-          <Text style={styles.subtitle}>This account does not have admin privileges.</Text>
-          <TouchableOpacity style={styles.primaryBtn} onPress={() => navigation.navigate("Home")}>
-            <Text style={styles.primaryBtnText}>Back to Home</Text>
-          </TouchableOpacity>
-        </View>
+        <KankregScrollPage
+        scrollVariant="inner"
+        showFooter={false}
+          style={customerScrollFill}
+          showsVerticalScrollIndicator={false}
+        >
+          <SectionReveal delay={40} preset="fade-up">
+            <View style={styles.panel}>
+              <PremiumErrorBanner
+                severity="warning"
+                title="Admin access required"
+                message="This account does not have admin privileges."
+              />
+              <PremiumButton
+                label="Back to home"
+                iconLeft="home-outline"
+                variant="primary"
+                size="md"
+                onPress={() => navigation.navigate("Home")}
+                style={styles.gateCta}
+              />
+            </View>
+          </SectionReveal>
+        </KankregScrollPage>
       </CustomerScreenShell>
     );
   }
 
   return (
     <CustomerScreenShell style={styles.screen}>
-    <ScrollView style={customerScrollFill} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-      <View style={styles.panel}>
-        <AdminBackLink navigation={navigation} />
-        <Text style={styles.title}>Broadcast Notifications</Text>
-        <Text style={styles.subtitle}>Send important updates to all users.</Text>
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        {success ? <Text style={styles.successText}>{success}</Text> : null}
+      <KeyboardAvoidingView style={customerScrollFill} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <KankregScrollPage
+        scrollVariant="admin"
+        showFooter={false}
+          style={customerScrollFill}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <KankregAdminShell navigation={navigation} route={route} title="Broadcast Notifications">
+          <View style={styles.panel}>
+            {error ? (
+              <View style={styles.bannerSpacer}>
+                <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+              </View>
+            ) : null}
+            {success ? (
+              <View style={styles.bannerSpacer}>
+                <PremiumErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
+              </View>
+            ) : null}
 
-        <TextInput
-          style={styles.input}
-          placeholder="Notification title"
-          placeholderTextColor={c.textMuted}
-          value={title}
-          onChangeText={setTitle}
-        />
-        <TextInput
-          style={[styles.input, styles.multiline]}
-          placeholder="Write message for all users..."
-          placeholderTextColor={c.textMuted}
-          value={message}
-          onChangeText={setMessage}
-          multiline
-        />
+            <PremiumCard padding="lg" goldAccent style={styles.composeCard}>
+              <Text style={[styles.composeLabel, { color: c.textPrimary }]}>Compose broadcast</Text>
+              <View style={styles.fieldGap}>
+                <PremiumInput
+                  label="Notification title"
+                  value={title}
+                  onChangeText={setTitle}
+                  iconLeft="megaphone-outline"
+                />
+              </View>
+              <View style={styles.fieldGap}>
+                <PremiumInput
+                  label="Message"
+                  value={message}
+                  onChangeText={setMessage}
+                  placeholder="Write message for all users…"
+                  multiline
+                  numberOfLines={4}
+                  iconLeft="document-text-outline"
+                />
+              </View>
 
-        <TouchableOpacity style={styles.primaryBtn} onPress={handleSend} disabled={sending}>
-          <View style={styles.buttonContent}>
-            <Ionicons name="megaphone-outline" size={16} color={c.onPrimary} />
-            <Text style={styles.primaryBtnText}>{sending ? "Sending..." : "Send to All Users"}</Text>
+              <PremiumButton
+                label={sending ? "Sending..." : "Send to all users"}
+                iconLeft="megaphone-outline"
+                variant="primary"
+                size="md"
+                loading={sending}
+                disabled={sending}
+                onPress={handleSend}
+                fullWidth
+              />
+
+              <PremiumButton
+                label={loading ? "Refreshing…" : "Refresh list"}
+                iconLeft="refresh-outline"
+                variant="secondary"
+                size="sm"
+                disabled={loading}
+                loading={loading}
+                onPress={loadNotifications}
+                fullWidth
+                style={styles.refreshBelowSend}
+              />
+            </PremiumCard>
           </View>
-        </TouchableOpacity>
 
-        <TouchableOpacity style={styles.refreshBtn} onPress={loadNotifications} disabled={loading}>
-          <Text style={styles.refreshBtnText}>{loading ? "Loading..." : "Refresh Notifications"}</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.panel}>
-        <Text style={styles.sectionTitle}>Sent Notifications</Text>
-        {loading ? (
-          <View style={styles.loaderWrap}>
-            <ActivityIndicator color={c.primary} />
+          <View style={styles.panel}>
+            <Text style={[styles.sectionTitle, { color: c.textPrimary }]}>Sent notifications</Text>
+            {loading ? (
+              <View style={styles.loaderWrap}>
+                <PremiumLoader size="sm" caption="Loading sent notifications…" />
+              </View>
+            ) : items.length === 0 ? (
+              <PremiumEmptyState
+                iconName="notifications-outline"
+                title="No notifications sent yet"
+                description="Broadcast a message above to reach all users."
+                compact
+              />
+            ) : (
+              items.map((item, index) => (
+                <PremiumCard
+                  key={item._id}
+                  padding="md"
+                  goldAccent={index === 0}
+                  style={styles.sentCard}
+                >
+                  <Text style={[styles.itemTitle, { color: c.textPrimary }]}>{item.title}</Text>
+                  <Text style={[styles.itemMessage, { color: c.textSecondary }]}>{item.message}</Text>
+                  <Text style={[styles.itemMeta, { color: c.textMuted }]}>
+                    Sent: {new Date(item.createdAt).toLocaleString()}
+                  </Text>
+                </PremiumCard>
+              ))
+            )}
           </View>
-        ) : items.length === 0 ? (
-          <Text style={styles.emptyText}>No notifications sent yet.</Text>
-        ) : (
-          items.map((item) => (
-            <View key={item._id} style={styles.itemCard}>
-              <Text style={styles.itemTitle}>{item.title}</Text>
-              <Text style={styles.itemMessage}>{item.message}</Text>
-              <Text style={styles.itemMeta}>
-                Sent: {new Date(item.createdAt).toLocaleString()}
-              </Text>
-            </View>
-          ))
-        )}
-      </View>
-      <AppFooter />
-    </ScrollView>
+          </KankregAdminShell>
+</KankregScrollPage>
+      </KeyboardAvoidingView>
     </CustomerScreenShell>
   );
 }
@@ -158,122 +213,42 @@ export default function AdminNotificationsScreen({ navigation }) {
 function createAdminNotificationsStyles(c, shadowPremium) {
   return StyleSheet.create({
     screen: {
-      flex: 1,
-    },
-    scrollContent: {
-      padding: spacing.lg,
-      width: "100%",
-      alignSelf: "center",
-      maxWidth: Platform.select({ web: layout.maxContentWidth, default: "100%" }),
-      paddingBottom: spacing.xxl,
-    },
+      flex: 1},
     panel: {
       ...adminPanel(c, shadowPremium),
-      marginBottom: spacing.md,
-    },
-    title: {
-      color: c.textPrimary,
-      fontSize: typography.h2,
-      fontFamily: fonts.extrabold,
-      letterSpacing: -0.35,
-    },
-    subtitle: {
-      marginTop: spacing.xs,
-      marginBottom: spacing.md,
-      color: c.textSecondary,
-      fontSize: typography.body,
-    },
+      marginBottom: spacing.md},
+    gateCta: {
+      marginTop: spacing.md,
+      alignSelf: "flex-start"},
+    composeCard: {
+      marginTop: spacing.xs},
+    composeLabel: {
+      fontSize: typography.bodySmall,
+      fontWeight: "800",
+      marginBottom: spacing.sm,
+      letterSpacing: 0.2},
     sectionTitle: {
-      color: c.textPrimary,
       fontSize: typography.h3,
       fontWeight: "700",
-      marginBottom: spacing.sm,
-    },
-    input: {
-      borderWidth: 1,
-      borderColor: c.border,
-      borderRadius: radius.md,
-      backgroundColor: c.surfaceMuted,
-      paddingHorizontal: spacing.md,
-      paddingVertical: 11,
-      marginBottom: spacing.sm,
-      color: c.textPrimary,
-    },
-    multiline: {
-      minHeight: 100,
-      textAlignVertical: "top",
-    },
-    primaryBtn: {
-      backgroundColor: c.primary,
-      borderRadius: radius.pill,
-      alignItems: "center",
-      justifyContent: "center",
-      paddingVertical: 12,
-    },
-    primaryBtnText: {
-      color: c.onPrimary,
-      fontSize: typography.body,
-      fontWeight: "700",
-    },
-    buttonContent: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-    },
-    refreshBtn: {
-      marginTop: spacing.sm,
-      borderRadius: radius.pill,
-      borderWidth: 1,
-      borderColor: c.primaryBorder,
-      backgroundColor: c.primarySoft,
-      alignItems: "center",
-      paddingVertical: 11,
-    },
-    refreshBtnText: {
-      color: c.primary,
-      fontSize: typography.bodySmall,
-      fontWeight: "700",
-    },
-    itemCard: {
-      borderWidth: 1,
-      borderColor: c.border,
-      borderRadius: radius.md,
-      backgroundColor: c.surfaceMuted,
-      padding: spacing.md,
-      marginBottom: spacing.sm,
-    },
+      marginBottom: spacing.sm},
+    bannerSpacer: {
+      marginBottom: spacing.sm},
+    fieldGap: {
+      marginBottom: spacing.sm},
+    refreshBelowSend: {
+      marginTop: spacing.sm},
+    sentCard: {
+      marginBottom: spacing.sm},
     itemTitle: {
-      color: c.textPrimary,
       fontSize: typography.body,
-      fontWeight: "700",
-    },
+      fontWeight: "700"},
     itemMessage: {
       marginTop: 4,
-      color: c.textSecondary,
       fontSize: typography.bodySmall,
-      lineHeight: 18,
-    },
+      lineHeight: 18},
     itemMeta: {
       marginTop: spacing.xs,
-      color: c.textMuted,
-      fontSize: typography.caption,
-    },
-    emptyText: {
-      color: c.textSecondary,
-      fontSize: typography.body,
-    },
+      fontSize: typography.caption},
     loaderWrap: {
-      paddingVertical: spacing.md,
-    },
-    errorText: {
-      color: c.danger,
-      fontWeight: "600",
-      marginBottom: spacing.sm,
-    },
-    successText: {
-      color: c.success,
-      fontWeight: "600",
-      marginBottom: spacing.sm,
-    },
-  });
+      paddingVertical: spacing.md}});
 }

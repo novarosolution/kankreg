@@ -37,8 +37,7 @@ export default function AppStartupScreen({ colors: c, useAppFonts = true, footno
           locations={[0, 0.45, 1]}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, styles.peNone]}
         />
 
         <Animated.View entering={FadeIn.duration(480)} style={styles.center}>
@@ -47,7 +46,7 @@ export default function AppStartupScreen({ colors: c, useAppFonts = true, footno
               style={[
                 styles.logoCardClip,
                 {
-                  backgroundColor: isDark ? c.surface : "rgba(255, 252, 248, 0.95)",
+                  backgroundColor: isDark ? c.surfaceElevated || c.surface : "rgba(255, 252, 248, 0.95)",
                   borderColor: isDark ? c.border : "rgba(116, 79, 28, 0.12)",
                 },
               ]}
@@ -246,5 +245,8 @@ const styles = StyleSheet.create({
   footnote: {
     fontSize: typography.caption,
     letterSpacing: 0.3,
+  },
+  peNone: {
+    pointerEvents: "none",
   },
 });
