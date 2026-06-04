@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import useReducedMotion from "../../hooks/useReducedMotion";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { FONT_DISPLAY } from "../../theme/customerAlchemy";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
@@ -7,7 +9,6 @@ import { createKankregEyebrowStyle, kankregSectionIndex } from "../../theme/kank
 import { fonts, spacing, typography } from "../../theme/tokens";
 import { useTheme } from "../../context/ThemeContext";
 import GoldHairline from "../ui/GoldHairline";
-
 /** `.section-head` from kankreg.html */
 export function KankregSectionHead({ index, eyebrow, title, right }) {
   const { isDark } = useTheme();
@@ -50,11 +51,54 @@ export function KankregSectionHead({ index, eyebrow, title, right }) {
   );
 }
 
-export function KankregPageWrap({ children, style }) {
-  const { pageGutterClamp } = useKankregLayout();
+/**
+ * Page content wrapper: max-width centering + vertical rhythm.
+ * Horizontal gutters are owned by {@link KankregScrollPage} (single source of truth),
+ * so this no longer re-applies a gutter — keeping Home/Shop/Profile aligned with inner pages.
+ */
+export function KankregPageWrap({ children, style, gap }) {
   return (
-    <View style={[styles.wrap, { paddingHorizontal: pageGutterClamp }, style]}>
-      <View style={styles.inner}>{children}</View>
+    <View style={[styles.wrap, style]}>
+      <View style={[styles.inner, gap != null ? { gap } : null]}>{children}</View>
+    </View>
+  );
+}
+
+function CheckoutStepCell({ index, label, active, done, hideLabels }) {
+  const reducedMotion = useReducedMotion();
+  const pulse = useSharedValue(active ? 1 : 0);
+
+  useEffect(() => {
+    if (reducedMotion) {
+      pulse.value = active ? 1 : 0;
+      return;
+    }
+    pulse.value = withSpring(active ? 1 : 0, { damping: 14, stiffness: 180 });
+  }, [active, reducedMotion, pulse]);
+
+  const numStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + pulse.value * 0.08 }],
+  }));
+
+  const borderColor = done ? KANKREG_PALETTE.green : active ? KANKREG_PALETTE.gold : KANKREG_PALETTE.line;
+
+  return (
+    <View style={[styles.step, { borderBottomColor: borderColor }]}>
+      <Animated.View
+        style={[
+          styles.stepNum,
+          done && styles.stepNumDone,
+          active && styles.stepNumOn,
+          numStyle,
+        ]}
+      >
+        <Text style={[styles.stepNumText, (done || active) && styles.stepNumTextOn]}>
+          {done ? "✓" : String(index + 1)}
+        </Text>
+      </Animated.View>
+      {hideLabels ? null : (
+        <Text style={[styles.stepLabel, (done || active) && styles.stepLabelOn]}>{label}</Text>
+      )}
     </View>
   );
 }
@@ -65,34 +109,16 @@ export function KankregCheckoutSteps({ active = 2 }) {
   const steps = ["Bag", "Address", "Payment", "Confirm"];
   return (
     <View style={styles.steps}>
-      {steps.map((label, i) => {
-        const done = i < active;
-        const on = i === active;
-        return (
-          <View
-            key={label}
-            style={[
-              styles.step,
-              { borderBottomColor: done ? KANKREG_PALETTE.green : on ? KANKREG_PALETTE.gold : KANKREG_PALETTE.line },
-            ]}
-          >
-            <View
-              style={[
-                styles.stepNum,
-                done && styles.stepNumDone,
-                on && styles.stepNumOn,
-              ]}
-            >
-              <Text style={[styles.stepNumText, (done || on) && styles.stepNumTextOn]}>
-                {done ? "✓" : String(i + 1)}
-              </Text>
-            </View>
-            {hideLabels ? null : (
-              <Text style={[styles.stepLabel, (done || on) && styles.stepLabelOn]}>{label}</Text>
-            )}
-          </View>
-        );
-      })}
+      {steps.map((label, i) => (
+        <CheckoutStepCell
+          key={label}
+          index={i}
+          label={label}
+          active={i === active}
+          done={i < active}
+          hideLabels={hideLabels}
+        />
+      ))}
     </View>
   );
 }

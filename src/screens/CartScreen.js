@@ -17,6 +17,7 @@ import CheckoutInfoCard from "../components/checkout/CheckoutInfoCard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import {
   createOrderRequest,
   fetchAvailableCouponsRequest,
@@ -82,6 +83,7 @@ function getProfileAddressCompletion(defaultAddress) {
 export default function CartScreen({ navigation, route }) {
   const { cartItems, totalAmount, totalItems, addToCart, removeFromCart, removeLineFromCart, clearCart } = useCart();
   const { isAuthenticated, token, user } = useAuth();
+  const { toastSuccess } = useToast();
     const isCheckoutFlow = route?.name === "Checkout" || route?.params?.flow === "checkout";
   const { useSplitLayout, isXs } = useKankregLayout();
   const kankregWebSplit = useSplitLayout;
@@ -105,7 +107,6 @@ export default function CartScreen({ navigation, route }) {
   const [longitude, setLongitude] = useState(null);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [couponCode, setCouponCode] = useState("");
@@ -209,7 +210,7 @@ export default function CartScreen({ navigation, route }) {
           if (cancelled) return;
           setAppliedCoupon(result.coupon || null);
           setCouponCode(normalized);
-          setSuccess(result.message || "Coupon applied.");
+          toastSuccess(result.message || "Coupon applied.", { title: "Coupon applied" });
           setAvailableCoupons((current) => current.filter((coupon) => coupon.code !== normalized));
           navigation.setParams({ prefillCoupon: undefined });
         } catch (err) {
@@ -224,7 +225,7 @@ export default function CartScreen({ navigation, route }) {
       return () => {
         cancelled = true;
       };
-    }, [route?.params?.prefillCoupon, isAuthenticated, token, totalAmount, navigation])
+    }, [route?.params?.prefillCoupon, isAuthenticated, token, totalAmount, navigation, toastSuccess])
   );
 
   const { colors: c, shadowLift, shadowPremium, isDark } = useTheme();
@@ -367,7 +368,6 @@ export default function CartScreen({ navigation, route }) {
     try {
       setIsPlacingOrder(true);
       setError("");
-      setSuccess("");
 
       const created = await createOrderRequest(token, {
         products: cartItems.map((item) => ({
@@ -395,7 +395,7 @@ export default function CartScreen({ navigation, route }) {
       clearCart();
 
       if (paymentMethod === "Cash on Delivery") {
-        setSuccess("Order placed—track it in Profile.");
+        toastSuccess("Order placed—track it in Profile.", { title: "Order confirmed" });
         navigation.navigate("Profile");
         return;
       }
@@ -421,15 +421,15 @@ export default function CartScreen({ navigation, route }) {
           razorpay_order_id: p.razorpay_order_id,
           razorpay_payment_id: p.razorpay_payment_id,
           razorpay_signature: p.razorpay_signature});
-        setSuccess("Payment confirmed.");
+        toastSuccess("Payment confirmed.", { title: "Order confirmed" });
         navigation.navigate("MyOrders");
         return;
       }
 
       if (checkout.status === "fallback") {
-        setSuccess("Finish payment on Razorpay—then check My Orders.");
+        toastSuccess("Finish payment on Razorpay—then check My Orders.", { title: "Almost done" });
       } else {
-        setSuccess("Resume payment from My Orders within 30 minutes.");
+        toastSuccess("Resume payment from My Orders within 30 minutes.", { title: "Payment pending" });
       }
       navigation.navigate("MyOrders");
     } catch (err) {
@@ -442,7 +442,6 @@ export default function CartScreen({ navigation, route }) {
   const handleApplyCoupon = async () => {
     try {
       setError("");
-      setSuccess("");
       const normalized = String(couponCode || "").trim().toUpperCase();
       if (!normalized) {
         setError("Enter coupon code.");
@@ -451,7 +450,7 @@ export default function CartScreen({ navigation, route }) {
       const result = await validateCouponRequest(token, normalized, totalAmount);
       setAppliedCoupon(result.coupon || null);
       setCouponCode(normalized);
-      setSuccess(result.message || "Coupon applied.");
+      toastSuccess(result.message || "Coupon applied.", { title: "Coupon applied" });
       setAvailableCoupons((current) => current.filter((coupon) => coupon.code !== normalized));
     } catch (err) {
       setAppliedCoupon(null);
@@ -490,7 +489,7 @@ export default function CartScreen({ navigation, route }) {
       if (address.country) setCountry(address.country);
       if (Number.isFinite(Number(address.latitude))) setLatitude(Number(address.latitude));
       if (Number.isFinite(Number(address.longitude))) setLongitude(Number(address.longitude));
-      setSuccess(CART_ADDRESS.gpsFillSuccess);
+      toastSuccess(CART_ADDRESS.gpsFillSuccess, { title: "Location added" });
     } catch (err) {
       setError(err.message || "Unable to get current location.");
     } finally {
@@ -529,7 +528,11 @@ export default function CartScreen({ navigation, route }) {
             ) : undefined
           }
         />
-        {isCheckoutFlow ? <KankregCheckoutSteps active={2} /> : null}
+        {isCheckoutFlow ? (
+          <SectionReveal index={0} preset="fade-in">
+            <KankregCheckoutSteps active={2} />
+          </SectionReveal>
+        ) : null}
 
         <KankregSplitLayout
           asideStyle={isDesktop ? styles.cartRightCol : undefined}
@@ -537,6 +540,7 @@ export default function CartScreen({ navigation, route }) {
         <>
 
         {(!kankregWebSplit || !isCheckoutFlow) && cartItems.length === 0 ? (
+          <SectionReveal index={0} preset="scale-in">
           <View style={styles.emptyCard}>
             <BrandLogo width={BRAND_LOGO_SIZE.footerCompact} height={BRAND_LOGO_SIZE.footerCompact} style={styles.emptyBrandLogo} />
             <PremiumEmptyState
@@ -548,6 +552,7 @@ export default function CartScreen({ navigation, route }) {
               onCtaPress={() => navigation.navigate(Platform.OS === "web" ? "Shop" : "Home")}
             />
           </View>
+          </SectionReveal>
         ) : (!kankregWebSplit || !isCheckoutFlow) ? (
           <>
             {!kankregWebSplit ? (
@@ -675,11 +680,6 @@ export default function CartScreen({ navigation, route }) {
           {error ? (
             <View style={styles.bannerSpacer}>
               <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
-            </View>
-          ) : null}
-          {success ? (
-            <View style={styles.bannerSpacer}>
-              <PremiumErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
             </View>
           ) : null}
           <PremiumButton

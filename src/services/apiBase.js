@@ -32,8 +32,16 @@ function sanitizeConfiguredBase(raw) {
   return s.replace(/\/+$/, "");
 }
 
+function getConfiguredApiUrl() {
+  const fromEnv = sanitizeConfiguredBase(process.env.EXPO_PUBLIC_API_URL);
+  if (fromEnv) return fromEnv;
+  const fromExtra = sanitizeConfiguredBase(Constants.expoConfig?.extra?.apiUrl);
+  if (fromExtra) return fromExtra;
+  return null;
+}
+
 export function getApiBaseUrl() {
-  const configured = sanitizeConfiguredBase(process.env.EXPO_PUBLIC_API_URL);
+  const configured = getConfiguredApiUrl();
   if (configured) {
     return configured;
   }

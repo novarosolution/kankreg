@@ -336,7 +336,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
-      <KankregAdminShell navigation={navigation} route={route} title={title}>
+      <KankregAdminShell navigation={navigation} route={route} title={title} subtitle="Creates a live catalog SKU">
       <View style={styles.panel}>
         {error ? (
           <View style={styles.fieldGap}>

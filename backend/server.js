@@ -20,7 +20,7 @@ const { notFound, errorHandler } = require("./src/middleware/errorMiddleware");
 const app = express();
 app.disable("x-powered-by");
 
-const allowedOrigins = [
+const allowedOrigins = new Set([
   "http://localhost:8081",
   "http://localhost:8082",
   "http://localhost:8083",
@@ -29,14 +29,29 @@ const allowedOrigins = [
   "http://127.0.0.1:8083",
   "https://novarosolution.com",
   "https://www.novarosolution.com",
-];
+]);
+
+/** Expo web, Vite, and local dev often use random localhost ports. */
+function isAllowedOrigin(origin) {
+  if (!origin) return true;
+  if (allowedOrigins.has(origin)) return true;
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return true;
+  if (/^https:\/\/[\w-]+\.vercel\.app$/i.test(origin)) return true;
+  const extra = process.env.CORS_EXTRA_ORIGINS;
+  if (extra) {
+    for (const o of extra.split(",").map((s) => s.trim()).filter(Boolean)) {
+      if (origin === o) return true;
+    }
+  }
+  return false;
+}
 
 const corsOptions = {
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (isAllowedOrigin(origin)) {
       return callback(null, true);
     }
-    return callback(new Error("Not allowed by CORS"));
+    return callback(new Error(`Not allowed by CORS: ${origin}`));
   },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],

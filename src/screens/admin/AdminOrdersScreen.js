@@ -381,7 +381,12 @@ export default function AdminOrdersScreen({ navigation, route }) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <KankregAdminShell navigation={navigation} route={route} title="Manage orders">
+        <KankregAdminShell
+          navigation={navigation}
+          route={route}
+          title="Manage orders"
+          subtitle="Live order queue and fulfillment"
+        >
         <View style={styles.panel}>
           <SectionReveal preset="fade-up" delay={0}>
           {error ? (

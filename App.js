@@ -22,6 +22,9 @@ import * as SplashScreen from "expo-splash-screen";
 import { isRunningInExpoGo } from "expo";
 import { CartProvider } from "./src/context/CartContext";
 import { AuthProvider } from "./src/context/AuthContext";
+import { ApiHealthProvider } from "./src/context/ApiHealthContext";
+import { ToastProvider } from "./src/context/ToastContext";
+import BackendOfflineBanner from "./src/components/BackendOfflineBanner";
 import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 import AppStartupScreen from "./src/components/AppStartupScreen";
 import AppNavigator from "./src/navigation/AppNavigator";
@@ -187,11 +190,16 @@ export default function App() {
     <SafeAreaProvider style={safeAreaRootStyle}>
       <View style={webRootStyle}>
         <ThemeProvider>
-          <AuthProvider>
-            <CartProvider>
-              <AppNavigationShell />
-            </CartProvider>
-          </AuthProvider>
+          <ToastProvider>
+            <ApiHealthProvider>
+              <AuthProvider>
+                <CartProvider>
+                  <BackendOfflineBanner />
+                  <AppNavigationShell />
+                </CartProvider>
+              </AuthProvider>
+            </ApiHealthProvider>
+          </ToastProvider>
         </ThemeProvider>
       </View>
     </SafeAreaProvider>

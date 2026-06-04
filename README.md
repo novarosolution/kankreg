@@ -21,6 +21,26 @@ Then press:
 - `a` for Android emulator
 - `w` for web
 
+### Backend connection (all live data)
+
+1. **Start MongoDB**, then from `backend/` (use the **exact** database name casing from Atlas — e.g. `Zeevan` not `zeevan`; optional `MONGO_DB_NAME=Zeevan` in `backend/.env`):
+   ```bash
+   npm install
+   cp .env.example .env   # set MONGO_URI, JWT_SECRET, Cloudinary, Razorpay
+   npm run dev
+   ```
+2. **App root `.env`:** `EXPO_PUBLIC_API_URL=http://127.0.0.1:5001` (must match backend port).
+3. Restart Expo after changing env (`npx expo start --clear`). A **“Cannot reach server”** banner means the API is down or the URL is wrong.
+
+Authenticated requests use `apiClient` (auto refresh on 401). Public catalog uses `GET /products` and `GET /home-view`.
+
+### Populating the store (no fake catalog on the customer app)
+
+- **Products:** Admin → **Products** / **Add product** (categories come from each product’s `category` field).
+- **Home hero & sections:** Admin → **Home view** (saved in MongoDB `HomeViewConfig`; `GET /home-view` creates defaults on first request).
+- Trust strip, marquee, and brand quote copy stay in `src/content/appContent.js` (not CMS).
+- An empty database shows real empty states — not placeholder category tiles.
+
 ### API URL (fix “Route not found” / 404)
 
 1. **Start the backend** from `backend/` (default port **5001**): `npm run dev`

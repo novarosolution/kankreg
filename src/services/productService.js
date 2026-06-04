@@ -1,10 +1,7 @@
-import { getApiBaseUrl } from "./apiBase";
-import { HOME_VIEW_DEFAULTS } from "../content/appContent";
+import { apiGet, apiPost } from "./apiClient";
 import { normalizeHeroSubtitle, normalizeHeroTitle } from "../utils/homeMarketingCopy";
 
-function apiUrl(path) {
-  return `${getApiBaseUrl()}${path}`;
-}
+const publicApi = { auth: false };
 
 const PRODUCTS_CACHE_TTL_MS = 60 * 1000;
 let productsCache = {
@@ -115,16 +112,9 @@ export async function getProducts() {
   }
 
   productsCache.promise = (async () => {
-    const response = await fetch(apiUrl("/products"));
-    const data = await response.json().catch(() => []);
-    if (!response.ok) {
-      const msg =
-        typeof data?.message === "string" && data.message.trim()
-          ? data.message.trim()
-          : "Unable to load products.";
-      throw new Error(msg);
-    }
-    const normalized = data.map(normalizeProduct);
+    const data = await apiGet("/products", publicApi);
+    const list = Array.isArray(data) ? data : [];
+    const normalized = list.map(normalizeProduct);
     productsCache = {
       data: normalized,
       fetchedAt: Date.now(),
@@ -155,11 +145,7 @@ export async function getProductById(id) {
 }
 
 export async function getProductReviews(productId) {
-  const response = await fetch(apiUrl(`/products/${productId}/reviews`));
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.message || "Unable to load reviews.");
-  }
+  const data = await apiGet(`/products/${productId}/reviews`, publicApi);
   return {
     ratingAverage: Number(data.ratingAverage || 0),
     reviewCount: Number(data.reviewCount || 0),
@@ -167,19 +153,8 @@ export async function getProductReviews(productId) {
   };
 }
 
-export async function submitProductReview(token, productId, payload) {
-  const response = await fetch(apiUrl(`/products/${productId}/reviews`), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.message || "Unable to submit review.");
-  }
+export async function submitProductReview(_token, productId, payload) {
+  const data = await apiPost(`/products/${productId}/reviews`, payload);
   return {
     ratingAverage: Number(data.ratingAverage || 0),
     reviewCount: Number(data.reviewCount || 0),
@@ -187,27 +162,19 @@ export async function submitProductReview(token, productId, payload) {
   };
 }
 
-const DEFAULT_HOME_VIEW = { ...HOME_VIEW_DEFAULTS };
-
-/** Never throws — uses defaults if API is down or route missing (older backends). */
+/** Customer home config from MongoDB. Returns `null` when API is unavailable (no client fallbacks). */
 export async function getHomeViewConfig() {
-  try {
-    const response = await fetch(apiUrl("/home-view"));
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      return { ...DEFAULT_HOME_VIEW };
-    }
-    return {
-      heroTitle: normalizeHeroTitle(data.heroTitle || DEFAULT_HOME_VIEW.heroTitle),
-      heroSubtitle: normalizeHeroSubtitle(data.heroSubtitle || DEFAULT_HOME_VIEW.heroSubtitle),
-      primeSectionTitle: data.primeSectionTitle || DEFAULT_HOME_VIEW.primeSectionTitle,
-      productTypeTitle: data.productTypeTitle || DEFAULT_HOME_VIEW.productTypeTitle,
-      showPrimeSection: data.showPrimeSection !== false,
-      showHomeSections: data.showHomeSections !== false,
-      showProductTypeSections: data.showProductTypeSections !== false,
-      productCardStyle: data.productCardStyle === "comfortable" ? "comfortable" : "compact",
-    };
-  } catch {
-    return { ...DEFAULT_HOME_VIEW };
-  }
+  const data = await apiGet("/home-view", publicApi);
+  const heroTitle = normalizeHeroTitle(String(data?.heroTitle ?? "").trim());
+  const heroSubtitle = normalizeHeroSubtitle(String(data?.heroSubtitle ?? "").trim());
+  return {
+    heroTitle,
+    heroSubtitle,
+    primeSectionTitle: String(data?.primeSectionTitle ?? "").trim(),
+    productTypeTitle: String(data?.productTypeTitle ?? "").trim(),
+    showPrimeSection: data?.showPrimeSection !== false,
+    showHomeSections: data?.showHomeSections !== false,
+    showProductTypeSections: data?.showProductTypeSections !== false,
+    productCardStyle: data?.productCardStyle === "comfortable" ? "comfortable" : "compact",
+  };
 }

@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import PremiumButton from "../ui/PremiumButton";
+import PremiumEmptyState from "../ui/PremiumEmptyState";
 import HomeSectionHeader from "./HomeSectionHeader";
 import { FONT_DISPLAY } from "../../theme/customerAlchemy";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
@@ -18,13 +19,6 @@ const MARQUEE_ITEMS = [
   "7-day easy returns",
   "Earn rewards every order",
   "Crafted in India",
-];
-
-const DEFAULT_CATEGORIES = [
-  { key: "kitchen", label: "Home & Kitchen", count: "Shop all", image: null },
-  { key: "lifestyle", label: "Lifestyle", count: "Browse", image: null },
-  { key: "wellness", label: "Wellness", count: "Browse", image: null },
-  { key: "accessories", label: "Accessories", count: "Browse", image: null },
 ];
 
 const CATEGORY_GRADIENTS = [
@@ -47,8 +41,8 @@ export function HomeMarqueeTicker() {
   );
 }
 
-/** Category tiles like `.cat-card` */
-export function HomeCategoryCards({ products = [], onBrowse }) {
+/** Category tiles like `.cat-card` — only categories present on products from API. */
+export function HomeCategoryCards({ products = [], onBrowse, onOpenShop, productTypeTitle = "" }) {
   const { categoryCols } = useKankregLayout();
   const { isDark } = useTheme();
   const cols = categoryCols;
@@ -56,29 +50,35 @@ export function HomeCategoryCards({ products = [], onBrowse }) {
 
   const categories = useMemo(() => {
     const fromProducts = [...new Set(products.map((p) => String(p.category || "").trim()).filter(Boolean))].slice(0, 4);
-    if (fromProducts.length >= 2) {
-      return fromProducts.map((label, i) => ({
-        key: label,
-        label,
-        count: `${products.filter((p) => p.category === label).length} items`,
-        gradient: CATEGORY_GRADIENTS[i % CATEGORY_GRADIENTS.length],
-        image: products.find((p) => p.category === label)?.image,
-      }));
-    }
-    return DEFAULT_CATEGORIES.map((c, i) => ({
-      ...c,
+    return fromProducts.map((label, i) => ({
+      key: label,
+      label,
+      count: `${products.filter((p) => p.category === label).length} items`,
       gradient: CATEGORY_GRADIENTS[i % CATEGORY_GRADIENTS.length],
-      count: c.count,
-      image: null,
+      image: products.find((p) => p.category === label)?.image,
     }));
   }, [products]);
+
+  if (!categories.length) {
+    return (
+      <PremiumEmptyState
+        iconName="grid-outline"
+        title="No categories yet"
+        description="Add products with categories in Admin to show collection tiles here."
+        ctaLabel="Go to shop"
+        onCtaPress={onOpenShop}
+      />
+    );
+  }
+
+  const sectionTitle = productTypeTitle || "Browse the categories";
 
   return (
     <View style={styles.catSection}>
       <View style={styles.catHeadRow}>
         <Text style={createKankregEyebrowStyle(isDark)}>{kankregSectionIndex(1)} Collections</Text>
       </View>
-      <HomeSectionHeader overline="Shop by room" title="Browse the categories" />
+      <HomeSectionHeader overline="Shop by category" title={sectionTitle} />
       <View style={styles.catGrid}>
         {categories.map((cat, idx) => (
           <Pressable
@@ -160,22 +160,26 @@ export function HomeFeaturedEditorial({ product, navigation }) {
 }
 
 /** Web editorial hero (copy + visual) — complements marketing slider on large screens */
-export function HomeEditorialHero({ navigation, featuredProduct }) {
+export function HomeEditorialHero({ navigation, featuredProduct, heroTitle, heroSubtitle }) {
   const { isDark } = useTheme();
   const { showEditorialHero, stackEditorialHero } = useKankregLayout();
   if (!showEditorialHero) return null;
 
   const image = featuredProduct?.image || featuredProduct?.images?.[0];
+  const title = heroTitle || "Everyday goods, made extraordinary.";
+  const subtitle =
+    heroSubtitle ||
+    "Design-led home, wellness and lifestyle — live tracking, Razorpay checkout, rewards on every order.";
 
   return (
     <View style={[styles.editorialHero, stackEditorialHero && styles.editorialHeroStack]}>
       <View style={styles.editorialCopy}>
         <Text style={createKankregEyebrowStyle(isDark)}>Curated essentials · Est. 2025</Text>
         <Text style={[styles.editorialH1, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
-          Everyday goods,{"\n"}made <Text style={styles.editorialEm}>extraordinary</Text>.
+          {title}
         </Text>
         <Text style={[styles.editorialLead, { color: isDark ? "#c8bdaf" : KANKREG_PALETTE.inkSoft }]}>
-          Design-led home, wellness and lifestyle — live tracking, Razorpay checkout, rewards on every order.
+          {subtitle}
         </Text>
         <View style={styles.editorialCtas}>
           <PremiumButton
@@ -189,18 +193,6 @@ export function HomeEditorialHero({ navigation, featuredProduct }) {
             }}
           />
           <PremiumButton label="Join rewards" variant="ghost" onPress={() => navigation.navigate("RedeemRewards")} />
-        </View>
-        <View style={styles.editorialStats}>
-          {[
-            ["12k+", "Happy customers"],
-            ["4.9★", "Avg. rating"],
-            ["38 min", "Avg. delivery"],
-          ].map(([n, l]) => (
-            <View key={l}>
-              <Text style={[styles.statN, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>{n}</Text>
-              <Text style={styles.statL}>{l}</Text>
-            </View>
-          ))}
         </View>
       </View>
       <View style={styles.editorialVisual}>

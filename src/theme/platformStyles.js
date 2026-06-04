@@ -8,4 +8,4 @@ export const platformElevation = platformShadow;
 export { platformShadow };
 
 /** Vertical gap between major page sections. */
-export const sectionStackGap = 20;
+export const sectionStackGap = 22;

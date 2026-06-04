@@ -8,15 +8,14 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 import CustomerScreenShell from "../components/CustomerScreenShell";
-import AuthSplitLayout from "../components/auth/AuthSplitLayout";
+import AuthScreenBody from "../components/auth/AuthScreenBody";
 import AuthFormShell from "../components/auth/AuthFormShell";
-import AuthCompactHero from "../components/auth/AuthCompactHero";
 import AuthSocialButtons from "../components/auth/AuthSocialButtons";
 import { useAuth } from "../context/AuthContext";
-import { useTheme } from "../context/ThemeContext";
+import { useToast } from "../context/ToastContext";
 import { AUTH_UI } from "../content/appContent";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
-import { adminScrollPaddingBottom, authPanel, customerScrollFill } from "../theme/screenLayout";
+import { adminScrollPaddingBottom, customerScrollFill } from "../theme/screenLayout";
 import { spacing } from "../theme/tokens";
 import {
   isValidEmail,
@@ -36,11 +35,11 @@ export default function RegisterScreen({ navigation }) {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { registerWithCredentials } = useAuth();
-  const { colors: c, shadowPremium: sp, isDark } = useTheme();
+  const { showToast } = useToast();
   const { useAuthSplit } = useKankregLayout();
-  const styles = useMemo(() => createRegisterStyles(c, sp, isDark), [c, sp, isDark]);
+  const styles = useMemo(() => createRegisterStyles(), []);
   const insets = useSafeAreaInsets();
-  const showSubtitle = Platform.OS !== "web" || !useAuthSplit;
+  const showFormSubtitle = Platform.OS === "web" && useAuthSplit;
 
   const handleRegister = async () => {
     const nameErr = validateRegisterName(name);
@@ -74,6 +73,7 @@ export default function RegisterScreen({ navigation }) {
         email: em,
         password,
       });
+      showToast({ type: "success", title: "Account created", message: "Welcome to kankreg.", duration: 2400 });
       navigation.navigate("Home");
     } catch (err) {
       setError(err.message || "Unable to register. Please try again.");
@@ -87,7 +87,8 @@ export default function RegisterScreen({ navigation }) {
       navigation={navigation}
       activeRoute="Register"
       title={AUTH_UI.registerTitle}
-      subtitle={showSubtitle ? AUTH_UI.registerSubtitle : undefined}
+      subtitle={showFormSubtitle ? AUTH_UI.registerSubtitle : undefined}
+      compact={!useAuthSplit}
       socialSlot={<AuthSocialButtons onSuccess={() => navigation.navigate("Home")} />}
       footerSlot={
         <PremiumButton
@@ -173,29 +174,30 @@ export default function RegisterScreen({ navigation }) {
           scrollVariant="auth"
           showFooter={false}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={[
-            styles.scrollContentExtra,
-            Platform.OS !== "web" ? { paddingBottom: adminScrollPaddingBottom(insets) } : null,
-          ]}
+          contentContainerStyle={
+            Platform.OS !== "web" ? { paddingBottom: adminScrollPaddingBottom(insets) } : undefined
+          }
           keyboardShouldPersistTaps="handled"
         >
-          {Platform.OS === "web" ? null : <AuthCompactHero compact />}
-          <AuthSplitLayout
-            artTitle={"Join kankreg\nrewards & perks"}
+          <AuthScreenBody
             artSubtitle={AUTH_UI.registerSubtitle}
-          >
-            <View style={[styles.card, Platform.OS === "web" ? styles.cardWebInline : null]}>{formBody}</View>
-          </AuthSplitLayout>
+            form={formBody}
+            styles={styles}
+          />
         </KankregScrollPage>
       </KeyboardAvoidingView>
     </CustomerScreenShell>
   );
 }
 
-function createRegisterStyles(c, shadowPremium, isDark) {
+function createRegisterStyles() {
   return StyleSheet.create({
     screen: { flex: 1 },
-    scrollContentExtra: { width: "100%" },
+    card: {
+      width: "100%",
+      maxWidth: 468,
+      alignSelf: "center",
+    },
     cardWebInline: {
       maxWidth: "100%",
       borderWidth: 0,
@@ -204,15 +206,12 @@ function createRegisterStyles(c, shadowPremium, isDark) {
       paddingVertical: 0,
       ...Platform.select({ web: { boxShadow: "none" }, default: {} }),
     },
-    card: {
-      width: "100%",
-      maxWidth: 468,
-      ...authPanel(c, shadowPremium, isDark),
-      paddingHorizontal: spacing.xl,
-      paddingVertical: spacing.xl,
-      alignSelf: "center",
+    cardWebStack: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
     },
     errorWrap: { marginTop: spacing.sm },
     primaryCta: { marginTop: spacing.md },
+    revealFill: { width: "100%" },
   });
 }

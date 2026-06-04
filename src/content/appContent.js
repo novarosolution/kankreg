@@ -144,6 +144,12 @@ export const HOME_STATS_STRIP = {
  * Customer testimonials shown under the stats strip. Keep voice short, regional, real.
  * `name`, `city`, `quote`, `rating` (out of 5), optional `avatar` (string url or null = initial).
  */
+/** Static brand quote on Kankreg home (not from reviews API). */
+export const HOME_BRAND_QUOTE = {
+  text: "The packaging alone felt like a gift. kankreg has quietly become the only place I shop for the home.",
+  attribution: "— The KankreG team",
+};
+
 export const HOME_TESTIMONIALS = {
   overline: "Loved by our customers",
   title: "Stories from our kitchens",

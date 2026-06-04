@@ -128,6 +128,7 @@ export default function AdminSupportScreen({ navigation, route }) {
           navigation={navigation}
           route={route}
           title="Support Inbox"
+          subtitle="Customer conversations"
           headerRight={
             <PremiumButton label="Refresh" iconLeft="refresh-outline" variant="secondary" size="sm" onPress={loadThreads} />
           }

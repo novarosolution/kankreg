@@ -28,6 +28,8 @@ import PremiumInput from "../../components/ui/PremiumInput";
 import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumChip from "../../components/ui/PremiumChip";
 import PremiumCard from "../../components/ui/PremiumCard";
+import SectionReveal from "../../components/motion/SectionReveal";
+import { staggerDelay } from "../../theme/motion";
 
 /** Counts as “low stock” when qty is 1..LOW_STOCK_MAX and still sellable. */
 const LOW_STOCK_MAX = 5;
@@ -207,7 +209,12 @@ export default function AdminInventoryScreen({ navigation, route }) {
 
   return (
     <CustomerScreenShell style={styles.screen}>
-      <KankregAdminShell navigation={navigation} route={route} title="Inventory & stock">
+      <KankregAdminShell
+        navigation={navigation}
+        route={route}
+        title="Inventory & stock"
+        subtitle="Quantities and availability"
+      >
       <FlatList
         data={visible}
         keyExtractor={(i) => i._id}
@@ -314,7 +321,7 @@ export default function AdminInventoryScreen({ navigation, route }) {
             </View>
           ) : null
         }
-        renderItem={({ item: p }) => {
+        renderItem={({ item: p, index: rowIndex }) => {
           const s = stockState(p);
           const busy = busyId === p._id;
           const dval =
@@ -322,6 +329,7 @@ export default function AdminInventoryScreen({ navigation, route }) {
               ? draftQty[p._id]
               : String(Math.max(0, Number(p.stockQty) || 0));
           return (
+            <SectionReveal delay={staggerDelay(Math.min(rowIndex, 10))} preset="fade-up">
             <View
               style={[
                 styles.rowCard,
@@ -395,6 +403,7 @@ export default function AdminInventoryScreen({ navigation, route }) {
                 />
               </View>
             </View>
+            </SectionReveal>
           );
         }}
         ListFooterComponent={

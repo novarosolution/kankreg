@@ -23,7 +23,9 @@ import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumCard from "../../components/ui/PremiumCard";
 import PremiumStatCard from "../../components/ui/PremiumStatCard";
+import SkeletonBlock from "../../components/ui/SkeletonBlock";
 import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
+import SectionReveal from "../../components/motion/SectionReveal";
 
 /** Group icon shown on each collapsible admin module header. */
 const SECTION_GROUP_ICONS = {
@@ -337,6 +339,7 @@ export default function AdminDashboardScreen({ navigation, route }) {
           navigation={navigation}
           route={route || { name: "AdminDashboard" }}
           title="Dashboard"
+          subtitle="Live counts from products, orders, and users"
           headerRight={
             <PremiumButton
               label="Refresh"
@@ -355,8 +358,11 @@ export default function AdminDashboardScreen({ navigation, route }) {
           ) : null}
 
           {loading ? (
-            <View style={styles.loaderWrap}>
-              <PremiumLoader size="md" caption="Loading live stats…" hint="Pull down to refresh anytime." />
+            <View style={styles.statsSkeletonRow}>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <SkeletonBlock key={i} width="18%" height={88} rounded="lg" style={styles.statSkeleton} />
+              ))}
+              <PremiumLoader size="sm" caption="Loading live stats…" />
             </View>
           ) : (
             <>
@@ -380,6 +386,7 @@ export default function AdminDashboardScreen({ navigation, route }) {
                 </View>
               </View>
 
+              <SectionReveal index={0} preset="fade-up">
               {Platform.OS === "web" ? (
                 <View style={styles.statsRowWrap}>
                   <StatCard icon="cube-outline" label="Products" value={stats.products} />
@@ -412,7 +419,9 @@ export default function AdminDashboardScreen({ navigation, route }) {
                   />
                 </ScrollView>
               )}
+              </SectionReveal>
 
+              <SectionReveal index={1} preset="fade-in">
               <Text style={[styles.quickOverline, !isDark ? styles.sectionOverlineLight : null]}>Quick open</Text>
               <ScrollView
                 horizontal
@@ -444,14 +453,18 @@ export default function AdminDashboardScreen({ navigation, route }) {
                   </PremiumCard>
                 ))}
               </ScrollView>
+              </SectionReveal>
 
+              <SectionReveal index={2} preset="fade-up">
               <Text style={[styles.modulesOverline, !isDark ? styles.sectionOverlineLight : null]}>All tools by area</Text>
               <Text style={styles.modulesHint}>Tap a section header to expand or collapse tools by area.</Text>
 
               {MANAGE_SECTIONS.map((section) => (
                 <ManageSectionBlock key={section.id} section={section} />
               ))}
+              </SectionReveal>
 
+              <SectionReveal index={3} preset="fade-in">
               <View style={styles.footerActions}>
                 <PremiumButton
                   label="Refresh stats"
@@ -462,6 +475,7 @@ export default function AdminDashboardScreen({ navigation, route }) {
                   style={styles.refreshBtn}
                 />
               </View>
+              </SectionReveal>
             </>
           )}
         </View>
@@ -768,6 +782,17 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium, isDark) {
     loaderWrap: {
       paddingVertical: spacing.xl,
       alignItems: "center"},
+    statsSkeletonRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+      marginBottom: spacing.lg,
+      alignItems: "center",
+    },
+    statSkeleton: {
+      minWidth: 120,
+      flexGrow: 1,
+    },
     statsRowWrap: {
       flexDirection: "row",
       flexWrap: "wrap",

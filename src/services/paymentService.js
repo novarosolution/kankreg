@@ -1,5 +1,5 @@
 import { Linking, Platform } from "react-native";
-import { getApiBaseUrl } from "./apiBase";
+import { apiPost } from "./apiClient";
 import { RAZORPAY_PAY_URL } from "../content/appContent";
 
 /**
@@ -13,10 +13,6 @@ import { RAZORPAY_PAY_URL } from "../content/appContent";
  *     3. Opening Razorpay Checkout (Web SDK / native module / fallback link).
  */
 
-function apiUrl(path) {
-  return `${getApiBaseUrl()}${path}`;
-}
-
 /**
  * Public Razorpay key id, exposed to the client via Expo's
  * `EXPO_PUBLIC_*` envs. Server-issued order responses also include this on
@@ -27,35 +23,14 @@ export function getPublicRazorpayKeyId() {
   return String(process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || "").trim();
 }
 
-async function paymentRequest(path, token, options = {}) {
-  const response = await fetch(apiUrl(path), {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: token ? `Bearer ${token}` : "",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.message || "Request failed.");
-  }
-  return data;
-}
-
 /** POST /orders/:id/verify-payment — finalises a Razorpay order on success. */
-export function verifyOrderPayment(token, orderId, payload) {
-  return paymentRequest(`/orders/${orderId}/verify-payment`, token, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
+export function verifyOrderPayment(_token, orderId, payload) {
+  return apiPost(`/orders/${orderId}/verify-payment`, payload);
 }
 
 /** POST /orders/:id/cancel-pending — abandons an unpaid Razorpay order. */
-export function cancelPendingOrder(token, orderId) {
-  return paymentRequest(`/orders/${orderId}/cancel-pending`, token, {
-    method: "POST",
-  });
+export function cancelPendingOrder(_token, orderId) {
+  return apiPost(`/orders/${orderId}/cancel-pending`, {});
 }
 
 const RAZORPAY_CHECKOUT_SCRIPT_URL = "https://checkout.razorpay.com/v1/checkout.js";

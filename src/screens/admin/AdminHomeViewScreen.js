@@ -16,14 +16,17 @@ import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumChip from "../../components/ui/PremiumChip";
 import PremiumCard from "../../components/ui/PremiumCard";
+import SectionReveal from "../../components/motion/SectionReveal";
 
-function Section({ label, hint, children, styles }) {
+function Section({ label, hint, children, styles, revealIndex = 0 }) {
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionLabel}>{label}</Text>
-      {hint ? <Text style={styles.sectionHint}>{hint}</Text> : null}
-      {children}
-    </View>
+    <SectionReveal index={revealIndex} preset="fade-up">
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>{label}</Text>
+        {hint ? <Text style={styles.sectionHint}>{hint}</Text> : null}
+        {children}
+      </View>
+    </SectionReveal>
   );
 }
 
@@ -133,7 +136,12 @@ export default function AdminHomeViewScreen({ navigation, route }) {
         style={customerScrollFill}
         showsVerticalScrollIndicator={false}
       >
-        <KankregAdminShell navigation={navigation} route={route} title={copy.title || "Storefront"}>
+        <KankregAdminShell
+          navigation={navigation}
+          route={route}
+          title={copy.title || "Storefront"}
+          subtitle="Hero copy and home sections (saved to database)"
+        >
         <View style={styles.panel}>
           <Text style={styles.subtitle}>{copy.subtitle}</Text>
           {error ? (
@@ -147,7 +155,7 @@ export default function AdminHomeViewScreen({ navigation, route }) {
             </View>
           ) : null}
 
-          <Section label={copy.heroSection} hint={copy.heroHint} styles={styles}>
+          <Section label={copy.heroSection} hint={copy.heroHint} styles={styles} revealIndex={0}>
             <View style={styles.fieldGap}>
               <PremiumInput label="Hero title" value={heroTitle} onChangeText={setHeroTitle} iconLeft="sparkles-outline" />
             </View>
@@ -163,7 +171,7 @@ export default function AdminHomeViewScreen({ navigation, route }) {
             </View>
           </Section>
 
-          <Section label={copy.sectionTitles} hint={copy.sectionTitlesHint} styles={styles}>
+          <Section label={copy.sectionTitles} hint={copy.sectionTitlesHint} styles={styles} revealIndex={1}>
             <View style={styles.fieldGap}>
               <PremiumInput
                 label="Prime section title"
@@ -184,7 +192,7 @@ export default function AdminHomeViewScreen({ navigation, route }) {
             </View>
           </Section>
 
-          <Section label={copy.visibilitySection} hint={copy.visibilityHint} styles={styles}>
+          <Section label={copy.visibilitySection} hint={copy.visibilityHint} styles={styles} revealIndex={2}>
             <PremiumCard
               padding="md"
               interactive
@@ -231,7 +239,7 @@ export default function AdminHomeViewScreen({ navigation, route }) {
             </PremiumCard>
           </Section>
 
-          <Section label={copy.cardLayoutSection} hint={copy.cardLayoutHint} styles={styles}>
+          <Section label={copy.cardLayoutSection} hint={copy.cardLayoutHint} styles={styles} revealIndex={3}>
             <View style={styles.row}>
               <PremiumChip
                 label="Compact"
@@ -252,7 +260,7 @@ export default function AdminHomeViewScreen({ navigation, route }) {
             </View>
           </Section>
 
-          <Section label={copy.quickLinks} hint={null} styles={styles}>
+          <Section label={copy.quickLinks} hint={null} styles={styles} revealIndex={4}>
             <View style={[styles.linkStack, { borderColor: c.border }]}>
               <QuickLinkRow
                 title={copy.linkProductsTitle}

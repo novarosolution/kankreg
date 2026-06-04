@@ -6,6 +6,7 @@ import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { FONT_DISPLAY } from "../../theme/customerAlchemy";
 import { platformElevation } from "../../theme/platformStyles";
 import { fonts, spacing } from "../../theme/tokens";
+import AdminPageHeading from "../admin/AdminPageHeading";
 
 const ADMIN_LINKS = [
   { key: "AdminDashboard", label: "Dashboard", icon: "grid-outline" },
@@ -19,7 +20,7 @@ const ADMIN_LINKS = [
 ];
 
 /** kankreg.html `.admin` sidebar + main */
-export default function KankregAdminShell({ navigation, route, title, headerRight, children }) {
+export default function KankregAdminShell({ navigation, route, title, subtitle, headerRight, children }) {
   const { useSidebarLayout, pageGutter, isXs } = useKankregLayout();
   const stackNav = navigation?.getParent?.() || navigation;
   const current = route?.name || "AdminDashboard";
@@ -60,8 +61,7 @@ export default function KankregAdminShell({ navigation, route, title, headerRigh
       </View>
       <View style={[styles.main, phone && { padding: pageGutter }]}>
         <View style={[styles.head, phone && styles.headPhone]}>
-          <Text style={[styles.headTitle, phone && styles.headTitlePhone]}>{title}</Text>
-          {headerRight ? <View style={styles.headRight}>{headerRight}</View> : null}
+          <AdminPageHeading title={title} subtitle={subtitle} right={headerRight} />
         </View>
         {children}
       </View>

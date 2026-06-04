@@ -46,11 +46,13 @@ export const HomeCatalogGridCard = memo(function HomeCatalogGridCard({
   onAddToCart,
   onRemoveFromCart,
   isOutOfStock,
+  compact = false,
 }) {
   return (
     <View style={[styles.productGridCell, catalogGridColStyle]}>
       <PremiumProductCard
         index={idx}
+        compact={compact}
         imagePriority={idx < 4 ? "high" : "normal"}
         isOutOfStock={isOutOfStock}
         product={item}

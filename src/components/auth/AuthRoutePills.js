@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { platformElevation } from "../../theme/platformStyles";
+import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { fonts, radius, spacing, typography } from "../../theme/tokens";
 
 const pillOnElevated = platformElevation({
@@ -19,6 +20,7 @@ const pillOnElevated = platformElevation({
 /** kankreg.html `.auth-toggle` — navigates between Login and Register routes. */
 export default function AuthRoutePills({ navigation, activeRoute = "Login" }) {
   const { isDark } = useTheme();
+  const { isXs } = useKankregLayout();
   const isLogin = activeRoute === "Login";
 
   const go = (name) => {
@@ -30,6 +32,7 @@ export default function AuthRoutePills({ navigation, activeRoute = "Login" }) {
     <View
       style={[
         styles.track,
+        isXs && styles.trackFull,
         {
           backgroundColor: isDark ? "rgba(255,255,255,0.06)" : KANKREG_PALETTE.paper2,
         },
@@ -37,7 +40,7 @@ export default function AuthRoutePills({ navigation, activeRoute = "Login" }) {
     >
       <Pressable
         onPress={() => go("Login")}
-        style={[styles.pill, isLogin && styles.pillOn, isLogin && pillOnElevated]}
+        style={[styles.pill, isXs && styles.pillFlex, isLogin && styles.pillOn, isLogin && pillOnElevated]}
         accessibilityRole="button"
         accessibilityState={{ selected: isLogin }}
       >
@@ -45,7 +48,7 @@ export default function AuthRoutePills({ navigation, activeRoute = "Login" }) {
       </Pressable>
       <Pressable
         onPress={() => go("Register")}
-        style={[styles.pill, !isLogin && styles.pillOn, !isLogin && pillOnElevated]}
+        style={[styles.pill, isXs && styles.pillFlex, !isLogin && styles.pillOn, !isLogin && pillOnElevated]}
         accessibilityRole="button"
         accessibilityState={{ selected: !isLogin }}
       >
@@ -63,10 +66,18 @@ const styles = StyleSheet.create({
     padding: 4,
     marginVertical: spacing.md,
   },
+  trackFull: {
+    alignSelf: "stretch",
+    width: "100%",
+  },
   pill: {
     paddingVertical: 9,
     paddingHorizontal: 22,
     borderRadius: radius.pill,
+  },
+  pillFlex: {
+    flex: 1,
+    alignItems: "center",
   },
   pillOn: {
     backgroundColor: KANKREG_PALETTE.card,

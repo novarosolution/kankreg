@@ -1,5 +1,6 @@
 /* @refresh reset */
 /** @deprecated Legacy home — AppNavigator uses KankregHomeScreen.js. Do not extend this file. */
+/** @deprecated Legacy home — live app uses `KankregHomeScreen`. */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFocusEffect, useRoute } from "@react-navigation/native";
 import {
@@ -246,9 +247,12 @@ export default function HomeScreen({ navigation }) {
     }
     setError("");
     try {
-      const [data, viewConfig] = await Promise.all([getProducts(), getHomeViewConfig()]);
+      const [data, viewConfig] = await Promise.all([
+        getProducts(),
+        getHomeViewConfig().catch(() => null),
+      ]);
       setProducts(data);
-      setHomeViewConfig(viewConfig);
+      if (viewConfig) setHomeViewConfig(viewConfig);
     } catch (err) {
       setError(err.message || "Unable to load products.");
     } finally {

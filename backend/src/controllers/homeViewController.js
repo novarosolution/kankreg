@@ -1,5 +1,16 @@
 const HomeViewConfig = require("../models/HomeViewConfig");
 
+/** In-memory defaults when the config document cannot be created (e.g. DB name case mismatch). */
+function buildDefaultHomeViewConfig() {
+  const doc = new HomeViewConfig();
+  const obj = doc.toObject();
+  delete obj._id;
+  delete obj.__v;
+  delete obj.createdAt;
+  delete obj.updatedAt;
+  return obj;
+}
+
 function normalizeBoolean(value, fallback) {
   if (value === undefined) return fallback;
   if (typeof value === "boolean") return value;
@@ -11,17 +22,41 @@ function normalizeBoolean(value, fallback) {
   return Boolean(value);
 }
 
-async function getOrCreateConfig() {
-  let config = await HomeViewConfig.findOne();
-  if (!config) {
-    config = await HomeViewConfig.create({});
+function logHomeViewDbError(err) {
+  const msg = err?.message || String(err);
+  if (/different case/i.test(msg)) {
+    console.error(
+      "[home-view] MongoDB database name case mismatch. Use MONGO_URI with db segment `Zeevan` (capital Z) or set MONGO_DB_NAME=Zeevan."
+    );
+  } else {
+    console.warn("[home-view] Database error:", msg);
   }
-  return config;
+}
+
+/** Public read — never 500 when defaults can be served in memory. */
+async function getPublicHomeViewPayload() {
+  const existing = await HomeViewConfig.findOne().lean();
+  if (existing) return existing;
+
+  try {
+    const created = await HomeViewConfig.create({});
+    return created.toObject();
+  } catch (err) {
+    logHomeViewDbError(err);
+    return buildDefaultHomeViewConfig();
+  }
+}
+
+/** Admin read/write — needs a real Mongoose document. */
+async function getOrCreateConfigDocument() {
+  let config = await HomeViewConfig.findOne();
+  if (config) return config;
+  return HomeViewConfig.create({});
 }
 
 async function getPublicHomeViewConfig(req, res, next) {
   try {
-    const config = await getOrCreateConfig();
+    const config = await getPublicHomeViewPayload();
     res.json(config);
   } catch (error) {
     next(error);
@@ -30,16 +65,17 @@ async function getPublicHomeViewConfig(req, res, next) {
 
 async function getAdminHomeViewConfig(req, res, next) {
   try {
-    const config = await getOrCreateConfig();
+    const config = await getOrCreateConfigDocument();
     res.json(config);
   } catch (error) {
+    logHomeViewDbError(error);
     next(error);
   }
 }
 
 async function updateAdminHomeViewConfig(req, res, next) {
   try {
-    const config = await getOrCreateConfig();
+    const config = await getOrCreateConfigDocument();
     const {
       heroTitle,
       heroSubtitle,

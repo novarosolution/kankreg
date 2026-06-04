@@ -3,7 +3,7 @@ import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
 import KankregScrollPage from "../components/kankreg/KankregScrollPage";
-import KankregResponsiveGrid from "../components/kankreg/KankregResponsiveGrid";
+import CatalogGridReveal from "../components/kankreg/CatalogGridReveal";
 
 import BottomNavBar from "../components/BottomNavBar";
 import AuthGateShell from "../components/AuthGateShell";
@@ -265,7 +265,7 @@ export default function RedeemRewardsScreen({ navigation }) {
             compact
           />
         ) : (
-          <KankregResponsiveGrid>
+          <CatalogGridReveal>
           {catalog.map((item) => (
             <PremiumCard key={item._id} padding="md" variant="muted" style={styles.rewardCard}>
               <View style={styles.rewardTop}>
@@ -324,7 +324,7 @@ export default function RedeemRewardsScreen({ navigation }) {
               />
             </PremiumCard>
           ))}
-          </KankregResponsiveGrid>
+          </CatalogGridReveal>
         )}
 
         <PremiumButton

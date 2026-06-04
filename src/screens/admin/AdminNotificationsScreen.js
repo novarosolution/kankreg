@@ -113,7 +113,7 @@ export default function AdminNotificationsScreen({ navigation, route }) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <KankregAdminShell navigation={navigation} route={route} title="Broadcast Notifications">
+          <KankregAdminShell navigation={navigation} route={route} title="Broadcast Notifications" subtitle="Push to all customers">
           <View style={styles.panel}>
             {error ? (
               <View style={styles.bannerSpacer}>

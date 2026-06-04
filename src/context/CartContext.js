@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "./AuthContext";
+import { useToastSafe } from "./ToastContext";
 import { fetchMyCart, replaceMyCart } from "../services/userService";
 import { cartLineKey } from "../utils/productCart";
 
@@ -7,25 +8,34 @@ const CartContext = createContext(undefined);
 
 export function CartProvider({ children }) {
   const { isAuthenticated, token } = useAuth();
+  const { toastSuccess, toastInfo } = useToastSafe();
   const [cartItems, setCartItems] = useState([]);
   const [isCartSyncing, setIsCartSyncing] = useState(false);
   const isHydratingRef = useRef(false);
   const syncTimerRef = useRef(null);
 
-  const addToCart = useCallback((product) => {
-    setCartItems((currentItems) => {
-      const key = cartLineKey(product);
-      const existingItem = currentItems.find((item) => cartLineKey(item) === key);
+  const addToCart = useCallback(
+    (product) => {
+      setCartItems((currentItems) => {
+        const key = cartLineKey(product);
+        const existingItem = currentItems.find((item) => cartLineKey(item) === key);
 
-      if (existingItem) {
-        return currentItems.map((item) =>
-          cartLineKey(item) === key ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
+        if (existingItem) {
+          return currentItems.map((item) =>
+            cartLineKey(item) === key ? { ...item, quantity: item.quantity + 1 } : item
+          );
+        }
 
-      return [...currentItems, { ...product, quantity: 1 }];
-    });
-  }, []);
+        return [...currentItems, { ...product, quantity: 1 }];
+      });
+      const name = String(product?.name || "Item").trim();
+      toastSuccess(`${name.length > 32 ? name.slice(0, 31) + "…" : name} added to bag`, {
+        title: "Added to bag",
+        duration: 2200,
+      });
+    },
+    [toastSuccess]
+  );
 
   /**
    * @param {string} productId
@@ -63,10 +73,23 @@ export function CartProvider({ children }) {
   }, []);
 
   /** Removes the line entirely (e.g. cart “Remove”). */
-  const removeLineFromCart = useCallback((productId, variantLabel = "") => {
-    const key = cartLineKey({ id: productId, variantLabel });
-    setCartItems((currentItems) => currentItems.filter((item) => cartLineKey(item) !== key));
-  }, []);
+  const removeLineFromCart = useCallback(
+    (productId, variantLabel = "") => {
+      const key = cartLineKey({ id: productId, variantLabel });
+      setCartItems((currentItems) => {
+        const removed = currentItems.find((item) => cartLineKey(item) === key);
+        if (removed) {
+          const name = String(removed?.name || "Item").trim();
+          toastInfo(`${name.length > 32 ? name.slice(0, 31) + "…" : name} removed from bag`, {
+            title: "Removed",
+            duration: 2000,
+          });
+        }
+        return currentItems.filter((item) => cartLineKey(item) !== key);
+      });
+    },
+    [toastInfo]
+  );
 
   const clearCart = useCallback(() => {
     setCartItems([]);
@@ -122,7 +145,7 @@ export function CartProvider({ children }) {
       try {
         setIsCartSyncing(true);
         isHydratingRef.current = true;
-        const serverItems = await fetchMyCart(token);
+        const serverItems = await fetchMyCart();
         if (isMounted) {
           setCartItems(serverItems);
         }
@@ -151,7 +174,7 @@ export function CartProvider({ children }) {
       clearTimeout(syncTimerRef.current);
     }
     syncTimerRef.current = setTimeout(() => {
-      replaceMyCart(token, cartItems).catch(() => {
+      replaceMyCart(cartItems).catch(() => {
         // Ignore sync error; user can continue using cart offline.
       });
     }, 300);
@@ -170,7 +193,7 @@ export function CartProvider({ children }) {
     }
     try {
       setIsCartSyncing(true);
-      const serverItems = await fetchMyCart(token);
+      const serverItems = await fetchMyCart();
       setCartItems(serverItems);
       return serverItems;
     } finally {

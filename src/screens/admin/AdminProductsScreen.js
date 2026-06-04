@@ -19,6 +19,7 @@ import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumCard from "../../components/ui/PremiumCard";
 import PremiumChip from "../../components/ui/PremiumChip";
 import SectionReveal from "../../components/motion/SectionReveal";
+import SkeletonBlock from "../../components/ui/SkeletonBlock";
 
 const LOW_STOCK_MAX = 5;
 
@@ -62,6 +63,7 @@ export default function AdminProductsScreen({ navigation, route }) {
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+  const [bootLoading, setBootLoading] = useState(true);
   const [renderCount, setRenderCount] = useState(40);
 
   const loadProducts = useCallback(async () => {
@@ -71,6 +73,8 @@ export default function AdminProductsScreen({ navigation, route }) {
       setProducts(response);
     } catch (err) {
       setError(err.message || "Failed to load products.");
+    } finally {
+      setBootLoading(false);
     }
   }, [token]);
 
@@ -164,7 +168,12 @@ export default function AdminProductsScreen({ navigation, route }) {
           )
         }
       >
-        <KankregAdminShell navigation={navigation} route={route} title="Manage Products">
+        <KankregAdminShell
+          navigation={navigation}
+          route={route}
+          title="Manage Products"
+          subtitle="Live catalog from your database"
+        >
         <View style={styles.panel}>
           {error ? (
             <View style={styles.bannerSpacer}>
@@ -229,7 +238,12 @@ export default function AdminProductsScreen({ navigation, route }) {
           </View>
 
           <View style={styles.listContent}>
-            {filteredProducts.length === 0 ? (
+            {bootLoading ? (
+              [0, 1, 2].map((i) => (
+                <SkeletonBlock key={i} width="100%" height={96} rounded="lg" style={styles.productCard} />
+              ))
+            ) : null}
+            {!bootLoading && filteredProducts.length === 0 ? (
               <PremiumEmptyState
                 iconName="cube-outline"
                 title={search.trim() ? "No matching products" : "No products in catalog"}
@@ -240,7 +254,8 @@ export default function AdminProductsScreen({ navigation, route }) {
                 compact
               />
             ) : null}
-            {visibleProducts.map((item, idx) => {
+            {!bootLoading
+              ? visibleProducts.map((item, idx) => {
               const chip = productStockChip(item);
               const uri = coverUri(item);
               const photoCount = (item.images || []).length || (item.image ? 1 : 0);
@@ -304,8 +319,9 @@ export default function AdminProductsScreen({ navigation, route }) {
                   </PremiumCard>
                 </SectionReveal>
               );
-            })}
-            {visibleProducts.length < filteredProducts.length ? (
+            })
+              : null}
+            {!bootLoading && visibleProducts.length < filteredProducts.length ? (
               <PremiumButton
                 label={`Load more (${filteredProducts.length - visibleProducts.length} remaining)`}
                 variant="subtle"

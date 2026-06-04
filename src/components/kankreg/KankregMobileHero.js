@@ -9,10 +9,13 @@ import { useTheme } from "../../context/ThemeContext";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 
 /** Compact hero when editorial split hero is hidden (<900px) */
-export default function KankregMobileHero({ navigation, featuredProduct }) {
+export default function KankregMobileHero({ navigation, featuredProduct, heroTitle, heroSubtitle }) {
   const { isDark } = useTheme();
   const { useSplitLayout, isXs } = useKankregLayout();
   if (useSplitLayout) return null;
+
+  const title = heroTitle || "Everyday goods, made extraordinary.";
+  const subtitle = heroSubtitle || "Live tracking, secure checkout, and rewards on every order.";
 
   return (
     <View style={[styles.wrap, isXs && styles.wrapXs]}>
@@ -24,10 +27,10 @@ export default function KankregMobileHero({ navigation, featuredProduct }) {
           { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink },
         ]}
       >
-        Everyday goods, made extraordinary.
+        {title}
       </Text>
       <Text style={[styles.lead, { color: isDark ? "#c8bdaf" : KANKREG_PALETTE.inkSoft }]}>
-        Live tracking, secure checkout, and rewards on every order.
+        {subtitle}
       </Text>
       <View style={styles.ctas}>
         <PremiumButton

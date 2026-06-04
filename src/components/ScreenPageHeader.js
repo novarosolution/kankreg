@@ -163,7 +163,7 @@ function createStyles(rowMinH, isDark, compact) {
   return StyleSheet.create({
     headerOuter: {
       /** Spacing to the next block comes from parent scroll `gap` (`customerInnerPageScrollContent`). */
-      marginBottom: 0,
+      marginBottom: compact ? spacing.xs : 0,
       ...Platform.select({ web: { maxWidth: "100%" }, default: {} }),
     },
     headerCard: {

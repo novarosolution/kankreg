@@ -202,7 +202,12 @@ export default function AdminUsersScreen({ navigation, route }) {
         style={customerScrollFill}
         showsVerticalScrollIndicator={false}
       >
-        <KankregAdminShell navigation={navigation} route={route} title="Manage Users">
+        <KankregAdminShell
+          navigation={navigation}
+          route={route}
+          title="Manage Users"
+          subtitle="Accounts, roles, and access"
+        >
         <View style={styles.panel}>
           <SectionReveal preset="fade-up" delay={0}>
           {error ? (

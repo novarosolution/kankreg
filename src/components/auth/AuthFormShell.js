@@ -7,6 +7,7 @@ import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { fonts, lineHeight, spacing, typography } from "../../theme/tokens";
 import AuthRoutePills from "./AuthRoutePills";
 import GoldHairline from "../ui/GoldHairline";
+import { useKankregLayout } from "../../theme/kankregBreakpoints";
 
 /**
  * kankreg.html `.auth-form` — title, subtitle, route pills, fields slot, social slot, footer links.
@@ -22,14 +23,17 @@ export default function AuthFormShell({
   showRoutePills = true,
   showForgotPassword = false,
   onForgotPassword,
+  compact = false,
 }) {
   const { isDark } = useTheme();
+  const { isXs } = useKankregLayout();
 
   return (
-    <View style={styles.shell}>
+    <View style={[styles.shell, compact && styles.shellCompact]}>
       <Text
         style={[
           styles.h1,
+          isXs && styles.h1Compact,
           { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink },
         ]}
       >
@@ -78,6 +82,9 @@ const styles = StyleSheet.create({
     maxWidth: 468,
     alignSelf: "center",
   },
+  shellCompact: {
+    maxWidth: "100%",
+  },
   h1: {
     fontFamily: FONT_DISPLAY,
     fontWeight: "400",
@@ -85,6 +92,10 @@ const styles = StyleSheet.create({
     lineHeight: Platform.select({ web: 44, default: lineHeight.h1 + 4 }),
     letterSpacing: -0.5,
     marginBottom: spacing.sm,
+  },
+  h1Compact: {
+    fontSize: typography.h2 + 2,
+    lineHeight: lineHeight.h2 + 4,
   },
   sub: {
     fontSize: typography.bodySmall,

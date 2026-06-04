@@ -6,7 +6,7 @@ import { useKankregLayout } from "../../theme/kankregBreakpoints";
  * Flex-wrap grid matching kankreg.html `.pgrid` / `.reward-grid` breakpoints.
  */
 export default function KankregResponsiveGrid({ children, variant = "catalog", style }) {
-  const { catalogGridCol, statCols, isXs } = useKankregLayout();
+  const { catalogGridCol, statCols, isXs, catalogCardCompact } = useKankregLayout();
   const colStyle =
     variant === "stats"
       ? {
@@ -17,10 +17,14 @@ export default function KankregResponsiveGrid({ children, variant = "catalog", s
         }
       : catalogGridCol;
 
+  const gridMargin = variant === "catalog" && (isXs || catalogCardCompact) ? -5 : -9;
+
   return (
-    <View style={[styles.grid, style]}>
+    <View style={[styles.grid, { marginHorizontal: gridMargin }, style]}>
       {React.Children.map(children, (child) =>
-        child ? <View style={[styles.cell, colStyle]}>{child}</View> : null
+        child ? (
+          <View style={[styles.cell, colStyle, catalogCardCompact && styles.cellCompact]}>{child}</View>
+        ) : null
       )}
     </View>
   );
@@ -30,10 +34,13 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginHorizontal: -11,
+    marginHorizontal: -9,
     width: "100%",
   },
   cell: {
-    marginBottom: 16,
+    marginBottom: 14,
+  },
+  cellCompact: {
+    marginBottom: 12,
   },
 });

@@ -3,6 +3,8 @@ import { Platform, StyleSheet, Text, View } from "react-native";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
 import { Ionicons } from "@expo/vector-icons";
 import KankregScrollPage from "../components/kankreg/KankregScrollPage";
+import { KankregPageWrap } from "../components/kankreg/KankregPageChrome";
+import { KANKREG_PAGE_SECTION_GAP } from "../theme/kankregScreenStyles";
 
 import BottomNavBar from "../components/BottomNavBar";
 import CustomerScreenShell from "../components/CustomerScreenShell";
@@ -105,6 +107,7 @@ export default function SettingsScreen({ navigation }) {
         style={customerScrollFill}
         showsVerticalScrollIndicator={false}
       >
+        <KankregPageWrap gap={KANKREG_PAGE_SECTION_GAP}>
         <KankregUnifiedPageHeader
           eyebrow="Account"
           title="Settings"
@@ -336,6 +339,7 @@ export default function SettingsScreen({ navigation }) {
           </SectionReveal>
         </View>
         </SectionReveal>
+        </KankregPageWrap>
 </KankregScrollPage>
       <BottomNavBar />
     </CustomerScreenShell>

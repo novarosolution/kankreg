@@ -1,51 +1,19 @@
-import { getApiBaseUrl } from "./apiBase";
+import { apiPost } from "./apiClient";
 
-function apiUrl(path) {
-  return `${getApiBaseUrl()}${path}`;
-}
-
-async function request(path, options = {}) {
-  const response = await fetch(apiUrl(path), {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(data.message || "Request failed.");
-  }
-
-  return data;
-}
+const publicOpts = { auth: false };
 
 export function registerRequest({ name, email, password }) {
-  return request("/users/register", {
-    method: "POST",
-    body: JSON.stringify({ name, email, password }),
-  });
+  return apiPost("/users/register", { name, email, password }, publicOpts);
 }
 
 export function loginRequest({ email, password }) {
-  return request("/users/login", {
-    method: "POST",
-    body: JSON.stringify({ email, password }),
-  });
+  return apiPost("/users/login", { email, password }, publicOpts);
 }
 
 export function googleAuthRequest({ idToken }) {
-  return request("/users/auth/google", {
-    method: "POST",
-    body: JSON.stringify({ idToken }),
-  });
+  return apiPost("/users/auth/google", { idToken }, publicOpts);
 }
 
 export function appleAuthRequest({ identityToken, fullName }) {
-  return request("/users/auth/apple", {
-    method: "POST",
-    body: JSON.stringify({ identityToken, fullName }),
-  });
+  return apiPost("/users/auth/apple", { identityToken, fullName }, publicOpts);
 }

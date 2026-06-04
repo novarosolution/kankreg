@@ -45,11 +45,12 @@ function PremiumProductCardBase({
   index,
   loading = false,
   imagePriority = "normal",
+  compact = false,
 }) {
   const { colors: c, isDark } = useTheme();
   const semantic = getSemanticColors(c);
   const reducedMotion = useReducedMotion();
-  const styles = useMemo(() => createStyles(c, isDark), [c, isDark]);
+  const styles = useMemo(() => createStyles(c, isDark, compact), [c, isDark, compact]);
 
   const primaryImage = useMemo(() => {
     if (String(product?.image || "").trim()) return product.image;
@@ -446,7 +447,7 @@ function PremiumProductCardBase({
   );
 }
 
-function createStyles(c, isDark) {
+function createStyles(c, isDark, compact = false) {
   const cardShadow = platformShadow({
     ios: {
       shadowColor: isDark ? "#000000" : "#3D2A12",
@@ -493,14 +494,14 @@ function createStyles(c, isDark) {
     },
     card: {
       width: "100%",
-      borderRadius: 20,
+      borderRadius: compact ? 16 : 20,
       backgroundColor: isDark ? c.surfaceElevated || c.surface : KANKREG_PALETTE.card,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: isDark ? "#3f3933" : KANKREG_PALETTE.line,
       overflow: "hidden",
-      paddingTop: spacing.md,
-      paddingHorizontal: spacing.md,
-      paddingBottom: spacing.md,
+      paddingTop: compact ? spacing.sm + 2 : spacing.md,
+      paddingHorizontal: compact ? spacing.sm + 2 : spacing.md,
+      paddingBottom: compact ? spacing.sm + 2 : spacing.md,
       ...cardShadow,
     },
     topAccent: {
@@ -521,12 +522,12 @@ function createStyles(c, isDark) {
     imageBlock: {
       position: "relative",
       width: "100%",
-      aspectRatio: 1,
-      borderRadius: radius.xl + 2,
+      aspectRatio: compact ? 0.92 : 1,
+      borderRadius: compact ? radius.lg + 2 : radius.xl + 2,
       overflow: "hidden",
       alignItems: "center",
       justifyContent: "center",
-      marginBottom: spacing.md,
+      marginBottom: compact ? spacing.sm : spacing.md,
     },
     imageGlow: {
       position: "absolute",
@@ -619,8 +620,8 @@ function createStyles(c, isDark) {
     },
     body: {
       paddingHorizontal: 2,
-      gap: 8,
-      marginBottom: spacing.md,
+      gap: compact ? 5 : 8,
+      marginBottom: compact ? spacing.sm : spacing.md,
     },
     categoryLine: {
       fontFamily: fonts.semibold,
@@ -630,11 +631,11 @@ function createStyles(c, isDark) {
     },
     title: {
       fontFamily: FONT_DISPLAY,
-      fontSize: 18,
-      lineHeight: 21,
+      fontSize: compact ? 15 : 18,
+      lineHeight: compact ? 18 : 21,
       fontWeight: "500",
       letterSpacing: -0.2,
-      minHeight: 40,
+      minHeight: compact ? 34 : 40,
     },
     metaRow: {
       flexDirection: "row",
@@ -669,11 +670,11 @@ function createStyles(c, isDark) {
     },
     price: {
       fontFamily: FONT_DISPLAY,
-      fontSize: 24,
-      lineHeight: 28,
+      fontSize: compact ? 19 : 24,
+      lineHeight: compact ? 22 : 28,
       letterSpacing: -0.5,
       ...Platform.select({
-        web: { fontSize: 26, lineHeight: 30 },
+        web: { fontSize: compact ? 20 : 26, lineHeight: compact ? 24 : 30 },
         default: {},
       }),
     },
@@ -706,9 +707,9 @@ function createStyles(c, isDark) {
       justifyContent: "center",
     },
     addCircle: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: compact ? 36 : 40,
+      height: compact ? 36 : 40,
+      borderRadius: compact ? 18 : 20,
       alignItems: "center",
       justifyContent: "center",
       ...Platform.select({

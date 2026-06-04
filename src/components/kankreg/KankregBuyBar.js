@@ -1,7 +1,7 @@
 import React from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import PremiumButton from "../ui/PremiumButton";
+import PremiumStickyBar from "../ui/PremiumStickyBar";
 import { formatINR } from "../../utils/currency";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
@@ -16,21 +16,11 @@ export default function KankregBuyBar({
   onAddToCart,
   onBuyNow,
 }) {
-  const insets = useSafeAreaInsets();
-  const { isXs, pageGutterClamp } = useKankregLayout();
+  const { isXs } = useKankregLayout();
   if (!visible) return null;
 
   return (
-    <View
-      style={[
-        styles.bar,
-        isXs && styles.barStack,
-        {
-          paddingBottom: Math.max(insets.bottom, 12),
-          paddingHorizontal: pageGutterClamp,
-        },
-      ]}
-    >
+    <PremiumStickyBar variant="glass" align={isXs ? "column" : "row"} style={styles.barOuter}>
       <View style={[styles.inner, isXs && styles.innerStack]}>
         <View style={styles.meta}>
           <Text style={styles.name} numberOfLines={1}>
@@ -55,27 +45,17 @@ export default function KankregBuyBar({
           />
         </View>
       </View>
-    </View>
+    </PremiumStickyBar>
   );
 }
 
 const styles = StyleSheet.create({
-  bar: {
+  barOuter: {
     position: Platform.OS === "web" ? "fixed" : "absolute",
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(255, 253, 248, 0.96)",
-    borderTopWidth: 1,
-    borderTopColor: KANKREG_PALETTE.line,
     zIndex: 90,
-    ...Platform.select({
-      web: { backdropFilter: "blur(12px)" },
-      default: {},
-    }),
-  },
-  barStack: {
-    paddingTop: 12,
   },
   inner: {
     flexDirection: "row",

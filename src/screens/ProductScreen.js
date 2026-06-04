@@ -6,6 +6,7 @@ import {
   Text,
   TouchableOpacity,
   View} from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -14,7 +15,10 @@ import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 
 import CustomerScreenShell from "../components/CustomerScreenShell";
 import BottomNavBar from "../components/BottomNavBar";
-import { getProductById, getProductReviews, submitProductReview } from "../services/productService";
+import { getProductById, getProductReviews, getProducts, submitProductReview } from "../services/productService";
+import { HomeCatalogGridCard } from "../components/home/HomeCatalogProductViews";
+import CatalogGridReveal from "../components/kankreg/CatalogGridReveal";
+import useReducedMotion from "../hooks/useReducedMotion";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
@@ -65,6 +69,9 @@ export default function ProductScreen({ route, navigation }) {
   const [reviewComment, setReviewComment] = useState("");
   const [reviewBusy, setReviewBusy] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState("");
+  const [catalog, setCatalog] = useState([]);
+  const reducedMotion = useReducedMotion();
+  const heroFade = useSharedValue(1);
   const shellRef = useRef(null);
   const heroRef = useRef(null);
   const reviewRef = useRef(null);
@@ -75,13 +82,26 @@ export default function ProductScreen({ route, navigation }) {
       try {
         setLoading(true);
         setError("");
-        const item = await getProductById(productId);
+        let item = null;
+        let resolvedId = productId;
+        if (productId) {
+          item = await getProductById(productId);
+        } else {
+          /** Opened from the "Product" menu link without a specific id — show the first catalog product. */
+          const list = await getProducts().catch(() => []);
+          item = Array.isArray(list) && list.length ? list[0] : null;
+          resolvedId = item?.id;
+        }
+        if (!item) {
+          setError(PRODUCT_SCREEN.loadErrorFallback);
+          return;
+        }
         setProduct(item);
-        if (Platform.OS === "web" && productId && typeof globalThis.sessionStorage !== "undefined") {
-          globalThis.sessionStorage.setItem("kankreg:lastProductId", String(productId));
+        if (Platform.OS === "web" && resolvedId && typeof globalThis.sessionStorage !== "undefined") {
+          globalThis.sessionStorage.setItem("kankreg:lastProductId", String(resolvedId));
         }
         try {
-          const reviewPayload = await getProductReviews(productId);
+          const reviewPayload = await getProductReviews(resolvedId);
           setReviews(reviewPayload.reviews || []);
         } catch {
           setReviews([]);
@@ -118,6 +138,38 @@ export default function ProductScreen({ route, navigation }) {
   useEffect(() => {
     setImageCandidateIndex(0);
   }, [selectedImage, product?.image]);
+
+  useEffect(() => {
+    if (!product?.id) return;
+    getProducts()
+      .then((list) => setCatalog(Array.isArray(list) ? list : []))
+      .catch(() => setCatalog([]));
+  }, [product?.id]);
+
+  useEffect(() => {
+    if (reducedMotion) {
+      heroFade.value = 1;
+      return;
+    }
+    heroFade.value = 0.65;
+    heroFade.value = withTiming(1, { duration: 260 });
+  }, [selectedVariantLabel, selectedImage, reducedMotion, heroFade]);
+
+  const heroFadeStyle = useAnimatedStyle(() => ({ opacity: heroFade.value }));
+
+  const relatedProducts = useMemo(() => {
+    if (!product?.id) return [];
+    const cat = String(product.category || "").trim().toLowerCase();
+    if (!cat) return [];
+    return catalog
+      .filter(
+        (p) =>
+          p.id !== product.id &&
+          p.inStock !== false &&
+          String(p.category || "").trim().toLowerCase() === cat
+      )
+      .slice(0, 4);
+  }, [catalog, product]);
 
   const shelfMatch = useMemo(
     () => (product ? matchesShelfProduct(product) : false),
@@ -333,6 +385,7 @@ export default function ProductScreen({ route, navigation }) {
             </TouchableOpacity>
             <View style={[styles.heroImageStage, { height: heroImageHeight }]}>
               {selectedImageUri && !imageFailed ? (
+                <Animated.View style={[styles.heroImageAnim, heroFadeStyle]}>
                 <Image
                   source={{ uri: selectedImageUri }}
                   style={styles.heroImage}
@@ -342,6 +395,7 @@ export default function ProductScreen({ route, navigation }) {
                   placeholder={{ blurhash: PRODUCT_HERO_BLURHASH }}
                   onError={() => setImageCandidateIndex((index) => index + 1)}
                 />
+                </Animated.View>
               ) : (
                 <View style={styles.imageFallback}>
                   <Ionicons name="image-outline" size={sz.xxl} color={c.textMuted} />
@@ -381,28 +435,30 @@ export default function ProductScreen({ route, navigation }) {
           </View>
         </HeroParallax>
         {galleryImages.length > 1 ? (
-          <View style={styles.galleryStrip}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.galleryRow}
-            >
-              {galleryImages.map((img) => (
-                <TouchableOpacity
-                  key={img}
-                  style={[
-                    styles.thumbWrap,
-                    (selectedImage || product.image) === img ? styles.thumbWrapActive : null,
-                  ]}
-                  onPress={() => {
-                    setSelectedImage(img);
-                  }}
-                >
-                  <RetryImage sourceUri={img} style={styles.thumbImage} styles={styles} c={c} />
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
+          <SectionReveal delay={80} preset="fade-in">
+            <View style={styles.galleryStrip}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.galleryRow}
+              >
+                {galleryImages.map((img) => (
+                  <TouchableOpacity
+                    key={img}
+                    style={[
+                      styles.thumbWrap,
+                      (selectedImage || product.image) === img ? styles.thumbWrapActive : null,
+                    ]}
+                    onPress={() => {
+                      setSelectedImage(img);
+                    }}
+                  >
+                    <RetryImage sourceUri={img} style={styles.thumbImage} styles={styles} c={c} />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </SectionReveal>
         ) : null}
         </View>
         <SectionReveal
@@ -545,8 +601,32 @@ export default function ProductScreen({ route, navigation }) {
             </View>
           ) : null}
 
+          {relatedProducts.length > 0 ? (
+            <SectionReveal index={1} preset="fade-up">
+              <PremiumSectionHeader compact overline="Catalog" title="You may also like" />
+              <CatalogGridReveal>
+                {relatedProducts.map((item, idx) => (
+                  <HomeCatalogGridCard
+                    key={item.id}
+                    idx={idx}
+                    item={item}
+                    compact
+                    navigation={navigation}
+                    quantity={getItemQuantity(item.id)}
+                    styles={relatedGridStyles}
+                    isOutOfStock={item.inStock === false}
+                    onAddToCart={() => addToCart(productToCartLine(item))}
+                    onRemoveFromCart={() => removeFromCart(item.id)}
+                  />
+                ))}
+              </CatalogGridReveal>
+              <GoldHairline marginVertical={spacing.md} />
+            </SectionReveal>
+          ) : null}
+
           <GoldHairline marginVertical={spacing.md} />
 
+          <SectionReveal index={2} preset="fade-up">
           <View ref={reviewRef} style={styles.reviewCard}>
             <PremiumSectionHeader
               compact
@@ -653,6 +733,7 @@ export default function ProductScreen({ route, navigation }) {
               <Text style={styles.reviewEmptyHint}>{PRODUCT_SCREEN.reviewFirstHint}</Text>
             ) : null}
           </View>
+          </SectionReveal>
           </View>
 
         </View>
@@ -674,6 +755,12 @@ export default function ProductScreen({ route, navigation }) {
     </CustomerScreenShell>
   );
 }
+
+const relatedGridStyles = StyleSheet.create({
+  productGridWrap: {},
+  productGridCell: {},
+  productListRow: {},
+});
 
 function createProductStyles(c, shadowPremium, isDark) {
   const panelLift = platformShadow({
@@ -733,6 +820,10 @@ function createProductStyles(c, shadowPremium, isDark) {
       default: {}})},
   heroVignette: {
     ...StyleSheet.absoluteFillObject},
+  heroImageAnim: {
+    width: "100%",
+    height: "100%",
+  },
   heroImage: {
     width: "100%",
     height: "100%",

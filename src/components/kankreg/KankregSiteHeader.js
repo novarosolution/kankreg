@@ -77,7 +77,8 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
         return;
       }
     }
-    go("Shop");
+    /** No last-viewed product: open the Product screen and let it resolve a default (first catalog item). */
+    go("Product");
   }, [go]);
 
   const items = useMemo(
@@ -244,15 +245,17 @@ const styles = StyleSheet.create({
   nav: {
     flex: 1,
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 3,
+    flexWrap: "nowrap",
+    gap: 2,
     marginLeft: 6,
     justifyContent: "center",
+    ...Platform.select({ web: { overflow: "hidden" }, default: {} }),
   },
   navBtn: {
     paddingVertical: 8,
-    paddingHorizontal: 13,
+    paddingHorizontal: 11,
     borderRadius: 999,
+    flexShrink: 0,
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
   navBtnActive: {

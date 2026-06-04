@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -8,6 +8,7 @@ import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
 import CustomerScreenShell from "../../components/CustomerScreenShell";
 import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import { fetchAdminAnalytics } from "../../services/adminService";
 import { useTheme } from "../../context/ThemeContext";
 import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../../theme/customerAlchemy";
@@ -68,6 +69,7 @@ function sparseAxisLabels(labels, maxVisible = 6, compactLen = 3) {
 
 export default function AdminAnalyticsScreen({ navigation, route }) {
   const { user, token } = useAuth();
+  const { toastSuccess, toastError } = useToast();
   const { width, isXs } = useKankregLayout();
     const { colors: c, shadowLift: themeShadowLift, shadowPremium: themeShadowPremium, isDark } =
     useTheme();
@@ -149,19 +151,21 @@ export default function AdminAnalyticsScreen({ navigation, route }) {
     if (!analytics) return;
     try {
       await exportAnalyticsReport(analytics);
+      toastSuccess("Report exported.", { title: "PDF ready" });
     } catch (err) {
-      Alert.alert("Export failed", err.message || "Could not export report.");
+      toastError(err.message || "Could not export report.", { title: "Export failed" });
     }
-  }, [analytics]);
+  }, [analytics, toastSuccess, toastError]);
 
   const handleExportCsv = useCallback(async () => {
     if (!analytics) return;
     try {
       await exportAnalyticsCsv(analytics);
+      toastSuccess("CSV exported.", { title: "CSV ready" });
     } catch (err) {
-      Alert.alert("Export failed", err.message || "Could not export CSV.");
+      toastError(err.message || "Could not export CSV.", { title: "Export failed" });
     }
-  }, [analytics]);
+  }, [analytics, toastSuccess, toastError]);
 
   function StatRow({ label, value, isLast }) {
     return (
@@ -298,7 +302,7 @@ export default function AdminAnalyticsScreen({ navigation, route }) {
         style={customerScrollFill}
         showsVerticalScrollIndicator={false}
       >
-      <KankregAdminShell navigation={navigation} route={route} title="Analytics">
+      <KankregAdminShell navigation={navigation} route={route} title="Analytics" subtitle="Sales and engagement reports">
       <LinearGradient colors={heroColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.heroGradient, { borderColor: hairline }]}>
         {!isDark ? <View style={styles.heroGoldHairline} /> : null}
         <Text style={[styles.subtitle, !isDark && styles.subtitleLight, styles.heroIntro]}>

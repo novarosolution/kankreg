@@ -209,3 +209,14 @@ export function apiPatch(path, body, options = {}) {
 export function apiDelete(path, options = {}) {
   return apiRequest(path, { ...options, method: "DELETE" });
 }
+
+/** Lightweight connectivity probe — GET / (no auth). */
+export async function checkApiHealth() {
+  try {
+    const response = await fetch(buildUrl("/"), { method: "GET" });
+    const data = await readJson(response);
+    return Boolean(response.ok && data?.ok);
+  } catch {
+    return false;
+  }
+}

@@ -11,6 +11,7 @@ module.exports = {
     ...expo,
     extra: {
       ...expo.extra,
+      apiUrl: process.env.EXPO_PUBLIC_API_URL,
       googleOAuthWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
       googleOAuthIosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
       googleOAuthAndroidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,

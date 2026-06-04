@@ -26,16 +26,15 @@ export function getKankregBreakpoint(width) {
 
 /** Product/catalog grid column width style for flex-wrap grids */
 export function getCatalogGridColStyle(width) {
+  const pad = width < KANKREG_BP.xs ? 5 : width < KANKREG_BP.sm ? 7 : 9;
   if (width >= KANKREG_BP.xl) {
-    return { width: "25%", maxWidth: "25%", paddingHorizontal: 11 };
+    return { width: "25%", maxWidth: "25%", paddingHorizontal: pad, flexGrow: 0, flexShrink: 0 };
   }
   if (width >= KANKREG_BP.lg) {
-    return { width: "33.333%", maxWidth: "33.333%", paddingHorizontal: 11 };
+    return { width: "33.333%", maxWidth: "33.333%", paddingHorizontal: pad, flexGrow: 0, flexShrink: 0 };
   }
-  if (width >= KANKREG_BP.sm) {
-    return { width: "50%", maxWidth: "50%", paddingHorizontal: 11 };
-  }
-  return { width: "100%", maxWidth: "100%", paddingHorizontal: 11 };
+  /** Phone & narrow tablet: 2-up grid (kankreg.html mobile catalog) */
+  return { width: "50%", maxWidth: "50%", paddingHorizontal: pad, flexGrow: 0, flexShrink: 0 };
 }
 
 export function useKankregLayout() {
@@ -72,8 +71,10 @@ export function useKankregLayout() {
       catalogGridCol: getCatalogGridColStyle(width),
       categoryCols: width >= KANKREG_BP.lg ? 4 : width >= KANKREG_BP.sm ? 2 : 1,
       footerCols: width >= KANKREG_BP.md ? 4 : width >= KANKREG_BP.sm ? 2 : 1,
-      pageGutter: width < KANKREG_BP.sm ? 16 : width < KANKREG_BP.md ? 18 : 24,
-      pageGutterClamp: width < KANKREG_BP.sm ? 16 : Math.min(40, Math.max(18, width * 0.04)),
+      pageGutter: width < KANKREG_BP.xs ? 14 : width < KANKREG_BP.sm ? 16 : width < KANKREG_BP.md ? 18 : 24,
+      pageGutterClamp: width < KANKREG_BP.xs ? 14 : width < KANKREG_BP.sm ? 16 : Math.min(40, Math.max(18, width * 0.04)),
+      /** Dense product tiles in 2-col phone grid */
+      catalogCardCompact: width < KANKREG_BP.md,
       /** Home editorial hero (`.hero-grid`) */
       showEditorialHero: width >= KANKREG_BP.md,
       stackEditorialHero: width < KANKREG_BP.heroStack,

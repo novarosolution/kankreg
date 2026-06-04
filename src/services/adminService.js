@@ -1,104 +1,57 @@
-import { getApiBaseUrl } from "./apiBase";
+import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "./apiClient";
+import { invalidateProductsCache } from "./productService";
 
-function apiUrl(path) {
-  return `${getApiBaseUrl()}${path}`;
-}
+/** @param {string} [_token] Legacy — session token from AuthContext. */
+export const fetchAdminUsers = (_token) => apiGet("/admin/users");
+export const fetchAdminOrders = (_token) => apiGet("/admin/orders");
+export const fetchAdminProducts = (_token) => apiGet("/admin/products");
 
-async function adminRequest(path, token, options = {}) {
-  const response = await fetch(apiUrl(path), {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
+export const updateAdminRole = (_token, userId, isAdmin) =>
+  apiPatch(`/admin/users/${userId}/role`, { isAdmin });
 
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.message || "Request failed.");
-  }
-  return data;
-}
+export const updateDeliveryPartnerRole = (_token, userId, isDeliveryPartner) =>
+  apiPatch(`/admin/users/${userId}/delivery-role`, { isDeliveryPartner });
 
-export const fetchAdminUsers = (token) => adminRequest("/admin/users", token);
-export const fetchAdminOrders = (token) => adminRequest("/admin/orders", token);
-export const fetchAdminProducts = (token) => adminRequest("/admin/products", token);
+export const updateOrderStatus = (_token, orderId, status) =>
+  apiPatch(`/admin/orders/${orderId}/status`, { status });
 
-export const updateAdminRole = (token, userId, isAdmin) =>
-  adminRequest(`/admin/users/${userId}/role`, token, {
-    method: "PATCH",
-    body: JSON.stringify({ isAdmin }),
-  });
+export const updateAdminOrderDetails = (_token, orderId, payload) =>
+  apiPut(`/admin/orders/${orderId}`, payload);
 
-export const updateDeliveryPartnerRole = (token, userId, isDeliveryPartner) =>
-  adminRequest(`/admin/users/${userId}/delivery-role`, token, {
-    method: "PATCH",
-    body: JSON.stringify({ isDeliveryPartner }),
-  });
+export const deleteAdminProduct = async (_token, productId) => {
+  const result = await apiDelete(`/admin/products/${productId}`);
+  invalidateProductsCache();
+  return result;
+};
 
-export const updateOrderStatus = (token, orderId, status) =>
-  adminRequest(`/admin/orders/${orderId}/status`, token, {
-    method: "PATCH",
-    body: JSON.stringify({ status }),
-  });
+export const updateAdminProduct = async (_token, productId, payload) => {
+  const result = await apiPut(`/admin/products/${productId}`, payload);
+  invalidateProductsCache();
+  return result;
+};
 
-export const updateAdminOrderDetails = (token, orderId, payload) =>
-  adminRequest(`/admin/orders/${orderId}`, token, {
-    method: "PUT",
-    body: JSON.stringify(payload),
-  });
+export const patchAdminProductStock = (_token, productId, payload) =>
+  updateAdminProduct(_token, productId, payload);
 
-export const deleteAdminProduct = (token, productId) =>
-  adminRequest(`/admin/products/${productId}`, token, {
-    method: "DELETE",
-  });
+export const deleteAdminOrder = (_token, orderId) => apiDelete(`/admin/orders/${orderId}`);
 
-export const updateAdminProduct = (token, productId, payload) =>
-  adminRequest(`/admin/products/${productId}`, token, {
-    method: "PUT",
-    body: JSON.stringify(payload),
-  });
+export const deleteAdminUser = (_token, userId) => apiDelete(`/admin/users/${userId}`);
 
-/** Stock-only or partial product patch (server merges fields). */
-export const patchAdminProductStock = (token, productId, payload) =>
-  updateAdminProduct(token, productId, payload);
+export const createAdminProduct = async (_token, payload) => {
+  const result = await apiPost("/admin/products", payload);
+  invalidateProductsCache();
+  return result;
+};
 
-export const deleteAdminOrder = (token, orderId) =>
-  adminRequest(`/admin/orders/${orderId}`, token, {
-    method: "DELETE",
-  });
+export const uploadAdminProductImage = (_token, { imageBase64, mimeType }) =>
+  apiPost("/admin/uploads/image", { imageBase64, mimeType });
 
-export const deleteAdminUser = (token, userId) =>
-  adminRequest(`/admin/users/${userId}`, token, {
-    method: "DELETE",
-  });
+export const fetchAdminNotifications = (_token) => apiGet("/admin/notifications");
 
-export const createAdminProduct = (token, payload) =>
-  adminRequest("/admin/products", token, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
+export const sendAdminBroadcastNotification = (_token, payload) =>
+  apiPost("/admin/notifications/broadcast", payload);
 
-export const uploadAdminProductImage = (token, { imageBase64, mimeType }) =>
-  adminRequest("/admin/uploads/image", token, {
-    method: "POST",
-    body: JSON.stringify({ imageBase64, mimeType }),
-  });
-
-export const fetchAdminNotifications = (token) => adminRequest("/admin/notifications", token);
-
-export const sendAdminBroadcastNotification = (token, payload) =>
-  adminRequest("/admin/notifications/broadcast", token, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-
-/**
- * @param {string} token
- * @param {Record<string, string | number | boolean | undefined | null>} [query] e.g. { preset: "30d", bucket: "day" }
- */
-export const fetchAdminAnalytics = (token, query = {}) => {
+export const fetchAdminAnalytics = (_token, query = {}) => {
   const params = new URLSearchParams();
   for (const [k, v] of Object.entries(query)) {
     if (v === undefined || v === null) continue;
@@ -107,53 +60,31 @@ export const fetchAdminAnalytics = (token, query = {}) => {
     params.set(k, s);
   }
   const qs = params.toString();
-  return adminRequest(`/admin/analytics${qs ? `?${qs}` : ""}`, token);
+  return apiGet(`/admin/analytics${qs ? `?${qs}` : ""}`);
 };
-export const fetchAdminHomeView = (token) => adminRequest("/admin/home-view", token);
-export const updateAdminHomeView = (token, payload) =>
-  adminRequest("/admin/home-view", token, {
-    method: "PUT",
-    body: JSON.stringify(payload),
-  });
 
-export const fetchAdminCoupons = (token) => adminRequest("/admin/coupons", token);
+export const fetchAdminHomeView = (_token) => apiGet("/admin/home-view");
 
-export const createAdminCoupon = (token, payload) =>
-  adminRequest("/admin/coupons", token, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
+export const updateAdminHomeView = (_token, payload) => apiPut("/admin/home-view", payload);
 
-export const updateAdminCoupon = (token, couponId, payload) =>
-  adminRequest(`/admin/coupons/${couponId}`, token, {
-    method: "PUT",
-    body: JSON.stringify(payload),
-  });
+export const fetchAdminCoupons = (_token) => apiGet("/admin/coupons");
 
-export const fetchAdminRewards = (token) => adminRequest("/admin/rewards", token);
+export const createAdminCoupon = (_token, payload) => apiPost("/admin/coupons", payload);
 
-export const createAdminReward = (token, payload) =>
-  adminRequest("/admin/rewards", token, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
+export const updateAdminCoupon = (_token, couponId, payload) =>
+  apiPut(`/admin/coupons/${couponId}`, payload);
 
-export const updateAdminReward = (token, rewardId, payload) =>
-  adminRequest(`/admin/rewards/${rewardId}`, token, {
-    method: "PUT",
-    body: JSON.stringify(payload),
-  });
+export const fetchAdminRewards = (_token) => apiGet("/admin/rewards");
 
-export const fetchAdminSupportThreads = (token) => adminRequest("/admin/support-threads", token);
+export const createAdminReward = (_token, payload) => apiPost("/admin/rewards", payload);
 
-export const replyAdminSupportThread = (token, threadId, payload) =>
-  adminRequest(`/admin/support-threads/${threadId}/reply`, token, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
+export const updateAdminReward = (_token, rewardId, payload) =>
+  apiPut(`/admin/rewards/${rewardId}`, payload);
 
-export const updateAdminSupportThreadStatus = (token, threadId, status) =>
-  adminRequest(`/admin/support-threads/${threadId}/status`, token, {
-    method: "PATCH",
-    body: JSON.stringify({ status }),
-  });
+export const fetchAdminSupportThreads = (_token) => apiGet("/admin/support-threads");
+
+export const replyAdminSupportThread = (_token, threadId, payload) =>
+  apiPost(`/admin/support-threads/${threadId}/reply`, payload);
+
+export const updateAdminSupportThreadStatus = (_token, threadId, status) =>
+  apiPatch(`/admin/support-threads/${threadId}/status`, { status });

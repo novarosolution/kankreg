@@ -16,7 +16,10 @@ export function customerPanel(c, shadowPremium, isDark) {
     ...admin,
     borderRadius: semanticRadius.panel,
     borderTopWidth: 3,
-    padding: Platform.select({ web: spacing.lg + 10, default: spacing.md + 4 }),
+    padding: Platform.select({
+      web: spacing.lg + 10,
+      default: spacing.md + 2,
+    }),
     ...(isDark
       ? {
           backgroundColor: c.surface,
@@ -78,14 +81,17 @@ export function customerPanelVariant(c, shadowPremium, isDark, variant = "defaul
 /**
  * Login / Register card — softer than customerPanel (no heavy gold top bar; clipped shadow on native).
  */
-export function authPanel(c, shadowPremium, isDark) {
+export function authPanel(c, shadowPremium, isDark, opts = {}) {
+  const { compact = false } = opts;
   const radius = 20;
+  const padH = compact ? spacing.md + 2 : spacing.xl;
+  const padV = compact ? spacing.md + 4 : spacing.xl;
   const base = {
     borderRadius: radius,
     overflow: "hidden",
     borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.xl,
+    paddingHorizontal: padH,
+    paddingVertical: padV,
     ...(isDark
       ? {
           backgroundColor: c.surface,
@@ -195,8 +201,8 @@ export function customerWebStickyTop(insets, extra = 0) {
 export const customerPageScrollBase = {
   /** Balanced gutters: generous on web for an editorial, premium layout. */
   paddingHorizontal: Platform.select({
-    web: "clamp(16px, 4vw, 40px)",
-    default: spacing.md,
+    web: "clamp(14px, 4vw, 40px)",
+    default: spacing.md + 2,
   }),
   width: "100%",
   alignSelf: "center",
@@ -218,7 +224,7 @@ export function customerInnerPageScrollContent(insets, extra = {}) {
     {
       paddingTop: customerScrollPaddingTop(insets),
       paddingBottom: customerScrollPaddingBottom(insets),
-      gap: Platform.select({ web: sectionStackGap, default: spacing.md }),
+      gap: Platform.select({ web: sectionStackGap, default: CUSTOMER_INNER_PAGE_GAP }),
       ...Platform.select({
         web: { flexGrow: 1 },
         default: {},
@@ -248,26 +254,33 @@ export function adminInnerPageScrollContent(insets, extra = {}) {
 /**
  * Scroll content for Login / Register: centered column on web with vertical breathing room below header.
  */
-export const authScrollContent = {
-  alignItems: "center",
-  ...Platform.select({
-    web: {
-      width: "100%",
-      maxWidth: layout.maxContentWidth + 72,
-      alignSelf: "center",
-      paddingHorizontal: container.gutter.desktop,
-      paddingTop: spacing.lg,
-      paddingBottom: spacing.xl + 4,
-      flexGrow: 1,
-      minHeight: `calc(100dvh - ${WEB_CHROME_TOP}px)`,
-      justifyContent: "center",
-    },
-    default: {
-      padding: spacing.lg,
-      paddingBottom: spacing.xl,
-    },
-  }),
-};
+/** Auth scroll padding — pass `pageGutter` from `useKankregLayout().pageGutterClamp` on native. */
+export function getAuthScrollContent(pageGutter = spacing.md + 2) {
+  return {
+    alignItems: "center",
+    width: "100%",
+    ...Platform.select({
+      web: {
+        maxWidth: layout.maxContentWidth + 72,
+        alignSelf: "center",
+        paddingHorizontal: container.gutter.desktop,
+        paddingTop: spacing.lg,
+        paddingBottom: spacing.xl + 4,
+        flexGrow: 1,
+        minHeight: `calc(100dvh - ${WEB_CHROME_TOP}px)`,
+        justifyContent: "center",
+      },
+      default: {
+        paddingHorizontal: pageGutter,
+        paddingTop: spacing.sm + 4,
+        paddingBottom: spacing.xl,
+      },
+    }),
+  };
+}
+
+/** @deprecated Use getAuthScrollContent(pageGutter) */
+export const authScrollContent = getAuthScrollContent();
 
 /** Removes default browser focus ring on web inputs (custom borders remain). */
 export const inputOutlineWeb = Platform.select({

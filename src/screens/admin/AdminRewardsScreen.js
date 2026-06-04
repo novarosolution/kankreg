@@ -164,7 +164,7 @@ export default function AdminRewardsScreen({ navigation, route }) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <KankregAdminShell navigation={navigation} route={route} title="Manage Rewards">
+          <KankregAdminShell navigation={navigation} route={route} title="Manage Rewards" subtitle="Points and redemptions">
           <View style={styles.panel}>
             <SectionReveal preset="fade-up" delay={0}>
               {error ? (

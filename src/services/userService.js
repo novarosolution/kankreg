@@ -1,93 +1,52 @@
-import { getApiBaseUrl } from "./apiBase";
-import { apiRequest, apiGet } from "./apiClient";
+import { apiGet, apiPatch, apiPost, apiPut, apiRequest } from "./apiClient";
 
-function apiUrl(path) {
-  return `${getApiBaseUrl()}${path}`;
-}
-
-/**
- * Legacy bearer-with-token fetch wrapper used by services that still pass a
- * token explicitly. Kept for backwards compatibility while we migrate to
- * `apiClient` which injects the token via AuthContext and handles 401 retry.
- */
-async function userRequest(path, token, options = {}) {
-  const response = await fetch(apiUrl(path), {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
-
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.message || "Request failed.");
-  }
-  return data;
-}
-
-/**
- * Use the central apiClient so 401 responses trigger a silent refresh + retry
- * instead of bubbling straight up. Token argument is ignored — the active
- * session token is taken from AuthContext via the configured getter.
- */
 export const fetchUserProfile = () => apiRequest("/users/profile");
 
-export const updateUserProfile = (token, payload) =>
-  userRequest("/users/profile", token, {
-    method: "PUT",
-    body: JSON.stringify(payload),
-  });
+/** @param {string} [_token] */
+export const updateUserProfile = (_token, payload) => apiPut("/users/profile", payload);
 
-export const uploadUserAvatar = (token, { imageBase64, mimeType }) =>
-  userRequest("/users/profile/avatar", token, {
-    method: "POST",
-    body: JSON.stringify({ imageBase64, mimeType }),
-  });
+/** @param {string} [_token] */
+export const uploadUserAvatar = (_token, { imageBase64, mimeType }) =>
+  apiPost("/users/profile/avatar", { imageBase64, mimeType });
 
-export const fetchMyOrders = (token) => userRequest("/users/my-orders", token);
+/** @param {string} [_token] */
+export const fetchMyOrders = (_token) => apiGet("/users/my-orders");
 
-/** Customer: live partner location for own order (out_for_delivery only). Uses apiClient refresh. */
 export const fetchOrderLiveLocation = (orderId) =>
   apiGet(`/users/my-orders/${orderId}/live-location`);
 
-/** Driving route polyline (proxied Google Directions). Returns { encodedPolyline, provider } or null polyline. */
 export const fetchOrderDrivingRoute = (orderId) =>
   apiGet(`/users/my-orders/${orderId}/driving-route`);
 
-export const fetchMyNotifications = (token) => userRequest("/users/notifications", token);
-export const fetchMyNotificationsIncludingArchived = (token) =>
-  userRequest("/users/notifications?includeArchived=true", token);
+/** @param {string} [_token] */
+export const fetchMyNotifications = (_token) => apiGet("/users/notifications");
 
-export const markMyNotificationRead = (token, notificationId) =>
-  userRequest(`/users/notifications/${notificationId}/read`, token, {
-    method: "PATCH",
-  });
+/** @param {string} [_token] */
+export const fetchMyNotificationsIncludingArchived = (_token) =>
+  apiGet("/users/notifications?includeArchived=true");
 
-export const archiveMyNotification = (token, notificationId) =>
-  userRequest(`/users/notifications/${notificationId}/archive`, token, {
-    method: "PATCH",
-  });
+/** @param {string} [_token] */
+export const markMyNotificationRead = (_token, notificationId) =>
+  apiPatch(`/users/notifications/${notificationId}/read`, {});
 
-export const unarchiveMyNotification = (token, notificationId) =>
-  userRequest(`/users/notifications/${notificationId}/unarchive`, token, {
-    method: "PATCH",
-  });
+/** @param {string} [_token] */
+export const archiveMyNotification = (_token, notificationId) =>
+  apiPatch(`/users/notifications/${notificationId}/archive`, {});
 
-export const registerMyPushToken = (token, pushToken) =>
-  userRequest("/users/push-token", token, {
-    method: "POST",
-    body: JSON.stringify({ pushToken }),
-  });
+/** @param {string} [_token] */
+export const unarchiveMyNotification = (_token, notificationId) =>
+  apiPatch(`/users/notifications/${notificationId}/unarchive`, {});
 
-export const fetchMySupportThread = (token) => userRequest("/users/support-thread", token);
+/** @param {string} [_token] */
+export const registerMyPushToken = (_token, pushToken) =>
+  apiPost("/users/push-token", { pushToken });
 
-export const sendMySupportMessage = (token, message) =>
-  userRequest("/users/support-thread/messages", token, {
-    method: "POST",
-    body: JSON.stringify({ message }),
-  });
+/** @param {string} [_token] */
+export const fetchMySupportThread = (_token) => apiGet("/users/support-thread");
+
+/** @param {string} [_token] */
+export const sendMySupportMessage = (_token, message) =>
+  apiPost("/users/support-thread/messages", { message });
 
 export const fetchRewardsCatalog = (subtotal) => {
   const qs =
@@ -128,7 +87,8 @@ export const fetchMyCart = async () => {
   return normalizeCartItems(data.items || []);
 };
 
-export const replaceMyCart = async (_token, items) => {
+export const replaceMyCart = async (itemsOrToken, maybeItems) => {
+  const items = Array.isArray(itemsOrToken) ? itemsOrToken : maybeItems;
   const payloadItems = (Array.isArray(items) ? items : []).map((item) => ({
     product: item.product || item.id,
     id: item.id,

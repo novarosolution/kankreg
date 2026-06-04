@@ -161,7 +161,7 @@ export default function AdminCouponsScreen({ navigation, route }) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <KankregAdminShell navigation={navigation} route={route} title="Manage Coupons">
+        <KankregAdminShell navigation={navigation} route={route} title="Manage Coupons" subtitle="Checkout discounts">
         <View style={styles.panel}>
           <SectionReveal preset="fade-up" delay={0}>
           {error ? (

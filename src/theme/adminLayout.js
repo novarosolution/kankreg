@@ -1,5 +1,6 @@
 import { Platform, StyleSheet } from "react-native";
 import { ALCHEMY } from "./customerAlchemy";
+import { shadowStyleForPlatform } from "./shadowPlatform";
 import { darkColors, getSemanticColors, layout, semanticRadius, spacing } from "./tokens";
 
 function themeIsDark(c) {
@@ -21,7 +22,7 @@ export function adminPanel(c, shadowPremium, isDark) {
     borderTopWidth: 3,
     borderTopColor: dark ? semantic.border.accent : ALCHEMY.gold,
     padding: spacing.lg + 10,
-    ...shadowPremium,
+    ...shadowStyleForPlatform(shadowPremium),
   };
   if (Platform.OS !== "web" || !shadowPremium?.boxShadow) {
     return base;

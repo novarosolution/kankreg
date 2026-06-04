@@ -154,12 +154,24 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
       <Stack.Group>
         <Stack.Screen name="Home" component={WrappedHome} />
         <Stack.Screen name="Shop" component={WrappedShop} />
-        <Stack.Screen name="Product" component={WrappedProduct} />
+        <Stack.Screen
+          name="Product"
+          component={WrappedProduct}
+          options={Platform.OS === "web" ? undefined : { animation: "fade_from_bottom" }}
+        />
       </Stack.Group>
 
       <Stack.Group>
-        <Stack.Screen name="Cart" component={ProtectedCart} />
-        <Stack.Screen name="Checkout" component={ProtectedCheckout} />
+        <Stack.Screen
+          name="Cart"
+          component={ProtectedCart}
+          options={Platform.OS === "web" ? undefined : { animation: "fade_from_bottom" }}
+        />
+        <Stack.Screen
+          name="Checkout"
+          component={ProtectedCheckout}
+          options={Platform.OS === "web" ? undefined : { animation: "fade_from_bottom" }}
+        />
         <Stack.Screen name="Profile" component={ProtectedProfile} />
         <Stack.Screen name="EditProfile" component={ProtectedEditProfile} />
         <Stack.Screen name="MyOrders" component={ProtectedMyOrders} />

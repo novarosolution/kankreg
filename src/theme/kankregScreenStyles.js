@@ -45,3 +45,22 @@ export function createKankregDisplayTitle(size = typography.h2) {
     color: KANKREG_PALETTE.ink,
   };
 }
+
+/** Result count line on shop / list pages */
+export function createKankregResultMeta(isDark) {
+  return {
+    fontSize: 13,
+    lineHeight: 18,
+    color: isDark ? "rgba(245, 239, 228, 0.72)" : KANKREG_PALETTE.inkFaint,
+  };
+}
+
+export function createKankregResultBold(isDark) {
+  return {
+    color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink,
+    fontFamily: fonts.semibold,
+  };
+}
+
+/** Shared page block spacing inside KankregPageWrap */
+export const KANKREG_PAGE_SECTION_GAP = 18;

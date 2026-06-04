@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -9,16 +8,14 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 import CustomerScreenShell from "../components/CustomerScreenShell";
-import AuthSplitLayout from "../components/auth/AuthSplitLayout";
-// AuthSplitLayout wraps form on web ≥900px
+import AuthScreenBody from "../components/auth/AuthScreenBody";
 import AuthFormShell from "../components/auth/AuthFormShell";
-import AuthCompactHero from "../components/auth/AuthCompactHero";
 import AuthSocialButtons from "../components/auth/AuthSocialButtons";
 import { useAuth } from "../context/AuthContext";
-import { useTheme } from "../context/ThemeContext";
+import { useToast } from "../context/ToastContext";
 import { AUTH_UI } from "../content/appContent";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
-import { adminScrollPaddingBottom, authPanel, customerScrollFill } from "../theme/screenLayout";
+import { adminScrollPaddingBottom, customerScrollFill } from "../theme/screenLayout";
 import { spacing } from "../theme/tokens";
 import { normalizeEmail, validateLoginEmail, validateLoginPassword } from "../utils/authValidation";
 import PremiumButton from "../components/ui/PremiumButton";
@@ -31,11 +28,11 @@ export default function LoginScreen({ navigation }) {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { loginWithCredentials } = useAuth();
-  const { colors: c, shadowPremium: sp, isDark } = useTheme();
+  const { showToast } = useToast();
   const { useAuthSplit } = useKankregLayout();
-  const styles = useMemo(() => createLoginStyles(c, sp, isDark), [c, sp, isDark]);
+  const styles = useMemo(() => createLoginStyles(), []);
   const insets = useSafeAreaInsets();
-  const showSubtitle = Platform.OS !== "web" || !useAuthSplit;
+  const showFormSubtitle = Platform.OS === "web" && useAuthSplit;
 
   const handleLogin = async () => {
     const emailErr = validateLoginEmail(email);
@@ -52,6 +49,7 @@ export default function LoginScreen({ navigation }) {
       setIsSubmitting(true);
       setError("");
       await loginWithCredentials({ email: normalizeEmail(email), password });
+      showToast({ type: "success", title: "Welcome back", message: "You're signed in.", duration: 2200 });
       navigation.navigate("Home");
     } catch (err) {
       setError(err.message || "Unable to login. Please try again.");
@@ -60,14 +58,21 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-  const formBody = (
+  const form = (
     <AuthFormShell
       navigation={navigation}
       activeRoute="Login"
       title={AUTH_UI.loginTitle}
-      subtitle={showSubtitle ? AUTH_UI.loginSubtitle : undefined}
+      subtitle={showFormSubtitle ? AUTH_UI.loginSubtitle : undefined}
       showForgotPassword
-      onForgotPassword={() => Alert.alert(AUTH_UI.forgotPassword, AUTH_UI.forgotPasswordStub)}
+      onForgotPassword={() =>
+        showToast({
+          type: "info",
+          title: AUTH_UI.forgotPassword,
+          message: AUTH_UI.forgotPasswordStub,
+          duration: 3600,
+        })
+      }
       socialSlot={<AuthSocialButtons onSuccess={() => navigation.navigate("Home")} />}
       footerSlot={
         <PremiumButton
@@ -79,6 +84,7 @@ export default function LoginScreen({ navigation }) {
           onPress={() => navigation.navigate("Home")}
         />
       }
+      compact={!useAuthSplit}
     >
       <PremiumInput
         label="Email"
@@ -135,26 +141,26 @@ export default function LoginScreen({ navigation }) {
           scrollVariant="auth"
           showFooter={false}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={[
-            styles.scrollContentExtra,
-            Platform.OS !== "web" ? { paddingBottom: adminScrollPaddingBottom(insets) } : null,
-          ]}
+          contentContainerStyle={
+            Platform.OS !== "web" ? { paddingBottom: adminScrollPaddingBottom(insets) } : undefined
+          }
           keyboardShouldPersistTaps="handled"
         >
-          {Platform.OS === "web" ? null : <AuthCompactHero compact />}
-          <AuthSplitLayout artSubtitle={AUTH_UI.loginSubtitle}>
-            <View style={[styles.card, Platform.OS === "web" ? styles.cardWebInline : null]}>{formBody}</View>
-          </AuthSplitLayout>
+          <AuthScreenBody artSubtitle={AUTH_UI.loginSubtitle} form={form} styles={styles} />
         </KankregScrollPage>
       </KeyboardAvoidingView>
     </CustomerScreenShell>
   );
 }
 
-function createLoginStyles(c, shadowPremium, isDark) {
+function createLoginStyles() {
   return StyleSheet.create({
     screen: { flex: 1 },
-    scrollContentExtra: { width: "100%" },
+    card: {
+      width: "100%",
+      maxWidth: 468,
+      alignSelf: "center",
+    },
     cardWebInline: {
       maxWidth: "100%",
       borderWidth: 0,
@@ -163,15 +169,12 @@ function createLoginStyles(c, shadowPremium, isDark) {
       paddingVertical: 0,
       ...Platform.select({ web: { boxShadow: "none" }, default: {} }),
     },
-    card: {
-      width: "100%",
-      maxWidth: 468,
-      ...authPanel(c, shadowPremium, isDark),
-      paddingHorizontal: spacing.xl,
-      paddingVertical: spacing.xl,
-      alignSelf: "center",
+    cardWebStack: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
     },
     errorWrap: { marginTop: spacing.sm },
     primaryCta: { marginTop: spacing.md },
+    revealFill: { width: "100%" },
   });
 }

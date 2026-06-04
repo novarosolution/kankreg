@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { AUTH_UI } from "../../content/appContent";
 import { useTheme } from "../../context/ThemeContext";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { fonts, typography } from "../../theme/tokens";
 import PremiumButton from "../ui/PremiumButton";
 import PremiumErrorBanner from "../ui/PremiumErrorBanner";
@@ -33,11 +34,13 @@ function DisabledSocialButton({ label, iconLeft, style }) {
 export default function AuthSocialButtons({ onSuccess }) {
   const { loginWithApple } = useAuth();
   const { isDark } = useTheme();
+  const { isXs } = useKankregLayout();
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const googleLive = isGoogleSignInConfigured();
   const appleLive = isAppleSignInConfigured();
   const showAppleSlot = Platform.OS === "ios" || Platform.OS === "web";
+  const btnStyle = isXs ? styles.btnStack : styles.btn;
 
   const runApple = async () => {
     if (!appleLive) return;
@@ -58,20 +61,20 @@ export default function AuthSocialButtons({ onSuccess }) {
   return (
     <View style={styles.wrap}>
       {error ? <PremiumErrorBanner severity="error" message={error} compact /> : null}
-      <View style={styles.row}>
+      <View style={[styles.row, isXs && styles.rowStack]}>
         {googleLive ? (
           <GoogleSignInButton
             onSuccess={onSuccess}
             busy={busy}
             setBusy={setBusy}
             setError={setError}
-            style={styles.btn}
+            style={btnStyle}
           />
         ) : (
           <DisabledSocialButton
             label={`${AUTH_UI.googleLabel} · ${AUTH_UI.socialComingSoon}`}
             iconLeft="logo-google"
-            style={styles.btn}
+            style={btnStyle}
           />
         )}
         {showAppleSlot ? (
@@ -85,13 +88,13 @@ export default function AuthSocialButtons({ onSuccess }) {
               loading={busy === "apple"}
               disabled={Boolean(busy)}
               onPress={runApple}
-              style={styles.btn}
+              style={btnStyle}
             />
           ) : (
             <DisabledSocialButton
               label={`${AUTH_UI.appleLabel} · ${AUTH_UI.socialComingSoon}`}
               iconLeft="logo-apple"
-              style={styles.btn}
+              style={btnStyle}
             />
           )
         ) : null}
@@ -108,7 +111,9 @@ export default function AuthSocialButtons({ onSuccess }) {
 const styles = StyleSheet.create({
   wrap: { width: "100%" },
   row: { flexDirection: "row", gap: 12 },
+  rowStack: { flexDirection: "column", gap: 10 },
   btn: { flex: 1 },
+  btnStack: { width: "100%" },
   hint: {
     marginTop: 10,
     fontSize: typography.caption,
