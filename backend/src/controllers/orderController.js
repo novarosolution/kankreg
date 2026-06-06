@@ -81,9 +81,7 @@ async function createOrder(req, res, next) {
       !shippingAddress.phone ||
       !shippingAddress.line1 ||
       !shippingAddress.city ||
-      !shippingAddress.state ||
-      !shippingAddress.postalCode ||
-      !shippingAddress.country
+      !shippingAddress.postalCode
     ) {
       return res.status(400).json({ message: "Complete shipping address is required." });
     }
@@ -751,7 +749,7 @@ async function updateMyOrderAddress(req, res, next) {
     }
 
     const shippingAddress = req.body?.shippingAddress || {};
-    const requiredFields = ["fullName", "phone", "line1", "city", "state", "postalCode", "country"];
+    const requiredFields = ["fullName", "phone", "line1", "city", "postalCode"];
     for (const field of requiredFields) {
       if (!String(shippingAddress[field] || "").trim()) {
         return res.status(400).json({ message: `Shipping address field "${field}" is required.` });
@@ -763,7 +761,10 @@ async function updateMyOrderAddress(req, res, next) {
       ...shippingAddress,
       fullName: String(shippingAddress.fullName || "").trim(),
       phone: String(shippingAddress.phone || "").trim(),
+      addressType: String(shippingAddress.addressType || "Home").trim(),
+      houseNumber: String(shippingAddress.houseNumber || "").trim(),
       line1: String(shippingAddress.line1 || "").trim(),
+      landmark: String(shippingAddress.landmark || "").trim(),
       city: String(shippingAddress.city || "").trim(),
       state: String(shippingAddress.state || "").trim(),
       postalCode: String(shippingAddress.postalCode || "").trim(),

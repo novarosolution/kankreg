@@ -14,6 +14,7 @@ import BottomNavBar from "../components/BottomNavBar";
 import CustomerScreenShell from "../components/CustomerScreenShell";
 import KankregUnifiedPageHeader from "../components/kankreg/KankregUnifiedPageHeader";
 import CheckoutInfoCard from "../components/checkout/CheckoutInfoCard";
+import AddressTypeSelector from "../components/address/AddressTypeSelector";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
@@ -70,13 +71,12 @@ import {
 /** Same required fields as ManageAddressScreen save. */
 function getProfileAddressCompletion(defaultAddress) {
   const a = defaultAddress && typeof defaultAddress === "object" ? defaultAddress : {};
+  const houseNumber = String(a.houseNumber || "").trim();
   const line1 = String(a.line1 || "").trim();
   const city = String(a.city || "").trim();
-  const state = String(a.state || "").trim();
   const postalCode = String(a.postalCode || "").trim();
-  const country = String(a.country || "").trim();
-  const complete = Boolean(line1 && city && state && postalCode && country);
-  const any = Boolean(line1 || city || state || postalCode || country);
+  const complete = Boolean(line1 && city && postalCode);
+  const any = Boolean(houseNumber || line1 || city || postalCode);
   return { complete, partial: any && !complete };
 }
 
@@ -98,9 +98,11 @@ export default function CartScreen({ navigation, route }) {
     transform: [{ scale: 1 + checkoutPulse.value * 0.04 }]}));
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [addressType, setAddressType] = useState("Home");
+  const [houseNumber, setHouseNumber] = useState("");
   const [line1, setLine1] = useState("");
+  const [landmark, setLandmark] = useState("");
   const [city, setCity] = useState("");
-  const [state, setState] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [country, setCountry] = useState("");
   const [latitude, setLatitude] = useState(null);
@@ -149,9 +151,11 @@ export default function CartScreen({ navigation, route }) {
   useEffect(() => {
     setFullName(user?.name || "");
     setPhone(user?.phone || "");
+    setAddressType(user?.defaultAddress?.addressType || "Home");
+    setHouseNumber(user?.defaultAddress?.houseNumber || "");
     setLine1(user?.defaultAddress?.line1 || "");
+    setLandmark(user?.defaultAddress?.landmark || "");
     setCity(user?.defaultAddress?.city || "");
-    setState(user?.defaultAddress?.state || "");
     setPostalCode(user?.defaultAddress?.postalCode || "");
     setCountry(user?.defaultAddress?.country || "");
     setLatitude(
@@ -344,11 +348,10 @@ export default function CartScreen({ navigation, route }) {
     if (
       !fullName.trim() ||
       !phone.trim() ||
+      !houseNumber.trim() ||
       !line1.trim() ||
       !city.trim() ||
-      !state.trim() ||
-      !postalCode.trim() ||
-      !country.trim()
+      !postalCode.trim()
     ) {
       setError("Please complete delivery address details.");
       return false;
@@ -381,11 +384,13 @@ export default function CartScreen({ navigation, route }) {
         shippingAddress: {
           fullName: fullName.trim(),
           phone: phone.trim(),
+          addressType: addressType || "Home",
+          houseNumber: houseNumber.trim(),
           line1: line1.trim(),
+          landmark: landmark.trim(),
           city: city.trim(),
-          state: state.trim(),
           postalCode: postalCode.trim(),
-          country: country.trim(),
+          country: country.trim() || "India",
           latitude,
           longitude,
           note: note.trim()},
@@ -484,7 +489,6 @@ export default function CartScreen({ navigation, route }) {
       const address = await getCurrentAddressFromGPS();
       if (address.line1) setLine1(address.line1);
       if (address.city) setCity(address.city);
-      if (address.state) setState(address.state);
       if (address.postalCode) setPostalCode(address.postalCode);
       if (address.country) setCountry(address.country);
       if (Number.isFinite(Number(address.latitude))) setLatitude(Number(address.latitude));
@@ -715,14 +719,36 @@ export default function CartScreen({ navigation, route }) {
             />
           </View>
           <View style={styles.addressFieldGap}>
+            <AddressTypeSelector value={addressType} onChange={setAddressType} />
+          </View>
+          <View style={styles.addressFieldGap}>
             <PremiumInput
-              label="Address line"
+              label="House / Flat / Building no."
+              value={houseNumber}
+              onChangeText={setHouseNumber}
+              iconLeft="business-outline"
+              autoCapitalize="characters"
+            />
+          </View>
+          <View style={styles.addressFieldGap}>
+            <PremiumInput
+              label="Street / Area / Colony"
               value={line1}
               onChangeText={setLine1}
-              iconLeft="home-outline"
+              iconLeft="map-outline"
               autoCapitalize="sentences"
               autoComplete="street-address"
               textContentType="streetAddressLine1"
+            />
+          </View>
+          <View style={styles.addressFieldGap}>
+            <PremiumInput
+              label="Landmark (optional)"
+              value={landmark}
+              onChangeText={setLandmark}
+              iconLeft="navigate-outline"
+              placeholder="e.g. Near city mall"
+              autoCapitalize="sentences"
             />
           </View>
           <View style={[styles.addressRow, isCompact ? styles.addressRowCompact : null]}>
@@ -731,6 +757,7 @@ export default function CartScreen({ navigation, route }) {
                 label="City"
                 value={city}
                 onChangeText={setCity}
+                iconLeft="business-outline"
                 autoCapitalize="words"
                 autoComplete="address-level2"
                 textContentType="addressCity"
@@ -738,34 +765,13 @@ export default function CartScreen({ navigation, route }) {
             </View>
             <View style={[styles.addressFieldGap, styles.halfField]}>
               <PremiumInput
-                label="State"
-                value={state}
-                onChangeText={setState}
-                autoCapitalize="words"
-                autoComplete="address-level1"
-                textContentType="addressState"
-              />
-            </View>
-          </View>
-          <View style={[styles.addressRow, isCompact ? styles.addressRowCompact : null]}>
-            <View style={[styles.addressFieldGap, styles.halfField]}>
-              <PremiumInput
-                label="Postal code"
+                label="Pincode"
                 value={postalCode}
                 onChangeText={setPostalCode}
+                iconLeft="pin-outline"
                 keyboardType="number-pad"
                 autoComplete="postal-code"
                 textContentType="postalCode"
-              />
-            </View>
-            <View style={[styles.addressFieldGap, styles.halfField]}>
-              <PremiumInput
-                label="Country"
-                value={country}
-                onChangeText={setCountry}
-                autoCapitalize="words"
-                autoComplete="country"
-                textContentType="countryName"
               />
             </View>
           </View>

@@ -5,9 +5,13 @@
  */
 export function formatCompactShippingLine(addr) {
   if (!addr || typeof addr !== "object") return "";
-  const line1 = String(addr.line1 || "").trim();
-  const cityState = [addr.city, addr.state].filter((x) => String(x || "").trim()).join(", ");
-  const parts = [line1, cityState].filter(Boolean);
+  const street = [addr.houseNumber, addr.line1]
+    .filter((x) => String(x || "").trim())
+    .join(", ");
+  const cityLine = [addr.city, addr.postalCode]
+    .filter((x) => String(x || "").trim())
+    .join(" - ");
+  const parts = [street, cityLine].filter(Boolean);
   if (parts.length) return parts.join(" · ");
-  return cityState;
+  return [addr.city, addr.state].filter((x) => String(x || "").trim()).join(", ");
 }

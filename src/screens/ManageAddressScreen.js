@@ -27,6 +27,7 @@ import PremiumButton from "../components/ui/PremiumButton";
 import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
 import PremiumCard from "../components/ui/PremiumCard";
 import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
+import AddressTypeSelector from "../components/address/AddressTypeSelector";
 import { ALCHEMY } from "../theme/customerAlchemy";
 import SectionReveal from "../components/motion/SectionReveal";
 import PremiumStickyBar from "../components/ui/PremiumStickyBar";
@@ -38,9 +39,11 @@ export default function ManageAddressScreen({ navigation }) {
   const { isXs, useSplitLayout } = useKankregLayout();
   const isCompact = isXs;
   const isWide = useSplitLayout;
+  const [addressType, setAddressType] = useState("Home");
+  const [houseNumber, setHouseNumber] = useState("");
   const [line1, setLine1] = useState("");
+  const [landmark, setLandmark] = useState("");
   const [city, setCity] = useState("");
-  const [state, setState] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [country, setCountry] = useState("");
   const [latitude, setLatitude] = useState(null);
@@ -55,9 +58,11 @@ export default function ManageAddressScreen({ navigation }) {
     if (!token) return;
     try {
       const profile = await fetchUserProfile(token);
+      setAddressType(profile.defaultAddress?.addressType || "Home");
+      setHouseNumber(profile.defaultAddress?.houseNumber || "");
       setLine1(profile.defaultAddress?.line1 || "");
+      setLandmark(profile.defaultAddress?.landmark || "");
       setCity(profile.defaultAddress?.city || "");
-      setState(profile.defaultAddress?.state || "");
       setPostalCode(profile.defaultAddress?.postalCode || "");
       setCountry(profile.defaultAddress?.country || "");
       setLatitude(Number.isFinite(Number(profile.defaultAddress?.latitude)) ? Number(profile.defaultAddress?.latitude) : null);
@@ -88,7 +93,6 @@ export default function ManageAddressScreen({ navigation }) {
       const address = await getCurrentAddressFromGPS();
       if (address.line1) setLine1(address.line1);
       if (address.city) setCity(address.city);
-      if (address.state) setState(address.state);
       if (address.postalCode) setPostalCode(address.postalCode);
       if (address.country) setCountry(address.country);
       if (Number.isFinite(Number(address.latitude))) setLatitude(Number(address.latitude));
@@ -103,14 +107,13 @@ export default function ManageAddressScreen({ navigation }) {
 
   const handleSave = async () => {
     const nextErrors = {
-      line1: line1.trim() ? "" : "Address line is required.",
+      houseNumber: houseNumber.trim() ? "" : "House / flat number is required.",
+      line1: line1.trim() ? "" : "Street / area is required.",
       city: city.trim() ? "" : "City is required.",
-      state: state.trim() ? "" : "State is required.",
-      postalCode: postalCode.trim() ? "" : "Postal code is required.",
-      country: country.trim() ? "" : "Country is required."};
+      postalCode: postalCode.trim() ? "" : "Pincode is required."};
     setFieldErrors(nextErrors);
     if (Object.values(nextErrors).some(Boolean)) {
-      setError("Please fill all address fields.");
+      setError("Please fill the required address fields.");
       return;
     }
 
@@ -120,11 +123,13 @@ export default function ManageAddressScreen({ navigation }) {
       setSuccess("");
       const updated = await updateUserProfile(token, {
         defaultAddress: {
+          addressType: addressType || "Home",
+          houseNumber: houseNumber.trim(),
           line1: line1.trim(),
+          landmark: landmark.trim(),
           city: city.trim(),
-          state: state.trim(),
           postalCode: postalCode.trim(),
-          country: country.trim(),
+          country: country.trim() || "India",
           latitude,
           longitude}});
       await updateStoredUser(updated);
@@ -168,16 +173,21 @@ export default function ManageAddressScreen({ navigation }) {
                       </View>
                       <View style={styles.previewTitleCol}>
                         <Text style={styles.previewKicker}>Saved address</Text>
-                        <Text style={styles.previewTitle}>Default delivery</Text>
+                        <Text style={styles.previewTitle}>{addressType || "Home"} · Default</Text>
                       </View>
                       <View style={styles.previewRibbon}>
                         <Ionicons name="star" size={11} color={ALCHEMY.brown} />
                         <Text style={styles.previewRibbonText}>Default</Text>
                       </View>
                     </View>
-                    <Text style={styles.previewLine}>{line1}</Text>
                     <Text style={styles.previewLine}>
-                      {[city, state].filter(Boolean).join(", ")} {postalCode}
+                      {[houseNumber, line1].filter(Boolean).join(", ")}
+                    </Text>
+                    {landmark ? (
+                      <Text style={styles.previewLineMuted}>Near {landmark}</Text>
+                    ) : null}
+                    <Text style={styles.previewLine}>
+                      {[city, postalCode].filter(Boolean).join(" - ")}
                     </Text>
                     {country ? <Text style={styles.previewLineMuted}>{country}</Text> : null}
                     {latitude != null && longitude != null ? (
@@ -231,34 +241,54 @@ export default function ManageAddressScreen({ navigation }) {
             </SectionReveal>
 
             <View style={styles.fieldStack}>
-              <SectionReveal delay={180}>
+              <SectionReveal delay={170}>
+                <AddressTypeSelector value={addressType} onChange={setAddressType} />
+              </SectionReveal>
+              <SectionReveal delay={200}>
                 <PremiumInput
-                  label="Address line"
-                  value={line1}
-                  onChangeText={setLine1}
-                  iconLeft="home-outline"
-                    errorText={fieldErrors.line1}
+                  label="House / Flat / Building no."
+                  value={houseNumber}
+                  onChangeText={setHouseNumber}
+                  iconLeft="business-outline"
+                  errorText={fieldErrors.houseNumber}
                 />
               </SectionReveal>
-              <SectionReveal delay={220}>
+              <SectionReveal delay={230}>
+                <PremiumInput
+                  label="Street / Area / Colony"
+                  value={line1}
+                  onChangeText={setLine1}
+                  iconLeft="map-outline"
+                  errorText={fieldErrors.line1}
+                />
+              </SectionReveal>
+              <SectionReveal delay={260}>
+                <PremiumInput
+                  label="Landmark (optional)"
+                  value={landmark}
+                  onChangeText={setLandmark}
+                  iconLeft="navigate-outline"
+                  placeholder="e.g. Near city mall"
+                />
+              </SectionReveal>
+              <SectionReveal delay={290}>
                 <View style={[styles.row, isCompact ? styles.rowCompact : null]}>
                   <View style={styles.half}>
-                    <PremiumInput label="City" value={city} onChangeText={setCity} errorText={fieldErrors.city} />
+                    <PremiumInput label="City" value={city} onChangeText={setCity} iconLeft="business-outline" errorText={fieldErrors.city} />
                   </View>
                   <View style={styles.half}>
-                    <PremiumInput label="State" value={state} onChangeText={setState} errorText={fieldErrors.state} />
+                    <PremiumInput label="Pincode" value={postalCode} onChangeText={setPostalCode} keyboardType="number-pad" iconLeft="pin-outline" errorText={fieldErrors.postalCode} />
                   </View>
                 </View>
               </SectionReveal>
-              <SectionReveal delay={260}>
-                <View style={[styles.row, isCompact ? styles.rowCompact : null]}>
-                  <View style={styles.half}>
-                    <PremiumInput label="Postal code" value={postalCode} onChangeText={setPostalCode} keyboardType="number-pad" errorText={fieldErrors.postalCode} />
-                  </View>
-                  <View style={styles.half}>
-                    <PremiumInput label="Country" value={country} onChangeText={setCountry} errorText={fieldErrors.country} />
-                  </View>
-                </View>
+              <SectionReveal delay={320}>
+                <PremiumInput
+                  label="Country (optional)"
+                  value={country}
+                  onChangeText={setCountry}
+                  iconLeft="flag-outline"
+                  placeholder="India"
+                />
               </SectionReveal>
             </View>
 

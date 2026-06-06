@@ -92,7 +92,10 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
     defaultAddress: {
+      addressType: { type: String, default: "Home", trim: true },
+      houseNumber: { type: String, default: "", trim: true },
       line1: { type: String, default: "", trim: true },
+      landmark: { type: String, default: "", trim: true },
       city: { type: String, default: "", trim: true },
       state: { type: String, default: "", trim: true },
       postalCode: { type: String, default: "", trim: true },
