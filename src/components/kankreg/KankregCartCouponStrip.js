@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { useTheme } from "../../context/ThemeContext";
 import { FIGMA } from "../../theme/figmaApp";
 import { fonts, spacing } from "../../theme/tokens";
 
@@ -11,13 +12,16 @@ export default function KankregCartCouponStrip({
   appliedLabel,
   placeholder = "Add coupon code",
 }) {
+  const { colors: c, isDark } = useTheme();
+  const styles = useMemo(() => createStyles(isDark, c), [isDark, c]);
+
   return (
     <View style={styles.wrap}>
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={FIGMA.inkFaint}
+        placeholderTextColor={styles.placeholderColor}
         autoCapitalize="characters"
         returnKeyType="done"
         onSubmitEditing={onApply}
@@ -40,53 +44,64 @@ export default function KankregCartCouponStrip({
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 6,
-    marginBottom: 4,
-  },
-  input: {
-    flex: 1,
-    minWidth: 140,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: FIGMA.line,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontFamily: fonts.regular,
-    fontSize: 11,
-    color: FIGMA.ink,
-    backgroundColor: FIGMA.card,
-  },
-  applyBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: FIGMA.line,
-    backgroundColor: FIGMA.card,
-  },
-  applyBtnHover: {
-    borderColor: FIGMA.gold,
-  },
-  applyBtnPressed: {
-    opacity: 0.88,
-  },
-  applyText: {
-    fontFamily: fonts.semibold,
-    fontSize: 11,
-    color: FIGMA.inkSoft,
-  },
-  applied: {
-    width: "100%",
-    fontFamily: fonts.medium,
-    fontSize: 10,
-    color: FIGMA.green,
-    marginTop: spacing.xs,
-  },
-});
+function createStyles(isDark, c) {
+  const bg = isDark ? c.surface : FIGMA.card;
+  const border = isDark ? c.border : FIGMA.line;
+  const text = isDark ? c.textPrimary : FIGMA.ink;
+  const textSoft = isDark ? c.textSecondary : FIGMA.inkSoft;
+  const placeholderColor = isDark ? c.textMuted : FIGMA.inkFaint;
+
+  return {
+    ...StyleSheet.create({
+      wrap: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        alignItems: "center",
+        gap: 8,
+        marginTop: 6,
+        marginBottom: 4,
+      },
+      input: {
+        flex: 1,
+        minWidth: 140,
+        borderWidth: 1,
+        borderStyle: "dashed",
+        borderColor: border,
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        fontFamily: fonts.regular,
+        fontSize: 11,
+        color: text,
+        backgroundColor: bg,
+      },
+      applyBtn: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 999,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: border,
+        backgroundColor: bg,
+      },
+      applyBtnHover: {
+        borderColor: isDark ? c.primary : FIGMA.gold,
+      },
+      applyBtnPressed: {
+        opacity: 0.88,
+      },
+      applyText: {
+        fontFamily: fonts.semibold,
+        fontSize: 11,
+        color: textSoft,
+      },
+      applied: {
+        width: "100%",
+        fontFamily: fonts.medium,
+        fontSize: 10,
+        color: isDark ? c.secondaryBright : FIGMA.green,
+        marginTop: spacing.xs,
+      },
+    }),
+    placeholderColor,
+  };
+}

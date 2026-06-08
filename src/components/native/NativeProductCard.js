@@ -2,7 +2,14 @@ import React, { useMemo } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { FIGMA, figmaCardShell, figmaDisplayTitle, figmaPrice } from "../../theme/figmaApp";
+import {
+  FIGMA,
+  figmaCardShell,
+  figmaDisplayTitle,
+  figmaPrice,
+  figmaTextMuted,
+  getProductTileGradient,
+} from "../../theme/figmaApp";
 import { useTheme } from "../../context/ThemeContext";
 import { formatINR } from "../../utils/currency";
 import { getImageUriCandidates } from "../../utils/image";
@@ -29,8 +36,8 @@ export default function NativeProductCard({
   isOutOfStock = false,
   isFeatured = false,
 }) {
-  const { isDark } = useTheme();
-  const grad = FIGMA.productTileGradients[index % FIGMA.productTileGradients.length];
+  const { colors: c, isDark } = useTheme();
+  const grad = getProductTileGradient(index, isDark);
   const imageUri = useMemo(() => {
     const src = product?.image || product?.images?.[0] || "";
     return getImageUriCandidates(src)[0] || "";
@@ -58,7 +65,7 @@ export default function NativeProductCard({
       style={({ pressed }) => [
         figmaCardShell(isDark),
         styles.card,
-        isFeatured && styles.cardFeatured,
+        isFeatured && (isDark ? styles.cardFeaturedDark : styles.cardFeatured),
         cardShadow,
         pressed && styles.cardPressed,
       ]}
@@ -87,8 +94,8 @@ export default function NativeProductCard({
           </View>
         ) : null}
       </View>
-      <View style={styles.meta}>
-        <Text style={styles.cat} numberOfLines={1}>
+      <View style={[styles.meta, { backgroundColor: isDark ? c.surface : FIGMA.card }]}>
+        <Text style={[styles.cat, { color: isDark ? FIGMA.goldBright : FIGMA.gold }]} numberOfLines={1}>
           {String(catLabel).toUpperCase()}
         </Text>
         <Text style={[figmaDisplayTitle(13, isDark), styles.name]} numberOfLines={2}>
@@ -97,7 +104,7 @@ export default function NativeProductCard({
         <View style={styles.priceRow}>
           <View style={styles.priceCol}>
             <Text style={[figmaPrice(isDark), styles.price]}>{formatINR(product?.price || 0)}</Text>
-            {listMrp ? <Text style={styles.was}>{formatINR(listMrp)}</Text> : null}
+            {listMrp ? <Text style={[styles.was, figmaTextMuted(isDark)]}>{formatINR(listMrp)}</Text> : null}
           </View>
           <Pressable
             style={[styles.addBtn, isOutOfStock && styles.addBtnDisabled]}
@@ -109,10 +116,16 @@ export default function NativeProductCard({
             accessibilityLabel="Add to cart"
           >
             <LinearGradient
-              colors={isOutOfStock ? ["#9a9a9a", "#7a7a7a"] : ["#2a241e", "#19140f"]}
+              colors={
+                isOutOfStock
+                  ? ["#9a9a9a", "#7a7a7a"]
+                  : isDark
+                    ? ["#d6ad5b", "#a9772e"]
+                    : ["#2a241e", "#19140f"]
+              }
               style={styles.addBtnGrad}
             >
-              <Text style={styles.addGlyph}>+</Text>
+              <Text style={[styles.addGlyph, isDark && !isOutOfStock && styles.addGlyphDark]}>+</Text>
             </LinearGradient>
           </Pressable>
         </View>
@@ -131,6 +144,10 @@ const styles = StyleSheet.create({
   cardFeatured: {
     borderColor: "rgba(169,119,46,0.35)",
     borderWidth: 1,
+  },
+  cardFeaturedDark: {
+    borderColor: "rgba(232, 200, 90, 0.42)",
+    borderWidth: 1.5,
   },
   cardPressed: {
     opacity: 0.94,
@@ -194,13 +211,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 11,
     paddingTop: 10,
     paddingBottom: 12,
-    backgroundColor: FIGMA.card,
   },
   cat: {
     fontFamily: fonts.bold,
     fontSize: 8,
     letterSpacing: 1.5,
-    color: FIGMA.gold,
   },
   name: {
     marginTop: 3,
@@ -228,7 +243,6 @@ const styles = StyleSheet.create({
   was: {
     fontFamily: fonts.regular,
     fontSize: 10,
-    color: FIGMA.inkFaint,
     textDecorationLine: "line-through",
   },
   addBtn: {
@@ -250,5 +264,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginTop: -1,
+  },
+  addGlyphDark: {
+    color: "#1a1612",
   },
 });

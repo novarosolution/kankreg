@@ -26,6 +26,7 @@ import {
 import PremiumButton from "../components/ui/PremiumButton";
 import PremiumInput from "../components/ui/PremiumInput";
 import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
+import { resetNavigationAfterAuth } from "../navigation/postAuthNavigation";
 
 export default function RegisterScreen({ navigation }) {
   const [name, setName] = useState("");
@@ -74,7 +75,7 @@ export default function RegisterScreen({ navigation }) {
         password,
       });
       showToast({ type: "success", title: "Account created", message: "Welcome to kankreg.", duration: 2400 });
-      navigation.navigate("Home");
+      await resetNavigationAfterAuth(navigation);
     } catch (err) {
       setError(err.message || "Unable to register. Please try again.");
     } finally {
@@ -89,7 +90,7 @@ export default function RegisterScreen({ navigation }) {
       title={AUTH_UI.registerTitle}
       subtitle={showFormSubtitle ? AUTH_UI.registerSubtitle : undefined}
       compact={!useAuthSplit}
-      socialSlot={<AuthSocialButtons onSuccess={() => navigation.navigate("Home")} />}
+      socialSlot={<AuthSocialButtons onSuccess={() => resetNavigationAfterAuth(navigation)} />}
       footerSlot={
         <PremiumButton
           label={AUTH_UI.continueGuest}

@@ -3,7 +3,17 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { FIGMA, figmaCardShell, figmaDisplayTitle, figmaPrice } from "../../theme/figmaApp";
+import {
+  FIGMA,
+  figmaCardShell,
+  figmaDisplayTitle,
+  figmaIconMuted,
+  figmaIconSoft,
+  figmaPrice,
+  figmaRowBorder,
+  figmaTextMuted,
+  figmaTextPrimary,
+} from "../../theme/figmaApp";
 import { useTheme } from "../../context/ThemeContext";
 import { formatINR } from "../../utils/currency";
 import { getImageUriCandidates } from "../../utils/image";
@@ -50,26 +60,26 @@ export default function KankregCartRow({
           {item?.name}
         </Text>
         {variant ? (
-          <Text style={styles.variant}>
+          <Text style={[styles.variant, figmaTextMuted(isDark)]}>
             {variant}
             {qty > 1 ? ` · Qty ${qty}` : ""}
           </Text>
         ) : qty > 1 ? (
-          <Text style={styles.variant}>Qty {qty}</Text>
+          <Text style={[styles.variant, figmaTextMuted(isDark)]}>Qty {qty}</Text>
         ) : null}
         <View style={styles.qtyRow}>
-          <View style={styles.qtyPill}>
+          <View style={[styles.qtyPill, figmaRowBorder(isDark)]}>
             <Pressable onPress={onDecrease} style={styles.qtyHit} hitSlop={6} accessibilityLabel="Decrease quantity">
-              <Ionicons name="remove" size={14} color={FIGMA.inkSoft} />
+              <Ionicons name="remove" size={14} color={figmaIconSoft(isDark)} />
             </Pressable>
-            <Text style={styles.qtyNum}>{item?.quantity || 1}</Text>
+            <Text style={[styles.qtyNum, figmaTextPrimary(isDark)]}>{item?.quantity || 1}</Text>
             <Pressable onPress={onIncrease} style={styles.qtyHit} hitSlop={6} accessibilityLabel="Increase quantity">
-              <Ionicons name="add" size={14} color={FIGMA.inkSoft} />
+              <Ionicons name="add" size={14} color={figmaIconSoft(isDark)} />
             </Pressable>
           </View>
           {onRemove ? (
             <Pressable onPress={onRemove} hitSlop={8} accessibilityLabel="Remove item">
-              <Ionicons name="trash-outline" size={15} color={FIGMA.inkFaint} />
+              <Ionicons name="trash-outline" size={15} color={figmaIconMuted(isDark)} />
             </Pressable>
           ) : null}
         </View>
@@ -113,7 +123,6 @@ const styles = StyleSheet.create({
   variant: {
     fontFamily: fonts.regular,
     fontSize: 10,
-    color: FIGMA.inkFaint,
     marginTop: 2,
     marginBottom: 6,
   },
@@ -126,7 +135,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: FIGMA.line,
     borderRadius: 999,
   },
   qtyHit: {
@@ -140,7 +148,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: fonts.semibold,
     fontSize: 11,
-    color: FIGMA.ink,
   },
   price: {
     flexShrink: 0,

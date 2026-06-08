@@ -254,13 +254,20 @@ export function HomeEditorialHero({ navigation, featuredProduct, heroTitle, hero
           />
         </View>
         {HOME_SCREEN_UI.web?.heroStats?.length ? (
-          <View style={styles.editorialStats}>
+          <View
+            style={[
+              styles.editorialStats,
+              isDark && { borderTopColor: "rgba(232, 200, 90, 0.18)" },
+            ]}
+          >
             {HOME_SCREEN_UI.web.heroStats.map((stat) => (
               <View key={stat.key} style={styles.statCell}>
                 <Text style={[styles.statN, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
                   {stat.value}
                 </Text>
-                <Text style={styles.statL}>{stat.label}</Text>
+                <Text style={[styles.statL, { color: isDark ? "rgba(245,239,228,0.65)" : KANKREG_PALETTE.inkFaint }]}>
+                  {stat.label}
+                </Text>
               </View>
             ))}
           </View>
@@ -273,15 +280,37 @@ export function HomeEditorialHero({ navigation, featuredProduct, heroTitle, hero
           style={StyleSheet.absoluteFillObject}
         />
         {image ? <Image source={{ uri: image }} style={styles.editorialPhoto} contentFit="cover" /> : null}
-        <View style={styles.floatA}>
+        <View
+          style={[
+            styles.floatA,
+            isDark && {
+              backgroundColor: "rgba(24, 21, 19, 0.92)",
+              borderColor: "rgba(232, 200, 90, 0.22)",
+            },
+          ]}
+        >
           <Text style={styles.floatEyebrow}>{HOME_SCREEN_UI.editorial.featuredLabel}</Text>
-          <Text style={styles.floatTitle}>{featuredProduct?.name || HOME_SCREEN_UI.bestsellers.titleFallback}</Text>
+          <Text style={[styles.floatTitle, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
+            {featuredProduct?.name || HOME_SCREEN_UI.bestsellers.titleFallback}
+          </Text>
         </View>
-        <View style={styles.floatB}>
+        <View
+          style={[
+            styles.floatB,
+            isDark && {
+              backgroundColor: "rgba(24, 21, 19, 0.92)",
+              borderColor: "rgba(232, 200, 90, 0.22)",
+            },
+          ]}
+        >
           <View style={styles.swatch} />
           <View>
-            <Text style={styles.floatFrom}>{HOME_SCREEN_UI.hero.fromLabel}</Text>
-            <Text style={styles.floatPrice}>{HOME_SCREEN_UI.editorial.shopNowLabel}</Text>
+            <Text style={[styles.floatFrom, { color: isDark ? "rgba(245,239,228,0.65)" : KANKREG_PALETTE.inkFaint }]}>
+              {HOME_SCREEN_UI.hero.fromLabel}
+            </Text>
+            <Text style={[styles.floatPrice, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
+              {HOME_SCREEN_UI.editorial.shopNowLabel}
+            </Text>
           </View>
         </View>
       </View>

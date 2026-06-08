@@ -17,6 +17,19 @@ import { platformShadow } from "../../theme/shadowPlatform";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import useGsapReveal from "../../hooks/useGsapReveal";
 
+const testimonialCardShadow = platformShadow({
+  ios: {
+    shadowColor: "#3D2A12",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.07,
+    shadowRadius: 16,
+  },
+  android: { elevation: 2 },
+  web: {
+    boxShadow: "0 12px 28px rgba(61, 42, 18, 0.07), inset 0 1px 0 rgba(255,255,255,0.92)",
+  },
+});
+
 function StarRow({ rating = 5, color }) {
   const stars = Array.from({ length: 5 });
   return (
@@ -201,19 +214,6 @@ export default function HomeTestimonials({ c, isDark }) {
     </View>
   );
 }
-
-const testimonialCardShadow = platformShadow({
-  ios: {
-    shadowColor: "#3D2A12",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.07,
-    shadowRadius: 16,
-  },
-  android: { elevation: 2 },
-  web: {
-    boxShadow: "0 12px 28px rgba(61, 42, 18, 0.07), inset 0 1px 0 rgba(255,255,255,0.92)",
-  },
-});
 
 const styles = StyleSheet.create({
   section: {

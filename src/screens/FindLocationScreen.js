@@ -7,7 +7,8 @@ import * as Haptics from "expo-haptics";
 import { useAuth } from "../context/AuthContext";
 import { useDeliveryLocation } from "../context/DeliveryLocationContext";
 import NativeFindLocationScene from "../components/native/NativeFindLocationScene";
-import { FIGMA } from "../theme/figmaApp";
+import { useTheme } from "../context/ThemeContext";
+import { FIGMA, figmaPageBg, figmaSurfaceBg, figmaTextPrimary, figmaTextSecondary } from "../theme/figmaApp";
 import { fonts, spacing } from "../theme/tokens";
 
 /**
@@ -15,7 +16,8 @@ import { fonts, spacing } from "../theme/tokens";
  * Skips to Home when delivery location was confirmed recently.
  */
 export default function FindLocationScreen({ navigation, route }) {
-  const { user } = useAuth();
+  const { colors: c, isDark } = useTheme();
+  const { user, isAuthenticated, isAuthLoading } = useAuth();
   const forceReveal = route?.params?.force === true;
   const {
     bootstrapped,
@@ -32,6 +34,13 @@ export default function FindLocationScreen({ navigation, route }) {
       navigation.replace("Home");
     }
   }, [navigation]);
+
+  useEffect(() => {
+    if (Platform.OS === "web" || isAuthLoading) return;
+    if (!isAuthenticated) {
+      navigation.replace("Home");
+    }
+  }, [isAuthenticated, isAuthLoading, navigation]);
 
   useEffect(() => {
     if (!bootstrapped || Platform.OS === "web" || forceReveal) return;
@@ -84,24 +93,34 @@ export default function FindLocationScreen({ navigation, route }) {
     });
   };
 
-  if (Platform.OS === "web" || !bootstrapped) {
-    return <View style={styles.boot} />;
+  const pageBg = figmaPageBg(isDark);
+  const gradColors = isDark
+    ? [c.background, c.backgroundGradientEnd || "#14110F", c.background]
+    : ["#f8f2e8", FIGMA.paper, "#f3ead8"];
+
+  if (
+    Platform.OS === "web" ||
+    isAuthLoading ||
+    !isAuthenticated ||
+    !bootstrapped
+  ) {
+    return <View style={[styles.boot, { backgroundColor: pageBg }]} />;
   }
 
   if (!needsFindScreen && !forceReveal) {
-    return <View style={styles.boot} />;
+    return <View style={[styles.boot, { backgroundColor: pageBg }]} />;
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: pageBg }]} edges={["top", "bottom"]}>
       <LinearGradient
-        colors={["#f8f2e8", FIGMA.paper, "#f3ead8"]}
+        colors={gradColors}
         locations={[0, 0.45, 1]}
         style={StyleSheet.absoluteFill}
       />
       <View style={styles.topMark}>
         <View style={styles.brandDot} />
-        <Text style={styles.brand}>kankreg</Text>
+        <Text style={[styles.brand, figmaTextSecondary(isDark)]}>kankreg</Text>
       </View>
 
       <View style={styles.body}>
@@ -137,16 +156,31 @@ export default function FindLocationScreen({ navigation, route }) {
             </LinearGradient>
           </Pressable>
         ) : (
-          <View style={styles.searchingBtn}>
-            <Text style={styles.searchingText}>Locating you…</Text>
+          <View
+            style={[
+              styles.searchingBtn,
+              {
+                borderColor: isDark ? c.border : FIGMA.line,
+                backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.7)",
+              },
+            ]}
+          >
+            <Text style={[styles.searchingText, figmaTextSecondary(isDark)]}>Locating you…</Text>
           </View>
         )}
 
         <Pressable
-          style={({ pressed }) => [styles.secondaryBtn, pressed && styles.btnPressed]}
+          style={({ pressed }) => [
+            styles.secondaryBtn,
+            {
+              borderColor: isDark ? c.border : FIGMA.line,
+              backgroundColor: figmaSurfaceBg(isDark),
+            },
+            pressed && styles.btnPressed,
+          ]}
           onPress={() => navigation.navigate(user ? "ManageAddress" : "Login")}
         >
-          <Text style={styles.secondaryText}>Enter address manually</Text>
+          <Text style={[styles.secondaryText, figmaTextPrimary(isDark)]}>Enter address manually</Text>
         </Pressable>
 
         {phase === "found" ? (
@@ -162,11 +196,9 @@ export default function FindLocationScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: FIGMA.paper,
   },
   boot: {
     flex: 1,
-    backgroundColor: FIGMA.paper,
   },
   topMark: {
     alignItems: "center",
@@ -184,7 +216,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     letterSpacing: 4,
     textTransform: "uppercase",
-    color: FIGMA.inkSoft,
   },
   body: {
     flex: 1,
@@ -219,28 +250,22 @@ const styles = StyleSheet.create({
   searchingBtn: {
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: FIGMA.line,
-    backgroundColor: "rgba(255,255,255,0.7)",
     paddingVertical: 15,
     alignItems: "center",
   },
   searchingText: {
     fontFamily: fonts.semibold,
     fontSize: 15,
-    color: FIGMA.inkSoft,
   },
   secondaryBtn: {
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: FIGMA.line,
-    backgroundColor: FIGMA.card,
     paddingVertical: 14,
     alignItems: "center",
   },
   secondaryText: {
     fontFamily: fonts.semibold,
     fontSize: 14,
-    color: FIGMA.ink,
   },
   linkBtn: {
     alignItems: "center",

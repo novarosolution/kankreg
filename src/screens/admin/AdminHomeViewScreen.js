@@ -8,7 +8,17 @@ import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminHomeView, updateAdminHomeView } from "../../services/adminService";
-import { adminPanel } from "../../theme/adminLayout";
+import {
+  adminPanel,
+  adminTwoColAside,
+  adminTwoColMain,
+  adminTwoColStyle,
+  useAdminCompactLayout,
+} from "../../theme/adminLayout";
+import AdminPanel from "../../components/admin/AdminPanel";
+import AdminPhonePreview from "../../components/admin/AdminPhonePreview";
+import AdminToggleRow from "../../components/admin/AdminToggleRow";
+import AdminAlerts from "../../components/admin/AdminAlerts";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { fonts, radius, spacing, typography } from "../../theme/tokens";
 import { ADMIN_HOME_VIEW_COPY, HOME_VIEW_DEFAULTS } from "../../content/appContent";
@@ -17,7 +27,6 @@ import PremiumInput from "../../components/ui/PremiumInput";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumChip from "../../components/ui/PremiumChip";
-import PremiumCard from "../../components/ui/PremiumCard";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
@@ -57,6 +66,7 @@ function QuickLinkRow({ title, subtitle, icon, onPress, styles, c }) {
 
 export default function AdminHomeViewScreen({ navigation, route }) {
   const { colors: c, shadowPremium } = useTheme();
+  const compact = useAdminCompactLayout();
   const styles = useMemo(() => createAdminHomeViewStyles(c, shadowPremium), [c, shadowPremium]);
     const { token, user } = useAuth();
   const copy = ADMIN_HOME_VIEW_COPY;
@@ -190,22 +200,17 @@ export default function AdminHomeViewScreen({ navigation, route }) {
         <KankregAdminShell
           navigation={navigation}
           route={route}
-          title={copy.title || "Storefront"}
-          subtitle="Hero copy and home sections (saved to database)"
+          title="Home view editor"
+          subtitle="Control the customer home screen"
+          headerRight={
+            <PremiumButton label="Save changes" variant="primary" size="sm" onPress={handleSave} loading={saving} disabled={saving} />
+          }
         >
-        <View style={styles.panel}>
-          <Text style={styles.subtitle}>{copy.subtitle}</Text>
-          {error ? (
-            <View style={styles.bannerSpacer}>
-              <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
-            </View>
-          ) : null}
-          {success ? (
-            <View style={styles.bannerSpacer}>
-              <PremiumErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
-            </View>
-          ) : null}
+        <View style={[adminTwoColStyle(compact), styles.panel]}>
+          <View style={adminTwoColMain(compact)}>
+          <AdminAlerts error={error} success={success} onCloseError={() => setError("")} onCloseSuccess={() => setSuccess("")} />
 
+          <AdminPanel title="Home layout">
           <Section label={copy.heroSection} hint={copy.heroHint} styles={styles} revealIndex={0}>
             <View style={styles.fieldGap}>
               <PremiumInput label="Hero title" value={heroTitle} onChangeText={setHeroTitle} iconLeft="sparkles-outline" />
@@ -243,52 +248,26 @@ export default function AdminHomeViewScreen({ navigation, route }) {
             </View>
           </Section>
 
-          <Section label={copy.visibilitySection} hint={copy.visibilityHint} styles={styles} revealIndex={2}>
-            <PremiumCard
-              padding="md"
-              interactive
-              onPress={() => setShowPrimeSection((current) => !current)}
-              goldAccent={showPrimeSection}
-              style={styles.toggleCard}
-            >
-              <Text style={[styles.toggleBtnText, { color: c.textPrimary }]}>
-                {showPrimeSection ? "Show prime section: ON" : "Show prime section: OFF"}
-              </Text>
-              <Text style={[styles.toggleDetail, { color: c.textSecondary }]}>
-                Affects how the prime-titled bucket is merged with other Home section groups on the storefront.
-              </Text>
-            </PremiumCard>
-
-            <PremiumCard
-              padding="md"
-              interactive
-              onPress={() => setShowHomeSections((current) => !current)}
-              goldAccent={showHomeSections}
-              style={styles.toggleCard}
-            >
-              <Text style={[styles.toggleBtnText, { color: c.textPrimary }]}>
-                {showHomeSections ? "Show home sections: ON" : "Show home sections: OFF"}
-              </Text>
-              <Text style={[styles.toggleDetail, { color: c.textSecondary }]}>
-                When on, Home can render one card per section title (plus merged list rules above).
-              </Text>
-            </PremiumCard>
-
-            <PremiumCard
-              padding="md"
-              interactive
-              onPress={() => setShowProductTypeSections((current) => !current)}
-              goldAccent={showProductTypeSections}
-              style={styles.toggleCard}
-            >
-              <Text style={[styles.toggleBtnText, { color: c.textPrimary }]}>
-                {showProductTypeSections ? "Show product types: ON" : "Show product types: OFF"}
-              </Text>
-              <Text style={[styles.toggleDetail, { color: c.textSecondary }]}>
-                Saved for your storefront profile (toggle + title travel with the same home-view API).
-              </Text>
-            </PremiumCard>
-          </Section>
+          <AdminToggleRow
+            title="Prime / bestsellers section"
+            subtitle="Show the curated product grid"
+            value={showPrimeSection}
+            onValueChange={setShowPrimeSection}
+          />
+          <AdminToggleRow
+            title="Category section"
+            subtitle="Show shop-by-category rail"
+            value={showProductTypeSections}
+            onValueChange={setShowProductTypeSections}
+          />
+          <AdminToggleRow
+            title="Editorial & quote"
+            subtitle="Featured block + brand quote"
+            value={showHomeSections}
+            onValueChange={setShowHomeSections}
+            isLast
+          />
+          </AdminPanel>
 
           <Section label={copy.shopLocationSection} hint={copy.shopLocationHint} styles={styles} revealIndex={3}>
             <View style={styles.fieldGap}>
@@ -395,15 +374,19 @@ export default function AdminHomeViewScreen({ navigation, route }) {
             </View>
           </Section>
 
-          <PremiumButton
-            label={saving ? "Saving…" : "Save storefront settings"}
-            variant="primary"
-            size="lg"
-            onPress={handleSave}
-            disabled={saving}
-            loading={saving}
-            fullWidth
-          />
+          </View>
+          <View style={adminTwoColAside(compact)}>
+            <AdminPanel title="Live preview">
+              <AdminPhonePreview
+                heroTitle={heroTitle}
+                heroSubtitle={heroSubtitle}
+                primeTitle={primeSectionTitle}
+                categoryTitle={productTypeTitle}
+                showPrime={showPrimeSection}
+                showCategories={showProductTypeSections}
+              />
+            </AdminPanel>
+          </View>
         </View>
         </KankregAdminShell>
 </KankregScrollPage>

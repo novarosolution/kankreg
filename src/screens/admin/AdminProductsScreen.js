@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
+import { ADMIN_GATE } from "../../content/adminContent";
 import { Platform, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
@@ -8,7 +8,11 @@ import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { deleteAdminProduct, fetchAdminProducts } from "../../services/adminService";
-import { adminPanel, adminToolbarPrimary, adminToolbarRow } from "../../theme/adminLayout";
+import { adminPanel, adminToolbarPrimary, adminToolbarRow, useAdminCompactLayout } from "../../theme/adminLayout";
+import AdminPanel from "../../components/admin/AdminPanel";
+import AdminDataTable from "../../components/admin/AdminDataTable";
+import AdminProductCell from "../../components/admin/AdminProductCell";
+import AdminStatusPill from "../../components/admin/AdminStatusPill";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { ALCHEMY } from "../../theme/customerAlchemy";
 import { layout, radius, spacing, typography } from "../../theme/tokens";
@@ -59,6 +63,7 @@ function coverUri(p) {
 
 export default function AdminProductsScreen({ navigation, route }) {
   const { colors: c, shadowPremium } = useTheme();
+  const compact = useAdminCompactLayout();
   const styles = useMemo(() => createAdminProductsStyles(c, shadowPremium), [c, shadowPremium]);
     const { user, token } = useAuth();
   const [products, setProducts] = useState([]);
@@ -173,8 +178,17 @@ export default function AdminProductsScreen({ navigation, route }) {
         <KankregAdminShell
           navigation={navigation}
           route={route}
-          title={ADMIN_SCREEN_COPY.products.title}
-          subtitle={ADMIN_SCREEN_COPY.products.subtitle}
+          title="Products"
+          subtitle={`${stats.total} products · ${stats.low} low stock`}
+          headerRight={
+            <PremiumButton
+              label="+ Add product"
+              variant="primary"
+              size="sm"
+              iconLeft="add"
+              onPress={() => navigation.navigate("AdminAddProduct")}
+            />
+          }
         >
         <View style={styles.panel}>
           {error ? (
@@ -245,6 +259,60 @@ export default function AdminProductsScreen({ navigation, route }) {
                 <SkeletonBlock key={i} width="100%" height={96} rounded="lg" style={styles.productCard} />
               ))
             ) : null}
+            {!bootLoading && filteredProducts.length > 0 && !compact ? (
+              <AdminPanel noPadding style={styles.tablePanel}>
+                <AdminDataTable
+                  compact={false}
+                  rows={visibleProducts}
+                  keyExtractor={(row) => row._id}
+                  onRowPress={(row) => navigation.navigate("AdminAddProduct", { product: row })}
+                  columns={[
+                    {
+                      key: "name",
+                      label: "Product",
+                      flex: 1.6,
+                      render: (row) => (
+                        <AdminProductCell name={row.name} imageUri={coverUri(row)} />
+                      ),
+                    },
+                    { key: "category", label: "Category", flex: 1, render: (row) => row.category || "—" },
+                    {
+                      key: "price",
+                      label: "Price",
+                      flex: 0.8,
+                      strong: true,
+                      render: (row) => formatINR(row.price),
+                    },
+                    {
+                      key: "stock",
+                      label: "Stock",
+                      flex: 0.7,
+                      render: (row) => `${Math.max(0, Number(row.stockQty) || 0)} units`,
+                    },
+                    {
+                      key: "status",
+                      label: "Status",
+                      flex: 0.8,
+                      render: (row) => {
+                        const chip = productStockChip(row);
+                        const tone = chip.tone === "green" ? "ok" : chip.tone === "red" ? "low" : "pend";
+                        const label = chip.tone === "green" ? "Active" : chip.label;
+                        return <AdminStatusPill label={label} tone={tone} />;
+                      },
+                    },
+                    {
+                      key: "edit",
+                      label: "",
+                      width: 56,
+                      align: "right",
+                      render: () => (
+                        <Text style={styles.editLink}>Edit</Text>
+                      ),
+                    },
+                  ]}
+                />
+              </AdminPanel>
+            ) : null}
             {!bootLoading && filteredProducts.length === 0 ? (
               <PremiumEmptyState
                 iconName="cube-outline"
@@ -256,7 +324,7 @@ export default function AdminProductsScreen({ navigation, route }) {
                 compact
               />
             ) : null}
-            {!bootLoading
+            {!bootLoading && compact
               ? visibleProducts.map((item, idx) => {
               const chip = productStockChip(item);
               const uri = coverUri(item);
@@ -386,6 +454,16 @@ function createAdminProductsStyles(c, shadowPremium) {
     listContent: {
       gap: spacing.sm,
       paddingBottom: spacing.xl},
+    tablePanel: {
+      marginBottom: spacing.md,
+      paddingHorizontal: 0,
+      paddingBottom: 4,
+    },
+    editLink: {
+      color: "#8a5f22",
+      fontWeight: "600",
+      fontSize: 12.5,
+    },
     productCard: {
       width: "100%",
       ...Platform.select({

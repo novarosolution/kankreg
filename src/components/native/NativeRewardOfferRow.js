@@ -1,7 +1,7 @@
 import React from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { FIGMA, figmaCardShell, figmaDisplayTitle } from "../../theme/figmaApp";
+import { FIGMA, figmaCardShell, figmaDisplayTitle, figmaTextMuted } from "../../theme/figmaApp";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/tokens";
 
@@ -27,19 +27,21 @@ export default function NativeRewardOfferRow({
           {title}
         </Text>
         {subtitle ? (
-          <Text style={styles.subtitle} numberOfLines={2}>
+          <Text style={[styles.subtitle, figmaTextMuted(isDark)]} numberOfLines={2}>
             {subtitle}
           </Text>
         ) : null}
       </View>
       <View style={styles.right}>
-        <Text style={styles.pts}>{pointsCost} pts</Text>
+        <Text style={[styles.pts, { color: isDark ? FIGMA.goldBright : FIGMA.gold }]}>{pointsCost} pts</Text>
         <Pressable
           onPress={onRedeem}
           disabled={disabled || busy}
           style={({ pressed }) => [pressed && { opacity: 0.8 }]}
         >
-          <Text style={styles.redeem}>{busy ? "…" : "Redeem"}</Text>
+          <Text style={[styles.redeem, { color: isDark ? FIGMA.goldBright : FIGMA.goldDeep }]}>
+            {busy ? "…" : "Redeem"}
+          </Text>
         </Pressable>
       </View>
     </View>
@@ -74,7 +76,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: fonts.regular,
     fontSize: 10,
-    color: FIGMA.inkFaint,
     marginTop: 2,
   },
   right: {
@@ -84,12 +85,10 @@ const styles = StyleSheet.create({
   pts: {
     fontFamily: fonts.bold,
     fontSize: 12,
-    color: FIGMA.gold,
   },
   redeem: {
     fontFamily: fonts.bold,
     fontSize: 9,
-    color: FIGMA.goldDeep,
     marginTop: 2,
     textTransform: "uppercase",
   },

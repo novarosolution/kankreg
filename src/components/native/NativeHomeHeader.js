@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
-import { FIGMA, figmaEyebrow, figmaIconCircle } from "../../theme/figmaApp";
+import { FIGMA, figmaEyebrow, figmaIconCircle, figmaIconMuted, figmaIconSoft } from "../../theme/figmaApp";
 import { fonts, spacing } from "../../theme/tokens";
 import { formatSavedAddressLabel } from "../../utils/deliveryLocationLabel";
 
@@ -16,7 +16,7 @@ export default function NativeHomeHeader({
   onRefreshLocation,
 }) {
   const { user } = useAuth();
-  const { isDark } = useTheme();
+  const { colors: c, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const circle = useMemo(() => figmaIconCircle(isDark), [isDark]);
   if (Platform.OS === "web") return null;
@@ -26,7 +26,16 @@ export default function NativeHomeHeader({
   const locationLabel = locationLabelProp || fallbackLabel;
 
   return (
-    <View style={[styles.shell, { paddingTop: Math.max(insets.top, spacing.xs) }]}>
+    <View
+      style={[
+        styles.shell,
+        {
+          paddingTop: Math.max(insets.top, spacing.xs),
+          backgroundColor: isDark ? c.background : FIGMA.paper,
+          borderBottomColor: isDark ? c.border : FIGMA.line,
+        },
+      ]}
+    >
       <View style={styles.row}>
         <Pressable
           style={styles.locationCol}
@@ -37,16 +46,16 @@ export default function NativeHomeHeader({
           accessibilityRole="button"
           accessibilityLabel={`Deliver to ${locationLabel}`}
         >
-          <Text style={figmaEyebrow(isDark)}>DELIVER TO</Text>
+          <Text style={[figmaEyebrow(isDark), styles.deliverEyebrow]}>DELIVER TO</Text>
           <View style={styles.locationRow}>
-            <Ionicons name="location-outline" size={13} color={FIGMA.gold} />
+            <Ionicons name="location-outline" size={13} color={isDark ? FIGMA.goldBright : FIGMA.gold} />
             <Text
               style={[styles.location, { color: isDark ? FIGMA.paper : FIGMA.ink }]}
               numberOfLines={1}
             >
               {locationLabel}
             </Text>
-            <Ionicons name="chevron-down" size={12} color={FIGMA.inkFaint} />
+            <Ionicons name="chevron-down" size={12} color={figmaIconMuted(isDark)} />
           </View>
         </Pressable>
         <Pressable
@@ -54,15 +63,17 @@ export default function NativeHomeHeader({
           onPress={() => navigation.navigate("Shop")}
           accessibilityLabel="Search shop"
         >
-          <Ionicons name="search-outline" size={16} color={FIGMA.inkSoft} />
+          <Ionicons name="search-outline" size={16} color={figmaIconSoft(isDark)} />
         </Pressable>
         <Pressable
           style={[circle, styles.bellWrap]}
           onPress={() => navigation.navigate(user ? "Notifications" : "Login")}
           accessibilityLabel="Notifications"
         >
-          <Ionicons name="notifications-outline" size={16} color={FIGMA.inkSoft} />
-          {hasNotifications ? <View style={styles.bellDot} /> : null}
+          <Ionicons name="notifications-outline" size={16} color={figmaIconSoft(isDark)} />
+          {hasNotifications ? (
+            <View style={[styles.bellDot, { borderColor: isDark ? c.surface : FIGMA.card }]} />
+          ) : null}
         </Pressable>
       </View>
     </View>
@@ -71,10 +82,8 @@ export default function NativeHomeHeader({
 
 const styles = StyleSheet.create({
   shell: {
-    backgroundColor: FIGMA.paper,
     zIndex: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: FIGMA.line,
     paddingBottom: spacing.sm + 2,
   },
   row: {
@@ -86,6 +95,10 @@ const styles = StyleSheet.create({
   locationCol: {
     flex: 1,
     minWidth: 0,
+  },
+  deliverEyebrow: {
+    fontSize: 9,
+    letterSpacing: 2.2,
   },
   locationRow: {
     flexDirection: "row",
@@ -111,6 +124,5 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: FIGMA.gold,
     borderWidth: 1.5,
-    borderColor: FIGMA.card,
   },
 });

@@ -2,7 +2,7 @@ import React from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { FIGMA, figmaCardShell, figmaDisplayTitle } from "../../theme/figmaApp";
+import { FIGMA, figmaCardShell, figmaDisplayTitle, figmaTextMuted } from "../../theme/figmaApp";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/tokens";
 
@@ -27,13 +27,15 @@ export default function NativeProfileCard({ name, email, avatarUrl, memberTag })
           {name || "Member"}
         </Text>
         {email ? (
-          <Text style={styles.email} numberOfLines={1}>
+          <Text style={[styles.email, figmaTextMuted(isDark)]} numberOfLines={1}>
             {email}
           </Text>
         ) : null}
         {memberTag ? (
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>{memberTag}</Text>
+            <Text style={[styles.badgeText, { color: isDark ? FIGMA.goldBright : FIGMA.goldDeep }]}>
+              {memberTag}
+            </Text>
           </View>
         ) : null}
       </View>
@@ -78,7 +80,6 @@ const styles = StyleSheet.create({
   email: {
     fontFamily: fonts.regular,
     fontSize: 11,
-    color: FIGMA.inkFaint,
     marginTop: 2,
   },
   badge: {

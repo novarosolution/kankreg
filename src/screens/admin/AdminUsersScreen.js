@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
+import { ADMIN_GATE } from "../../content/adminContent";
 import { Alert, Platform, StyleSheet, Text, View } from "react-native";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
 import AdminScreenShell from "../../components/admin/AdminScreenShell";
@@ -32,6 +32,11 @@ import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumCard from "../../components/ui/PremiumCard";
 import PremiumChip from "../../components/ui/PremiumChip";
+import AdminPanel from "../../components/admin/AdminPanel";
+import AdminDataTable from "../../components/admin/AdminDataTable";
+import AdminStatusPill from "../../components/admin/AdminStatusPill";
+import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 
 export default function AdminUsersScreen({ navigation, route }) {
   const { colors: c, shadowPremium } = useTheme();
@@ -221,8 +226,8 @@ export default function AdminUsersScreen({ navigation, route }) {
         <KankregAdminShell
           navigation={navigation}
           route={route}
-          title={ADMIN_SCREEN_COPY.users.title}
-          subtitle={ADMIN_SCREEN_COPY.users.subtitle}
+          title="Users"
+          subtitle={`${stats.total.toLocaleString()} registered`}
         >
         <View style={styles.panel}>
           <SectionReveal preset="fade-up" delay={0}>
@@ -286,6 +291,60 @@ export default function AdminUsersScreen({ navigation, route }) {
 
           <SectionReveal preset="fade-up" delay={60}>
           <View style={styles.listContent}>
+            {visibleUsers.length > 0 && !compactAdmin ? (
+              <AdminPanel noPadding style={styles.tablePanel}>
+                <AdminDataTable
+                  rows={renderedUsers}
+                  keyExtractor={(row) => row._id}
+                  columns={[
+                    {
+                      key: "user",
+                      label: "User",
+                      flex: 1.5,
+                      render: (row) => (
+                        <View style={styles.userCell}>
+                          <View style={styles.userAv}>
+                            <Text style={styles.userAvText}>
+                              {String(row.name || row.email || "?").charAt(0).toUpperCase()}
+                            </Text>
+                          </View>
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <Text style={styles.userName} numberOfLines={1}>
+                              {row.name || "Unnamed"}
+                            </Text>
+                            <Text style={styles.userEmail} numberOfLines={1}>
+                              {row.email}
+                            </Text>
+                          </View>
+                        </View>
+                      ),
+                    },
+                    {
+                      key: "role",
+                      label: "Role",
+                      flex: 0.8,
+                      render: (row) =>
+                        row.isAdmin ? "Admin" : row.isDeliveryPartner ? "Delivery" : "Customer",
+                    },
+                    { key: "orders", label: "Orders", width: 64, render: () => "—" },
+                    { key: "spent", label: "Spent", width: 72, render: () => "—" },
+                    {
+                      key: "joined",
+                      label: "Joined",
+                      flex: 0.8,
+                      render: (row) =>
+                        row.createdAt ? new Date(row.createdAt).toLocaleDateString(undefined, { month: "short", year: "numeric" }) : "—",
+                    },
+                    {
+                      key: "status",
+                      label: "Status",
+                      flex: 0.7,
+                      render: () => <AdminStatusPill label="Active" tone="ok" />,
+                    },
+                  ]}
+                />
+              </AdminPanel>
+            ) : null}
             {visibleUsers.length === 0 ? (
               <PremiumEmptyState
                 iconName="people-outline"
@@ -294,7 +353,8 @@ export default function AdminUsersScreen({ navigation, route }) {
                 compact
               />
             ) : null}
-            {renderedUsers.map((item) => (
+            {compactAdmin
+              ? renderedUsers.map((item) => (
               <PremiumCard key={item._id} padding="md" style={styles.cardWrap}>
                 <View style={styles.cardTopRow}>
                   <View style={styles.userMain}>
@@ -406,7 +466,8 @@ export default function AdminUsersScreen({ navigation, route }) {
                   </View>
                 ) : null}
               </PremiumCard>
-            ))}
+            ))
+              : null}
             {renderedUsers.length < visibleUsers.length ? (
               <PremiumButton
                 label={`Load more (${visibleUsers.length - renderedUsers.length} remaining)`}
@@ -439,6 +500,38 @@ function createAdminUsersStyles(c, shadowPremium, compact = false) {
     alignSelf: "flex-start"},
   bannerSpacer: {
     marginBottom: spacing.sm},
+  tablePanel: {
+    marginBottom: spacing.md,
+    paddingHorizontal: 0,
+    paddingBottom: 4,
+  },
+  userCell: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  userAv: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: KANKREG_PALETTE.goldBright,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  userAvText: {
+    fontFamily: FONT_DISPLAY,
+    fontSize: 13,
+    color: "#fff",
+  },
+  userName: {
+    color: KANKREG_PALETTE.ink,
+    fontWeight: "600",
+    fontSize: 12.5,
+  },
+  userEmail: {
+    color: KANKREG_PALETTE.inkFaint,
+    fontSize: 11,
+  },
   statsGrid: adminStatsGridStyle(compact),
   metricCard: {
     ...adminMetricCardStyle(compact),

@@ -3,7 +3,8 @@ import { Platform, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
-import { FIGMA, figmaDisplayTitle, figmaEyebrow, figmaBody } from "../../theme/figmaApp";
+import { useTheme } from "../../context/ThemeContext";
+import { FIGMA, figmaBody, figmaDisplayTitle, figmaEyebrow, figmaPageBg, figmaTextMuted } from "../../theme/figmaApp";
 import { spacing } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
 
@@ -21,6 +22,7 @@ const cardShadow = platformShadow({
  * figmaforkankreg.html auth — gradient hero top + sheet form sliding up.
  */
 export default function AuthMobileShell({ children, artTitle, artSubtitle, eyebrow, mode = "login" }) {
+  const { isDark } = useTheme();
   const { isXs } = useKankregLayout();
   const isLogin = mode === "login";
 
@@ -44,12 +46,14 @@ export default function AuthMobileShell({ children, artTitle, artSubtitle, eyebr
           color="rgba(255,255,255,0.28)"
         />
       </View>
-      <View style={[styles.sheet, cardShadow]}>
-        <Text style={figmaEyebrow()}>{eyebrow || (isLogin ? "Welcome back" : "Join kankreg")}</Text>
-        <Text style={[figmaDisplayTitle(26), styles.sheetTitle]}>
+      <View style={[styles.sheet, cardShadow, { backgroundColor: figmaPageBg(isDark) }]}>
+        <Text style={figmaEyebrow(isDark)}>{eyebrow || (isLogin ? "Welcome back" : "Join kankreg")}</Text>
+        <Text style={[figmaDisplayTitle(26, isDark), styles.sheetTitle]}>
           {artTitle || (isLogin ? "Sign in" : "Create account")}
         </Text>
-        {artSubtitle ? <Text style={[figmaBody(11.5), styles.sheetSub]}>{artSubtitle}</Text> : null}
+        {artSubtitle ? (
+          <Text style={[figmaBody(11.5, isDark), styles.sheetSub, figmaTextMuted(isDark)]}>{artSubtitle}</Text>
+        ) : null}
         {children}
       </View>
     </View>
@@ -83,7 +87,6 @@ const styles = StyleSheet.create({
   sheet: {
     flex: 1,
     marginTop: "34%",
-    backgroundColor: FIGMA.paper,
     borderTopLeftRadius: FIGMA.radiusSheet,
     borderTopRightRadius: FIGMA.radiusSheet,
     paddingHorizontal: 22,
@@ -98,6 +101,5 @@ const styles = StyleSheet.create({
   },
   sheetSub: {
     marginBottom: spacing.md,
-    color: FIGMA.inkFaint,
   },
 });

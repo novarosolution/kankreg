@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import { Platform, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import CustomerScreenShell from "../components/CustomerScreenShell";
@@ -44,6 +45,25 @@ import { useAuth } from "../context/AuthContext";
 import { fetchMyNotifications } from "../services/userService";
 import { spacing } from "../theme/tokens";
 import { useDeliveryLocation } from "../hooks/useDeliveryLocation";
+
+function useRedirectToFindLocationWhenNeeded(navigation, isAuthenticated) {
+  const { bootstrapped, needsFindScreen } = useDeliveryLocation();
+
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS === "web" || !bootstrapped || !isAuthenticated || !needsFindScreen) {
+        return undefined;
+      }
+      const task = setTimeout(() => {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "FindLocation" }],
+        });
+      }, 0);
+      return () => clearTimeout(task);
+    }, [bootstrapped, isAuthenticated, needsFindScreen, navigation])
+  );
+}
 
 const nativeHomeStyles = StyleSheet.create({
   shell: {
@@ -105,6 +125,7 @@ export default function KankregHomeScreen({ navigation }) {
   const [configError, setConfigError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const { displayLabel } = useDeliveryLocation();
+  useRedirectToFindLocationWhenNeeded(navigation, isAuthenticated);
 
   const load = useCallback(async (pull = false) => {
     if (pull) setRefreshing(true);
@@ -190,7 +211,13 @@ export default function KankregHomeScreen({ navigation }) {
           navigation={navigation}
           hasNotifications={hasUnreadNotifications}
           locationLabel={displayLabel}
-          onRefreshLocation={() => navigation.navigate("FindLocation", { force: true })}
+          onRefreshLocation={() => {
+            if (!isAuthenticated) {
+              navigation.navigate("Login");
+              return;
+            }
+            navigation.navigate("FindLocation", { force: true });
+          }}
         />
         <KankregScrollPage
           scrollVariant="inner"

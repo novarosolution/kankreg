@@ -6,6 +6,8 @@ import PremiumStickyBar from "../ui/PremiumStickyBar";
 import { formatINR } from "../../utils/currency";
 import { customerFloatingNavOffset } from "../../theme/screenLayout";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
+import { useTheme } from "../../context/ThemeContext";
+import { figmaTextPrimary } from "../../theme/figmaApp";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { FONT_DISPLAY } from "../../theme/customerAlchemy";
 import { fonts } from "../../theme/tokens";
@@ -19,6 +21,7 @@ export default function KankregBuyBar({
   onAddToCart,
   onBuyNow,
 }) {
+  const { isDark } = useTheme();
   const { isXs, showMobileWebTabBar } = useKankregLayout();
   const insets = useSafeAreaInsets();
   const bottomOffset =
@@ -48,7 +51,7 @@ export default function KankregBuyBar({
     >
       <View style={[styles.inner, isXs && styles.innerStack]}>
         <View style={styles.meta}>
-          <Text style={styles.name} numberOfLines={1}>
+          <Text style={[styles.name, figmaTextPrimary(isDark)]} numberOfLines={1}>
             {productName}
           </Text>
           <Text style={styles.price}>{formatINR(price)}</Text>
@@ -98,7 +101,6 @@ const styles = StyleSheet.create({
   name: {
     fontFamily: FONT_DISPLAY,
     fontSize: 15,
-    color: KANKREG_PALETTE.ink,
   },
   price: {
     fontFamily: fonts.bold,

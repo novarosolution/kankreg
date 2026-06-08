@@ -2,7 +2,13 @@ import React from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { FIGMA, figmaDisplayTitle, figmaStickyFooter } from "../../theme/figmaApp";
+import {
+  FIGMA,
+  figmaDisplayTitle,
+  figmaStickyFooter,
+  figmaTextSecondary,
+} from "../../theme/figmaApp";
+import { useTheme } from "../../context/ThemeContext";
 import { customerFloatingNavOffset } from "../../theme/screenLayout";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { formatINR } from "../../utils/currency";
@@ -37,6 +43,7 @@ export default function KankregCartPayBar({
   compact = false,
   style,
 }) {
+  const { isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { showMobileWebTabBar } = useKankregLayout();
   const isSticky = mode === "sticky";
@@ -46,7 +53,7 @@ export default function KankregCartPayBar({
   return (
     <View
       style={[
-        figmaStickyFooter(),
+        figmaStickyFooter(isDark),
         styles.bar,
         barShadow,
         isSticky && {
@@ -69,8 +76,8 @@ export default function KankregCartPayBar({
     >
       {showBreakdown ? (
         <View style={styles.line}>
-          <Text style={styles.meta}>Subtotal</Text>
-          <Text style={styles.meta}>{formatINR(subtotal)}</Text>
+          <Text style={[styles.meta, figmaTextSecondary(isDark)]}>Subtotal</Text>
+          <Text style={[styles.meta, figmaTextSecondary(isDark)]}>{formatINR(subtotal)}</Text>
         </View>
       ) : null}
       {showBreakdown && discount > 0 ? (
@@ -80,8 +87,8 @@ export default function KankregCartPayBar({
         </View>
       ) : null}
       <View style={[styles.line, styles.totalLine]}>
-        <Text style={[figmaDisplayTitle(13), styles.totalLabel]}>Total</Text>
-        <Text style={[figmaDisplayTitle(19), styles.totalValue]}>{formatINR(total)}</Text>
+        <Text style={[figmaDisplayTitle(13, isDark), styles.totalLabel]}>Total</Text>
+        <Text style={[figmaDisplayTitle(19, isDark), styles.totalValue]}>{formatINR(total)}</Text>
       </View>
       <Pressable
         onPress={onPress}
@@ -119,7 +126,6 @@ const styles = StyleSheet.create({
   meta: {
     fontFamily: fonts.regular,
     fontSize: 11,
-    color: FIGMA.inkSoft,
   },
   discountMeta: {
     color: FIGMA.green,

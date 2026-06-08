@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text } from "react-native";
 import { MY_ORDERS_UI } from "../../content/appContent";
+import { useTheme } from "../../context/ThemeContext";
 import { FIGMA } from "../../theme/figmaApp";
 import { fonts } from "../../theme/tokens";
 
@@ -14,6 +15,9 @@ function filterLabel(key, counts) {
 
 /** Shared order filters — app pills + web chips */
 export default function KankregOrdersFilterRow({ selected, onSelect, counts = {} }) {
+  const { isDark } = useTheme();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
+
   return (
     <ScrollView
       horizontal
@@ -45,35 +49,37 @@ export default function KankregOrdersFilterRow({ selected, onSelect, counts = {}
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    gap: 7,
-    paddingHorizontal: FIGMA.gutter,
-    paddingBottom: 10,
-  },
-  chip: {
-    paddingHorizontal: 13,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  chipOn: {
-    backgroundColor: FIGMA.ink,
-  },
-  chipOff: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: FIGMA.line,
-    backgroundColor: FIGMA.card,
-  },
-  chipHover: {
-    borderColor: FIGMA.gold,
-  },
-  chipText: {
-    fontFamily: fonts.semibold,
-    fontSize: 10,
-    color: FIGMA.inkSoft,
-  },
-  chipTextOn: {
-    color: "#fff",
-  },
-});
+function createStyles(isDark) {
+  return StyleSheet.create({
+    row: {
+      flexDirection: "row",
+      gap: 7,
+      paddingHorizontal: FIGMA.gutter,
+      paddingBottom: 10,
+    },
+    chip: {
+      paddingHorizontal: 13,
+      paddingVertical: 6,
+      borderRadius: 999,
+    },
+    chipOn: {
+      backgroundColor: isDark ? FIGMA.goldDeep : FIGMA.ink,
+    },
+    chipOff: {
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: isDark ? "#3f3933" : FIGMA.line,
+      backgroundColor: isDark ? "#181513" : FIGMA.card,
+    },
+    chipHover: {
+      borderColor: isDark ? FIGMA.goldBright : FIGMA.gold,
+    },
+    chipText: {
+      fontFamily: fonts.semibold,
+      fontSize: 10,
+      color: isDark ? "rgba(245, 239, 228, 0.72)" : FIGMA.inkSoft,
+    },
+    chipTextOn: {
+      color: "#fff",
+    },
+  });
+}

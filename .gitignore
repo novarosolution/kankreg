@@ -1,3 +1,5 @@
+.env
+.env.local
 node_modules
 .tmp-bundle-check
 .tmp-export-verify

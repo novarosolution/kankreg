@@ -64,7 +64,7 @@ export function KankregPageWrap({ children, style, gap }) {
   );
 }
 
-function CheckoutStepCell({ index, label, active, done, hideLabels }) {
+function CheckoutStepCell({ index, label, active, done, hideLabels, isDark }) {
   const reducedMotion = useReducedMotion();
   const pulse = useSharedValue(active ? 1 : 0);
 
@@ -80,30 +80,52 @@ function CheckoutStepCell({ index, label, active, done, hideLabels }) {
     transform: [{ scale: 1 + pulse.value * 0.08 }],
   }));
 
-  const borderColor = done ? KANKREG_PALETTE.green : active ? KANKREG_PALETTE.gold : KANKREG_PALETTE.line;
+  const borderColor = done
+    ? KANKREG_PALETTE.green
+    : active
+      ? KANKREG_PALETTE.gold
+      : isDark
+        ? "#3f3933"
+        : KANKREG_PALETTE.line;
 
   return (
     <View style={[styles.step, { borderBottomColor: borderColor }]}>
       <Animated.View
         style={[
           styles.stepNum,
+          !done && !active && (isDark ? styles.stepNumDark : null),
           done && styles.stepNumDone,
           active && styles.stepNumOn,
           numStyle,
         ]}
       >
-        <Text style={[styles.stepNumText, (done || active) && styles.stepNumTextOn]}>
+        <Text
+          style={[
+            styles.stepNumText,
+            isDark && !done && !active && styles.stepNumTextDark,
+            (done || active) && styles.stepNumTextOn,
+          ]}
+        >
           {done ? "✓" : String(index + 1)}
         </Text>
       </Animated.View>
       {hideLabels ? null : (
-        <Text style={[styles.stepLabel, (done || active) && styles.stepLabelOn]}>{label}</Text>
+        <Text
+          style={[
+            styles.stepLabel,
+            isDark && styles.stepLabelDark,
+            (done || active) && (isDark ? styles.stepLabelOnDark : styles.stepLabelOn),
+          ]}
+        >
+          {label}
+        </Text>
       )}
     </View>
   );
 }
 
 export function KankregCheckoutSteps({ active = 2 }) {
+  const { isDark } = useTheme();
   const { isXs } = useKankregLayout();
   const hideLabels = isXs;
   const steps = ["Bag", "Address", "Payment", "Confirm"];
@@ -117,6 +139,7 @@ export function KankregCheckoutSteps({ active = 2 }) {
           active={i === active}
           done={i < active}
           hideLabels={hideLabels}
+          isDark={isDark}
         />
       ))}
     </View>
@@ -188,6 +211,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  stepNumDark: {
+    backgroundColor: "#24201d",
+  },
   stepNumDone: { backgroundColor: KANKREG_PALETTE.green },
   stepNumOn: { backgroundColor: KANKREG_PALETTE.gold },
   stepNumText: {
@@ -195,13 +221,20 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     color: KANKREG_PALETTE.inkFaint,
   },
+  stepNumTextDark: {
+    color: "rgba(245, 239, 228, 0.55)",
+  },
   stepNumTextOn: { color: "#fff" },
   stepLabel: {
     fontSize: 13,
     fontFamily: fonts.semibold,
     color: KANKREG_PALETTE.inkFaint,
   },
+  stepLabelDark: {
+    color: "rgba(245, 239, 228, 0.55)",
+  },
   stepLabelOn: { color: KANKREG_PALETTE.ink },
+  stepLabelOnDark: { color: KANKREG_PALETTE.paper },
   grain: {
     ...Platform.select({
       web: {

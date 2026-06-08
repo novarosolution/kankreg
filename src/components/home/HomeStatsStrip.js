@@ -12,6 +12,98 @@ import useReducedMotion from "../../hooks/useReducedMotion";
 import useGsapReveal from "../../hooks/useGsapReveal";
 import { platformShadow } from "../../theme/shadowPlatform";
 
+const statsWrapShadow = platformShadow({
+  ios: {
+    shadowColor: "#3D2A12",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+  },
+  android: { elevation: 3 },
+  web: {
+    boxShadow:
+      "0 14px 36px rgba(61, 42, 18, 0.07), 0 2px 10px rgba(28, 25, 23, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.94)",
+  },
+});
+
+const styles = StyleSheet.create({
+  wrap: {
+    width: "100%",
+    maxWidth: layout.maxContentWidth,
+    alignSelf: "center",
+    borderRadius: radius.xxl,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: 2,
+    borderTopColor: ALCHEMY.gold,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.xl,
+    overflow: "hidden",
+    ...statsWrapShadow,
+  },
+  overline: {
+    fontSize: typography.overline + 1,
+    fontFamily: fonts.extrabold,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+    textAlign: "center",
+    marginBottom: spacing.md,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  rowMobileWeb: {
+    gap: spacing.xs,
+  },
+  divider: {
+    width: StyleSheet.hairlineWidth,
+    alignSelf: "stretch",
+    marginVertical: spacing.xs,
+  },
+  cell: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: spacing.xs,
+    gap: 6,
+  },
+  iconBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: 2,
+  },
+  statValue: {
+    fontFamily: FONT_DISPLAY,
+    fontSize: Platform.OS === "web" ? 30 : 26,
+    lineHeight: Platform.OS === "web" ? 36 : 32,
+    letterSpacing: -0.4,
+    fontVariant: ["tabular-nums"],
+  },
+  statValueCompact: {
+    fontSize: 22,
+    lineHeight: 28,
+  },
+  dividerMobileWeb: {
+    marginVertical: spacing.sm,
+  },
+  statLabel: {
+    fontSize: typography.caption,
+    lineHeight: lineHeight.caption,
+    fontFamily: fonts.semibold,
+    letterSpacing: 0.2,
+    textAlign: "center",
+  },
+  peNone: {
+    pointerEvents: "none",
+  },
+});
+
 function formatStat(value, { precision = 0, prefix = "", suffix = "" }) {
   let n;
   if (precision > 0) {
@@ -121,95 +213,3 @@ export default function HomeStatsStrip({ c, isDark }) {
     </View>
   );
 }
-
-const statsWrapShadow = platformShadow({
-  ios: {
-    shadowColor: "#3D2A12",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
-  },
-  android: { elevation: 3 },
-  web: {
-    boxShadow:
-      "0 14px 36px rgba(61, 42, 18, 0.07), 0 2px 10px rgba(28, 25, 23, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.94)",
-  },
-});
-
-const styles = StyleSheet.create({
-  wrap: {
-    width: "100%",
-    maxWidth: layout.maxContentWidth,
-    alignSelf: "center",
-    borderRadius: radius.xxl,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderTopWidth: 2,
-    borderTopColor: ALCHEMY.gold,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.xl,
-    overflow: "hidden",
-    ...statsWrapShadow,
-  },
-  overline: {
-    fontSize: typography.overline + 1,
-    fontFamily: fonts.extrabold,
-    letterSpacing: 1.6,
-    textTransform: "uppercase",
-    textAlign: "center",
-    marginBottom: spacing.md,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "stretch",
-    justifyContent: "space-between",
-    width: "100%",
-  },
-  rowMobileWeb: {
-    gap: spacing.xs,
-  },
-  divider: {
-    width: StyleSheet.hairlineWidth,
-    alignSelf: "stretch",
-    marginVertical: spacing.xs,
-  },
-  cell: {
-    flex: 1,
-    alignItems: "center",
-    paddingHorizontal: spacing.xs,
-    gap: 6,
-  },
-  iconBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: StyleSheet.hairlineWidth,
-    marginBottom: 2,
-  },
-  statValue: {
-    fontFamily: FONT_DISPLAY,
-    fontSize: Platform.OS === "web" ? 30 : 26,
-    lineHeight: Platform.OS === "web" ? 36 : 32,
-    letterSpacing: -0.4,
-    fontVariant: ["tabular-nums"],
-  },
-  statValueCompact: {
-    fontSize: 22,
-    lineHeight: 28,
-  },
-  dividerMobileWeb: {
-    marginVertical: spacing.sm,
-  },
-  statLabel: {
-    fontSize: typography.caption,
-    lineHeight: lineHeight.caption,
-    fontFamily: fonts.semibold,
-    letterSpacing: 0.2,
-    textAlign: "center",
-  },
-  peNone: {
-    pointerEvents: "none",
-  },
-});

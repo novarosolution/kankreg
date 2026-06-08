@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
+import { ADMIN_GATE } from "../../content/adminContent";
 import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
@@ -13,7 +13,9 @@ import {
   updateAdminProduct,
   uploadAdminProductImage} from "../../services/adminService";
 import { useTheme } from "../../context/ThemeContext";
-import { adminPanel } from "../../theme/adminLayout";
+import { adminPanel, adminTwoColAside, adminTwoColMain, adminTwoColStyle, useAdminCompactLayout } from "../../theme/adminLayout";
+import AdminPanel from "../../components/admin/AdminPanel";
+import AdminAlerts from "../../components/admin/AdminAlerts";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { radius, spacing } from "../../theme/tokens";
 import { getImageUriCandidates, PRODUCT_HERO_BLURHASH } from "../../utils/image";
@@ -24,6 +26,7 @@ import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumChip from "../../components/ui/PremiumChip";
 import PremiumSectionHeader from "../../components/ui/PremiumSectionHeader";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
+import { formatINR } from "../../utils/currency";
 
 function dedupeUrls(urls = []) {
   const seen = new Set();
@@ -49,6 +52,7 @@ const CATEGORY_OPTIONS = [
 
 export default function AdminAddProductScreen({ navigation, route }) {
   const { colors: c, shadowPremium } = useTheme();
+  const compact = useAdminCompactLayout();
   const styles = useMemo(() => createAdminAddProductStyles(c, shadowPremium), [c, shadowPremium]);
     const { token, user } = useAuth();
   const editingProduct = route?.params?.product;
@@ -129,8 +133,6 @@ export default function AdminAddProductScreen({ navigation, route }) {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadMessage, setUploadMessage] = useState("");
-
-  const title = useMemo(() => (editingProduct ? "Edit Product" : "Add New Product"), [editingProduct]);
 
   useEffect(() => {
     if (!user) return;
@@ -338,13 +340,29 @@ export default function AdminAddProductScreen({ navigation, route }) {
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
-      <KankregAdminShell navigation={navigation} route={route} title={title} subtitle={ADMIN_SCREEN_COPY.addProduct.subtitle}>
-      <View style={styles.panel}>
-        {error ? (
-          <View style={styles.fieldGap}>
-            <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
-          </View>
-        ) : null}
+      <KankregAdminShell
+        navigation={navigation}
+        route={route}
+        title={editingProduct ? "Edit product" : "Add product"}
+        subtitle="Create a new catalogue item"
+        headerRight={
+          <>
+            <PremiumButton label="Cancel" variant="ghost" size="sm" onPress={() => navigation.goBack()} />
+            <PremiumButton
+              label={isSaving ? "Saving…" : editingProduct ? "Update" : "Publish"}
+              variant="primary"
+              size="sm"
+              loading={isSaving}
+              disabled={isSaving}
+              onPress={handleSubmit}
+            />
+          </>
+        }
+      >
+      <View style={[adminTwoColStyle(compact), styles.panel]}>
+        <View style={adminTwoColMain(compact)}>
+        <AdminAlerts error={error} onCloseError={() => setError("")} />
+        <AdminPanel title="Product details">
         {uploadMessage ? (
           <View style={styles.fieldGap}>
             <PremiumErrorBanner severity="success" message={uploadMessage} onClose={() => setUploadMessage("")} compact />
@@ -784,6 +802,34 @@ export default function AdminAddProductScreen({ navigation, route }) {
           fullWidth
           style={styles.saveProductBtn}
         />
+        </AdminPanel>
+        </View>
+        {!compact ? (
+          <View style={adminTwoColAside(compact)}>
+            <AdminPanel title="Store preview">
+              <View style={styles.previewCard}>
+                {primaryImage ? (
+                  <RetryImage sourceUri={primaryImage} style={styles.previewImage} />
+                ) : (
+                  <View style={[styles.previewImage, styles.previewPlaceholder]}>
+                    <Ionicons name="image-outline" size={32} color={c.textMuted} />
+                  </View>
+                )}
+                <Text style={styles.previewName} numberOfLines={2}>
+                  {name.trim() || "Product name"}
+                </Text>
+                <Text style={styles.previewPrice}>
+                  {formatINR(Number(price) || 0)}
+                  {mrp && Number(mrp) > Number(price) ? (
+                    <Text style={styles.previewMrp}> {formatINR(Number(mrp))}</Text>
+                  ) : null}
+                </Text>
+                {category ? <Text style={styles.previewMeta}>{category}</Text> : null}
+                <Text style={styles.previewHint}>Live preview updates as you edit</Text>
+              </View>
+            </AdminPanel>
+          </View>
+        ) : null}
       </View>
       </KankregAdminShell>
 </KankregScrollPage>
@@ -934,5 +980,39 @@ function createAdminAddProductStyles(c, shadowPremium) {
     alignSelf: "flex-end",
     marginTop: spacing.xs},
   variantRowWrap: {
-    marginBottom: spacing.xs}});
+    marginBottom: spacing.xs},
+  previewCard: {
+    alignItems: "stretch",
+    gap: spacing.sm},
+  previewImage: {
+    width: "100%",
+    height: 200,
+    borderRadius: radius.md,
+    backgroundColor: c.surfaceMuted},
+  previewPlaceholder: {
+    alignItems: "center",
+    justifyContent: "center"},
+  previewName: {
+    color: c.textPrimary,
+    fontSize: 18,
+    fontWeight: "700"},
+  previewPrice: {
+    color: c.primaryDark,
+    fontSize: 16,
+    fontWeight: "700"},
+  previewMrp: {
+    color: c.textMuted,
+    fontSize: 13,
+    fontWeight: "500",
+    textDecorationLine: "line-through"},
+  previewMeta: {
+    color: c.textSecondary,
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 1},
+  previewHint: {
+    color: c.textMuted,
+    fontSize: 11,
+    marginTop: spacing.xs}});
 }

@@ -2,6 +2,8 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { MY_ORDERS_UI } from "../../content/appContent";
 import { getActiveProgressStep, getOrderStatusLabel } from "../../utils/orderStatus";
+import { useTheme } from "../../context/ThemeContext";
+import { figmaTextMuted, figmaTextPrimary } from "../../theme/figmaApp";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { fonts } from "../../theme/tokens";
 
@@ -19,6 +21,7 @@ export default function KankregOrderTrack({
   compact = false,
   showStatusHint = true,
 }) {
+  const { isDark } = useTheme();
   const steps = MY_ORDERS_UI.trackSteps;
   const active = stepIndexForStatus(status);
   const statusLabel = getOrderStatusLabel(status);
@@ -31,12 +34,24 @@ export default function KankregOrderTrack({
           const on = i === active;
           return (
             <React.Fragment key={label}>
-              {i > 0 ? <View style={[styles.line, (done || on) && styles.lineDone]} /> : null}
+              {i > 0 ? (
+                <View
+                  style={[
+                    styles.line,
+                    { backgroundColor: isDark ? "#3f3933" : KANKREG_PALETTE.line },
+                    (done || on) && styles.lineDone,
+                  ]}
+                />
+              ) : null}
               <View style={styles.nodeCol}>
                 <View
                   style={[
                     styles.dot,
                     compact && styles.dotCompact,
+                    {
+                      borderColor: isDark ? "#3f3933" : KANKREG_PALETTE.line,
+                      backgroundColor: isDark ? "#181513" : KANKREG_PALETTE.card,
+                    },
                     done && styles.dotDone,
                     on && styles.dotOn,
                   ]}
@@ -49,6 +64,7 @@ export default function KankregOrderTrack({
                   style={[
                     styles.stepLabel,
                     compact && styles.stepLabelCompact,
+                    done || on ? figmaTextPrimary(isDark) : figmaTextMuted(isDark),
                     (done || on) && styles.stepLabelOn,
                   ]}
                 >
@@ -60,7 +76,7 @@ export default function KankregOrderTrack({
         })}
       </View>
       {showStatusHint && statusLabel ? (
-        <Text style={[styles.statusHint, { color: KANKREG_PALETTE.gold }]}>
+        <Text style={[styles.statusHint, { color: isDark ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.gold }]}>
           {statusLabel}
         </Text>
       ) : null}
@@ -82,10 +98,8 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: 14,
     borderWidth: 2,
-    borderColor: KANKREG_PALETTE.line,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: KANKREG_PALETTE.card,
   },
   dotDone: { backgroundColor: KANKREG_PALETTE.green, borderColor: KANKREG_PALETTE.green },
   dotOn: { backgroundColor: KANKREG_PALETTE.gold, borderColor: KANKREG_PALETTE.gold },
@@ -99,11 +113,10 @@ const styles = StyleSheet.create({
   stepLabel: {
     marginTop: 6,
     fontSize: 11,
-    color: KANKREG_PALETTE.inkFaint,
     fontFamily: fonts.medium,
     textAlign: "center",
   },
-  stepLabelOn: { color: KANKREG_PALETTE.ink, fontFamily: fonts.semibold },
+  stepLabelOn: { fontFamily: fonts.semibold },
   stepLabelCompact: {
     marginTop: 4,
     fontSize: 8,
@@ -111,14 +124,14 @@ const styles = StyleSheet.create({
   line: {
     flex: 1,
     height: 2,
-    backgroundColor: KANKREG_PALETTE.line,
     marginTop: 14,
     marginHorizontal: 4,
   },
   lineDone: { backgroundColor: KANKREG_PALETTE.green },
   statusHint: {
     marginTop: 10,
-    fontSize: 12,
     fontFamily: fonts.semibold,
+    fontSize: 12,
+    textAlign: "center",
   },
 });

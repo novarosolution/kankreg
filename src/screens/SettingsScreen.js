@@ -431,22 +431,22 @@ function createSettingsStyles(c, shadowPremium, isDark, layoutFlags = {}) {
       paddingVertical: 13,
       paddingHorizontal: 14,
       borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: FIGMA.line,
+      borderBottomColor: isDark ? c.border : FIGMA.line,
     },
     nativeRowLabel: {
       flex: 1,
       fontFamily: fonts.semibold,
       fontSize: 13,
-      color: FIGMA.ink,
+      color: c.textPrimary,
     },
     nativeRowMeta: {
       fontFamily: fonts.regular,
       fontSize: 11,
-      color: FIGMA.inkFaint,
+      color: c.textMuted,
     },
     nativeRowChevron: {
       fontSize: 16,
-      color: FIGMA.inkFaint,
+      color: c.textMuted,
     },
     panel: {
       ...customerPanel(c, shadowPremium, isDark),

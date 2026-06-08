@@ -123,9 +123,9 @@ export function DeliveryLocationProvider({ children }) {
   }, []);
 
   const needsFindScreen = useMemo(() => {
-    if (Platform.OS === "web" || !bootstrapped) return false;
+    if (Platform.OS === "web" || !bootstrapped || !user) return false;
     return !isDeliveryLocationConfirmed(confirmedAt);
-  }, [bootstrapped, confirmedAt]);
+  }, [bootstrapped, confirmedAt, user]);
 
   const isFinding = status === "detecting";
   const displayLabel = snippet?.label || savedLabel || "Set delivery location";

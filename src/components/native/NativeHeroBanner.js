@@ -4,7 +4,8 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { KankregGrainOverlay } from "../kankreg/KankregPageChrome";
-import { FIGMA, figmaDisplayTitle } from "../../theme/figmaApp";
+import { FIGMA } from "../../theme/figmaApp";
+import { useTheme } from "../../context/ThemeContext";
 import { FONT_DISPLAY } from "../../theme/customerAlchemy";
 import { formatINR } from "../../utils/currency";
 import { getImageUriCandidates, PRODUCT_HERO_BLURHASH } from "../../utils/image";
@@ -22,6 +23,16 @@ const heroShadow = platformShadow({
   android: { elevation: 6 },
 });
 
+const heroShadowDark = platformShadow({
+  ios: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+  },
+  android: { elevation: 8 },
+});
+
 /** figmaforkankreg.html Home hero — radial gradient + product showcase */
 export default function NativeHeroBanner({
   eyebrow = HOME_SCREEN_UI.hero.eyebrow,
@@ -31,6 +42,7 @@ export default function NativeHeroBanner({
   onPress,
   loading = false,
 }) {
+  const { colors: c, isDark } = useTheme();
   const imageUri = useMemo(() => {
     const src = featuredProduct?.image || featuredProduct?.images?.[0] || "";
     return getImageUriCandidates(src)[0] || "";
@@ -42,6 +54,14 @@ export default function NativeHeroBanner({
   const showPrice =
     featuredProduct?.price != null && Number(featuredProduct.price) > 0 && !loading;
 
+  const heroGrad = isDark
+    ? ["#3a3228", "#2a241e", "#1a1714", "#0c0a09"]
+    : ["#f0e3c5", "#d4b87a", "#8a6f45", "#2c2620"];
+
+  const washGrad = isDark
+    ? ["rgba(232,200,90,0.12)", "transparent", "rgba(0,0,0,0.45)"]
+    : ["rgba(255,255,255,0.12)", "transparent", "rgba(0,0,0,0.28)"];
+
   return (
     <Pressable
       onPress={onPress}
@@ -49,24 +69,37 @@ export default function NativeHeroBanner({
       accessibilityRole="button"
       disabled={loading}
     >
-      <View style={[styles.wrap, heroShadow]}>
+      <View
+        style={[
+          styles.wrap,
+          isDark ? heroShadowDark : heroShadow,
+          { borderColor: isDark ? "rgba(232, 200, 90, 0.22)" : "rgba(255,255,255,0.22)" },
+        ]}
+      >
         <LinearGradient
-          colors={["#f0e3c5", "#d4b87a", "#8a6f45", "#2c2620"]}
+          colors={heroGrad}
           locations={[0, 0.42, 0.68, 1]}
           start={{ x: 0.72, y: 0.08 }}
           end={{ x: 0.18, y: 1 }}
           style={StyleSheet.absoluteFillObject}
         />
-        <LinearGradient
-          colors={["rgba(255,255,255,0.12)", "transparent", "rgba(0,0,0,0.28)"]}
-          locations={[0, 0.45, 1]}
-          style={styles.lightWash}
-        />
+        <LinearGradient colors={washGrad} locations={[0, 0.45, 1]} style={styles.lightWash} />
         <KankregGrainOverlay />
-        <View style={styles.goldRing} pointerEvents="none" />
+        <View
+          style={[
+            styles.goldRing,
+            { borderColor: isDark ? "rgba(214,173,91,0.35)" : "rgba(214,173,91,0.25)" },
+          ]}
+          pointerEvents="none"
+        />
 
         <View style={styles.illo} pointerEvents="none">
-          <View style={styles.illoGlow} />
+          <View
+            style={[
+              styles.illoGlow,
+              { backgroundColor: isDark ? "rgba(232,200,90,0.1)" : "rgba(255,255,255,0.08)" },
+            ]}
+          />
           {imageUri ? (
             <Image
               source={{ uri: imageUri }}
@@ -81,33 +114,59 @@ export default function NativeHeroBanner({
         </View>
 
         {showPrice ? (
-          <View style={styles.priceChip} pointerEvents="none">
-            <Text style={styles.priceChipLabel}>{HOME_SCREEN_UI.hero.fromLabel}</Text>
-            <Text style={styles.priceChipValue}>{formatINR(featuredProduct.price)}</Text>
+          <View
+            style={[
+              styles.priceChip,
+              isDark
+                ? {
+                    backgroundColor: "rgba(24, 21, 19, 0.92)",
+                    borderColor: "rgba(232, 200, 90, 0.35)",
+                  }
+                : {
+                    backgroundColor: "rgba(255,253,248,0.96)",
+                    borderColor: FIGMA.line,
+                  },
+            ]}
+            pointerEvents="none"
+          >
+            <Text style={[styles.priceChipLabel, isDark && { color: "rgba(245,239,228,0.65)" }]}>
+              {HOME_SCREEN_UI.hero.fromLabel}
+            </Text>
+            <Text style={[styles.priceChipValue, isDark && { color: c.primaryBright }]}>
+              {formatINR(featuredProduct.price)}
+            </Text>
           </View>
         ) : null}
 
         <View style={styles.copy}>
           <View style={styles.eyebrowRow}>
-            <View style={styles.eyebrowDot} />
+            <View style={[styles.eyebrowDot, { backgroundColor: isDark ? c.primaryBright : FIGMA.goldBright }]} />
             <Text style={styles.eyebrow}>{eyebrow}</Text>
           </View>
           <Text style={styles.title} numberOfLines={2}>
             {displayTitle}
           </Text>
           {subtitle ? (
-            <Text style={styles.subtitle} numberOfLines={1}>
+            <Text style={[styles.subtitle, isDark && styles.subtitleDark]} numberOfLines={2}>
               {subtitle}
             </Text>
           ) : null}
           <LinearGradient
-            colors={loading ? ["#9a9a9a", "#7a7a7a"] : ["#fff", "#fffdf8"]}
+            colors={
+              loading
+                ? ["#9a9a9a", "#7a7a7a"]
+                : isDark
+                  ? ["#d6ad5b", "#a9772e"]
+                  : ["#fff", "#fffdf8"]
+            }
             style={[styles.cta, !subtitle && styles.ctaSpaced]}
           >
-            <Text style={styles.ctaText}>
+            <Text style={[styles.ctaText, isDark && styles.ctaTextDark]}>
               {loading ? HOME_SCREEN_UI.hero.loadingCta : HOME_SCREEN_UI.hero.cta}
             </Text>
-            {!loading ? <Ionicons name="arrow-forward" size={12} color={FIGMA.ink} /> : null}
+            {!loading ? (
+              <Ionicons name="arrow-forward" size={12} color={isDark ? "#1a1612" : FIGMA.ink} />
+            ) : null}
           </LinearGradient>
         </View>
       </View>
@@ -129,7 +188,6 @@ const styles = StyleSheet.create({
     borderRadius: FIGMA.radiusHero,
     overflow: "hidden",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.22)",
   },
   lightWash: {
     ...StyleSheet.absoluteFillObject,
@@ -143,7 +201,6 @@ const styles = StyleSheet.create({
     height: 140,
     borderRadius: 70,
     borderWidth: 1,
-    borderColor: "rgba(214,173,91,0.25)",
     zIndex: 1,
   },
   illo: {
@@ -161,7 +218,6 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: "rgba(255,255,255,0.08)",
   },
   productImage: {
     width: "90%",
@@ -182,28 +238,27 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 16,
     right: 16,
-    backgroundColor: "rgba(255,253,248,0.96)",
     borderRadius: 12,
     paddingHorizontal: 11,
     paddingVertical: 8,
     zIndex: 5,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: FIGMA.line,
     ...platformShadow({
       ios: {
         shadowColor: "#19140f",
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
+        shadowOpacity: 0.12,
         shadowRadius: 6,
       },
       android: { elevation: 2 },
     }),
   },
   priceChipLabel: {
-    fontFamily: fonts.regular,
+    fontFamily: fonts.semibold,
     fontSize: 8,
     color: FIGMA.inkFaint,
-    letterSpacing: 0.3,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
   },
   priceChipValue: {
     fontFamily: FONT_DISPLAY,
@@ -229,30 +284,33 @@ const styles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 3,
-    backgroundColor: FIGMA.goldBright,
   },
   eyebrow: {
     fontFamily: fonts.bold,
     fontSize: 8,
     letterSpacing: 2.8,
     textTransform: "uppercase",
-    color: "rgba(255,255,255,0.9)",
+    color: "rgba(255,255,255,0.92)",
   },
   title: {
-    ...figmaDisplayTitle(23, false),
-    color: "#fff",
     fontFamily: FONT_DISPLAY,
+    fontSize: 23,
     fontWeight: "400",
+    color: "#fff",
     marginTop: 4,
     lineHeight: 26,
     letterSpacing: -0.3,
   },
   subtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 10,
-    color: "rgba(255,255,255,0.72)",
-    marginTop: 4,
-    marginBottom: 14,
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    lineHeight: 15,
+    color: "rgba(255,255,255,0.78)",
+    marginTop: 5,
+    marginBottom: 12,
+  },
+  subtitleDark: {
+    color: "rgba(255,255,255,0.9)",
   },
   cta: {
     alignSelf: "flex-start",
@@ -271,5 +329,8 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     color: FIGMA.ink,
     letterSpacing: 0.15,
+  },
+  ctaTextDark: {
+    color: "#1a1612",
   },
 });

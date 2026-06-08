@@ -40,19 +40,45 @@ export default function AuthRoutePills({ navigation, activeRoute = "Login" }) {
     >
       <Pressable
         onPress={() => go("Login")}
-        style={[styles.pill, isXs && styles.pillFlex, isLogin && styles.pillOn, isLogin && pillOnElevated]}
+        style={[
+          styles.pill,
+          isXs && styles.pillFlex,
+          isLogin && (isDark ? styles.pillOnDark : styles.pillOn),
+          isLogin && pillOnElevated,
+        ]}
         accessibilityRole="button"
         accessibilityState={{ selected: isLogin }}
       >
-        <Text style={[styles.pillText, isLogin && styles.pillTextOn]}>Sign in</Text>
+        <Text
+          style={[
+            styles.pillText,
+            isDark && styles.pillTextDark,
+            isLogin && (isDark ? styles.pillTextOnDark : styles.pillTextOn),
+          ]}
+        >
+          Sign in
+        </Text>
       </Pressable>
       <Pressable
         onPress={() => go("Register")}
-        style={[styles.pill, isXs && styles.pillFlex, !isLogin && styles.pillOn, !isLogin && pillOnElevated]}
+        style={[
+          styles.pill,
+          isXs && styles.pillFlex,
+          !isLogin && (isDark ? styles.pillOnDark : styles.pillOn),
+          !isLogin && pillOnElevated,
+        ]}
         accessibilityRole="button"
         accessibilityState={{ selected: !isLogin }}
       >
-        <Text style={[styles.pillText, !isLogin && styles.pillTextOn]}>Create account</Text>
+        <Text
+          style={[
+            styles.pillText,
+            isDark && styles.pillTextDark,
+            !isLogin && (isDark ? styles.pillTextOnDark : styles.pillTextOn),
+          ]}
+        >
+          Create account
+        </Text>
       </Pressable>
     </View>
   );
@@ -82,12 +108,21 @@ const styles = StyleSheet.create({
   pillOn: {
     backgroundColor: KANKREG_PALETTE.card,
   },
+  pillOnDark: {
+    backgroundColor: "#181513",
+  },
   pillText: {
     fontSize: typography.bodySmall,
     fontFamily: fonts.semibold,
     color: KANKREG_PALETTE.inkFaint,
   },
+  pillTextDark: {
+    color: "rgba(245, 239, 228, 0.68)",
+  },
   pillTextOn: {
     color: KANKREG_PALETTE.ink,
+  },
+  pillTextOnDark: {
+    color: "#f5efe4",
   },
 });

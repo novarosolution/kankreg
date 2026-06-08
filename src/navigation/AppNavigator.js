@@ -22,6 +22,8 @@ import SettingsScreen from "../screens/SettingsScreen";
 import RedeemRewardsScreen from "../screens/RedeemRewardsScreen";
 import ManageAddressScreen from "../screens/ManageAddressScreen";
 import SupportScreen from "../screens/SupportScreen";
+import AboutScreen from "../screens/AboutScreen";
+import LegalDocumentScreen from "../screens/LegalDocumentScreen";
 import DeliveryDashboardScreen from "../screens/DeliveryDashboardScreen";
 import AdminDashboardScreen from "../screens/admin/AdminDashboardScreen";
 import AdminProductsScreen from "../screens/admin/AdminProductsScreen";
@@ -101,6 +103,8 @@ const WrappedFindLocation = withPageTransition(FindLocationScreen);
 const WrappedHome = withPageTransition(KankregHomeScreen);
 const WrappedShop = withPageTransition(ShopScreen);
 const WrappedProduct = withPageTransition(ProductScreen);
+const WrappedAbout = withPageTransition(AboutScreen);
+const WrappedLegal = withPageTransition(LegalDocumentScreen);
 
 const ProtectedCart = withAuthGuard(CartScreen);
 const ProtectedCheckout = withAuthGuard(CheckoutScreen);
@@ -152,7 +156,7 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
         ) : (
     <DeliveryLocationProvider>
     <Stack.Navigator
-      initialRouteName={Platform.OS !== "web" ? "FindLocation" : "Home"}
+      initialRouteName="Home"
       screenOptions={screenOptions}
     >
       <Stack.Group screenOptions={{ presentation: "card" }}>
@@ -170,6 +174,9 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
         )}
         <Stack.Screen name="Home" component={WrappedHome} />
         <Stack.Screen name="Shop" component={WrappedShop} />
+        <Stack.Screen name="About" component={WrappedAbout} />
+        <Stack.Screen name="Privacy" component={WrappedLegal} />
+        <Stack.Screen name="Terms" component={WrappedLegal} />
         <Stack.Screen
           name="Product"
           component={WrappedProduct}

@@ -359,10 +359,18 @@ export default function ProductScreen({ route, navigation }) {
           displayPrice={displayPrice}
           showMrp={showMrp}
           mrp={mrp}
+          offPct={offPct}
           liveRatingAvg={liveRatingAvg}
           reviewCountDisplay={reviewCountDisplay}
           isOutOfStock={isOutOfStock}
+          quantity={quantity}
           onAddToCart={handleAddToCart}
+          onRemoveFromCart={handleRemoveFromCart}
+          onBuyNow={() => {
+            handleAddToCart();
+            if (isAuthenticated) navigation.navigate("Checkout");
+            else navigation.navigate("Login");
+          }}
           relatedProducts={relatedProducts}
           onRelatedPress={(p) => navigation.push("Product", { productId: p.id })}
           onAddRelated={(p) => {

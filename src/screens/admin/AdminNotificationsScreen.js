@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
 import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
@@ -10,6 +10,9 @@ import {
   fetchAdminNotifications,
   sendAdminBroadcastNotification} from "../../services/adminService";
 import { adminPanel } from "../../theme/adminLayout";
+import AdminPanel from "../../components/admin/AdminPanel";
+import AdminAlerts from "../../components/admin/AdminAlerts";
+import AdminDataTable from "../../components/admin/AdminDataTable";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { spacing, typography } from "../../theme/tokens";
 import PremiumLoader from "../../components/ui/PremiumLoader";
@@ -17,7 +20,6 @@ import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumInput from "../../components/ui/PremiumInput";
 import PremiumButton from "../../components/ui/PremiumButton";
-import PremiumCard from "../../components/ui/PremiumCard";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
@@ -116,20 +118,9 @@ export default function AdminNotificationsScreen({ navigation, route }) {
           keyboardShouldPersistTaps="handled"
         >
           <KankregAdminShell navigation={navigation} route={route} title={ADMIN_SCREEN_COPY.notifications.title} subtitle={ADMIN_SCREEN_COPY.notifications.subtitle}>
-          <View style={styles.panel}>
-            {error ? (
-              <View style={styles.bannerSpacer}>
-                <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
-              </View>
-            ) : null}
-            {success ? (
-              <View style={styles.bannerSpacer}>
-                <PremiumErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
-              </View>
-            ) : null}
+          <AdminAlerts error={error} success={success} onCloseError={() => setError("")} onCloseSuccess={() => setSuccess("")} />
 
-            <PremiumCard padding="lg" goldAccent style={styles.composeCard}>
-              <Text style={[styles.composeLabel, { color: c.textPrimary }]}>Compose broadcast</Text>
+            <AdminPanel title="Compose broadcast">
               <View style={styles.fieldGap}>
                 <PremiumInput
                   label="Notification title"
@@ -172,11 +163,9 @@ export default function AdminNotificationsScreen({ navigation, route }) {
                 fullWidth
                 style={styles.refreshBelowSend}
               />
-            </PremiumCard>
-          </View>
+            </AdminPanel>
 
-          <View style={styles.panel}>
-            <Text style={[styles.sectionTitle, { color: c.textPrimary }]}>Sent notifications</Text>
+          <AdminPanel title="Sent notifications" noPadding style={{ marginTop: spacing.md }}>
             {loading ? (
               <View style={styles.loaderWrap}>
                 <PremiumLoader size="sm" caption="Loading sent notifications…" />
@@ -189,22 +178,22 @@ export default function AdminNotificationsScreen({ navigation, route }) {
                 compact
               />
             ) : (
-              items.map((item, index) => (
-                <PremiumCard
-                  key={item._id}
-                  padding="md"
-                  goldAccent={index === 0}
-                  style={styles.sentCard}
-                >
-                  <Text style={[styles.itemTitle, { color: c.textPrimary }]}>{item.title}</Text>
-                  <Text style={[styles.itemMessage, { color: c.textSecondary }]}>{item.message}</Text>
-                  <Text style={[styles.itemMeta, { color: c.textMuted }]}>
-                    Sent: {new Date(item.createdAt).toLocaleString()}
-                  </Text>
-                </PremiumCard>
-              ))
+              <AdminDataTable
+                rows={items}
+                keyExtractor={(row) => row._id}
+                columns={[
+                  { key: "title", label: "Title", flex: 1.2, strong: true, render: (r) => r.title },
+                  { key: "message", label: "Message", flex: 1.6, render: (r) => r.message },
+                  {
+                    key: "sent",
+                    label: "Sent",
+                    flex: 0.9,
+                    render: (r) => (r.createdAt ? new Date(r.createdAt).toLocaleString() : "—"),
+                  },
+                ]}
+              />
             )}
-          </View>
+          </AdminPanel>
           </KankregAdminShell>
 </KankregScrollPage>
       </KeyboardAvoidingView>

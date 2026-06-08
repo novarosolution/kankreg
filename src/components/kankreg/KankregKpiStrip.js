@@ -2,7 +2,7 @@ import React from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { FONT_DISPLAY } from "../../theme/customerAlchemy";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { getKankregSurfaces } from "../../theme/kankregWeb";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { fonts, spacing } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
@@ -21,7 +21,8 @@ const cardShadow = platformShadow({
 
 /** kankreg.html `.kpis` row on profile (Orders / Saved / Points). */
 export default function KankregKpiStrip({ items = [] }) {
-  const { isDark } = useTheme();
+  const { colors: c, isDark } = useTheme();
+  const surfaces = getKankregSurfaces(isDark, c);
   const { isXs, isMobileWeb } = useKankregLayout();
   const stackVertically = isXs && !isMobileWeb;
 
@@ -41,12 +42,16 @@ export default function KankregKpiStrip({ items = [] }) {
             style={({ pressed, hovered }) => [
               styles.kpi,
               stackVertically ? styles.kpiStacked : styles.kpiInline,
+              {
+                backgroundColor: surfaces.card,
+                borderColor: surfaces.border,
+              },
               (pressed || (Platform.OS === "web" && hovered)) && item.onPress ? styles.kpiPressed : null,
             ]}
             accessibilityRole={item.onPress ? "button" : "text"}
           >
-            <Text style={[styles.lbl, { color: isDark ? "#a8a29e" : KANKREG_PALETTE.inkFaint }]}>{item.label}</Text>
-            <Text style={[styles.n, { color: isDark ? "#f5efe4" : KANKREG_PALETTE.ink }]}>{item.value}</Text>
+            <Text style={[styles.lbl, { color: surfaces.textMuted }]}>{item.label}</Text>
+            <Text style={[styles.n, { color: surfaces.text }]}>{item.value}</Text>
           </Pressable>
         </SectionReveal>
       ))}
@@ -80,8 +85,6 @@ const styles = StyleSheet.create({
     padding: spacing.md + 4,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: KANKREG_PALETTE.line,
-    backgroundColor: KANKREG_PALETTE.card,
     ...cardShadow,
   },
   kpiInline: {

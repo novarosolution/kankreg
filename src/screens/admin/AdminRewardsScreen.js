@@ -10,7 +10,8 @@ import {
   createAdminReward,
   fetchAdminRewards,
   updateAdminReward} from "../../services/adminService";
-import { adminPanel } from "../../theme/adminLayout";
+import { adminCardGridItem, adminCardGridStyle, adminPanel, useAdminCompactLayout } from "../../theme/adminLayout";
+import AdminRewardTicket from "../../components/admin/AdminRewardTicket";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { layout, radius, spacing } from "../../theme/tokens";
@@ -25,6 +26,7 @@ import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
 export default function AdminRewardsScreen({ navigation, route }) {
   const { colors: c, shadowPremium } = useTheme();
+  const compact = useAdminCompactLayout();
   const styles = useMemo(() => createStyles(c, shadowPremium), [c, shadowPremium]);
     const { user, token } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -114,16 +116,6 @@ export default function AdminRewardsScreen({ navigation, route }) {
       await loadRewards();
     } catch (err) {
       setError(err.message || "Unable to update reward.");
-    }
-  };
-
-  const handleToggleVisibility = async (reward) => {
-    try {
-      setError("");
-      await updateAdminReward(token, reward._id, { isVisibleToUsers: !reward.isVisibleToUsers });
-      await loadRewards();
-    } catch (err) {
-      setError(err.message || "Unable to update visibility.");
     }
   };
 
@@ -326,51 +318,33 @@ export default function AdminRewardsScreen({ navigation, route }) {
                   compact
                 />
               ) : (
-                rewards.map((reward) => (
-                  <PremiumCard key={reward._id} padding="md" style={styles.card}>
-                    <View style={styles.cardTop}>
-                      <Text style={[styles.cardTitle, { color: c.textPrimary }]}>{reward.title}</Text>
-                      <PremiumChip
-                        label={reward.isActive ? "Active" : "Inactive"}
-                        tone={reward.isActive ? "green" : "neutral"}
-                        size="xs"
-                      />
-                    </View>
-                    <Text style={[styles.meta, { color: c.textSecondary }]}>
-                      {reward.pointsCost} pts •{" "}
-                      {reward.discountType === "percent"
-                        ? `${reward.discountValue}% off`
-                        : `₹${reward.discountValue} off`}
-                      {" • "}Min order ₹{reward.minOrderAmount || 0}
-                    </Text>
-                    <Text style={[styles.meta, { color: c.textSecondary }]}>
-                      Redeemed: {reward.redemptionCount || 0}
-                      {reward.totalRedemptionLimit != null ? ` / ${reward.totalRedemptionLimit}` : ""} • Per user:{" "}
-                      {reward.perUserLimit || 1}
-                    </Text>
-                    <Text style={[styles.meta, { color: c.textSecondary }]}>
-                      Shop visibility: {reward.isVisibleToUsers ? "Shown" : "Hidden"} • Coupon validity:{" "}
-                      {reward.issuedCouponValidDays || 90} days after redeem
-                    </Text>
-                    <Text style={[styles.meta, { color: c.textSecondary }]}>
-                      Offer ends:{" "}
-                      {reward.expiresAt ? new Date(reward.expiresAt).toLocaleDateString() : "No end date"}
-                    </Text>
-                    <View style={styles.rowSwitches}>
-                      <View style={styles.switchRow}>
-                        <Text style={[styles.switchLabel, { color: c.textSecondary }]}>Active</Text>
-                        <Switch value={Boolean(reward.isActive)} onValueChange={() => handleToggleActive(reward)} />
-                      </View>
-                      <View style={styles.switchRow}>
-                        <Text style={[styles.switchLabel, { color: c.textSecondary }]}>Visible</Text>
-                        <Switch
-                          value={Boolean(reward.isVisibleToUsers)}
-                          onValueChange={() => handleToggleVisibility(reward)}
+                <View style={adminCardGridStyle(compact)}>
+                  {rewards.map((reward) => {
+                    const expired =
+                      reward.expiresAt && new Date(reward.expiresAt).getTime() < Date.now();
+                    const status = expired ? "Expired" : reward.isActive ? "Active" : "Paused";
+                    const desc =
+                      reward.discountType === "percent"
+                        ? `${reward.discountValue}% off · min ₹${reward.minOrderAmount || 0}`
+                        : `₹${reward.discountValue} off · min ₹${reward.minOrderAmount || 0}`;
+                    const usage = `${reward.redemptionCount || 0}${
+                      reward.totalRedemptionLimit != null ? ` / ${reward.totalRedemptionLimit}` : " / ∞"
+                    } redeemed`;
+                    return (
+                      <View key={reward._id} style={adminCardGridItem(compact)}>
+                        <AdminRewardTicket
+                          title={reward.title}
+                          description={desc}
+                          pointsCost={reward.pointsCost}
+                          usageText={usage}
+                          status={status}
+                          active={Boolean(reward.isActive)}
+                          onToggle={() => handleToggleActive(reward)}
                         />
                       </View>
-                    </View>
-                  </PremiumCard>
-                ))
+                    );
+                  })}
+                </View>
               )}
             </SectionReveal>
           </View>

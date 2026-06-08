@@ -210,10 +210,11 @@ export function apiDelete(path, options = {}) {
   return apiRequest(path, { ...options, method: "DELETE" });
 }
 
-/** Lightweight connectivity probe — GET / (no auth). */
+/** Lightweight connectivity probe — GET / on server root (no auth). */
 export async function checkApiHealth() {
   try {
-    const response = await fetch(buildUrl("/"), { method: "GET" });
+    const base = getApiBaseUrl().replace(/\/api\/?$/i, "");
+    const response = await fetch(`${base}/`, { method: "GET" });
     const data = await readJson(response);
     return Boolean(response.ok && data?.ok);
   } catch {

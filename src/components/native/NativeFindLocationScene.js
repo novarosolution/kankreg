@@ -12,7 +12,15 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { FIGMA, figmaBody, figmaDisplayTitle, figmaEyebrow } from "../../theme/figmaApp";
+import { useTheme } from "../../context/ThemeContext";
+import {
+  FIGMA,
+  figmaBody,
+  figmaDisplayTitle,
+  figmaEyebrow,
+  figmaTextPrimary,
+  figmaTextSecondary,
+} from "../../theme/figmaApp";
 import { fonts, spacing } from "../../theme/tokens";
 
 const RING_COUNT = 4;
@@ -71,6 +79,7 @@ function SweepLine() {
 
 /** Premium radar + pin animation for the find-location flow. */
 export default function NativeFindLocationScene({ phase = "searching", snippet }) {
+  const { colors: c, isDark } = useTheme();
   const pinScale = useSharedValue(1);
   const pinLift = useSharedValue(0);
 
@@ -138,17 +147,17 @@ export default function NativeFindLocationScene({ phase = "searching", snippet }
       </View>
 
       <Animated.View style={styles.copyBlock}>
-        <Text style={figmaEyebrow()}>
+        <Text style={figmaEyebrow(isDark)}>
           {phase === "found" ? "LOCATION FOUND" : phase === "error" ? "UNABLE TO LOCATE" : "DELIVERY ZONE"}
         </Text>
-        <Text style={figmaDisplayTitle(28)}>
+        <Text style={figmaDisplayTitle(28, isDark)}>
           {phase === "found"
             ? "Confirm your spot"
             : phase === "error"
               ? "Turn on location"
               : "Finding you…"}
         </Text>
-        <Text style={[figmaBody(14), styles.subtitle]}>
+        <Text style={[figmaBody(14, isDark), styles.subtitle]}>
           {phase === "found"
             ? "We pinned your area for faster delivery and curated picks."
             : phase === "error"
@@ -158,9 +167,9 @@ export default function NativeFindLocationScene({ phase = "searching", snippet }
       </Animated.View>
 
       {showCard ? (
-        <Animated.View style={styles.card}>
+        <Animated.View style={[styles.card, isDark && { borderColor: "rgba(232, 200, 90, 0.28)" }]}>
           <LinearGradient
-            colors={["#fffdf8", "#f8f0e4"]}
+            colors={isDark ? [c.surface, c.surfaceMuted] : ["#fffdf8", "#f8f0e4"]}
             style={StyleSheet.absoluteFill}
           />
           <View style={styles.cardTop}>
@@ -169,16 +178,16 @@ export default function NativeFindLocationScene({ phase = "searching", snippet }
             </View>
             <Text style={styles.cardEyebrow}>Delivering to</Text>
           </View>
-          <Text style={styles.cardTitle} numberOfLines={2}>
+          <Text style={[styles.cardTitle, figmaTextPrimary(isDark)]} numberOfLines={2}>
             {snippet.label}
           </Text>
           {snippet.line1 ? (
-            <Text style={styles.cardMeta} numberOfLines={1}>
+            <Text style={[styles.cardMeta, figmaTextSecondary(isDark)]} numberOfLines={1}>
               {snippet.line1}
             </Text>
           ) : null}
           {(snippet.city || snippet.postalCode) ? (
-            <Text style={styles.cardMeta} numberOfLines={1}>
+            <Text style={[styles.cardMeta, figmaTextSecondary(isDark)]} numberOfLines={1}>
               {[snippet.city, snippet.postalCode].filter(Boolean).join(" · ")}
             </Text>
           ) : null}
@@ -318,14 +327,12 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontFamily: fonts.semibold,
     fontSize: 18,
-    color: FIGMA.ink,
     lineHeight: 24,
     marginBottom: 4,
   },
   cardMeta: {
     fontFamily: fonts.regular,
     fontSize: 13,
-    color: FIGMA.inkSoft,
     lineHeight: 18,
   },
 });

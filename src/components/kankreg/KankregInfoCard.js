@@ -42,7 +42,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md + 2,
     padding: spacing.lg,
     borderRadius: 18,
-    backgroundColor: ALCHEMY.cardBg,
   },
   cardCompact: {
     padding: spacing.md + 2,

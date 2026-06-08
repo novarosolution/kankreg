@@ -3,10 +3,12 @@ import { Platform, Pressable, StyleSheet, Text } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { APP_DISPLAY_NAME } from "../../constants/brand";
 import { FONT_DISPLAY } from "../../theme/customerAlchemy";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { useTheme } from "../../context/ThemeContext";
+import { figmaTextPrimary } from "../../theme/figmaApp";
 
 /** kankreg.html `.brand` + `.dot` */
 export default function KankregBrandMark({ onPress, compact = false }) {
+  const { isDark } = useTheme();
   return (
     <Pressable
       onPress={onPress}
@@ -24,7 +26,9 @@ export default function KankregBrandMark({ onPress, compact = false }) {
         end={{ x: 1, y: 1 }}
         style={styles.dot}
       />
-      <Text style={[styles.wordmark, compact && styles.wordmarkCompact]}>{APP_DISPLAY_NAME.toLowerCase()}</Text>
+      <Text style={[styles.wordmark, figmaTextPrimary(isDark), compact && styles.wordmarkCompact]}>
+        {APP_DISPLAY_NAME.toLowerCase()}
+      </Text>
     </Pressable>
   );
 }
@@ -49,7 +53,6 @@ const styles = StyleSheet.create({
     fontSize: 25,
     fontWeight: "600",
     letterSpacing: 0.01,
-    color: KANKREG_PALETTE.ink,
     textTransform: "lowercase",
   },
   wordmarkCompact: {

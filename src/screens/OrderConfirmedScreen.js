@@ -28,6 +28,7 @@ import {
   orderPaymentLabel,
 } from "../content/appContent";
 import { useTheme } from "../context/ThemeContext";
+import { useKankregLayout } from "../theme/kankregBreakpoints";
 import { ALCHEMY, FONT_DISPLAY, getCustomerShellGradient } from "../theme/customerAlchemy";
 import { customerPanel, customerScrollFill } from "../theme/screenLayout";
 import { KANKREG_PALETTE } from "../theme/kankregWeb";
@@ -37,6 +38,17 @@ import { formatCompactShippingLine } from "../utils/shippingAddressFormat";
 import { platformShadow } from "../theme/shadowPlatform";
 
 const COPY = ORDER_CELEBRATION_UI.screen;
+
+const heroShadow = platformShadow({
+  web: { boxShadow: "0 20px 48px -20px rgba(61, 42, 18, 0.18)" },
+  ios: {
+    shadowColor: "#3D2A12",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+  },
+  android: { elevation: 4 },
+});
 
 function PulseRing({ color, delay = 0, reducedMotion, styles }) {
   const progress = useSharedValue(0);
@@ -80,8 +92,8 @@ function ConfirmHero({ styles }) {
 
   return (
     <View style={styles.heroIconWrap}>
-      <PulseRing color="#7ecf9a" delay={0} reducedMotion={reducedMotion} />
-      <PulseRing color="#4ade80" delay={300} reducedMotion={reducedMotion} />
+      <PulseRing color="#7ecf9a" delay={0} reducedMotion={reducedMotion} styles={styles} />
+      <PulseRing color="#4ade80" delay={300} reducedMotion={reducedMotion} styles={styles} />
       <Animated.View style={iconStyle}>
         <LinearGradient colors={["#3c6248", "#2a4a36"]} style={styles.heroIconDisc}>
           <Ionicons name="checkmark-circle" size={44} color="#fff" />
@@ -116,6 +128,7 @@ function StepRow({ step, isLast, isDark, styles }) {
 export default function OrderConfirmedScreen({ navigation, route }) {
   const order = route?.params?.order;
   const { colors: c, shadowPremium, isDark } = useTheme();
+  const { showMobileWebTabBar } = useKankregLayout();
   const styles = useMemo(() => createStyles(c, shadowPremium, isDark), [c, shadowPremium, isDark]);
   const shellColors = getCustomerShellGradient(isDark, c);
 
@@ -133,7 +146,11 @@ export default function OrderConfirmedScreen({ navigation, route }) {
   if (!order?._id && !order?.id) {
     return (
       <CustomerScreenShell style={styles.shell}>
-        <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
+        <KankregScrollPage
+          scrollVariant="inner"
+          showFooter={Platform.OS === "web" && !showMobileWebTabBar}
+          style={customerScrollFill}
+        >
           <PremiumCard padding="lg" variant="elevated" goldAccent>
             <Text style={[styles.missingTitle, { color: c.textPrimary }]}>{COPY.missingOrderTitle}</Text>
             <Text style={[styles.missingBody, { color: c.textSecondary }]}>{COPY.missingOrderBody}</Text>
@@ -157,7 +174,11 @@ export default function OrderConfirmedScreen({ navigation, route }) {
         locations={[0, 0.45, 1]}
         style={StyleSheet.absoluteFillObject}
       />
-      <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
+      <KankregScrollPage
+        scrollVariant="inner"
+        showFooter={Platform.OS === "web" && !showMobileWebTabBar}
+        style={customerScrollFill}
+      >
         <SectionReveal preset="fade-up" delay={0}>
           <LinearGradient
             colors={
@@ -281,17 +302,6 @@ export default function OrderConfirmedScreen({ navigation, route }) {
     </CustomerScreenShell>
   );
 }
-
-const heroShadow = platformShadow({
-  web: { boxShadow: "0 20px 48px -20px rgba(61, 42, 18, 0.18)" },
-  ios: {
-    shadowColor: "#3D2A12",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-  },
-  android: { elevation: 4 },
-});
 
 function createStyles(c, shadowPremium, isDark) {
   return StyleSheet.create({

@@ -43,7 +43,7 @@ export default function KankregProfileGrid({
   children,
 }) {
   const { useSidebarLayout } = useKankregLayout();
-  const { isDark } = useTheme();
+  const { colors: c, isDark } = useTheme();
   const stack = !useSidebarLayout;
   const initial = String(user?.name || user?.email || "K").trim().charAt(0).toUpperCase();
   const avatar = (avatarUrl || user?.avatar || "").trim();
@@ -88,8 +88,12 @@ export default function KankregProfileGrid({
                 disabled={!item.route}
                 style={({ pressed, hovered }) => [
                   styles.menuItem,
-                  on && styles.menuItemOn,
-                  (pressed || (Platform.OS === "web" && hovered)) && item.route ? styles.menuItemHover : null,
+                  on && (isDark ? styles.menuItemOnDark : styles.menuItemOn),
+                  (pressed || (Platform.OS === "web" && hovered)) && item.route
+                    ? isDark
+                      ? styles.menuItemHoverDark
+                      : styles.menuItemHover
+                    : null,
                 ]}
                 accessibilityRole="button"
                 accessibilityState={{ selected: on }}
@@ -97,9 +101,17 @@ export default function KankregProfileGrid({
                 <Ionicons
                   name={item.icon}
                   size={17}
-                  color={on ? KANKREG_PALETTE.ink : KANKREG_PALETTE.gold}
+                  color={on ? (isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink) : c.primary}
                 />
-                <Text style={[styles.menuText, on && styles.menuTextOn]}>{item.label}</Text>
+                <Text
+                  style={[
+                    styles.menuText,
+                    isDark && styles.menuTextDark,
+                    on && (isDark ? styles.menuTextOnDark : styles.menuTextOn),
+                  ]}
+                >
+                  {item.label}
+                </Text>
               </Pressable>
             );
           })}
@@ -107,7 +119,12 @@ export default function KankregProfileGrid({
             <Pressable
               onPress={onSignOut}
               disabled={signingOut}
-              style={({ pressed }) => [styles.menuItem, styles.menuItemSignOut, pressed && { opacity: 0.85 }]}
+              style={({ pressed }) => [
+                styles.menuItem,
+                styles.menuItemSignOut,
+                isDark && styles.menuItemSignOutDark,
+                pressed && { opacity: 0.85 },
+              ]}
               accessibilityRole="button"
               accessibilityLabel="Sign out"
             >
@@ -221,23 +238,39 @@ const styles = StyleSheet.create({
   menuItemOn: {
     backgroundColor: KANKREG_PALETTE.paper2,
   },
+  menuItemOnDark: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
   menuItemHover: {
     backgroundColor: "rgba(169, 119, 46, 0.08)",
+  },
+  menuItemHoverDark: {
+    backgroundColor: "rgba(232, 200, 90, 0.1)",
   },
   menuText: {
     fontSize: 14,
     fontFamily: fonts.medium,
     color: KANKREG_PALETTE.inkSoft,
   },
+  menuTextDark: {
+    color: "rgba(245, 239, 228, 0.72)",
+  },
   menuTextOn: {
     fontFamily: fonts.semibold,
     color: KANKREG_PALETTE.ink,
+  },
+  menuTextOnDark: {
+    fontFamily: fonts.semibold,
+    color: KANKREG_PALETTE.paper,
   },
   menuItemSignOut: {
     marginTop: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: KANKREG_PALETTE.line,
     paddingTop: spacing.md,
+  },
+  menuItemSignOutDark: {
+    borderTopColor: "rgba(255,255,255,0.08)",
   },
   menuTextSignOut: {
     fontSize: 14,

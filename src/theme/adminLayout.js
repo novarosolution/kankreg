@@ -205,3 +205,44 @@ export function adminScreenRoot(c) {
     backgroundColor: c?.background ?? "transparent",
   };
 }
+
+/** Two-column admin layout (dashboard charts, add-product, home editor). */
+export function adminTwoColStyle(compact, ratio = 1.6) {
+  if (compact) {
+    return { flexDirection: "column", gap: spacing.md };
+  }
+  return {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md,
+    flexWrap: "wrap",
+  };
+}
+
+export function adminTwoColMain(compact, ratio = 1.6) {
+  if (compact) return { width: "100%" };
+  return { flex: ratio, minWidth: 280 };
+}
+
+export function adminTwoColAside(compact) {
+  if (compact) return { width: "100%" };
+  return { flex: 1, minWidth: 240 };
+}
+
+/** Coupon / card grid for admin marketing screens. */
+export function adminCardGridStyle(compact, cols = 3) {
+  if (compact) {
+    return { flexDirection: "column", gap: spacing.md };
+  }
+  return {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.md,
+  };
+}
+
+export function adminCardGridItem(compact, cols = 3) {
+  if (compact) return { width: "100%" };
+  const basis = cols === 2 ? "48%" : cols === 3 ? "31%" : "23%";
+  return { flexGrow: 1, flexBasis: basis, minWidth: 220, maxWidth: cols === 1 ? "100%" : 360 };
+}

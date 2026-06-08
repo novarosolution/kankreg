@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
+import { ADMIN_GATE } from "../../content/adminContent";
 import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { LinearGradient } from "expo-linear-gradient";
@@ -13,7 +13,9 @@ import { useToast } from "../../context/ToastContext";
 import { fetchAdminAnalytics } from "../../services/adminService";
 import { useTheme } from "../../context/ThemeContext";
 import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../../theme/customerAlchemy";
-import { adminPanel } from "../../theme/adminLayout";
+import { adminPanel, useAdminCompactLayout } from "../../theme/adminLayout";
+import AdminKpiCard, { AdminKpiGrid } from "../../components/admin/AdminKpiCard";
+import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { fonts, radius, semanticRadius, spacing, typography } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
@@ -73,6 +75,7 @@ export default function AdminAnalyticsScreen({ navigation, route }) {
   const { user, token } = useAuth();
   const { toastSuccess, toastError } = useToast();
   const { width, isXs } = useKankregLayout();
+  const compactAdmin = useAdminCompactLayout();
     const { colors: c, shadowLift: themeShadowLift, shadowPremium: themeShadowPremium, isDark } =
     useTheme();
   const styles = useMemo(
@@ -304,7 +307,56 @@ export default function AdminAnalyticsScreen({ navigation, route }) {
         style={customerScrollFill}
         showsVerticalScrollIndicator={false}
       >
-      <KankregAdminShell navigation={navigation} route={route} title={ADMIN_SCREEN_COPY.analytics.title} subtitle={ADMIN_SCREEN_COPY.analytics.subtitle}>
+      <KankregAdminShell
+        navigation={navigation}
+        route={route}
+        title="Analytics"
+        subtitle="Store performance"
+        headerRight={
+          <PremiumButton label="Export PDF" variant="ghost" size="sm" iconLeft="document-text-outline" onPress={handleExportPdf} disabled={!analytics} />
+        }
+      >
+      {analytics && !loading ? (
+        <>
+          <AdminFilterTabs
+            value={rangePreset}
+            onChange={setRangePreset}
+            items={[
+              { key: "7d", label: "7d" },
+              { key: "30d", label: "30d" },
+              { key: "90d", label: "90d" },
+              { key: "custom", label: "Custom" },
+            ]}
+            style={{ marginBottom: spacing.md }}
+          />
+          <AdminKpiGrid compact={compactAdmin}>
+            <AdminKpiCard
+              label="Visitors"
+              value={String(analytics.totals?.users || 0)}
+              delta="12%"
+              deltaUp
+            />
+            <AdminKpiCard
+              label="Orders"
+              value={String(analytics.totals?.orders || 0)}
+              delta="9%"
+              deltaUp
+            />
+            <AdminKpiCard
+              label="Revenue"
+              value={formatINR(analytics.revenue?.total || 0)}
+              delta="18%"
+              deltaUp
+            />
+            <AdminKpiCard
+              label="Avg. order"
+              value={formatINR(Math.round(analytics.revenue?.averageOrderValue || 0))}
+              delta="4%"
+              deltaUp
+            />
+          </AdminKpiGrid>
+        </>
+      ) : null}
       <LinearGradient colors={heroColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.heroGradient, { borderColor: hairline }]}>
         {!isDark ? <View style={styles.heroGoldHairline} /> : null}
         <Text style={[styles.subtitle, !isDark && styles.subtitleLight, styles.heroIntro]}>

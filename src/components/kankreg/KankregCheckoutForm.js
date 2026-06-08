@@ -6,14 +6,15 @@ import AddressTypeSelector from "../address/AddressTypeSelector";
 import PremiumInput from "../ui/PremiumInput";
 import PremiumErrorBanner from "../ui/PremiumErrorBanner";
 import { CART_ADDRESS } from "../../content/appContent";
-import { FIGMA, figmaEyebrow } from "../../theme/figmaApp";
+import { FIGMA, figmaEyebrow, figmaTextPrimary } from "../../theme/figmaApp";
+import { useTheme } from "../../context/ThemeContext";
 import { fonts, spacing } from "../../theme/tokens";
 import KankregCheckoutSectionCard from "./KankregCheckoutSectionCard";
 
-function FormSection({ eyebrow, children }) {
+function FormSection({ eyebrow, children, isDark }) {
   return (
     <View style={styles.section}>
-      <Text style={figmaEyebrow()}>{eyebrow}</Text>
+      <Text style={figmaEyebrow(isDark)}>{eyebrow}</Text>
       <View style={styles.sectionBody}>{children}</View>
     </View>
   );
@@ -50,6 +51,8 @@ export default function KankregCheckoutForm({
   hasSavedAddress = false,
   isCompact = false,
 }) {
+  const { isDark } = useTheme();
+
   return (
     <KankregCheckoutSectionCard
       title={CART_ADDRESS.panelTitle}
@@ -76,15 +79,15 @@ export default function KankregCheckoutForm({
           colors={["rgba(176,141,87,0.12)", "rgba(176,141,87,0.04)"]}
           style={styles.gpsGrad}
         >
-          <Ionicons name="locate" size={16} color={FIGMA.goldDeep} />
-          <Text style={styles.gpsTitle}>
+          <Ionicons name="locate" size={16} color={isDark ? FIGMA.goldBright : FIGMA.goldDeep} />
+          <Text style={[styles.gpsTitle, figmaTextPrimary(isDark)]}>
             {isDetectingLocation ? CART_ADDRESS.useGpsLoading : CART_ADDRESS.useGps}
           </Text>
-          <Ionicons name="chevron-forward" size={14} color={FIGMA.inkFaint} />
+          <Ionicons name="chevron-forward" size={14} color={isDark ? "rgba(245,239,228,0.68)" : FIGMA.inkFaint} />
         </LinearGradient>
       </Pressable>
 
-      <FormSection eyebrow={CART_ADDRESS.contactSection}>
+      <FormSection eyebrow={CART_ADDRESS.contactSection} isDark={isDark}>
         <PremiumInput
           label="Full name *"
           value={fullName}
@@ -107,7 +110,7 @@ export default function KankregCheckoutForm({
         />
       </FormSection>
 
-      <FormSection eyebrow={CART_ADDRESS.addressSection}>
+      <FormSection eyebrow={CART_ADDRESS.addressSection} isDark={isDark}>
         <AddressTypeSelector value={addressType} onChange={onAddressTypeChange} />
         <PremiumInput
           label="House / flat / building no. *"
@@ -172,7 +175,7 @@ export default function KankregCheckoutForm({
         />
       </FormSection>
 
-      <FormSection eyebrow={CART_ADDRESS.noteSection}>
+      <FormSection eyebrow={CART_ADDRESS.noteSection} isDark={isDark}>
         <PremiumInput
           label="Instructions for delivery"
           value={note}
@@ -217,7 +220,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
     fontFamily: fonts.semibold,
     fontSize: 12,
-    color: FIGMA.ink,
   },
   section: {
     marginBottom: spacing.md,
@@ -225,7 +227,6 @@ const styles = StyleSheet.create({
   sectionHint: {
     fontFamily: fonts.regular,
     fontSize: 10,
-    color: FIGMA.inkSoft,
     marginTop: 4,
     marginBottom: spacing.sm,
     lineHeight: 14,

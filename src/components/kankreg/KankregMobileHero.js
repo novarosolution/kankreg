@@ -89,6 +89,12 @@ const styles = StyleSheet.create({
   wrapDark: {
     backgroundColor: "#181513",
     borderColor: "#3f3933",
+    ...Platform.select({
+      web: {
+        boxShadow: "0 18px 44px -28px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.04)",
+      },
+      default: {},
+    }),
   },
   wrapXs: {
     marginBottom: spacing.lg,

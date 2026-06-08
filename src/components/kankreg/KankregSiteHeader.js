@@ -33,7 +33,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
   const { showDesktopNav, compactHeader, pageGutterClamp } = useKankregLayout();
   const { totalItems } = useCart();
   const { isAuthenticated, user } = useAuth();
-  const { isDark } = useTheme();
+  const { colors: c, isDark } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [currentRouteName, setCurrentRouteName] = useState(null);
 
@@ -101,7 +101,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
     isNative && styles.topbarNative,
     {
       backgroundColor: isDark ? "rgba(20, 17, 15, 0.92)" : "rgba(245, 239, 228, 0.85)",
-      borderBottomColor: KANKREG_PALETTE.line,
+      borderBottomColor: isDark ? c.border : KANKREG_PALETTE.line,
       paddingTop: Platform.OS === "web" ? 0 : insets.top,
       minHeight: isNative ? nativeHeaderHeight : WEB_HEADER_HEIGHT,
     },
@@ -139,13 +139,21 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
                     onPress={item.onPress}
                     style={({ hovered }) => [
                       styles.navBtn,
-                      active && styles.navBtnActive,
-                      hovered && !active && styles.navBtnHover,
+                      active && (isDark ? styles.navBtnActiveDark : styles.navBtnActive),
+                      hovered && !active && (isDark ? styles.navBtnHoverDark : styles.navBtnHover),
                     ]}
                     accessibilityRole="tab"
                     accessibilityState={{ selected: active }}
                   >
-                    <Text style={[styles.navBtnText, active && styles.navBtnTextActive]}>{item.label}</Text>
+                    <Text
+                      style={[
+                        styles.navBtnText,
+                        isDark && styles.navBtnTextDark,
+                        active && (isDark ? styles.navBtnTextActiveDark : styles.navBtnTextActive),
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
                   </Pressable>
                 );
               })}
@@ -155,17 +163,33 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
           <View style={styles.actions}>
             <Pressable
               onPress={() => go("Shop")}
-              style={({ hovered }) => [styles.iconBtn, hovered && styles.iconBtnHover]}
+              style={({ hovered }) => [
+                styles.iconBtn,
+                isDark && styles.iconBtnDark,
+                hovered && (isDark ? styles.iconBtnHoverDark : styles.iconBtnHover),
+              ]}
               accessibilityLabel={KANKREG_HEADER.searchA11y}
             >
-              <Ionicons name="search-outline" size={18} color={KANKREG_PALETTE.inkSoft} />
+              <Ionicons
+                name="search-outline"
+                size={18}
+                color={isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft}
+              />
             </Pressable>
             <Pressable
               onPress={() => go("Cart", true)}
-              style={({ hovered }) => [styles.iconBtn, hovered && styles.iconBtnHover]}
+              style={({ hovered }) => [
+                styles.iconBtn,
+                isDark && styles.iconBtnDark,
+                hovered && (isDark ? styles.iconBtnHoverDark : styles.iconBtnHover),
+              ]}
               accessibilityLabel={KANKREG_HEADER.cartA11y}
             >
-              <Ionicons name="bag-outline" size={18} color={KANKREG_PALETTE.inkSoft} />
+              <Ionicons
+                name="bag-outline"
+                size={18}
+                color={isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft}
+              />
               {totalItems > 0 ? (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{totalItems > 9 ? "9+" : String(totalItems)}</Text>
@@ -188,23 +212,27 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
             ) : (
               <Pressable
                 onPress={() => (isAuthenticated ? go("Profile", true) : go("Login"))}
-                style={styles.iconBtn}
+                style={[styles.iconBtn, isDark && styles.iconBtnDark]}
                 accessibilityLabel={
                   isAuthenticated ? KANKREG_HEADER.accountLabel : KANKREG_HEADER.signInLabel
                 }
               >
-                <Ionicons name="person-outline" size={18} color={KANKREG_PALETTE.inkSoft} />
+                <Ionicons
+                  name="person-outline"
+                  size={18}
+                  color={isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft}
+                />
               </Pressable>
             )}
             {!showDesktopNav && !isNative ? (
               <Pressable
                 onPress={() => setMobileOpen((v) => !v)}
-                style={styles.hamb}
+                style={[styles.hamb, isDark && styles.hambDark]}
                 accessibilityLabel={mobileOpen ? KANKREG_HEADER.menuCloseA11y : KANKREG_HEADER.menuOpenA11y}
               >
-                <View style={styles.hambBar} />
-                <View style={styles.hambBar} />
-                <View style={styles.hambBar} />
+                <View style={[styles.hambBar, isDark && styles.hambBarDark]} />
+                <View style={[styles.hambBar, isDark && styles.hambBarDark]} />
+                <View style={[styles.hambBar, isDark && styles.hambBarDark]} />
               </Pressable>
             ) : null}
           </View>
@@ -215,6 +243,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
             items={items}
             currentRouteName={currentRouteName}
             onClose={() => setMobileOpen(false)}
+            isDark={isDark}
           />
         ) : null}
       </View>
@@ -280,16 +309,29 @@ const styles = StyleSheet.create({
       android: { elevation: 2 },
     }),
   },
+  navBtnActiveDark: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
   navBtnHover: {
     backgroundColor: "rgba(169, 119, 46, 0.1)",
+  },
+  navBtnHoverDark: {
+    backgroundColor: "rgba(232, 200, 90, 0.1)",
   },
   navBtnText: {
     fontSize: 13.5,
     fontFamily: fonts.medium,
     color: KANKREG_PALETTE.inkSoft,
   },
+  navBtnTextDark: {
+    color: "rgba(245, 239, 228, 0.78)",
+  },
   navBtnTextActive: {
     color: KANKREG_PALETTE.ink,
+    fontFamily: fonts.semibold,
+  },
+  navBtnTextActiveDark: {
+    color: "#f5efe4",
     fontFamily: fonts.semibold,
   },
   actions: {
@@ -310,8 +352,15 @@ const styles = StyleSheet.create({
     position: "relative",
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
+  iconBtnDark: {
+    backgroundColor: "#181513",
+    borderColor: "#3f3933",
+  },
   iconBtnHover: {
     borderColor: KANKREG_PALETTE.gold,
+  },
+  iconBtnHoverDark: {
+    borderColor: KANKREG_PALETTE.goldBright,
   },
   badge: {
     position: "absolute",
@@ -354,10 +403,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 4,
   },
+  hambDark: {
+    backgroundColor: "#181513",
+    borderColor: "#3f3933",
+  },
   hambBar: {
     width: 18,
     height: 2,
     borderRadius: 1,
     backgroundColor: KANKREG_PALETTE.ink,
+  },
+  hambBarDark: {
+    backgroundColor: "#f5efe4",
   },
 });

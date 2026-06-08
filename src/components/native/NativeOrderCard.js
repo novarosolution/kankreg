@@ -1,7 +1,13 @@
 import React from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { FIGMA, figmaCardShell, figmaDisplayTitle } from "../../theme/figmaApp";
+import {
+  FIGMA,
+  figmaCardShell,
+  figmaDisplayTitle,
+  figmaIconMuted,
+  figmaTextMuted,
+} from "../../theme/figmaApp";
 import { useTheme } from "../../context/ThemeContext";
 import { formatINR } from "../../utils/currency";
 import { fonts } from "../../theme/tokens";
@@ -30,17 +36,17 @@ export default function NativeOrderCard({
     >
       <View style={styles.header}>
         <View style={styles.left}>
-          <Text style={styles.kicker}>ORDER #{orderId}</Text>
+          <Text style={[styles.kicker, figmaTextMuted(isDark)]}>ORDER #{orderId}</Text>
           <Text style={[figmaDisplayTitle(14, isDark), styles.title]} numberOfLines={1}>
             {itemCount} item{itemCount === 1 ? "" : "s"} · {formatINR(total)}
           </Text>
-          {dateLabel ? <Text style={styles.date}>{dateLabel}</Text> : null}
+          {dateLabel ? <Text style={[styles.date, figmaTextMuted(isDark)]}>{dateLabel}</Text> : null}
         </View>
         {statusLabel ? <NativeTag label={statusLabel} tone={tone} /> : null}
       </View>
       {children}
       <View style={styles.chevronRow}>
-        <Ionicons name="chevron-down" size={16} color={FIGMA.inkFaint} />
+        <Ionicons name="chevron-down" size={16} color={figmaIconMuted(isDark)} />
       </View>
     </Pressable>
   );
@@ -66,7 +72,6 @@ const styles = StyleSheet.create({
   kicker: {
     fontFamily: fonts.bold,
     fontSize: 9,
-    color: FIGMA.inkFaint,
     letterSpacing: 0.6,
   },
   title: {
@@ -76,7 +81,6 @@ const styles = StyleSheet.create({
   date: {
     fontFamily: fonts.regular,
     fontSize: 10,
-    color: FIGMA.inkFaint,
     marginTop: 2,
   },
   chevronRow: {

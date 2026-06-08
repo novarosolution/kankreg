@@ -7,7 +7,8 @@ import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { createAdminCoupon, fetchAdminCoupons, updateAdminCoupon } from "../../services/adminService";
-import { adminPanel } from "../../theme/adminLayout";
+import { adminCardGridItem, adminCardGridStyle, adminPanel, useAdminCompactLayout } from "../../theme/adminLayout";
+import AdminCouponTicket from "../../components/admin/AdminCouponTicket";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { layout, radius, spacing } from "../../theme/tokens";
@@ -22,6 +23,7 @@ import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
 export default function AdminCouponsScreen({ navigation, route }) {
   const { colors: c, shadowPremium } = useTheme();
+  const compact = useAdminCompactLayout();
   const styles = useMemo(() => createAdminCouponsStyles(c, shadowPremium), [c, shadowPremium]);
     const { user, token } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -101,26 +103,6 @@ export default function AdminCouponsScreen({ navigation, route }) {
       await loadCoupons();
     } catch (err) {
       setError(err.message || "Unable to update coupon.");
-    }
-  };
-
-  const handleToggleVisibility = async (coupon) => {
-    try {
-      setError("");
-      await updateAdminCoupon(token, coupon._id, { isVisibleToUsers: !coupon.isVisibleToUsers });
-      await loadCoupons();
-    } catch (err) {
-      setError(err.message || "Unable to update coupon visibility.");
-    }
-  };
-
-  const handleToggleOneTime = async (coupon) => {
-    try {
-      setError("");
-      await updateAdminCoupon(token, coupon._id, { isOneTimePerUser: !coupon.isOneTimePerUser });
-      await loadCoupons();
-    } catch (err) {
-      setError(err.message || "Unable to update one-time coupon setting.");
     }
   };
 
@@ -312,55 +294,33 @@ export default function AdminCouponsScreen({ navigation, route }) {
               compact
             />
           ) : (
-            coupons.map((coupon) => (
-              <PremiumCard key={coupon._id} padding="md" style={styles.couponCard}>
-                <View style={styles.couponTopRow}>
-                  <Text style={[styles.couponCode, { color: c.textPrimary }]}>{coupon.code}</Text>
-                  <PremiumChip
-                    label={coupon.isActive ? "Active" : "Inactive"}
-                    tone={coupon.isActive ? "green" : "neutral"}
-                    size="xs"
-                  />
-                </View>
-                <Text style={[styles.couponMeta, { color: c.textSecondary }]}>
-                  {coupon.type === "percent" ? `${coupon.value}% off` : `${coupon.value} off`} • Min order: {coupon.minOrderAmount || 0}
-                </Text>
-                <Text style={[styles.couponMeta, { color: c.textSecondary }]}>
-                  Used: {coupon.usedCount || 0}
-                  {coupon.usageLimit ? ` / ${coupon.usageLimit}` : ""}
-                </Text>
-                <Text style={[styles.couponMeta, { color: c.textSecondary }]}>
-                  User visibility: {coupon.isVisibleToUsers ? "Shown" : "Hidden"} •
-                  One-time per user: {coupon.isOneTimePerUser ? "Yes" : "No"}
-                </Text>
-                <Text style={[styles.couponMeta, { color: c.textSecondary }]}>
-                  Expires: {coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString() : "No expiry"}
-                </Text>
-                <View style={styles.rowSwitches}>
-                  <View style={styles.switchRow}>
-                    <Text style={[styles.switchLabel, { color: c.textSecondary }]}>Active</Text>
-                    <Switch
-                      value={Boolean(coupon.isActive)}
-                      onValueChange={() => handleToggleActive(coupon)}
+            <View style={adminCardGridStyle(compact)}>
+              {coupons.map((coupon) => {
+                const expired =
+                  coupon.expiresAt && new Date(coupon.expiresAt).getTime() < Date.now();
+                const status = expired ? "Expired" : coupon.isActive ? "Active" : "Paused";
+                const usageText = `${coupon.usedCount || 0}${
+                  coupon.usageLimit ? ` / ${coupon.usageLimit}` : " / ∞"
+                } used`;
+                const desc =
+                  coupon.title ||
+                  (coupon.type === "percent"
+                    ? `${coupon.value}% off`
+                    : `₹${coupon.value} off`);
+                return (
+                  <View key={coupon._id} style={adminCardGridItem(compact)}>
+                    <AdminCouponTicket
+                      code={coupon.code}
+                      description={desc}
+                      usageText={usageText}
+                      status={status}
+                      active={Boolean(coupon.isActive)}
+                      onToggle={() => handleToggleActive(coupon)}
                     />
                   </View>
-                  <View style={styles.switchRow}>
-                    <Text style={[styles.switchLabel, { color: c.textSecondary }]}>Visible</Text>
-                    <Switch
-                      value={Boolean(coupon.isVisibleToUsers)}
-                      onValueChange={() => handleToggleVisibility(coupon)}
-                    />
-                  </View>
-                  <View style={styles.switchRow}>
-                    <Text style={[styles.switchLabel, { color: c.textSecondary }]}>One-Time</Text>
-                    <Switch
-                      value={Boolean(coupon.isOneTimePerUser)}
-                      onValueChange={() => handleToggleOneTime(coupon)}
-                    />
-                  </View>
-                </View>
-              </PremiumCard>
-            ))
+                );
+              })}
+            </View>
           )}
           </SectionReveal>
         </View>

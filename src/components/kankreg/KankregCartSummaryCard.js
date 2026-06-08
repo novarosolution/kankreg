@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { FIGMA, figmaCardShell } from "../../theme/figmaApp";
+import { FIGMA, figmaCardShell, figmaRowBorder, figmaTextPrimary, figmaTextSecondary } from "../../theme/figmaApp";
 import { useTheme } from "../../context/ThemeContext";
 import { formatINR } from "../../utils/currency";
 import { fonts, spacing } from "../../theme/tokens";
@@ -38,6 +38,8 @@ export default function KankregCartSummaryCard({
   itemCount = 0,
 }) {
   const { isDark } = useTheme();
+  const textSecondary = figmaTextSecondary(isDark);
+  const textPrimary = figmaTextPrimary(isDark);
 
   return (
     <View style={[figmaCardShell(isDark), styles.card, cardShadow]}>
@@ -52,13 +54,13 @@ export default function KankregCartSummaryCard({
 
       <View style={styles.lines}>
         <View style={styles.line}>
-          <Text style={styles.label}>Subtotal</Text>
-          <Text style={styles.value}>{formatINR(subtotal)}</Text>
+          <Text style={[styles.label, textSecondary]}>Subtotal</Text>
+          <Text style={[styles.value, textPrimary]}>{formatINR(subtotal)}</Text>
         </View>
         {platformFee > 0 ? (
           <View style={styles.line}>
-            <Text style={styles.label}>Service fee</Text>
-            <Text style={styles.value}>{formatINR(platformFee)}</Text>
+            <Text style={[styles.label, textSecondary]}>Service fee</Text>
+            <Text style={[styles.value, textPrimary]}>{formatINR(platformFee)}</Text>
           </View>
         ) : null}
         {discount > 0 ? (
@@ -78,7 +80,7 @@ export default function KankregCartSummaryCard({
         onPress={onPress}
         disabled={disabled}
         loading={loading}
-        style={styles.payInline}
+        style={[styles.payInline, figmaRowBorder(isDark)]}
       />
     </View>
   );
@@ -89,12 +91,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: spacing.md + 2,
     gap: spacing.sm,
-  },
-  metaLine: {
-    fontFamily: fonts.regular,
-    fontSize: 11,
-    color: FIGMA.inkSoft,
-    marginTop: 2,
   },
   lines: {
     gap: 4,
@@ -107,12 +103,10 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: fonts.regular,
     fontSize: 11,
-    color: FIGMA.inkSoft,
   },
   value: {
     fontFamily: fonts.medium,
     fontSize: 11,
-    color: FIGMA.ink,
   },
   discount: {
     color: FIGMA.green,
@@ -122,7 +116,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     paddingTop: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: FIGMA.line,
     backgroundColor: "transparent",
   },
 });

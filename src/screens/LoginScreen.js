@@ -21,6 +21,7 @@ import { normalizeEmail, validateLoginEmail, validateLoginPassword } from "../ut
 import PremiumButton from "../components/ui/PremiumButton";
 import PremiumInput from "../components/ui/PremiumInput";
 import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
+import { resetNavigationAfterAuth } from "../navigation/postAuthNavigation";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
@@ -50,7 +51,7 @@ export default function LoginScreen({ navigation }) {
       setError("");
       await loginWithCredentials({ email: normalizeEmail(email), password });
       showToast({ type: "success", title: "Welcome back", message: "You're signed in.", duration: 2200 });
-      navigation.navigate("Home");
+      await resetNavigationAfterAuth(navigation);
     } catch (err) {
       setError(err.message || "Unable to login. Please try again.");
     } finally {
@@ -73,7 +74,7 @@ export default function LoginScreen({ navigation }) {
           duration: 3600,
         })
       }
-      socialSlot={<AuthSocialButtons onSuccess={() => navigation.navigate("Home")} />}
+      socialSlot={<AuthSocialButtons onSuccess={() => resetNavigationAfterAuth(navigation)} />}
       footerSlot={
         <PremiumButton
           label={AUTH_UI.continueGuest}

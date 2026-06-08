@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FlatList,
   Platform,
-  ScrollView,
   StyleSheet,
   Switch,
   Text,
@@ -11,14 +10,18 @@ import {
   View} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
+import { ADMIN_GATE } from "../../content/adminContent";
 import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import AdminScreenShell from "../../components/admin/AdminScreenShell";
-import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminProducts, patchAdminProductStock } from "../../services/adminService";
-import { adminModuleSection } from "../../theme/adminLayout";
+import { adminModuleSection, useAdminCompactLayout } from "../../theme/adminLayout";
+import AdminKpiCard, { AdminKpiGrid } from "../../components/admin/AdminKpiCard";
+import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
+import AdminDataTable from "../../components/admin/AdminDataTable";
+import AdminPanel from "../../components/admin/AdminPanel";
+import { buildInventoryTableColumns } from "../../components/admin/adminTableColumns";
 import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { fonts, layout, radius, spacing, typography } from "../../theme/tokens";
@@ -64,8 +67,7 @@ export default function AdminInventoryScreen({ navigation, route }) {
   const [draftQty, setDraftQty] = useState({});
 
   const styles = useMemo(() => createStyles(c, shadowPremium), [c, shadowPremium]);
-  const { statCols } = useKankregLayout();
-  const statsScroll = statCols < 3;
+  const compact = useAdminCompactLayout();
 
   const load = useCallback(async (opts = {}) => {
     const { silent = false } = opts;
@@ -186,39 +188,16 @@ export default function AdminInventoryScreen({ navigation, route }) {
     );
   }
 
-  const statsHeader = (
-    <View style={[styles.statsRow, statsScroll && styles.statsRowScroll]}>
-      {[
-        { icon: "cube-outline", label: "SKUs", value: String(stats.total), warn: false },
-        { icon: "alert-circle-outline", label: "Out / zero", value: String(stats.out), warn: stats.out > 0 },
-        { icon: "trending-down-outline", label: `Low (≤${LOW_STOCK_MAX})`, value: String(stats.low), warn: stats.low > 0 },
-      ].map((s) => (
-        <View
-          key={s.label}
-          style={[
-            styles.statPill,
-            statsScroll && styles.statPillScroll,
-            s.warn ? { borderColor: c.primaryBorder, backgroundColor: c.primarySoft } : { borderColor: c.border },
-          ]}
-        >
-          <Ionicons name={s.icon} size={16} color={c.primary} />
-          <Text style={styles.statVal}>{s.value}</Text>
-          <Text style={styles.statLab}>{s.label}</Text>
-        </View>
-      ))}
-    </View>
-  );
-
   return (
     <AdminScreenShell style={styles.screen}>
       <KankregAdminShell
         navigation={navigation}
         route={route}
-        title={ADMIN_SCREEN_COPY.inventory.title}
-        subtitle={ADMIN_SCREEN_COPY.inventory.subtitle}
+        title="Inventory"
+        subtitle={`${stats.total} SKUs · ${stats.low} low · ${stats.out} out`}
       >
       <FlatList
-        data={visible}
+        data={compact ? visible : []}
         keyExtractor={(i) => i._id}
         style={[customerScrollFill, styles.inventoryList]}
         contentContainerStyle={[
@@ -227,33 +206,28 @@ export default function AdminInventoryScreen({ navigation, route }) {
         ]}
         ListHeaderComponent={
           <View style={styles.headerBlock}>
-            <Text style={styles.subH}>
-              Adjust quantities and availability. Customers see out-of-stock on the store.
-            </Text>
-            {statsScroll ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statsScrollContent}>
-                {[
-                  { icon: "cube-outline", label: "SKUs", value: String(stats.total), warn: false },
-                  { icon: "alert-circle-outline", label: "Out / zero", value: String(stats.out), warn: stats.out > 0 },
-                  { icon: "trending-down-outline", label: `Low (≤${LOW_STOCK_MAX})`, value: String(stats.low), warn: stats.low > 0 },
-                ].map((s) => (
-                  <View
-                    key={s.label}
-                    style={[
-                      styles.statPill,
-                      styles.statPillScroll,
-                      s.warn ? { borderColor: c.primaryBorder, backgroundColor: c.primarySoft } : { borderColor: c.border },
-                    ]}
-                  >
-                    <Ionicons name={s.icon} size={16} color={c.primary} />
-                    <Text style={styles.statVal}>{s.value}</Text>
-                    <Text style={styles.statLab}>{s.label}</Text>
-                  </View>
-                ))}
-              </ScrollView>
-            ) : (
-              statsHeader
-            )}
+            <AdminKpiGrid compact={compact}>
+              <AdminKpiCard label="SKUs" value={String(stats.total)} />
+              <AdminKpiCard label="Low stock" value={String(stats.low)} deltaUp={false} />
+              <AdminKpiCard label="Out of stock" value={String(stats.out)} deltaUp={false} />
+            </AdminKpiGrid>
+            <AdminFilterTabs
+              value={filter}
+              onChange={setFilter}
+              items={FILTERS.map((f) => ({ key: f.id, label: f.label }))}
+              style={{ marginVertical: spacing.sm }}
+            />
+            {!compact && visible.length > 0 ? (
+              <AdminPanel noPadding style={{ marginBottom: spacing.md }}>
+                <AdminDataTable
+                  rows={visible.slice(0, 50)}
+                  keyExtractor={(row) => row._id}
+                  columns={buildInventoryTableColumns({
+                    onEdit: (row) => navigation.navigate("AdminAddProduct", { product: row }),
+                  })}
+                />
+              </AdminPanel>
+            ) : null}
 
             {error ? (
               <View style={styles.bannerSpacer}>
@@ -262,22 +236,6 @@ export default function AdminInventoryScreen({ navigation, route }) {
             ) : null}
 
             <View style={[adminModuleSection(isDark, c), styles.filterShell]}>
-              <Text style={[styles.sectionKicker, { color: c.textMuted }]}>FILTER</Text>
-              <View style={styles.chips}>
-                {FILTERS.map((f) => {
-                  const active = filter === f.id;
-                  return (
-                    <PremiumChip
-                      key={f.id}
-                      label={f.label}
-                      tone={active ? "gold" : "neutral"}
-                      size="sm"
-                      selected={active}
-                      onPress={() => setFilter(f.id)}
-                    />
-                  );
-                })}
-              </View>
               <View style={styles.searchRow}>
                 <View style={styles.searchInputFlex}>
                   <PremiumInput
@@ -312,7 +270,7 @@ export default function AdminInventoryScreen({ navigation, route }) {
           </View>
         }
         ListEmptyComponent={
-          !loading ? (
+          !loading && (compact || visible.length === 0) ? (
             <View style={styles.emptyWrap}>
               <PremiumEmptyState
                 iconName="file-tray-outline"

@@ -47,6 +47,9 @@ const linking = {
     screens: {
       Home: "",
       Shop: "shop",
+      About: "about",
+      Privacy: "privacy",
+      Terms: "terms",
       Product: "product/:productId",
       Cart: "cart",
       Checkout: "checkout",

@@ -1,6 +1,6 @@
 import React from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import { FIGMA, figmaCardShell, figmaDisplayTitle } from "../../theme/figmaApp";
+import { FIGMA, figmaCardShell, figmaDisplayTitle, figmaTextMuted } from "../../theme/figmaApp";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
@@ -32,7 +32,7 @@ export default function KankregCheckoutSectionCard({
       <View style={styles.head}>
         <View style={styles.headText}>
           <Text style={[figmaDisplayTitle(14, isDark), styles.title]}>{title}</Text>
-          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+          {subtitle ? <Text style={[styles.subtitle, figmaTextMuted(isDark)]}>{subtitle}</Text> : null}
         </View>
         {actionLabel && onActionPress ? (
           <Pressable
@@ -44,7 +44,9 @@ export default function KankregCheckoutSectionCard({
               pressed && { opacity: 0.85 },
             ]}
           >
-            <Text style={styles.action}>{actionLabel}</Text>
+            <Text style={[styles.action, { color: isDark ? FIGMA.goldBright : FIGMA.goldDeep }]}>
+              {actionLabel}
+            </Text>
           </Pressable>
         ) : null}
       </View>
@@ -77,7 +79,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: fonts.regular,
     fontSize: 10,
-    color: FIGMA.inkFaint,
     marginTop: 4,
     lineHeight: 14,
   },
@@ -91,6 +92,5 @@ const styles = StyleSheet.create({
   action: {
     fontFamily: fonts.semibold,
     fontSize: 10,
-    color: FIGMA.goldDeep,
   },
 });

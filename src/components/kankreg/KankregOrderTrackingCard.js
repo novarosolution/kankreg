@@ -3,7 +3,14 @@ import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { MY_ORDERS_UI } from "../../content/appContent";
-import { FIGMA, figmaCardShell, figmaDisplayTitle } from "../../theme/figmaApp";
+import {
+  FIGMA,
+  figmaCardShell,
+  figmaDisplayTitle,
+  figmaRowBorder,
+  figmaTextMuted,
+  figmaTextPrimary,
+} from "../../theme/figmaApp";
 import { useTheme } from "../../context/ThemeContext";
 import {
   formatOrderItemsSummary,
@@ -79,7 +86,7 @@ export default function KankregOrderTrackingCard({
       <View style={styles.body}>
         <View style={styles.headRow}>
           <View style={styles.headText}>
-            <Text style={styles.orderKicker}>
+            <Text style={[styles.orderKicker, figmaTextMuted(isDark)]}>
               {MY_ORDERS_UI.orderPrefix} #{shortId}
             </Text>
             <Text style={[figmaDisplayTitle(14, isDark), styles.summary]} numberOfLines={2}>
@@ -92,7 +99,13 @@ export default function KankregOrderTrackingCard({
         <KankregOrderTrack status={order?.status} compact showStatusHint={false} />
 
         {showPartner ? (
-          <View style={styles.partnerRow}>
+          <View
+            style={[
+              styles.partnerRow,
+              figmaRowBorder(isDark),
+              { backgroundColor: isDark ? "#181513" : FIGMA.card },
+            ]}
+          >
             <LinearGradient
               colors={["#d9b463", "#9c6b27"]}
               style={styles.partnerAvatar}
@@ -100,10 +113,10 @@ export default function KankregOrderTrackingCard({
               <Text style={styles.partnerInitial}>{getPartnerInitial(partner.name)}</Text>
             </LinearGradient>
             <View style={styles.partnerText}>
-              <Text style={styles.partnerName}>
+              <Text style={[styles.partnerName, figmaTextPrimary(isDark)]}>
                 {partner.name} · {MY_ORDERS_UI.partnerRole}
               </Text>
-              <Text style={styles.partnerMeta}>{MY_ORDERS_UI.partnerOnWay}</Text>
+              <Text style={[styles.partnerMeta, figmaTextMuted(isDark)]}>{MY_ORDERS_UI.partnerOnWay}</Text>
             </View>
             {partner.phone ? (
               <Pressable style={styles.callBtn} onPress={handleCall} accessibilityLabel="Call partner">
@@ -213,7 +226,6 @@ const styles = StyleSheet.create({
   orderKicker: {
     fontFamily: fonts.bold,
     fontSize: 9,
-    color: FIGMA.inkFaint,
     letterSpacing: 0.5,
   },
   summary: {
@@ -228,8 +240,6 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: FIGMA.line,
-    backgroundColor: FIGMA.card,
   },
   partnerAvatar: {
     width: 40,
@@ -250,12 +260,10 @@ const styles = StyleSheet.create({
   partnerName: {
     fontFamily: fonts.semibold,
     fontSize: 12,
-    color: FIGMA.ink,
   },
   partnerMeta: {
     fontFamily: fonts.regular,
     fontSize: 10,
-    color: FIGMA.inkFaint,
     marginTop: 2,
   },
   callBtn: {

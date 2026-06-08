@@ -1,6 +1,6 @@
 /** Shared nav keys / route matching for KankregSiteHeader + KankregMobileNav */
 
-import { KANKREG_NAV_ITEMS, KANKREG_ROLE_NAV_ITEMS } from "../../content/appContent";
+import { KANKREG_ROLE_NAV_ITEMS, KANKREG_WEB_NAV_ITEMS } from "../../content/appContent";
 
 export const ADMIN_ROUTES = new Set([
   "AdminDashboard",
@@ -20,6 +20,7 @@ export const ADMIN_ROUTES = new Set([
 const ROUTE_GROUPS = {
   Home: ["Home"],
   Shop: ["Shop"],
+  About: ["About", "Privacy", "Terms"],
   Product: ["Product"],
   Cart: ["Cart"],
   Checkout: ["Checkout"],
@@ -34,6 +35,7 @@ const ROUTE_GROUPS = {
 const NAV_HANDLERS = {
   Home: ({ go }) => () => go("Home"),
   Shop: ({ go }) => () => go("Shop"),
+  About: ({ go }) => () => go("About"),
   Product: ({ goProduct }) => goProduct,
   Cart: ({ go }) => () => go("Cart", true),
   Checkout: ({ go }) => () => go("Checkout", true),
@@ -70,7 +72,7 @@ export function buildKankregNavItems({ go, goProduct, user }) {
     });
   }
   return [
-    ...KANKREG_NAV_ITEMS.map(({ key, label }) => ({
+    ...KANKREG_WEB_NAV_ITEMS.map(({ key, label }) => ({
       key,
       label,
       onPress: NAV_HANDLERS[key](ctx),

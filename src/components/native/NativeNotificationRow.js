@@ -1,7 +1,7 @@
 import React from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { FIGMA, figmaCardShell } from "../../theme/figmaApp";
+import { FIGMA, figmaCardShell, figmaTextMuted, figmaTextPrimary } from "../../theme/figmaApp";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/tokens";
 
@@ -39,14 +39,14 @@ export default function NativeNotificationRow({ item, onPress }) {
         <Ionicons name="notifications-outline" size={16} color={FIGMA.gold} />
       </View>
       <View style={styles.body}>
-        <Text style={styles.title} numberOfLines={1}>
+        <Text style={[styles.title, figmaTextPrimary(isDark)]} numberOfLines={1}>
           {item?.title}
         </Text>
-        <Text style={styles.message} numberOfLines={2}>
+        <Text style={[styles.message, figmaTextMuted(isDark)]} numberOfLines={2}>
           {item?.message}
         </Text>
       </View>
-      <Text style={styles.time}>{formatRelativeTime(item?.createdAt)}</Text>
+      <Text style={[styles.time, figmaTextMuted(isDark)]}>{formatRelativeTime(item?.createdAt)}</Text>
     </Pressable>
   );
 }
@@ -80,19 +80,16 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: fonts.semibold,
     fontSize: 12.5,
-    color: FIGMA.ink,
   },
   message: {
     fontFamily: fonts.regular,
     fontSize: 11,
-    color: FIGMA.inkFaint,
     marginTop: 2,
     lineHeight: 15,
   },
   time: {
     fontFamily: fonts.regular,
     fontSize: 9,
-    color: FIGMA.inkFaint,
     flexShrink: 0,
   },
 });

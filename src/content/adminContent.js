@@ -12,57 +12,57 @@ export const ADMIN_GATE = {
 export const ADMIN_SCREEN_COPY = {
   dashboard: {
     title: "Dashboard",
-    subtitle: "Live counts from products, orders, and users",
+    subtitle: "Store overview — revenue, orders, and recent activity",
   },
   products: {
-    title: "Manage Products",
-    subtitle: "Live catalog from your database",
+    title: "Products",
+    subtitle: "Catalog, pricing, and stock status",
     empty: "No products in catalog",
     emptySearch: "No matching products",
   },
-  addProduct: {
-    title: "Add Product",
-    subtitle: "Create or edit catalog entries with images and variants",
-  },
-  inventory: {
-    title: "Inventory & Stock",
-    subtitle: "Quantities, low-stock alerts, and availability",
-  },
   orders: {
-    title: "Manage orders",
-    subtitle: "Live order queue and fulfillment",
+    title: "Orders",
+    subtitle: "Order queue, fulfillment, and exports",
     emptyFilter: "No orders match this filter",
   },
   users: {
-    title: "Manage Users",
-    subtitle: "Roles, accounts, and access controls",
+    title: "Users",
+    subtitle: "Registered customers, roles, and access",
   },
   notifications: {
-    title: "Broadcast Notifications",
-    subtitle: "Push messages to all customers",
+    title: "Notify",
+    subtitle: "Broadcast push messages to customers",
     empty: "No notifications sent yet",
   },
   analytics: {
     title: "Analytics",
-    subtitle: "Sales and engagement reports",
+    subtitle: "Store performance and trends",
   },
   coupons: {
-    title: "Manage Coupons",
-    subtitle: "Discount codes and visibility",
+    title: "Coupons",
+    subtitle: "Discount campaigns and usage",
   },
   rewards: {
-    title: "Manage Rewards",
+    title: "Rewards",
     subtitle: "Points catalog and redemptions",
     empty: "No rewards yet",
   },
   support: {
-    title: "Support Inbox",
-    subtitle: "Customer conversations",
+    title: "Support",
+    subtitle: "Customer conversations and replies",
     empty: "No support messages yet",
     selectThread: "Select a conversation",
   },
   homeView: {
-    title: "Storefront Content",
-    subtitle: "Hero copy, sections, and home layout switches",
+    title: "Home view editor",
+    subtitle: "Control the customer home screen",
+  },
+  addProduct: {
+    title: "Add product",
+    subtitle: "Create a new catalogue item",
+  },
+  inventory: {
+    title: "Inventory",
+    subtitle: "Stock quantities and availability",
   },
 };

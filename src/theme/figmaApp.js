@@ -22,7 +22,20 @@ export const FIGMA = {
     ["#f4e6d2", "#e0b98f"],
     ["#e8e9ee", "#cdd2dc"],
   ],
+  productTileGradientsDark: [
+    ["#2e2820", "#1c1916"],
+    ["#1e2a22", "#121816"],
+    ["#2a221c", "#181412"],
+    ["#2c2618", "#1a1610"],
+    ["#22242a", "#14161a"],
+  ],
 };
+
+/** Product image well — warm cream in light, deep bronze in dark */
+export function getProductTileGradient(index = 0, isDark = false) {
+  const list = isDark ? FIGMA.productTileGradientsDark : FIGMA.productTileGradients;
+  return list[index % list.length];
+}
 
 export function figmaEyebrow(isDark = false) {
   return {
@@ -69,9 +82,9 @@ export function figmaPill(active, isDark = false) {
     paddingHorizontal: 13,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: active ? FIGMA.ink : isDark ? "#181513" : FIGMA.card,
+    backgroundColor: active ? (isDark ? FIGMA.goldDeep : FIGMA.ink) : isDark ? "#181513" : FIGMA.card,
     borderWidth: active ? 0 : StyleSheet.hairlineWidth,
-    borderColor: FIGMA.line,
+    borderColor: isDark ? "#3f3933" : FIGMA.line,
   };
 }
 
@@ -79,7 +92,7 @@ export function figmaPillText(active, isDark = false) {
   return {
     fontFamily: fonts.semibold,
     fontSize: 10,
-    color: active ? FIGMA.paper : isDark ? FIGMA.inkFaint : FIGMA.inkSoft,
+    color: active ? FIGMA.paper : isDark ? "rgba(245, 239, 228, 0.72)" : FIGMA.inkSoft,
   };
 }
 
@@ -89,7 +102,7 @@ export function figmaIconCircle(isDark = false) {
     height: 36,
     borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: FIGMA.line,
+    borderColor: isDark ? "#3f3933" : FIGMA.line,
     backgroundColor: isDark ? "#181513" : FIGMA.card,
     alignItems: "center",
     justifyContent: "center",
@@ -100,16 +113,24 @@ export function figmaStickyFooter(isDark = false) {
   return {
     backgroundColor: isDark ? "rgba(15,12,10,0.97)" : "rgba(255,253,248,0.97)",
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: FIGMA.line,
+    borderTopColor: isDark ? "#3f3933" : FIGMA.line,
     paddingHorizontal: FIGMA.gutter + 2,
     paddingTop: spacing.md,
   };
 }
 
-export function figmaNativeShell() {
+export function figmaNativeShell(isDark = false) {
   return Platform.OS !== "web"
-    ? { flex: 1, width: "100%", backgroundColor: FIGMA.paper }
+    ? { flex: 1, width: "100%", backgroundColor: isDark ? "#050403" : FIGMA.paper }
     : {};
+}
+
+export function figmaSurfaceBg(isDark = false) {
+  return isDark ? "#181513" : FIGMA.card;
+}
+
+export function figmaPageBg(isDark = false) {
+  return isDark ? "#050403" : FIGMA.paper;
 }
 
 export function figmaPrice(isDark = false) {
@@ -119,4 +140,29 @@ export function figmaPrice(isDark = false) {
     fontWeight: "600",
     color: isDark ? FIGMA.paper : FIGMA.ink,
   };
+}
+
+/** Readable body/label text on themed surfaces */
+export function figmaTextPrimary(isDark = false) {
+  return { color: isDark ? "#f5efe4" : FIGMA.ink };
+}
+
+export function figmaTextSecondary(isDark = false) {
+  return { color: isDark ? "rgba(245, 239, 228, 0.88)" : FIGMA.inkSoft };
+}
+
+export function figmaTextMuted(isDark = false) {
+  return { color: isDark ? "rgba(245, 239, 228, 0.68)" : FIGMA.inkFaint };
+}
+
+export function figmaIconSoft(isDark = false) {
+  return isDark ? "rgba(245, 239, 228, 0.88)" : FIGMA.inkSoft;
+}
+
+export function figmaIconMuted(isDark = false) {
+  return isDark ? "rgba(245, 239, 228, 0.68)" : FIGMA.inkFaint;
+}
+
+export function figmaRowBorder(isDark = false) {
+  return { borderColor: isDark ? "#3f3933" : FIGMA.line };
 }

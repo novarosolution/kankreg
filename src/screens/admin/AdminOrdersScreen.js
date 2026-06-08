@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
+import { ADMIN_GATE } from "../../content/adminContent";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -56,8 +56,22 @@ import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumCard from "../../components/ui/PremiumCard";
 import PremiumChip from "../../components/ui/PremiumChip";
+import AdminKpiCard, { AdminKpiGrid } from "../../components/admin/AdminKpiCard";
+import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
+import AdminDataTable from "../../components/admin/AdminDataTable";
+import AdminPanel from "../../components/admin/AdminPanel";
+import AdminAlerts from "../../components/admin/AdminAlerts";
+import { buildOrderTableColumns } from "../../components/admin/adminTableColumns";
 
 const STATUSES = ["all", ...ALL_ORDER_STATUSES];
+
+const ORDER_TAB_KEYS = [
+  { key: "all", label: "All" },
+  { key: "pending", label: "Pending" },
+  { key: "out_for_delivery", label: "Out for delivery" },
+  { key: "delivered", label: "Delivered" },
+  { key: "cancelled", label: "Cancelled" },
+];
 
 function AdminPaymentStatusChip({ paymentStatus, c, styles }) {
   const ps = String(paymentStatus || "pending").toLowerCase();
@@ -387,15 +401,6 @@ export default function AdminOrdersScreen({ navigation, route }) {
     }
   };
 
-  function MetricCard({ label, value }) {
-    return (
-      <View style={styles.metricCard}>
-        <Text style={styles.metricValue}>{value}</Text>
-        <Text style={styles.metricLabel}>{label}</Text>
-      </View>
-    );
-  }
-
   function SectionTitle({ icon, label }) {
     return (
       <View style={styles.sectionTitleRow}>
@@ -418,29 +423,27 @@ export default function AdminOrdersScreen({ navigation, route }) {
         <KankregAdminShell
           navigation={navigation}
           route={route}
-          title={ADMIN_SCREEN_COPY.orders.title}
-          subtitle={ADMIN_SCREEN_COPY.orders.subtitle}
+          title="Orders"
+          subtitle={`${stats.total.toLocaleString()} total orders`}
+          headerRight={
+            <PremiumButton label="Export CSV" variant="ghost" size="sm" iconLeft="download-outline" onPress={() => {}} />
+          }
         >
         <View style={styles.panel}>
           <SectionReveal preset="fade-up" delay={0}>
-          {error ? (
-            <View style={styles.bannerSpacer}>
-              <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
-            </View>
-          ) : null}
-          {success ? (
-            <View style={styles.bannerSpacer}>
-              <PremiumErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
-            </View>
-          ) : null}
+          <AdminAlerts
+            error={error}
+            success={success}
+            onCloseError={() => setError("")}
+            onCloseSuccess={() => setSuccess("")}
+          />
 
-          <View style={styles.statsGrid}>
-            <MetricCard label="Total" value={stats.total} />
-            <MetricCard label="New" value={stats.newOrders} />
-            <MetricCard label="In kitchen" value={stats.inKitchen} />
-            <MetricCard label="Out / pickup" value={stats.outForDelivery} />
-            <MetricCard label="Delivered" value={stats.delivered} />
-          </View>
+          <AdminKpiGrid compact={compactAdmin}>
+            <AdminKpiCard label="Total" value={stats.total.toLocaleString()} />
+            <AdminKpiCard label="Pending" value={String(stats.newOrders)} />
+            <AdminKpiCard label="In kitchen" value={String(stats.inKitchen)} />
+            <AdminKpiCard label="Delivered" value={String(stats.delivered)} />
+          </AdminKpiGrid>
 
           <View style={styles.actionsRow}>
             <View style={styles.searchInputWrap}>
@@ -466,27 +469,35 @@ export default function AdminOrdersScreen({ navigation, route }) {
             />
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filtersRow}
-          >
-            {STATUSES.map((status) => (
-              <PremiumChip
-                key={status}
-                label={status === "all" ? "All" : getOrderStatusLabel(status)}
-                tone="gold"
-                size="sm"
-                selected={statusFilter === status}
-                onPress={() => setStatusFilter(status)}
-              />
-            ))}
-          </ScrollView>
+          <AdminFilterTabs
+            style={styles.filterTabs}
+            value={ORDER_TAB_KEYS.some((t) => t.key === statusFilter) ? statusFilter : "all"}
+            onChange={setStatusFilter}
+            items={ORDER_TAB_KEYS.map((tab) => ({
+              key: tab.key,
+              label:
+                tab.key === "all"
+                  ? `${tab.label} · ${stats.total}`
+                  : tab.label,
+            }))}
+          />
           </SectionReveal>
 
           <SectionReveal preset="fade-up" delay={60}>
           <View style={styles.listContent}>
-            {renderedOrders.map((item) => {
+            {!compactAdmin && renderedOrders.length > 0 ? (
+              <AdminPanel noPadding style={styles.tablePanel}>
+                <AdminDataTable
+                  rows={renderedOrders}
+                  keyExtractor={(row) => row._id}
+                  columns={buildOrderTableColumns({
+                    onView: (row) => setExpandedOrderId((cur) => (cur === row._id ? "" : row._id)),
+                  })}
+                />
+              </AdminPanel>
+            ) : null}
+            {compactAdmin
+              ? renderedOrders.map((item) => {
               const accentBorder =
                 item.status === "delivered"
                   ? c.secondary
@@ -837,7 +848,8 @@ export default function AdminOrdersScreen({ navigation, route }) {
                 </View>
               </PremiumCard>
             );
-            })}
+            })
+              : null}
             {renderedOrders.length < visibleOrders.length ? (
               <PremiumButton
                 label={`Load more (${visibleOrders.length - renderedOrders.length} remaining)`}
@@ -908,6 +920,15 @@ function createAdminOrdersStyles(c, shadowPremium, compact = false) {
     ...adminToolbarPrimary},
   refreshBtn: {
     alignSelf: "flex-end"},
+  filterTabs: {
+    marginTop: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  tablePanel: {
+    marginBottom: spacing.md,
+    paddingHorizontal: 0,
+    paddingBottom: 4,
+  },
   filtersRow: {
     flexDirection: "row",
     flexWrap: "wrap",

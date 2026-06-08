@@ -15,6 +15,7 @@ import KankregCustomerPageHeader from "../components/kankreg/KankregCustomerPage
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
+import { useOrderCelebration } from "../context/OrderCelebrationContext";
 import {
   createOrderRequest,
   validateCouponRequest} from "../services/orderService";
@@ -78,6 +79,7 @@ function getProfileAddressCompletion(defaultAddress) {
 export default function CartScreen({ navigation, route }) {
   const { cartItems, totalAmount, totalItems, addToCart, removeFromCart, removeLineFromCart, clearCart } = useCart();
   const { isAuthenticated, token, user } = useAuth();
+  const { showOrderConfirmed } = useOrderCelebration();
   const { toastSuccess } = useToast();
   const isCheckoutFlow = route?.name === "Checkout" || route?.params?.flow === "checkout";
   const { useSplitLayout, isXs } = useKankregLayout();
@@ -328,10 +330,7 @@ export default function CartScreen({ navigation, route }) {
       clearCart();
 
       if (paymentMethod === "Cash on Delivery") {
-        navigation.reset({
-          index: 1,
-          routes: [{ name: "Home" }, { name: "OrderConfirmed", params: { order: created } }],
-        });
+        showOrderConfirmed(created);
         return;
       }
 
@@ -356,13 +355,7 @@ export default function CartScreen({ navigation, route }) {
           razorpay_order_id: p.razorpay_order_id,
           razorpay_payment_id: p.razorpay_payment_id,
           razorpay_signature: p.razorpay_signature});
-        navigation.reset({
-          index: 1,
-          routes: [
-            { name: "Home" },
-            { name: "OrderConfirmed", params: { order: verified || created } },
-          ],
-        });
+        showOrderConfirmed(verified || created);
         return;
       }
 

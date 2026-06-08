@@ -43,10 +43,9 @@ export function OrderCelebrationProvider({ children, navigationRef }) {
       setTimeout(() => localConfirmRef.current.delete(id), 90_000);
       if (navigationRef?.isReady?.()) {
         navigationRef.reset({
-          index: 1,
-          routes: [{ name: "Home" }, { name: "OrderConfirmed", params: { order } }],
+          index: 0,
+          routes: [{ name: "Home" }],
         });
-        return;
       }
       showCelebration("confirmed", order);
     },
@@ -102,11 +101,7 @@ export function OrderCelebrationProvider({ children, navigationRef }) {
         EARLY_STATUSES.has(prevStatus) &&
         !localConfirmRef.current.has(id)
       ) {
-        if (navigationRef?.isReady?.()) {
-          navigationRef.navigate("OrderConfirmed", { order });
-        } else {
-          showCelebration("confirmed", order);
-        }
+        showCelebration("confirmed", order);
       }
     });
   }, [isAuthenticated, navigationRef, onLiveEvent, showCelebration]);

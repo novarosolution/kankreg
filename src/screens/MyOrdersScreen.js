@@ -1774,9 +1774,9 @@ function createMyOrdersStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     marginBottom: spacing.md},
   nativeOrderPanel: {
     marginHorizontal: FIGMA.gutter,
-    backgroundColor: FIGMA.card,
+    backgroundColor: isDark ? c.surface : FIGMA.card,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: FIGMA.line,
+    borderColor: isDark ? c.border : FIGMA.line,
     borderRadius: 16,
     padding: 14,
     marginBottom: 10,

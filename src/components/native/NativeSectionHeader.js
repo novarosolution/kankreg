@@ -23,7 +23,9 @@ export default function NativeSectionHeader({
       </View>
       {onAction ? (
         <Pressable onPress={onAction} hitSlop={8}>
-          <Text style={[styles.action, { color: FIGMA.goldDeep }]}>{actionLabel}</Text>
+          <Text style={[styles.action, { color: isDark ? FIGMA.goldBright : FIGMA.goldDeep }]}>
+            {actionLabel}
+          </Text>
         </Pressable>
       ) : null}
     </View>

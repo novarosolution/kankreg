@@ -30,7 +30,9 @@ function isTabActive(tabKey, routeName) {
   return false;
 }
 
-function TabItem({ label, icon, iconActive, active, onPress, badge, colors, compact }) {
+function TabItem({ label, icon, iconActive, active, onPress, badge, colors, compact, isDark }) {
+  const inactiveColor = isDark ? colors.textSecondary : FIGMA.inkFaint;
+  const activeColor = isDark ? colors.primary : FIGMA.goldDeep;
   const scale = useRef(new Animated.Value(active ? 1.06 : 1)).current;
   const lift = useRef(new Animated.Value(active ? -2 : 0)).current;
 
@@ -81,7 +83,7 @@ function TabItem({ label, icon, iconActive, active, onPress, badge, colors, comp
           <Ionicons
             name={active && iconActive ? iconActive : icon}
             size={glyphSize.tabBar}
-            color={active ? FIGMA.goldDeep : FIGMA.inkFaint}
+            color={active ? activeColor : inactiveColor}
           />
           {badge ? (
             <View style={[styles.badge, { backgroundColor: FIGMA.gold }]}>
@@ -94,7 +96,7 @@ function TabItem({ label, icon, iconActive, active, onPress, badge, colors, comp
             style={[
               styles.tabLabel,
               {
-                color: active ? FIGMA.goldDeep : FIGMA.inkFaint,
+                color: active ? activeColor : inactiveColor,
                 fontFamily: active ? fonts.bold : fonts.semibold,
               },
             ]}
@@ -199,6 +201,7 @@ export default function BottomNavBar() {
           badge={tab.badge}
           colors={colors}
           compact={!showLabels}
+          isDark={isDark}
         />
       ))}
     </View>

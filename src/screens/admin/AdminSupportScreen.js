@@ -10,7 +10,10 @@ import {
   fetchAdminSupportThreads,
   replyAdminSupportThread,
   updateAdminSupportThreadStatus} from "../../services/adminService";
-import { adminPanel } from "../../theme/adminLayout";
+import { adminPanel, adminTwoColAside, adminTwoColMain, adminTwoColStyle, useAdminCompactLayout } from "../../theme/adminLayout";
+import AdminPanel from "../../components/admin/AdminPanel";
+import AdminAlerts from "../../components/admin/AdminAlerts";
+import AdminStatusPill from "../../components/admin/AdminStatusPill";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { layout, radius, spacing } from "../../theme/tokens";
@@ -24,6 +27,7 @@ import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
 export default function AdminSupportScreen({ navigation, route }) {
   const { colors: c, shadowPremium } = useTheme();
+  const compact = useAdminCompactLayout();
   const styles = useMemo(() => createAdminSupportStyles(c, shadowPremium), [c, shadowPremium]);
     const { user, token } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -135,15 +139,7 @@ export default function AdminSupportScreen({ navigation, route }) {
             <PremiumButton label="Refresh" iconLeft="refresh-outline" variant="secondary" size="sm" onPress={loadThreads} />
           }
         >
-        <SectionReveal preset="fade-up" delay={0}>
-        <View style={styles.panel}>
-          {error ? (
-            <View style={styles.bannerSpacer}>
-              <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
-            </View>
-          ) : null}
-        </View>
-        </SectionReveal>
+        <AdminAlerts error={error} onCloseError={() => setError("")} />
 
         {loading ? (
           <SectionReveal preset="fade-up" delay={40}>
@@ -152,10 +148,10 @@ export default function AdminSupportScreen({ navigation, route }) {
           </View>
           </SectionReveal>
         ) : (
-          <>
+          <View style={adminTwoColStyle(compact)}>
+            <View style={adminTwoColMain(compact)}>
             <SectionReveal preset="fade-up" delay={40}>
-            <View style={styles.panel}>
-              <Text style={styles.sectionTitle}>Conversations</Text>
+            <AdminPanel title="Conversations">
               {(threads || []).length === 0 ? (
                 <PremiumEmptyState
                   iconName="chatbubbles-outline"
@@ -176,18 +172,20 @@ export default function AdminSupportScreen({ navigation, route }) {
                   >
                     <Text style={[styles.threadTitle, { color: c.textPrimary }]}>{thread.user?.name || "User"}</Text>
                     <Text style={[styles.threadMeta, { color: c.textSecondary }]}>{thread.user?.email || "N/A"}</Text>
-                    <Text style={[styles.threadMeta, { color: c.textSecondary }]}>
-                      Status: {thread.status} • Messages: {(thread.messages || []).length}
-                    </Text>
+                    <AdminStatusPill
+                      label={thread.status === "closed" ? "Closed" : "Open"}
+                      tone={thread.status === "closed" ? "cancel" : "ok"}
+                    />
                   </PremiumCard>
                 ))
               )}
-            </View>
+            </AdminPanel>
             </SectionReveal>
+            </View>
+            <View style={adminTwoColAside(compact)}>
             <SectionReveal preset="fade-up" delay={100}>
-            <View style={styles.panel}>
+            <AdminPanel title="Thread details">
               <View style={styles.rowBetween}>
-                <Text style={styles.sectionTitle}>Thread Details</Text>
                 {selectedThread ? (
                   <PremiumButton
                     label={`Mark ${selectedThread.status === "closed" ? "Open" : "Closed"}`}
@@ -248,9 +246,10 @@ export default function AdminSupportScreen({ navigation, route }) {
                   />
                 </>
               )}
-            </View>
+            </AdminPanel>
             </SectionReveal>
-          </>
+            </View>
+          </View>
         )}
         </KankregAdminShell>
 </KankregScrollPage>

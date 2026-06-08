@@ -373,6 +373,164 @@ export const KANKREG_NAV_ITEMS = [
   { key: "Account", label: "Account" },
 ];
 
+/** Desktop web header — marketing site nav (no checkout/product deep links). */
+export const KANKREG_WEB_NAV_ITEMS = [
+  { key: "Home", label: "Home" },
+  { key: "Shop", label: "Shop" },
+  { key: "About", label: "About" },
+  { key: "Rewards", label: "Rewards" },
+  { key: "Account", label: "Account" },
+];
+
+/** About page — editorial marketing copy (web-first, works on native). */
+export const ABOUT_SCREEN_UI = {
+  header: {
+    eyebrow: "Our story",
+    title: "Crafted for everyday rituals",
+    subtitle: "Slow-churned essentials, fair prices, and a delivery experience that feels personal.",
+  },
+  hero: {
+    kicker: "Since day one",
+    title: "Quietly premium essentials for Indian kitchens",
+    lead:
+      "KankreG began with a simple promise: heritage-quality ghee and staples, sourced with care, priced honestly, and delivered with live tracking you can trust.",
+    ctaPrimary: "Shop the collection",
+    ctaSecondary: "How we craft",
+    badge: "Family-owned · Gujarat",
+    floatQuote: "The aroma the moment you open the jar — pure nostalgia.",
+  },
+  mission: {
+    eyebrow: "Mission",
+    title: "Good food should feel unmistakably real",
+    paragraphs: [
+      "We work with small-batch partners who share our obsession with clarity, aroma, and honest labels. No shortcuts — just ingredients you would proudly serve at your own table.",
+      "Every order earns rewards, every delivery is tracked in real time, and every product page tells you exactly what you are buying. Transparency is part of the craft.",
+    ],
+  },
+  pillars: [
+    {
+      key: "source",
+      icon: "leaf-outline",
+      title: "Thoughtful sourcing",
+      body: "Grass-fed A2 milk, cold-pressed oils, and pantry staples chosen for purity — not shelf appeal.",
+    },
+    {
+      key: "craft",
+      icon: "flame-outline",
+      title: "Slow craft",
+      body: "Traditional methods, small batches, and patient churning for the golden clarity ghee is known for.",
+    },
+    {
+      key: "fair",
+      icon: "heart-outline",
+      title: "Fair pricing",
+      body: "Premium quality without the premium markup. Rewards on every order keep loyal kitchens saving.",
+    },
+    {
+      key: "deliver",
+      icon: "bicycle-outline",
+      title: "Delivered with care",
+      body: "Live order tracking, secure Razorpay checkout, and support that answers like a neighbour would.",
+    },
+  ],
+  craft: {
+    eyebrow: "The process",
+    title: "From farm to your morning roti",
+    steps: [
+      { key: "milk", label: "01", title: "Select milk", body: "A2 milk from grass-fed herds, tested for quality before it ever reaches the churn." },
+      { key: "churn", label: "02", title: "Slow churn", body: "Patient, low-heat churning until the butter separates — the step that builds aroma." },
+      { key: "clarify", label: "03", title: "Clarify & rest", body: "Ghee is clarified, filtered, and rested so the golden colour and nutty notes settle in." },
+      { key: "pack", label: "04", title: "Pack & ship", body: "Sealed fresh, shipped with live tracking — from our kitchen partners to yours." },
+    ],
+  },
+  stats: [
+    { key: "orders", value: "12.5k+", label: "Orders fulfilled" },
+    { key: "rating", value: "4.9★", label: "Average rating" },
+    { key: "purity", value: "100%", label: "Pure A2 ghee" },
+    { key: "cities", value: "40+", label: "Cities served" },
+  ],
+  ctaBand: {
+    title: "Ready to taste the difference?",
+    body: "Explore bestsellers, earn rewards on your first order, and track delivery every step of the way.",
+    cta: "Browse the shop",
+    ctaSecondary: "Contact support",
+  },
+};
+
+/** Privacy & Terms — static legal pages linked from site footer. */
+export const LEGAL_PAGES = {
+  privacy: {
+    title: "Privacy policy",
+    eyebrow: "Legal",
+    updated: "Last updated June 2025",
+    intro:
+      "KankreG respects your privacy. This policy explains what we collect, how we use it, and the choices you have when you shop with us.",
+    sections: [
+      {
+        title: "Information we collect",
+        body: "When you create an account or place an order, we collect your name, phone number, email, delivery address, and payment references processed securely through Razorpay. We also collect device and usage data to improve the app and website.",
+      },
+      {
+        title: "How we use your data",
+        body: "We use your information to fulfil orders, send delivery updates, provide customer support, process rewards, and improve our products. We do not sell your personal data to third parties.",
+      },
+      {
+        title: "Cookies & analytics",
+        body: "Our website may use cookies and similar technologies to remember preferences and measure performance. You can control cookies through your browser settings.",
+      },
+      {
+        title: "Data retention & security",
+        body: "We retain order and account data as long as needed for legal, tax, and support purposes. We apply industry-standard safeguards to protect your information in transit and at rest.",
+      },
+      {
+        title: "Your rights",
+        body: "You may request access, correction, or deletion of your personal data by contacting us at support@kankreg.app. We will respond within a reasonable timeframe.",
+      },
+      {
+        title: "Contact",
+        body: "Questions about this policy? Email support@kankreg.app and we will be glad to help.",
+      },
+    ],
+  },
+  terms: {
+    title: "Terms of service",
+    eyebrow: "Legal",
+    updated: "Last updated June 2025",
+    intro:
+      "By using KankreG — on web or in the app — you agree to these terms. Please read them before placing an order.",
+    sections: [
+      {
+        title: "Using our service",
+        body: "You must provide accurate delivery details and be available to receive orders. Misuse of the platform, fraudulent payments, or abusive behaviour toward staff or delivery partners may result in account suspension.",
+      },
+      {
+        title: "Orders & pricing",
+        body: "Prices, offers, and product availability may change without notice. An order is confirmed only after successful payment (or COD acceptance). We reserve the right to cancel orders affected by stock or pricing errors.",
+      },
+      {
+        title: "Payments",
+        body: "Online payments are processed by Razorpay. Cash on delivery is available where shown at checkout. Failed or abandoned online payments may release reserved stock after the payment timeout window.",
+      },
+      {
+        title: "Delivery",
+        body: "Estimated delivery times are indicative. Live tracking is provided when available. Risk of loss passes to you upon successful delivery to the address provided.",
+      },
+      {
+        title: "Returns & quality",
+        body: "If you receive a damaged or incorrect item, contact support within 48 hours with photos. We will arrange a replacement or refund at our discretion, in line with applicable consumer laws.",
+      },
+      {
+        title: "Rewards",
+        body: "Reward points have no cash value, may expire, and are subject to programme rules shown in the app. We may amend the rewards programme with reasonable notice.",
+      },
+      {
+        title: "Governing law",
+        body: "These terms are governed by the laws of India. Disputes shall be subject to the courts of Ahmedabad, Gujarat, unless otherwise required by law.",
+      },
+    ],
+  },
+};
+
 export const KANKREG_ROLE_NAV_ITEMS = {
   admin: { key: "Admin", label: "Admin" },
   delivery: { key: "Delivery", label: "Delivery" },
@@ -412,10 +570,10 @@ export const KANKREG_FOOTER_COLUMNS = [
   {
     title: "Company",
     links: [
-      { label: "About", route: "Support" },
-      { label: "Careers", route: null },
-      { label: "Privacy", route: null },
-      { label: "Terms", route: null },
+      { label: "About", route: "About" },
+      { label: "Careers", route: "About" },
+      { label: "Privacy", route: "Privacy" },
+      { label: "Terms", route: "Terms" },
     ],
   },
 ];
@@ -462,26 +620,41 @@ export const CART_ADDRESS = {
   gpsFillSuccess: "Location added.",
 };
 
-/** Shop catalog — `ShopScreen.js`. */
+/** Shop catalog — `ShopScreen.js` + `ShopPageChrome.js`. */
 export const SHOP_SCREEN_UI = {
   pageEyebrow: "Catalog",
   pageTitle: "Shop",
   pageTitleWide: "Shop everything",
-  pageSubtitle: "Curated pieces for home & kitchen",
+  pageSubtitle: "Curated pieces for home, kitchen & everyday rituals",
   searchPlaceholder: "Search essentials",
+  refineTitle: "Refine",
+  resetFilters: "Reset",
+  sortA11y: "Change sort order",
   showingPrefix: "Showing",
   showingOf: "of",
   showingSuffix: "products",
   clearFilters: "Clear filters",
+  filtersOpen: "Filters",
+  filtersClose: "Hide filters",
   emptyTitle: "No products found",
   emptyDescription: "Try a different filter or check back soon.",
   emptyCta: "Browse shop",
+  emptyMatchesTitle: "No matches",
+  emptyMatchesDescription: "Try another category or clear filters to see more products.",
+  viewAllCta: "View all",
   filterCategory: "Category",
   filterCollection: "Collection",
   filterRating: "Rating",
   filterPrice: "Price",
   priceMin: "₹500",
   priceMax: "₹8,000",
+  collectionPills: ["All", "New in", "On sale", "Premium"],
+  sortOptions: [
+    { key: "featured", label: "Featured" },
+    { key: "price-asc", label: "Price ↑" },
+    { key: "newest", label: "Newest" },
+  ],
+  trustLine: "Free delivery over ₹1,499 · Secure checkout · Live order tracking",
 };
 
 /** Notifications — `NotificationsScreen.js`. */
@@ -796,7 +969,7 @@ export const PRODUCT_SCREEN = {
   reviewListLatest: "",
   reviewNoWrittenNote: "—",
   reviewFirstHint: "",
-  stickyPriceLabel: "Price",
+  stickyPriceLabel: "Total",
   addToCart: "Add to cart",
   /** Primary + sticky CTA when line is not purchasable */
   outOfStock: "Out of stock",
@@ -878,10 +1051,10 @@ export const ORDER_CELEBRATION_UI = {
     missingOrderBody: "We couldn't load this confirmation. Check My Orders for your latest purchases.",
     missingOrderCta: "Go to My Orders",
   },
-  /** Compact modal — socket-driven confirm + delivered moment. */
+  /** Full-screen popup after checkout (`OrderCelebrationOverlay.js`). */
   confirmed: {
-    title: "Order confirmed!",
-    subtitle: "We're preparing your essentials. Track live updates anytime in My Orders.",
+    title: "Order placed",
+    subtitle: "Your order {ref} is confirmed. We'll keep you posted as it moves.",
     ctaPrimary: "Track order",
     ctaSecondary: "Continue shopping",
   },
@@ -899,6 +1072,20 @@ export function formatOrderReference(order, prefix = ORDER_CELEBRATION_UI.orderP
     .slice(-6)
     .toUpperCase();
   return id ? `${prefix} #${id}` : "";
+}
+
+/** Public order id for celebration UI (e.g. #KG-20451). */
+export function formatOrderPublicRef(order) {
+  const id = String(order?._id || order?.id || "")
+    .slice(-5)
+    .toUpperCase();
+  return id ? `#KG-${id}` : "";
+}
+
+export function formatOrderPlacedMessage(order) {
+  const ref = formatOrderPublicRef(order);
+  const template = ORDER_CELEBRATION_UI.confirmed.subtitle;
+  return ref ? template.replace("{ref}", ref) : template.replace("{ref}", "your order");
 }
 
 /** Item count from order line items. */

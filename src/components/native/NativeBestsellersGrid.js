@@ -1,6 +1,7 @@
 import React from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTheme } from "../../context/ThemeContext";
 import { FIGMA } from "../../theme/figmaApp";
 import { spacing } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
@@ -16,16 +17,49 @@ const gridShadow = platformShadow({
   android: { elevation: 2 },
 });
 
+const gridShadowDark = platformShadow({
+  ios: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.28,
+    shadowRadius: 18,
+  },
+  android: { elevation: 4 },
+});
+
 /** Premium 2-up product grid for home bestsellers */
 export default function NativeBestsellersGrid({ products, onProductPress, onAddToCart }) {
+  const { isDark } = useTheme();
   if (Platform.OS === "web") return null;
 
   return (
-    <View style={[styles.shell, gridShadow]}>
-      <LinearGradient
-        colors={["rgba(255,253,248,0.98)", FIGMA.card]}
-        style={StyleSheet.absoluteFillObject}
-      />
+    <View
+      style={[
+        styles.shell,
+        isDark ? gridShadowDark : gridShadow,
+        isDark
+          ? {
+              backgroundColor: "rgba(255,255,255,0.03)",
+              borderColor: "rgba(232, 200, 90, 0.2)",
+            }
+          : {
+              borderColor: FIGMA.line,
+            },
+      ]}
+    >
+      {!isDark ? (
+        <LinearGradient
+          colors={["rgba(255,253,248,0.98)", FIGMA.card]}
+          style={StyleSheet.absoluteFillObject}
+        />
+      ) : (
+        <LinearGradient
+          colors={["rgba(232, 200, 90, 0.08)", "rgba(255,255,255,0.02)", "transparent"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+        />
+      )}
       <View style={styles.grid}>
         {products.map((item, idx) => (
           <View key={item.id} style={styles.cell}>
@@ -50,7 +84,6 @@ const styles = StyleSheet.create({
     marginHorizontal: FIGMA.gutter,
     borderRadius: 20,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: FIGMA.line,
     overflow: "hidden",
     padding: 11,
     paddingTop: 13,

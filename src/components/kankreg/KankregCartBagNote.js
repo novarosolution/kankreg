@@ -1,11 +1,13 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { FIGMA } from "../../theme/figmaApp";
+import { useTheme } from "../../context/ThemeContext";
+import { FIGMA, figmaRowBorder, figmaSurfaceBg, figmaTextSecondary } from "../../theme/figmaApp";
 import { fonts, spacing } from "../../theme/tokens";
 
 /** Small trust strip under cart header */
 export default function KankregCartBagNote() {
+  const { isDark } = useTheme();
   const items = [
     { icon: "leaf-outline", label: "Organic" },
     { icon: "shield-checkmark-outline", label: "Secure" },
@@ -15,9 +17,16 @@ export default function KankregCartBagNote() {
   return (
     <View style={styles.wrap}>
       {items.map((item) => (
-        <View key={item.label} style={styles.cell}>
-          <Ionicons name={item.icon} size={12} color={FIGMA.gold} />
-          <Text style={styles.label}>{item.label}</Text>
+        <View
+          key={item.label}
+          style={[
+            styles.cell,
+            figmaRowBorder(isDark),
+            { backgroundColor: figmaSurfaceBg(isDark) },
+          ]}
+        >
+          <Ionicons name={item.icon} size={12} color={isDark ? FIGMA.goldBright : FIGMA.gold} />
+          <Text style={[styles.label, figmaTextSecondary(isDark)]}>{item.label}</Text>
         </View>
       ))}
     </View>
@@ -39,13 +48,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: FIGMA.card,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: FIGMA.line,
   },
   label: {
     fontFamily: fonts.medium,
     fontSize: 9,
-    color: FIGMA.inkSoft,
   },
 });

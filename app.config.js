@@ -27,6 +27,10 @@ module.exports = {
           "KankreG uses your location for delivery addresses and optional live location sharing while you deliver orders.",
       },
     },
+    android: {
+      ...expo.android,
+      package: "com.novarosolution.kankreg",
+    },
     plugins: [...(expo.plugins || []), "expo-web-browser"],
   },
 };

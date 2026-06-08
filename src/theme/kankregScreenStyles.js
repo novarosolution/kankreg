@@ -36,13 +36,13 @@ export function createKankregCardShell(isDark) {
   };
 }
 
-export function createKankregDisplayTitle(size = typography.h2) {
+export function createKankregDisplayTitle(size = typography.h2, isDark = false) {
   return {
     fontFamily: FONT_DISPLAY,
     fontSize: size,
     letterSpacing: -0.5,
     lineHeight: size * 1.05,
-    color: KANKREG_PALETTE.ink,
+    color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink,
   };
 }
 

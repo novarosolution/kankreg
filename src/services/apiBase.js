@@ -5,7 +5,7 @@ import * as Device from "expo-device";
 // Production app calls this host + paths like /products. Static sites on the same domain
 // usually proxy the API under /api — we mount both /products and /api/products on the server.
 // Override with EXPO_PUBLIC_API_URL if your API lives elsewhere (e.g. https://api.example.com).
-const PRODUCTION_API_URL = "https://novarosolution.com/api";
+const PRODUCTION_API_URL = "https://kankregserver.onrender.com";
 const DEV_API_PORT = 5001;
 
 /**
