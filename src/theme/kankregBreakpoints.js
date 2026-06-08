@@ -3,7 +3,7 @@
  * @see kankreg.html @media (max-width: 1080|900|560|420)
  */
 import { useMemo } from "react";
-import { useWindowDimensions } from "react-native";
+import { Platform, useWindowDimensions } from "react-native";
 
 export const KANKREG_BP = {
   xs: 420,
@@ -52,6 +52,9 @@ export function useKankregLayout() {
       isXl: width >= KANKREG_BP.xl,
       /** HTML: nav hidden below 1080 */
       showDesktopNav: width >= KANKREG_BP.lg,
+      /** Narrow web — app-like tab bar + aligned figma gutters (kankreg.html ≤1080) */
+      isMobileWeb: Platform.OS === "web" && width < KANKREG_BP.lg,
+      showMobileWebTabBar: Platform.OS === "web" && width < KANKREG_BP.lg,
       /** HTML: compact topbar below 560 */
       compactHeader: width < KANKREG_BP.sm,
       /** HTML: `.announce .hide-sm` */
@@ -69,7 +72,9 @@ export function useKankregLayout() {
       /** `.deliv-grid` */
       useDeliverySplit: width >= KANKREG_BP.md,
       catalogGridCol: getCatalogGridColStyle(width),
-      categoryCols: width >= KANKREG_BP.lg ? 4 : width >= KANKREG_BP.sm ? 2 : 1,
+      /** Home `.cats` grid — never 1-up (keeps tiles compact on phone web). */
+      categoryCols: width >= KANKREG_BP.lg ? 4 : width >= KANKREG_BP.md ? 3 : 2,
+      categoryCompact: width < KANKREG_BP.md,
       footerCols: width >= KANKREG_BP.md ? 4 : width >= KANKREG_BP.sm ? 2 : 1,
       pageGutter: width < KANKREG_BP.xs ? 14 : width < KANKREG_BP.sm ? 16 : width < KANKREG_BP.md ? 18 : 24,
       pageGutterClamp: width < KANKREG_BP.xs ? 14 : width < KANKREG_BP.sm ? 16 : Math.min(40, Math.max(18, width * 0.04)),
@@ -95,4 +100,15 @@ export function useKankregLayout() {
 export function getFlexGridCellStyle(colCount) {
   const pct = `${100 / Math.max(1, colCount)}%`;
   return { width: pct, maxWidth: pct, minWidth: colCount === 1 ? "100%" : 140, paddingHorizontal: 11 };
+}
+
+/** Home category tile width — accounts for `gap` in flex-wrap rows. */
+export function getCategoryGridCellStyle(colCount) {
+  if (colCount >= 4) {
+    return { width: "23.5%", maxWidth: "23.5%", flexGrow: 0, flexShrink: 0 };
+  }
+  if (colCount === 3) {
+    return { width: "31%", maxWidth: "31%", flexGrow: 0, flexShrink: 0 };
+  }
+  return { width: "48%", maxWidth: "48%", flexGrow: 0, flexShrink: 0 };
 }

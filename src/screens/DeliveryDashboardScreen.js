@@ -26,6 +26,7 @@ import AuthGateShell from "../components/AuthGateShell";
 import CustomerScreenShell from "../components/CustomerScreenShell";
 import KankregUnifiedPageHeader from "../components/kankreg/KankregUnifiedPageHeader";
 import { useAuth } from "../context/AuthContext";
+import { useLiveSocket } from "../context/LiveSocketContext";
 import { useTheme } from "../context/ThemeContext";
 import {
   fetchMyDeliveryOrders,
@@ -294,6 +295,28 @@ export default function DeliveryDashboardScreen({ navigation }) {
     load();
   }, [profileHydrated, isAuthLoading, isAuthenticated, user?.isDeliveryPartner, load]);
 
+  const { on: onLiveEvent } = useLiveSocket();
+  useEffect(() => {
+    if (!isAuthenticated || !user?.isDeliveryPartner) return undefined;
+    const partnerId = String(user._id || "");
+    return onLiveEvent("orders:updated", ({ order }) => {
+      if (!order?._id) return;
+      const orderId = String(order._id);
+      const assigned = String(order.assignedDeliveryUser?._id || order.assignedDeliveryUser || "");
+      setOrders((prev) => {
+        const idx = prev.findIndex((item) => String(item._id) === orderId);
+        if (assigned === partnerId) {
+          if (idx < 0) return [order, ...prev];
+          const next = [...prev];
+          next[idx] = { ...next[idx], ...order };
+          return next;
+        }
+        if (idx >= 0) return prev.filter((item) => String(item._id) !== orderId);
+        return prev;
+      });
+    });
+  }, [isAuthenticated, user?._id, user?.isDeliveryPartner, onLiveEvent]);
+
   useEffect(() => {
     setRenderCount(20);
   }, [orders.length]);
@@ -357,6 +380,7 @@ export default function DeliveryDashboardScreen({ navigation }) {
       <CustomerScreenShell style={styles.screen}>
         <KankregScrollPage
         scrollVariant="inner"
+        flushNativeGutter={false}
         style={customerScrollFill}
           showsVerticalScrollIndicator={false}
         >
@@ -384,6 +408,7 @@ export default function DeliveryDashboardScreen({ navigation }) {
     <CustomerScreenShell style={styles.screen}>
       <KankregScrollPage
         scrollVariant="inner"
+        flushNativeGutter={false}
         style={customerScrollFill}
         showsVerticalScrollIndicator={false}
       >

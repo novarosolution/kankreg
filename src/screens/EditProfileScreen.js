@@ -10,8 +10,8 @@ import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 import BottomNavBar from "../components/BottomNavBar";
 import AuthGateShell from "../components/AuthGateShell";
 import CustomerScreenShell from "../components/CustomerScreenShell";
-import KankregUnifiedPageHeader from "../components/kankreg/KankregUnifiedPageHeader";
-import GoldHairline from "../components/ui/GoldHairline";
+import KankregCustomerPageHeader from "../components/kankreg/KankregCustomerPageHeader";
+import { EDIT_PROFILE_SCREEN_UI } from "../content/appContent";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { fetchUserProfile, updateUserProfile, uploadUserAvatar } from "../services/userService";
@@ -28,12 +28,14 @@ import SectionReveal from "../components/motion/SectionReveal";
 import useReducedMotion from "../hooks/useReducedMotion";
 import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
 import PremiumStickyBar from "../components/ui/PremiumStickyBar";
+import { FIGMA } from "../theme/figmaApp";
 
 export default function EditProfileScreen({ navigation }) {
   const { colors: c, shadowPremium, isDark } = useTheme();
   const styles = useMemo(() => createStyles(c, shadowPremium, isDark), [c, shadowPremium, isDark]);
   const { isAuthenticated, token, user, updateStoredUser, isAuthLoading } = useAuth();
-    const reducedMotion = useReducedMotion();
+  const reducedMotion = useReducedMotion();
+  const isNativeApp = Platform.OS !== "web";
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -218,14 +220,13 @@ export default function EditProfileScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <KankregUnifiedPageHeader
-          eyebrow="Account"
+        <KankregCustomerPageHeader
+          eyebrow={EDIT_PROFILE_SCREEN_UI.pageEyebrow}
+          title={EDIT_PROFILE_SCREEN_UI.pageTitle}
+          subtitle={EDIT_PROFILE_SCREEN_UI.pageSubtitle}
           navigation={navigation}
-          title="Edit profile"
-          subtitle="Name, photo & phone"
-          showBack
+          showHairline={!isNativeApp}
         />
-        <GoldHairline marginVertical={spacing.sm} />
 
         {loading ? (
           <View style={styles.loaderWrap}>
@@ -244,7 +245,7 @@ export default function EditProfileScreen({ navigation }) {
           </View>
         ) : (
           <SectionReveal delay={60} preset="fade-up">
-            <View style={styles.panel}>
+            <View style={[styles.panel, isNativeApp && styles.nativePanel]}>
               {error ? (
                 <View style={styles.bannerWrap}>
                   <PremiumErrorBanner severity="error" message={error} compact />
@@ -392,6 +393,9 @@ function createStyles(c, shadowPremium, isDark) {
   return StyleSheet.create({
     screen: {
       flex: 1},
+    nativePanel: {
+      paddingHorizontal: FIGMA.gutter,
+    },
     loaderWrap: {
       paddingVertical: spacing.lg,
       gap: spacing.md},

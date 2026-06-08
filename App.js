@@ -22,6 +22,9 @@ import * as SplashScreen from "expo-splash-screen";
 import { isRunningInExpoGo } from "expo";
 import { CartProvider } from "./src/context/CartContext";
 import { AuthProvider } from "./src/context/AuthContext";
+import { LiveSocketProvider } from "./src/context/LiveSocketContext";
+import { OrderCelebrationProvider } from "./src/context/OrderCelebrationContext";
+import { DeliveryLocationProvider } from "./src/context/DeliveryLocationContext";
 import { ApiHealthProvider } from "./src/context/ApiHealthContext";
 import { ToastProvider } from "./src/context/ToastContext";
 import BackendOfflineBanner from "./src/components/BackendOfflineBanner";
@@ -53,6 +56,7 @@ const linking = {
       Profile: "profile",
       EditProfile: "profile/edit",
       MyOrders: "orders",
+      OrderConfirmed: "order-confirmed",
       Notifications: "notifications",
       Settings: "settings",
       ManageAddress: "address",
@@ -193,10 +197,14 @@ export default function App() {
           <ToastProvider>
             <ApiHealthProvider>
               <AuthProvider>
-                <CartProvider>
-                  <BackendOfflineBanner />
-                  <AppNavigationShell />
-                </CartProvider>
+                <LiveSocketProvider>
+                  <OrderCelebrationProvider navigationRef={navigationRef}>
+                    <CartProvider>
+                      <BackendOfflineBanner />
+                      <AppNavigationShell />
+                    </CartProvider>
+                  </OrderCelebrationProvider>
+                </LiveSocketProvider>
               </AuthProvider>
             </ApiHealthProvider>
           </ToastProvider>

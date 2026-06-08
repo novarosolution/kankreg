@@ -1,7 +1,98 @@
+import { useMemo } from "react";
 import { Platform, StyleSheet } from "react-native";
 import { ALCHEMY } from "./customerAlchemy";
+import { useKankregLayout } from "./kankregBreakpoints";
 import { shadowStyleForPlatform } from "./shadowPlatform";
 import { darkColors, getSemanticColors, layout, semanticRadius, spacing } from "./tokens";
+
+/** Phone native + narrow web — stack dense admin rows instead of squeezing text. */
+export function useAdminCompactLayout() {
+  const { isXs, width } = useKankregLayout();
+  return useMemo(
+    () => Platform.OS !== "web" || isXs || width < 760,
+    [isXs, width]
+  );
+}
+
+/** KPI strip above admin lists (orders, etc.). */
+export function adminStatsGridStyle(compact) {
+  return {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  };
+}
+
+export function adminMetricCardStyle(compact) {
+  return {
+    flexGrow: 1,
+    flexBasis: compact ? "47%" : "18%",
+    minWidth: compact ? 132 : 90,
+    maxWidth: compact ? "48%" : undefined,
+  };
+}
+
+/** Order / record card header — row on desktop, column on phone. */
+export function adminRecordHeaderRowStyle(compact) {
+  return compact
+    ? {
+        flexDirection: "column",
+        alignItems: "stretch",
+        gap: spacing.sm,
+      }
+    : {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        gap: spacing.md,
+      };
+}
+
+export function adminRecordMainColStyle(compact) {
+  return {
+    flex: compact ? undefined : 1,
+    flexShrink: 1,
+    minWidth: 0,
+    width: compact ? "100%" : undefined,
+  };
+}
+
+export function adminBadgeClusterStyle(compact) {
+  return compact
+    ? {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        alignItems: "center",
+        justifyContent: "flex-start",
+        gap: spacing.xs,
+        width: "100%",
+        maxWidth: "100%",
+      }
+    : {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        alignItems: "center",
+        justifyContent: "flex-end",
+        gap: spacing.xs,
+        flexShrink: 0,
+        maxWidth: "42%",
+      };
+}
+
+export function adminCardActionsStyle(compact) {
+  return compact
+    ? {
+        flexDirection: "column",
+        alignItems: "stretch",
+        gap: spacing.xs,
+      }
+    : {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: spacing.xs,
+      };
+}
 
 function themeIsDark(c) {
   return c?.textPrimary === darkColors.textPrimary;
@@ -21,7 +112,10 @@ export function adminPanel(c, shadowPremium, isDark) {
     borderRadius: semanticRadius.panel,
     borderTopWidth: 3,
     borderTopColor: dark ? semantic.border.accent : ALCHEMY.gold,
-    padding: spacing.lg + 10,
+    padding: Platform.select({
+      web: spacing.lg + 10,
+      default: spacing.md + 2,
+    }),
     ...shadowStyleForPlatform(shadowPremium),
   };
   if (Platform.OS !== "web" || !shadowPremium?.boxShadow) {
@@ -75,6 +169,31 @@ export function adminModuleSection(isDark, c) {
     }),
   };
 }
+
+/** Inner padding for `KankregAdminShell` main column. */
+export function adminShellMainPadding() {
+  return Platform.select({ web: spacing.lg, default: spacing.md });
+}
+
+/** Toolbar row — stacks vertically on native for readable search + actions. */
+export const adminToolbarRow = Platform.select({
+  web: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "flex-end",
+    gap: spacing.sm,
+  },
+  default: {
+    flexDirection: "column",
+    alignItems: "stretch",
+    gap: spacing.sm,
+  },
+});
+
+export const adminToolbarPrimary = Platform.select({
+  web: { flex: 1, minWidth: 0 },
+  default: { width: "100%" },
+});
 
 /** Root view for admin screens — centered column on web. */
 export function adminScreenRoot(c) {

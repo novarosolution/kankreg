@@ -27,6 +27,20 @@ const {
   fetchDrivingRouteEncodedPolyline,
   getDirectionsApiKey,
 } = require("../services/googleDirectionsService");
+const { geocodeAddress } = require("../services/geocodingService");
+const { getShopLocationPayload } = require("../utils/shopLocation");
+const {
+  emitOrderUpdated,
+  emitDeliveryPartnerLocation,
+} = require("../realtime/socketHub");
+
+function pushOrderLiveUpdate(order) {
+  try {
+    emitOrderUpdated(order);
+  } catch {
+    // Realtime is best-effort; REST responses still succeed.
+  }
+}
 
 const PLATFORM_FEE = 1.2;
 const DEFAULT_DELIVERY_FEE = 0;
@@ -44,6 +58,26 @@ function liveLocationDestinationSummary(shippingAddress) {
     postalCode: String(a.postalCode || "").trim(),
     phone: String(a.phone || "").trim(),
     country: String(a.country || "").trim(),
+  };
+}
+
+async function resolveShippingCoordinates(shippingAddress) {
+  const base = shippingAddress && typeof shippingAddress === "object" ? { ...shippingAddress } : {};
+  let lat = Number(base.latitude);
+  let lng = Number(base.longitude);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    const geo = await geocodeAddress(base);
+    if (geo) {
+      lat = geo.latitude;
+      lng = geo.longitude;
+    }
+  }
+
+  return {
+    ...base,
+    latitude: Number.isFinite(lat) ? lat : null,
+    longitude: Number.isFinite(lng) ? lng : null,
   };
 }
 const INVOICE_STATUS_VALUES = ["draft", "final", "paid", "void"];
@@ -196,11 +230,13 @@ async function createOrder(req, res, next) {
     const initialStatus = isRazorpay ? "pending_payment" : "pending";
     const paymentExpiresAt = isRazorpay ? new Date(Date.now() + RAZORPAY_PAYMENT_WINDOW_MS) : null;
 
+    const resolvedShippingAddress = await resolveShippingCoordinates(shippingAddress);
+
     const order = await Order.create({
       user: req.user._id,
       products: normalizedItems,
       totalPrice,
-      shippingAddress,
+      shippingAddress: resolvedShippingAddress,
       paymentMethod: normalizedPaymentMethod,
       paymentStatus: "pending",
       paymentExpiresAt,
@@ -280,6 +316,7 @@ async function createOrder(req, res, next) {
       responsePayload.razorpayKeyId = razorpayKeyId;
     }
 
+    pushOrderLiveUpdate(populatedOrder);
     res.status(201).json(responsePayload);
   } catch (error) {
     next(error);
@@ -355,6 +392,13 @@ async function updateMyDeliveryLocation(req, res, next) {
       },
     });
 
+    emitDeliveryPartnerLocation(req.user, {
+      latitude: lat,
+      longitude: lng,
+      accuracyMeters: Number.isFinite(accuracyMeters) ? accuracyMeters : null,
+      updatedAt: now,
+    }).catch(() => {});
+
     res.json({ ok: true, throttled: false, updatedAt: now.toISOString() });
   } catch (error) {
     next(error);
@@ -395,9 +439,28 @@ async function getMyOrderLiveLocation(req, res, next) {
     const loc = partner.deliveryLiveLocation;
     const lat = loc?.latitude;
     const lng = loc?.longitude;
-    const destLat = order.shippingAddress?.latitude;
-    const destLng = order.shippingAddress?.longitude;
+
+    let destLat = order.shippingAddress?.latitude;
+    let destLng = order.shippingAddress?.longitude;
+    if (!Number.isFinite(Number(destLat)) || !Number.isFinite(Number(destLng))) {
+      const geo = await geocodeAddress(order.shippingAddress);
+      if (geo) {
+        destLat = geo.latitude;
+        destLng = geo.longitude;
+        await Order.updateOne(
+          { _id: order._id },
+          {
+            $set: {
+              "shippingAddress.latitude": geo.latitude,
+              "shippingAddress.longitude": geo.longitude,
+            },
+          }
+        );
+      }
+    }
+
     const destSummary = liveLocationDestinationSummary(order.shippingAddress);
+    const shop = await getShopLocationPayload();
 
     const payload = {
       trackable: Number.isFinite(lat) && Number.isFinite(lng),
@@ -405,6 +468,7 @@ async function getMyOrderLiveLocation(req, res, next) {
         name: partner.name || "",
         phone: partner.phone || "",
       },
+      shop,
       destination: {
         latitude: Number.isFinite(Number(destLat)) ? Number(destLat) : null,
         longitude: Number.isFinite(Number(destLng)) ? Number(destLng) : null,
@@ -756,7 +820,7 @@ async function updateMyOrderAddress(req, res, next) {
       }
     }
 
-    order.shippingAddress = {
+    const mergedAddress = {
       ...order.shippingAddress,
       ...shippingAddress,
       fullName: String(shippingAddress.fullName || "").trim(),
@@ -777,11 +841,13 @@ async function updateMyOrderAddress(req, res, next) {
         ? Number(shippingAddress.longitude)
         : order.shippingAddress?.longitude ?? null,
     };
+    order.shippingAddress = await resolveShippingCoordinates(mergedAddress);
 
     await order.save();
     const updated = await Order.findById(order._id)
       .populate("user", "name email")
       .populate("products.product", "name price image inStock stockQty");
+    pushOrderLiveUpdate(updated);
     res.json(updated);
   } catch (error) {
     next(error);
@@ -880,6 +946,7 @@ async function updateAdminOrderDetails(req, res, next) {
       .populate("user", "name email")
       .populate("assignedDeliveryUser", "name email phone")
       .populate("products.product", "name price image inStock stockQty");
+    pushOrderLiveUpdate(updated);
     res.json(updated);
   } catch (error) {
     next(error);
@@ -930,6 +997,7 @@ async function markMyDeliveryOrderDelivered(req, res, next) {
       .populate("user", "name email")
       .populate("assignedDeliveryUser", "name email phone")
       .populate("products.product", "name price image inStock stockQty");
+    pushOrderLiveUpdate(updated);
     res.json(updated);
   } catch (error) {
     next(error);
@@ -957,6 +1025,7 @@ async function updateOrderStatus(req, res, next) {
       .populate("assignedDeliveryUser", "name email phone")
       .populate("products.product", "name price image");
 
+    pushOrderLiveUpdate(updated);
     res.json(updated);
   } catch (error) {
     next(error);
@@ -1031,6 +1100,7 @@ async function verifyPayment(req, res, next) {
     const populated = await Order.findById(order._id)
       .populate("user", "name email")
       .populate("products.product", "name price image inStock stockQty");
+    pushOrderLiveUpdate(populated);
     return res.json(populated);
   } catch (error) {
     next(error);
@@ -1095,11 +1165,20 @@ async function razorpayWebhook(req, res, next) {
           order.invoice.updatedAt = new Date();
         }
         await order.save();
+        const populated = await Order.findById(order._id)
+          .populate("user", "name email")
+          .populate("assignedDeliveryUser", "name email phone")
+          .populate("products.product", "name price image inStock stockQty");
+        pushOrderLiveUpdate(populated);
       }
     } else if (eventType === "payment.failed") {
       if (order.paymentStatus === "pending") {
         order.paymentStatus = "failed";
         await order.save();
+        const populated = await Order.findById(order._id)
+          .populate("user", "name email")
+          .populate("products.product", "name price image inStock stockQty");
+        pushOrderLiveUpdate(populated);
       }
     }
 
@@ -1140,6 +1219,7 @@ async function cancelPendingOrder(req, res, next) {
     const populated = await Order.findById(order._id)
       .populate("user", "name email")
       .populate("products.product", "name price image inStock stockQty");
+    pushOrderLiveUpdate(populated);
     return res.json(populated);
   } catch (error) {
     next(error);

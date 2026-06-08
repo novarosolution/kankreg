@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Linking,
@@ -9,11 +9,11 @@ import {
   View,
 } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
-import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
 import { ORDER_LIVE_TRACKING } from "../../content/appContent";
-import { fetchOrderDrivingRoute, fetchOrderLiveLocation } from "../../services/userService";
+import { fetchOrderDrivingRoute } from "../../services/userService";
+import useOrderLiveLocation from "../../hooks/useOrderLiveLocation";
 import { decodeGooglePolyline } from "../../utils/polylineRoute";
 import { formatLiveLocationUpdatedLine } from "../../utils/formatLiveLocationUpdated";
 import { fonts, icon, radius, semanticRadius, spacing, typography } from "../../theme/tokens";
@@ -22,7 +22,8 @@ import { platformShadow } from "../../theme/shadowPlatform";
 import PremiumCard from "../ui/PremiumCard";
 import PremiumButton from "../ui/PremiumButton";
 import PremiumSectionHeader from "../ui/PremiumSectionHeader";
-import { openMapsDirections, POLL_MS, STALE_MS } from "./orderLiveMapShared";
+import { collectOrderMapPoints, computeMapRegionFromPoints } from "../../utils/orderMapBounds";
+import { openMapsDirections, STALE_MS } from "./orderLiveMapShared";
 
 /** Minimal Google Maps styling for Android dark mode (fewer POIs, muted roads). */
 const ANDROID_MAP_STYLE_DARK = [
@@ -55,50 +56,9 @@ function formatDestinationSubtitle(dest) {
 
 export default function OrderLiveMapCard({ orderId }) {
   const { colors: c, isDark } = useTheme();
-  const [data, setData] = useState(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
+  const { data, error, loading } = useOrderLiveLocation(orderId);
   const [routeCoords, setRouteCoords] = useState(null);
   const lastDrivingFetchRef = useRef(0);
-
-  useFocusEffect(
-    useCallback(() => {
-      let cancelled = false;
-      setLoading(true);
-      (async () => {
-        try {
-          const res = await fetchOrderLiveLocation(orderId);
-          if (!cancelled) {
-            setData(res);
-            setError("");
-          }
-        } catch (err) {
-          if (!cancelled) {
-            setError(err.message || ORDER_LIVE_TRACKING.loadFailed);
-            setData(null);
-          }
-        } finally {
-          if (!cancelled) setLoading(false);
-        }
-      })();
-      const t = setInterval(() => {
-        fetchOrderLiveLocation(orderId)
-          .then((res) => {
-            if (!cancelled) {
-              setData(res);
-              setError("");
-            }
-          })
-          .catch((err) => {
-            if (!cancelled) setError(err.message || ORDER_LIVE_TRACKING.loadFailed);
-          });
-      }, POLL_MS);
-      return () => {
-        cancelled = true;
-        clearInterval(t);
-      };
-    }, [orderId])
-  );
 
   const styles = useMemo(() => createOrderMapStyles(c, isDark), [c, isDark]);
 
@@ -106,11 +66,23 @@ export default function OrderLiveMapCard({ orderId }) {
   const trackable = Boolean(data?.trackable);
   const plat = Number(data?.latitude);
   const plng = Number(data?.longitude);
+  const shop = data?.shop && typeof data.shop === "object" ? data.shop : {};
+  const shopLabel = String(shop.name || "").trim() || ORDER_LIVE_TRACKING.markerShop;
+  const slat = Number(shop.latitude);
+  const slng = Number(shop.longitude);
+  const hasShop = Number.isFinite(slat) && Number.isFinite(slng);
+
   const dest = data?.destination && typeof data.destination === "object" ? data.destination : {};
   const dlat = Number(dest.latitude);
   const dlng = Number(dest.longitude);
   const hasDest = Number.isFinite(dlat) && Number.isFinite(dlng);
   const hasPartner = Number.isFinite(plat) && Number.isFinite(plng);
+
+  const mapPoints = collectOrderMapPoints({
+    shop: hasShop ? { latitude: slat, longitude: slng } : null,
+    partner: hasPartner ? { latitude: plat, longitude: plng } : null,
+    destination: hasDest ? { latitude: dlat, longitude: dlng } : null,
+  });
 
   useEffect(() => {
     lastDrivingFetchRef.current = 0;
@@ -156,34 +128,7 @@ export default function OrderLiveMapCard({ orderId }) {
     if (Number.isFinite(t) && Date.now() - t > STALE_MS) stale = true;
   }
 
-  const region =
-    hasPartner && hasDest
-      ? {
-          latitude: (plat + dlat) / 2,
-          longitude: (plng + dlng) / 2,
-          latitudeDelta: Math.max(Math.abs(plat - dlat) * 2.2, 0.02),
-          longitudeDelta: Math.max(Math.abs(plng - dlng) * 2.2, 0.02),
-        }
-      : hasPartner
-        ? {
-            latitude: plat,
-            longitude: plng,
-            latitudeDelta: 0.06,
-            longitudeDelta: 0.06,
-          }
-        : hasDest
-          ? {
-              latitude: dlat,
-              longitude: dlng,
-              latitudeDelta: 0.06,
-              longitudeDelta: 0.06,
-            }
-          : {
-              latitude: 20.5937,
-              longitude: 78.9629,
-              latitudeDelta: 40,
-              longitudeDelta: 40,
-            };
+  const region = computeMapRegionFromPoints(mapPoints);
 
   const polyStroke = isDark ? "rgba(232, 197, 90, 0.92)" : "rgba(138, 90, 18, 0.85)";
   const destSummary = hasDestinationSummary(dest);
@@ -212,7 +157,7 @@ export default function OrderLiveMapCard({ orderId }) {
     );
   }
 
-  const showMap = trackable && (hasPartner || hasDest);
+  const showMap = hasPartner || hasDest || hasShop;
   const partnerSubtitle = [partnerLabel, data?.partner?.phone?.trim()].filter(Boolean).join(" · ");
 
   return (
@@ -270,6 +215,10 @@ export default function OrderLiveMapCard({ orderId }) {
         </Text>
       ) : null}
 
+      {!hasShop ? (
+        <Text style={[styles.shopHint, { color: c.textMuted }]}>{ORDER_LIVE_TRACKING.shopNotConfigured}</Text>
+      ) : null}
+
       {showMap ? (
         <View
           style={[
@@ -305,6 +254,30 @@ export default function OrderLiveMapCard({ orderId }) {
                 strokeColor={polyStroke}
                 strokeWidth={3}
               />
+            ) : null}
+            {hasShop ? (
+              <Marker
+                coordinate={{ latitude: slat, longitude: slng }}
+                anchor={{ x: 0.5, y: 1 }}
+                tracksViewChanges={false}
+                accessibilityLabel={`${shopLabel}, ${ORDER_LIVE_TRACKING.markerShop}`}
+              >
+                <View
+                  style={[
+                    styles.shopMarker,
+                    {
+                      borderColor: isDark ? ALCHEMY.goldBright : ALCHEMY.gold,
+                      backgroundColor: isDark ? "rgba(28, 25, 23, 0.96)" : ALCHEMY.cardBg,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="storefront"
+                    size={icon.sm}
+                    color={isDark ? ALCHEMY.goldBright : ALCHEMY.goldDeep}
+                  />
+                </View>
+              </Marker>
             ) : null}
             {hasPartner ? (
               <Marker
@@ -396,11 +369,11 @@ export default function OrderLiveMapCard({ orderId }) {
           fullWidth
           onPress={() =>
             openMapsDirections(
-              hasPartner ? { latitude: plat, longitude: plng } : null,
+              hasPartner ? { latitude: plat, longitude: plng } : hasShop ? { latitude: slat, longitude: slng } : null,
               hasDest ? { latitude: dlat, longitude: dlng } : null
             )
           }
-          disabled={!hasPartner && !hasDest}
+          disabled={!hasPartner && !hasDest && !hasShop}
         />
       </View>
     </PremiumCard>
@@ -477,6 +450,20 @@ function createOrderMapStyles(c, isDark) {
       alignItems: "center",
       justifyContent: "center",
       borderWidth: 2,
+    },
+    shopMarker: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 2,
+    },
+    shopHint: {
+      fontSize: typography.caption,
+      fontFamily: fonts.regular,
+      paddingHorizontal: spacing.md,
+      marginBottom: spacing.xs,
     },
     destHomeMarker: {
       width: 30,

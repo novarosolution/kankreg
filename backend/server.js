@@ -1,7 +1,9 @@
+const http = require("http");
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
+const { initSocketServer } = require("./src/realtime/socketHub");
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
@@ -111,9 +113,12 @@ function startExpiredPaymentSweeper() {
 async function start() {
   await connectDB();
   startExpiredPaymentSweeper();
-  app.listen(PORT, "0.0.0.0", () => {
+  const httpServer = http.createServer(app);
+  initSocketServer(httpServer);
+  httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`Kankreg API on port ${PORT} (listening on 0.0.0.0)`);
     console.log("Try: GET http://127.0.0.1:" + PORT + "/products");
+    console.log("Live: WebSocket /socket.io");
   });
 }
 

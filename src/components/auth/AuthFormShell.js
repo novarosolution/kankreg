@@ -27,24 +27,27 @@ export default function AuthFormShell({
 }) {
   const { isDark } = useTheme();
   const { isXs } = useKankregLayout();
+  const isNativeApp = Platform.OS !== "web";
 
   return (
     <View style={[styles.shell, compact && styles.shellCompact]}>
-      <Text
-        style={[
-          styles.h1,
-          isXs && styles.h1Compact,
-          { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink },
-        ]}
-      >
-        {title}
-      </Text>
-      {subtitle ? (
+      {!isNativeApp ? (
+        <Text
+          style={[
+            styles.h1,
+            isXs && styles.h1Compact,
+            { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink },
+          ]}
+        >
+          {title}
+        </Text>
+      ) : null}
+      {!isNativeApp && subtitle ? (
         <Text style={[styles.sub, { color: isDark ? "#c8bdaf" : KANKREG_PALETTE.inkSoft }]}>
           {subtitle}
         </Text>
       ) : null}
-      {showRoutePills && navigation ? (
+      {!isNativeApp && showRoutePills && navigation ? (
         <AuthRoutePills navigation={navigation} activeRoute={activeRoute} />
       ) : null}
       <View style={styles.fields}>{children}</View>

@@ -1,20 +1,21 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import { useTheme } from "../../context/ThemeContext";
 import { ORDER_LIVE_TRACKING } from "../../content/appContent";
-import { fetchOrderDrivingRoute, fetchOrderLiveLocation } from "../../services/userService";
+import { fetchOrderDrivingRoute } from "../../services/userService";
+import useOrderLiveLocation from "../../hooks/useOrderLiveLocation";
 import { decodeGooglePolyline } from "../../utils/polylineRoute";
 import { formatLiveLocationUpdatedLine } from "../../utils/formatLiveLocationUpdated";
 import { fonts, icon, radius, semanticRadius, spacing, typography } from "../../theme/tokens";
 import PremiumCard from "../ui/PremiumCard";
 import PremiumButton from "../ui/PremiumButton";
 import PremiumSectionHeader from "../ui/PremiumSectionHeader";
-import { openMapsDirections, POLL_MS, STALE_MS } from "./orderLiveMapShared";
+import { collectOrderMapPoints, computeMapRegionFromPoints } from "../../utils/orderMapBounds";
+import { openMapsDirections, STALE_MS } from "./orderLiveMapShared";
 
 function hasDestinationSummary(dest) {
   if (!dest || typeof dest !== "object") return false;
@@ -58,40 +59,42 @@ const leafletChromeStyles = StyleSheet.create({
   },
 });
 
-function MapViewSync({ plat, plng, dlat, dlng, hasPartner, hasDest }) {
+function MapViewSync({ mapPoints }) {
   const map = useMap();
   useEffect(() => {
-    if (hasPartner && hasDest) {
-      map.fitBounds(L.latLngBounds(L.latLng(plat, plng), L.latLng(dlat, dlng)), {
-        padding: [28, 28],
-        maxZoom: 15,
-      });
-    } else if (hasPartner) {
-      map.setView([plat, plng], 14, { animate: false });
-    } else if (hasDest) {
-      map.setView([dlat, dlng], 14, { animate: false });
+    if (!mapPoints?.length) return;
+    if (mapPoints.length === 1) {
+      const p = mapPoints[0];
+      map.setView([p.latitude, p.longitude], 14, { animate: false });
+      return;
     }
-  }, [map, plat, plng, dlat, dlng, hasPartner, hasDest]);
+    const bounds = L.latLngBounds(mapPoints.map((p) => L.latLng(p.latitude, p.longitude)));
+    map.fitBounds(bounds, { padding: [28, 28], maxZoom: 15 });
+  }, [map, mapPoints]);
   return null;
 }
 
 function LiveLeafletMap({
   plat,
   plng,
+  slat,
+  slng,
   dlat,
   dlng,
   hasPartner,
+  hasShop,
   hasDest,
   partnerLabel,
+  shopLabel,
   isDark,
   routeColor,
   routePositions,
+  mapPoints,
 }) {
   const center = useMemo(() => {
-    if (hasPartner) return [plat, plng];
-    if (hasDest) return [dlat, dlng];
-    return [20.5937, 78.9629];
-  }, [hasPartner, hasDest, plat, plng, dlat, dlng]);
+    const region = computeMapRegionFromPoints(mapPoints);
+    return [region.latitude, region.longitude];
+  }, [mapPoints]);
 
   const partnerBikeIcon = useMemo(() => {
     const bg = isDark ? "rgba(28,25,23,0.96)" : "#FFFCF8";
@@ -116,6 +119,17 @@ function LiveLeafletMap({
       }),
     []
   );
+
+  const shopIcon = useMemo(() => {
+    const border = isDark ? "#E8C85A" : "#C9A227";
+    const bg = isDark ? "rgba(28,25,23,0.96)" : "#FFFCF8";
+    return L.divIcon({
+      className: "order-live-map-shop-icon",
+      html: `<div style="width:34px;height:34px;border-radius:17px;background:${bg};border:2px solid ${border};display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.18);font-size:15px;line-height:1;">🏪</div>`,
+      iconSize: [34, 34],
+      iconAnchor: [17, 34],
+    });
+  }, [isDark]);
 
   const tile = isDark
     ? {
@@ -147,14 +161,7 @@ function LiveLeafletMap({
         attributionControl
       >
         <TileLayer attribution={tile.attribution} url={tile.url} />
-        <MapViewSync
-          plat={plat}
-          plng={plng}
-          dlat={dlat}
-          dlng={dlng}
-          hasPartner={hasPartner}
-          hasDest={hasDest}
-        />
+        <MapViewSync mapPoints={mapPoints} />
         {hasPartner && hasDest ? (
           <Polyline
             positions={
@@ -167,6 +174,11 @@ function LiveLeafletMap({
             }
             pathOptions={{ color: routeColor, weight: 3, opacity: 0.88 }}
           />
+        ) : null}
+        {hasShop ? (
+          <Marker position={[slat, slng]} icon={shopIcon}>
+            <Popup>{shopLabel}</Popup>
+          </Marker>
         ) : null}
         {hasPartner ? (
           <Marker position={[plat, plng]} icon={partnerBikeIcon}>
@@ -194,50 +206,9 @@ function LiveLeafletMap({
 /** Web: Leaflet + OSM / Carto dark (no react-native-maps). */
 export default function OrderLiveMapCard({ orderId }) {
   const { colors: c, isDark } = useTheme();
-  const [data, setData] = useState(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
+  const { data, error, loading } = useOrderLiveLocation(orderId);
   const [routeCoords, setRouteCoords] = useState(null);
   const lastDrivingFetchRef = useRef(0);
-
-  useFocusEffect(
-    useCallback(() => {
-      let cancelled = false;
-      setLoading(true);
-      (async () => {
-        try {
-          const res = await fetchOrderLiveLocation(orderId);
-          if (!cancelled) {
-            setData(res);
-            setError("");
-          }
-        } catch (err) {
-          if (!cancelled) {
-            setError(err.message || ORDER_LIVE_TRACKING.loadFailed);
-            setData(null);
-          }
-        } finally {
-          if (!cancelled) setLoading(false);
-        }
-      })();
-      const t = setInterval(() => {
-        fetchOrderLiveLocation(orderId)
-          .then((res) => {
-            if (!cancelled) {
-              setData(res);
-              setError("");
-            }
-          })
-          .catch((err) => {
-            if (!cancelled) setError(err.message || ORDER_LIVE_TRACKING.loadFailed);
-          });
-      }, POLL_MS);
-      return () => {
-        cancelled = true;
-        clearInterval(t);
-      };
-    }, [orderId])
-  );
 
   const cardStyles = useMemo(() => createWebStyles(c, isDark), [c, isDark]);
 
@@ -245,11 +216,23 @@ export default function OrderLiveMapCard({ orderId }) {
   const trackable = Boolean(data?.trackable);
   const plat = Number(data?.latitude);
   const plng = Number(data?.longitude);
+  const shop = data?.shop && typeof data.shop === "object" ? data.shop : {};
+  const shopLabel = String(shop.name || "").trim() || ORDER_LIVE_TRACKING.markerShop;
+  const slat = Number(shop.latitude);
+  const slng = Number(shop.longitude);
+  const hasShop = Number.isFinite(slat) && Number.isFinite(slng);
+
   const dest = data?.destination && typeof data.destination === "object" ? data.destination : {};
   const dlat = Number(dest.latitude);
   const dlng = Number(dest.longitude);
   const hasDest = Number.isFinite(dlat) && Number.isFinite(dlng);
   const hasPartner = Number.isFinite(plat) && Number.isFinite(plng);
+
+  const mapPoints = collectOrderMapPoints({
+    shop: hasShop ? { latitude: slat, longitude: slng } : null,
+    partner: hasPartner ? { latitude: plat, longitude: plng } : null,
+    destination: hasDest ? { latitude: dlat, longitude: dlng } : null,
+  });
   const routeColor = isDark ? "#E8C547" : "#8A5A12";
 
   useEffect(() => {
@@ -303,7 +286,7 @@ export default function OrderLiveMapCard({ orderId }) {
     if (Number.isFinite(t) && Date.now() - t > STALE_MS) stale = true;
   }
 
-  const showMap = trackable && (hasPartner || hasDest);
+  const showMap = hasPartner || hasDest || hasShop;
   const destSummary = hasDestinationSummary(dest);
   const destTitle =
     String(dest.fullName || "").trim() || String(dest.line1 || "").trim() || ORDER_LIVE_TRACKING.markerDestination;
@@ -391,18 +374,27 @@ export default function OrderLiveMapCard({ orderId }) {
         </Text>
       ) : null}
 
+      {!hasShop ? (
+        <Text style={[cardStyles.shopHint, { color: c.textMuted }]}>{ORDER_LIVE_TRACKING.shopNotConfigured}</Text>
+      ) : null}
+
       {showMap ? (
         <LiveLeafletMap
           plat={plat}
           plng={plng}
+          slat={slat}
+          slng={slng}
           dlat={dlat}
           dlng={dlng}
           hasPartner={hasPartner}
+          hasShop={hasShop}
           hasDest={hasDest}
           partnerLabel={partnerLabel}
+          shopLabel={shopLabel}
           isDark={isDark}
           routeColor={routeColor}
           routePositions={routePositions}
+          mapPoints={mapPoints}
         />
       ) : null}
 
@@ -421,11 +413,11 @@ export default function OrderLiveMapCard({ orderId }) {
           fullWidth
           onPress={() =>
             openMapsDirections(
-              hasPartner ? { latitude: plat, longitude: plng } : null,
+              hasPartner ? { latitude: plat, longitude: plng } : hasShop ? { latitude: slat, longitude: slng } : null,
               hasDest ? { latitude: dlat, longitude: dlng } : null
             )
           }
-          disabled={!hasPartner && !hasDest}
+          disabled={!hasPartner && !hasDest && !hasShop}
         />
       </View>
     </PremiumCard>
@@ -518,6 +510,12 @@ function createWebStyles(c, isDark) {
       fontSize: typography.caption,
       fontFamily: fonts.medium,
       color: isDark ? c.brandYellow : c.primaryDark,
+    },
+    shopHint: {
+      fontSize: typography.caption,
+      fontFamily: fonts.regular,
+      paddingHorizontal: spacing.md,
+      marginBottom: spacing.xs,
     },
     updated: {
       paddingHorizontal: spacing.md,

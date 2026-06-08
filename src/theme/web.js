@@ -3,6 +3,8 @@ import { ALCHEMY } from "./customerAlchemy";
 
 /** Fixed top bar height on web (kankreg.html `.topbar` ≈ 76px). */
 export const WEB_HEADER_HEIGHT = 76;
+/** Slim in-flow header on native — bottom tab bar handles primary nav. */
+export const NATIVE_HEADER_HEIGHT = 52;
 /** kankreg.html `.announce` strip */
 export const WEB_ANNOUNCE_HEIGHT = 34;
 /** Announce + sticky topbar — use for page scroll padding. */
@@ -127,6 +129,17 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
         ::-webkit-scrollbar {
           width: 7px;
           height: 7px;
+        }
+      }
+      @media (max-width: 1080px) {
+        [data-kankreg-scroll-panel] {
+          max-width: 100%;
+          overflow-x: clip;
+        }
+      }
+      @media (max-width: 560px) {
+        h1, h2, [role="heading"] {
+          overflow-wrap: anywhere;
         }
       }
     `;

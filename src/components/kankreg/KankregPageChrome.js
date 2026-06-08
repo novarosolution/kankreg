@@ -12,7 +12,7 @@ import GoldHairline from "../ui/GoldHairline";
 /** `.section-head` from kankreg.html */
 export function KankregSectionHead({ index, eyebrow, title, right }) {
   const { isDark } = useTheme();
-  const { isMd, isSm } = useKankregLayout();
+  const { isMd, isSm, isXs } = useKankregLayout();
   const titleSize =
     Platform.OS === "web"
       ? isMd
@@ -24,8 +24,8 @@ export function KankregSectionHead({ index, eyebrow, title, right }) {
         ? 26
         : 22;
   return (
-    <View style={styles.sectionHead}>
-      <View style={styles.sectionLeft}>
+    <View style={[styles.sectionHead, isXs && styles.sectionHeadStack]}>
+      <View style={[styles.sectionLeft, isXs && styles.sectionLeftFull]}>
         {index != null ? (
           <Text style={[styles.ix, { color: isDark ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.gold }]}>
             {kankregSectionIndex(index)} {eyebrow ? eyebrow.split("—").pop()?.trim() || eyebrow : ""}
@@ -144,9 +144,15 @@ const styles = StyleSheet.create({
     marginBottom: Platform.select({ web: spacing.lg + 6, default: spacing.md }),
     flexWrap: "wrap",
     gap: spacing.md,
+    width: "100%",
+  },
+  sectionHeadStack: {
+    flexDirection: "column",
+    alignItems: "flex-start",
   },
   sectionLeft: { flex: 1, minWidth: 200 },
-  sectionRight: { flexShrink: 0 },
+  sectionLeftFull: { minWidth: 0, width: "100%" },
+  sectionRight: { flexShrink: 0, maxWidth: "100%" },
   ix: {
     fontFamily: FONT_DISPLAY,
     fontSize: 13,

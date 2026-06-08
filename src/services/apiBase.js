@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import Constants from "expo-constants";
+import * as Device from "expo-device";
 
 // Production app calls this host + paths like /products. Static sites on the same domain
 // usually proxy the API under /api — we mount both /products and /api/products on the server.
@@ -40,6 +41,13 @@ function getConfiguredApiUrl() {
   return null;
 }
 
+/** WebSocket host — same origin as API, without `/api` suffix. */
+export function getSocketBaseUrl() {
+  const api = getApiBaseUrl();
+  if (!api) return "";
+  return api.replace(/\/api\/?$/i, "");
+}
+
 export function getApiBaseUrl() {
   const configured = getConfiguredApiUrl();
   if (configured) {
@@ -56,6 +64,11 @@ export function getApiBaseUrl() {
   // Web: use 127.0.0.1 so we don't hit IPv6 ::1 with no server (broken fetch / 404 from wrong host).
   if (Platform.OS === "web" && typeof window !== "undefined") {
     return `http://127.0.0.1:${DEV_API_PORT}`;
+  }
+
+  // Android emulator: 10.0.2.2 reaches the host machine (API + WebSocket on port 5001).
+  if (Platform.OS === "android" && Device.isDevice === false) {
+    return `http://10.0.2.2:${DEV_API_PORT}`;
   }
 
   const debuggerHost =

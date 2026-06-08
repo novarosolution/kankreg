@@ -29,6 +29,7 @@ export const BRAND_LOGO_SIZE = {
   startup: 96,
 };
 export const APP_TAGLINE = "Premium essentials · Fair prices";
+export const APP_SPLASH_TAGLINE = "Goods, beautifully delivered";
 export const APP_WORDMARK_SUBLINE = "Premium essentials";
 export const APP_HERO_KICKER = `${APP_DISPLAY_NAME} · ${APP_WORDMARK_SUBLINE}`;
 export const SEARCH_PLACEHOLDER = "Search KankreG — ghee, staples…";
@@ -53,20 +54,20 @@ export const PAYMENT_METHODS = [
   {
     id: "Razorpay",
     title: "Pay online",
-    eyebrow: "INSTANT",
-    subtitle: "UPI, cards, wallets, netbanking",
+    eyebrow: "ONLINE",
+    subtitle: "UPI, cards & wallets",
     icon: "card-outline",
-    badge: "RECOMMENDED",
-    brandStrip: ["UPI", "Visa", "MC", "RuPay", "Wallets"],
-    secureNote: "Secured by Razorpay · 256-bit SSL",
+    badge: "",
+    brandStrip: [],
+    secureNote: "",
   },
   {
     id: "Cash on Delivery",
     title: "Cash on delivery",
-    eyebrow: "RELAXED",
-    subtitle: "Pay in cash when your order arrives",
+    eyebrow: "COD",
+    subtitle: "Pay when delivered",
     icon: "cash-outline",
-    secureNote: "Available across serviceable pin codes",
+    secureNote: "",
   },
 ];
 
@@ -84,23 +85,118 @@ export const HOME_VIEW_DEFAULTS = {
   showHomeSections: true,
   showProductTypeSections: true,
   productCardStyle: "compact",
+  shopLocation: {
+    name: "KankreG Shop",
+    line1: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    latitude: null,
+    longitude: null,
+  },
 };
 
-/** Hero image card (above-the-fold marketing, not the same fields as API hero title). */
+/** Hero image card (native banner kicker — API `heroTitle` / `heroSubtitle` override when loaded). */
 export const HOME_HERO_BANNER = {
-  kicker: "Heritage craft · Small batch",
-  badge: "100% PURE AND NATURAL",
-  cta: "Explore collection",
+  kicker: "New season",
+  badge: "Bestseller",
+  cta: "Shop now",
+};
+
+/** Static brand quote on wide web home (not from reviews API). */
+export const HOME_BRAND_QUOTE = {
+  text: "Quietly premium — the kind of essentials you notice every morning.",
+  attribution: "— KankreG",
+};
+
+/**
+ * Home screen — shared copy for app + web (`KankregHomeScreen.js` and home sections).
+ * API fields from `/home-view` override titles where noted in screen code.
+ */
+export const HOME_SCREEN_UI = {
+  hero: {
+    eyebrow: HOME_HERO_BANNER.kicker,
+    titleFallback: "The morning ritual",
+    subtitleFallback: "",
+    cta: HOME_HERO_BANNER.cta,
+    loadingCta: "Loading…",
+    fromLabel: "From",
+  },
+  categories: {
+    title: "Categories",
+    action: "See all",
+    webOverline: "Collections",
+    webShopBy: "Shop by category",
+    webTitleFallback: "Browse the categories",
+    /** Fallback Ionicons for web category tiles (by sort order). */
+    webTileIcons: ["nutrition-outline", "leaf-outline", "home-outline", "cafe-outline"],
+    itemsSuffix: "items",
+  },
+  bestsellers: {
+    titleFallback: "Bestsellers",
+    action: "See all",
+    webEyebrow: "Catalog",
+    webAction: "View all",
+  },
+  editorial: {
+    overline: "Curated essentials",
+    ctaExplore: "Explore collection",
+    ctaRewards: "Rewards",
+    featuredLabel: "Featured",
+    shopNowLabel: "Shop now",
+    ctaShop: "Shop now",
+  },
+  featured: {
+    sectionLabel: "Featured",
+    eyebrow: "New season",
+    title: "Slow rituals, beautifully made.",
+    body: "Design-led essentials for home, wellness, and everyday living.",
+    ctaPrimary: "Shop now",
+    ctaSecondary: "Browse shop",
+  },
+  marquee: [
+    "Live order tracking",
+    "Secure checkout",
+    "Rewards on every order",
+    "Crafted with care",
+  ],
+  empty: {
+    productsTitle: "No products yet",
+    productsDescription: "New arrivals will appear here soon.",
+    productsCta: "Browse shop",
+    categoriesTitle: "No categories yet",
+    categoriesDescription: "Collections appear when products are added.",
+    categoriesCta: "Browse shop",
+  },
+  quote: HOME_BRAND_QUOTE,
+  trust: {
+    overline: "Why KankreG",
+  },
+  /** Web-only home layout copy and section toggles (`KankregHomeScreen.js`). */
+  web: {
+    welcomeTag: APP_TAGLINE,
+    heroStats: [
+      { key: "orders", value: "12.5k+", label: "Orders fulfilled" },
+      { key: "rating", value: "4.9★", label: "Avg. rating" },
+      { key: "purity", value: "100%", label: "Pure A2 ghee" },
+    ],
+    showStatsStrip: true,
+    showTestimonials: true,
+    showBrandQuote: true,
+    statsSectionIndex: 2,
+    testimonialsSectionIndex: 7,
+    quoteSectionIndex: 8,
+  },
 };
 
 /** Light-mode tagline under the home top wordmark (same voice as `APP_TAGLINE`). */
 export const HOME_WORDMARK_TAGLINE = APP_TAGLINE;
 
-/** Trust strip under the hero image (icon = Ionicons name). */
+/** Trust strip under the hero (icon = Ionicons name). */
 export const HOME_TRUST_STRIP = [
-  { key: "source", label: "Authentic source", icon: "shield-checkmark-outline" },
-  { key: "batch", label: "Small batch", icon: "leaf-outline" },
-  { key: "cod", label: "COD delivery", icon: "car-outline" },
+  { key: "craft", label: "Curated quality", icon: "diamond-outline" },
+  { key: "track", label: "Live tracking", icon: "navigate-outline" },
+  { key: "secure", label: "Secure checkout", icon: "shield-checkmark-outline" },
 ];
 
 /**
@@ -144,12 +240,6 @@ export const HOME_STATS_STRIP = {
  * Customer testimonials shown under the stats strip. Keep voice short, regional, real.
  * `name`, `city`, `quote`, `rating` (out of 5), optional `avatar` (string url or null = initial).
  */
-/** Static brand quote on Kankreg home (not from reviews API). */
-export const HOME_BRAND_QUOTE = {
-  text: "The packaging alone felt like a gift. kankreg has quietly become the only place I shop for the home.",
-  attribution: "— The KankreG team",
-};
-
 export const HOME_TESTIMONIALS = {
   overline: "Loved by our customers",
   title: "Stories from our kitchens",
@@ -340,13 +430,167 @@ export const KANKREG_ANNOUNCE_COPY = {
   seasonCta: "New season edit is live →",
 };
 
+/** Shared actions / empty states across customer screens. */
+export const COMMON_UI = {
+  retry: "Retry",
+  refresh: "Refresh",
+  save: "Save",
+  cancel: "Cancel",
+  loading: "Loading…",
+  errorFallback: "Something went wrong. Try again.",
+};
+
+/** Cart screen section chrome — see `CartScreen.js`. */
+export const CART_UI = {
+  pageEyebrow: "Your bag",
+  pageTitle: "Shopping cart",
+  checkoutTitle: "Checkout",
+  emptyTitle: "Your cart is empty",
+  emptyDescription: "Add items from the shop.",
+  browseCta: "Browse shop",
+};
+
+/** Cart — deliver-to panel and profile address prompts. */
+export const CART_ADDRESS = {
+  panelTitle: "Delivery address",
+  contactSection: "Contact",
+  addressSection: "Address",
+  noteSection: "Note",
+  useSaved: "Use saved",
+  useGps: "Use current location",
+  useGpsLoading: "Locating…",
+  gpsFillSuccess: "Location added.",
+};
+
+/** Shop catalog — `ShopScreen.js`. */
+export const SHOP_SCREEN_UI = {
+  pageEyebrow: "Catalog",
+  pageTitle: "Shop",
+  pageTitleWide: "Shop everything",
+  pageSubtitle: "Curated pieces for home & kitchen",
+  searchPlaceholder: "Search essentials",
+  showingPrefix: "Showing",
+  showingOf: "of",
+  showingSuffix: "products",
+  clearFilters: "Clear filters",
+  emptyTitle: "No products found",
+  emptyDescription: "Try a different filter or check back soon.",
+  emptyCta: "Browse shop",
+  filterCategory: "Category",
+  filterCollection: "Collection",
+  filterRating: "Rating",
+  filterPrice: "Price",
+  priceMin: "₹500",
+  priceMax: "₹8,000",
+};
+
+/** Notifications — `NotificationsScreen.js`. */
+export const NOTIFICATIONS_SCREEN_UI = {
+  pageTitle: "Notifications",
+  pageEyebrow: "Inbox",
+  refresh: COMMON_UI.refresh,
+  loadingCaption: "Loading notifications…",
+  filters: {
+    all: "All",
+    unread: "Unread",
+    archived: "Archived",
+  },
+  groups: {
+    today: "Today",
+    week: "This week",
+    earlier: "Earlier",
+  },
+  emptyTitle: "You're all caught up",
+  emptyDescription: "We'll notify you when something arrives.",
+};
+
+/** Rewards — `RedeemRewardsScreen.js`. */
+export const REWARDS_SCREEN_UI = {
+  pageTitle: "Rewards",
+  pageEyebrow: "Points",
+  pageSubtitle: "Redeem coupons with your balance",
+  balanceLabel: "Your balance",
+  catalogTitle: "Redeem",
+  walletTitle: "My coupons",
+  emptyCatalogTitle: "No rewards yet",
+  emptyCatalogDescription: "Check back for new offers.",
+  redeemCta: "Redeem",
+  redeeming: "Redeeming…",
+  copied: "Code copied",
+  copyFailed: "Could not copy",
+  loadingCaption: "Loading rewards…",
+  errorFallback: "Unable to load rewards.",
+};
+
+/** Edit profile — `EditProfileScreen.js`. */
+export const EDIT_PROFILE_SCREEN_UI = {
+  pageTitle: "Edit profile",
+  pageEyebrow: "Account",
+  pageSubtitle: "Name, phone & photo",
+  sectionPersonal: "Personal",
+  sectionContact: "Contact",
+  saveCta: COMMON_UI.save,
+  saving: "Saving…",
+  success: "Profile updated.",
+  errorFallback: "Unable to save profile.",
+};
+
+/** Saved addresses — `ManageAddressScreen.js`. */
+export const MANAGE_ADDRESS_SCREEN_UI = {
+  pageTitle: "Saved addresses",
+  pageEyebrow: "Delivery",
+  pageSubtitle: "Default address for checkout",
+  sectionDefault: "Default address",
+  useGps: "Use current location",
+  useGpsLoading: "Locating…",
+  saveCta: COMMON_UI.save,
+  saving: "Saving…",
+  success: "Address saved.",
+  errorFallback: "Unable to save address.",
+  coordsHint: "GPS coordinates help live order tracking.",
+};
+
+/** Native location onboarding — `FindLocationScreen.js`. */
+export const FIND_LOCATION_UI = {
+  title: "Where should we deliver?",
+  subtitle: "Set your area for accurate delivery and tracking.",
+  cta: "Confirm location",
+  skip: "Skip for now",
+  loading: "Finding location…",
+};
+
 /** Support screen (customer). */
 export const SUPPORT_SCREEN = {
+  pageTitle: "Help & support",
+  pageEyebrow: "Support",
   pageSubtitle: "Fast replies",
   liveChatTitle: "Live chat",
   contactChatSub: "Usually minutes",
   contactEmailSub: SUPPORT_EMAIL_DISPLAY,
   contactWhatsAppSub: "Anytime",
+  faqTitle: "Common questions",
+  chatPlaceholder: "Type your message…",
+  sendCta: "Send",
+  sending: "Sending…",
+  emptyThread: "Start a conversation — we typically reply within minutes.",
+  faqs: [
+    {
+      q: "When will my order arrive?",
+      a: "Track status in My Orders. Same-day in many areas.",
+    },
+    {
+      q: "How do I change my order?",
+      a: "My Orders → update address before pickup.",
+    },
+    {
+      q: "Can I pay on delivery?",
+      a: "Yes — Cash on Delivery and online checkout.",
+    },
+    {
+      q: "How do refunds work?",
+      a: "Refunds return to your original payment method.",
+    },
+  ],
 };
 
 /**
@@ -354,6 +598,8 @@ export const SUPPORT_SCREEN = {
  * place rather than hard-coded in [src/screens/ProfileScreen.js].
  */
 export const PROFILE_SCREEN = {
+  pageTitle: "My profile",
+  pageEyebrow: "Account",
   eyebrow: "KankreG member",
   memberSincePrefix: "Member since",
   pageSubtitle: "Your account",
@@ -383,6 +629,8 @@ export const PROFILE_SCREEN = {
 
 /** Settings screen — short labels for density. */
 export const SETTINGS_SCREEN = {
+  pageTitle: "Settings",
+  pageEyebrow: "Preferences",
   pageSubtitle: "Theme & account",
   appearanceGroup: "Appearance",
   appearanceGroupSub: "Theme",
@@ -454,56 +702,53 @@ export const AUTH_UI = {
   needAccount: "New here?",
 };
 
-/** Cart screen section chrome — see `CartScreen.js`. */
-export const CART_UI = {
-  pageEyebrow: "Your bag",
-  pageTitle: "Shopping cart",
-  checkoutEyebrow: "Almost there",
-  checkoutTitle: "Checkout",
-  backToBag: "Back to bag",
-  itemsOverline: "Bag",
-  itemsTitle: "Your items",
-  pairOverline: "Pair",
-  pairTitle: "Goes well with",
-  couponOverline: "Save",
-  couponTitle: "Coupon",
-  summaryOverline: "Total",
-  summaryTitle: "Summary",
-  addressOverline: "Delivery",
-  trustPure: "Pure ingredients",
-  trustPay: "Secure checkout",
-  trustOrganic: "Organic focus",
-  emptyTitle: "Your cart is empty",
-  emptyDescription: "Browse the shop and add items.",
-  browseCta: "Browse products",
-};
-
-/** Cart — deliver-to panel and profile address prompts. */
-export const CART_ADDRESS = {
-  panelTitle: "Deliver to",
-  profileIncompleteTitle: "Address incomplete",
-  profileIncompleteSub: "Finish line, city, state, PIN, and country in your profile—we’ll pre-fill here.",
-  profileEmptyTitle: "Save a delivery address",
-  profileEmptySub: "Add it once in your profile for faster checkout.",
-  useGps: "Use GPS",
-  useGpsLoading: "Locating…",
-  gpsFillSuccess: "Filled from your location.",
-};
-
-/** My Orders — buttons and compact copy (avoid repeating map/address lines). */
+/** My Orders — shared copy for app + web (`MyOrdersScreen.js`). */
 export const MY_ORDERS_UI = {
+  pageTitle: "Order tracking",
+  pageEyebrowActive: "In transit",
+  pageEyebrowDefault: "Orders",
+  emptyTitle: "No orders yet",
+  emptyDescription: "Orders show up here after checkout.",
+  emptyCta: "Browse shop",
+  loadingCaption: "Loading orders…",
+  refresh: "Refresh",
+  orderPrefix: "ORDER",
+  filters: {
+    all: "All",
+    active: "Active",
+    delivered: "Delivered",
+    cancelled: "Cancelled",
+  },
+  trackSteps: ["Placed", "Packed", "On the way", "Delivered"],
+  etaPrefix: "Arriving in",
+  etaFallback: "Soon",
+  partnerRole: "Delivery partner",
+  partnerOnWay: "On the way",
   detailsExpand: "Details",
   detailsCollapse: "Hide",
-  changeAddress: "Change address",
-  /** Shown above the address edit form. */
-  editAddressTitle: "Update address (5 min)",
-  invoiceHintWeb: "Tip: print dialog → Save as PDF.",
+  changeAddress: "Address",
+  editAddressTitle: "Update address",
+  saveAddress: "Save",
+  savingAddress: "Saving…",
+  cancel: "Cancel",
+  reorder: "Reorder",
+  reorderLoading: "Adding…",
+  invoiceDownload: "Invoice",
+  invoiceGenerating: "Generating…",
+  invoiceHintWeb: "Save as PDF from print.",
   itemsPreviewTitle: "Items",
-  inFlightOverline: "Active",
-  inFlightTitle: "In flight",
-  historyOverline: "Past",
+  claimReward: "Claim reward",
+  claimRewardLoading: "Claiming…",
+  claimedReward: "Claimed",
+  loadMore: "Load more",
+  statTotal: "Total",
+  statInFlight: "Active",
+  statDelivered: "Delivered",
+  statSpend: "Spend",
+  inFlightTitle: "Active orders",
   historyTitle: "History",
-  emptyDescriptionShort: "Orders and tracking show up here.",
+  /** @deprecated use emptyDescription */
+  emptyDescriptionShort: "Orders show up here after checkout.",
 };
 
 /**
@@ -577,6 +822,98 @@ export function fillProductScreen(template, vars) {
   return out;
 }
 
+/** Order confirmed screen + celebration overlays (`OrderConfirmedScreen.js`, `OrderCelebrationOverlay.js`). */
+export const ORDER_CELEBRATION_UI = {
+  orderPrefix: "ORDER",
+  /** Full-screen route after checkout (`OrderConfirmedScreen.js`). */
+  screen: {
+    eyebrow: "Order placed",
+    title: "Order confirmed",
+    lead: "Thank you — we're preparing your essentials with care.",
+    orderRefLabel: "Reference",
+    stepsTitle: "What happens next",
+    steps: [
+      {
+        key: "confirmed",
+        icon: "checkmark-circle-outline",
+        label: "Confirmed",
+        detail: "We received your order and payment details.",
+      },
+      {
+        key: "preparing",
+        icon: "cube-outline",
+        label: "Preparing",
+        detail: "Your items are being packed at the store.",
+      },
+      {
+        key: "tracking",
+        icon: "navigate-outline",
+        label: "On the way",
+        detail: "Track live updates anytime in My Orders.",
+      },
+    ],
+    summaryTitle: "Order summary",
+    labels: {
+      items: "Items",
+      payment: "Payment",
+      delivery: "Delivering to",
+      total: "Total",
+    },
+    paymentLabels: {
+      "Cash on Delivery": "Cash on delivery",
+      Razorpay: "Paid online",
+      cod: "Cash on delivery",
+      online: "Paid online",
+    },
+    trustChips: [
+      { key: "track", icon: "navigate-outline", label: "Live tracking" },
+      { key: "secure", icon: "shield-checkmark-outline", label: "Secure checkout" },
+      { key: "care", icon: "heart-outline", label: "Handled with care" },
+    ],
+    trustLine: "We'll notify you as your order moves — open My Orders for the full timeline.",
+    ctaPrimary: "Track order",
+    ctaSecondary: "Continue shopping",
+    ctaHome: "Back to home",
+    missingOrderTitle: "Order not found",
+    missingOrderBody: "We couldn't load this confirmation. Check My Orders for your latest purchases.",
+    missingOrderCta: "Go to My Orders",
+  },
+  /** Compact modal — socket-driven confirm + delivered moment. */
+  confirmed: {
+    title: "Order confirmed!",
+    subtitle: "We're preparing your essentials. Track live updates anytime in My Orders.",
+    ctaPrimary: "Track order",
+    ctaSecondary: "Continue shopping",
+  },
+  delivered: {
+    title: "Delivered!",
+    subtitle: "Your order arrived safely. Enjoy — and thank you for choosing kankreg.",
+    ctaPrimary: "View orders",
+    ctaSecondary: "Shop again",
+  },
+};
+
+/** Format short order reference for UI (e.g. ORDER #A1B2C3). */
+export function formatOrderReference(order, prefix = ORDER_CELEBRATION_UI.orderPrefix) {
+  const id = String(order?._id || order?.id || "")
+    .slice(-6)
+    .toUpperCase();
+  return id ? `${prefix} #${id}` : "";
+}
+
+/** Item count from order line items. */
+export function orderItemCount(order) {
+  const lines = Array.isArray(order?.products) ? order.products : [];
+  return lines.reduce((sum, line) => sum + Math.max(1, Number(line?.quantity) || 1), 0);
+}
+
+/** Human payment label from order payload. */
+export function orderPaymentLabel(order) {
+  const raw = String(order?.paymentMethod || "").trim();
+  const map = ORDER_CELEBRATION_UI.screen.paymentLabels;
+  return map[raw] || raw || map.online;
+}
+
 /** My Orders — live map + markers while order is out for delivery. */
 export const ORDER_LIVE_TRACKING = {
   overline: "Live",
@@ -593,8 +930,10 @@ export const ORDER_LIVE_TRACKING = {
   /** Dark mode uses Carto tiles on web. */
   osmAttribDark: "© OpenStreetMap · © CARTO",
   openMapsCta: "Open in Maps",
-  markerPartner: "Partner",
+  markerPartner: "Delivery partner",
+  markerShop: "Shop",
   markerDestination: "Delivery address",
+  shopNotConfigured: "Set shop location in Admin → Storefront.",
   deliverToEyebrow: "Deliver to",
   deliverPhoneA11y: "Call delivery phone",
   updatedJustNow: "Updated just now",
@@ -621,6 +960,16 @@ export const ADMIN_HOME_VIEW_COPY = {
     "These flags are read by the live Home screen. Each product still needs “Show on Home” and a Home section in the product editor.",
   cardLayoutSection: "Product card density",
   cardLayoutHint: "Stored as compact or comfortable (wired when the storefront reads this setting).",
+  shopLocationSection: "Shop / pickup location",
+  shopLocationHint: "Pin shown on order tracking maps (shop, delivery partner, customer).",
+  shopNameLabel: "Shop name",
+  shopAddressLabel: "Address line",
+  shopCityLabel: "City",
+  shopStateLabel: "State",
+  shopPostalLabel: "Postal code",
+  shopCoordsLabel: "Coordinates",
+  shopUseGps: "Use current location",
+  shopUseGpsLoading: "Locating…",
   quickLinks: "Catalog & items",
   linkProductsTitle: "Manage products",
   linkProductsSubtitle: "Edit listings, MRP, discount, photos, stock, home section, and visibility on Home.",

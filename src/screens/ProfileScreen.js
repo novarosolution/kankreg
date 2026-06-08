@@ -10,7 +10,7 @@ import { KankregPageWrap } from "../components/kankreg/KankregPageChrome";
 import BottomNavBar from "../components/BottomNavBar";
 import AuthGateShell from "../components/AuthGateShell";
 import CustomerScreenShell from "../components/CustomerScreenShell";
-import KankregUnifiedPageHeader from "../components/kankreg/KankregUnifiedPageHeader";
+import KankregCustomerPageHeader from "../components/kankreg/KankregCustomerPageHeader";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../context/ToastContext";
@@ -27,6 +27,9 @@ import PremiumCard from "../components/ui/PremiumCard";
 import SkeletonBlock from "../components/ui/SkeletonBlock";
 import SectionReveal from "../components/motion/SectionReveal";
 import KankregProfileGrid from "../components/kankreg/KankregProfileGrid";
+import NativeProfileCard from "../components/native/NativeProfileCard";
+import NativeMenuList from "../components/native/NativeMenuList";
+import { FIGMA } from "../theme/figmaApp";
 
 /**
  * `MMM YYYY` (e.g. "Jan 2026") for the member-since line. Returns "" when the
@@ -141,6 +144,8 @@ export default function ProfileScreen({ navigation }) {
   const memberTagBase = membershipTag(rewardPoints, deliveredOrders);
   const memberTag =
     unreadNotifications > 0 ? `${memberTagBase} · ${unreadNotifications} new` : memberTagBase;
+  const nativeMemberBadge = `${memberTagBase.toUpperCase()} · ${rewardPoints.toLocaleString("en-IN")} PTS`;
+  const isNativeApp = Platform.OS !== "web";
   const savedTotal = useMemo(
     () =>
       orders
@@ -275,7 +280,6 @@ export default function ProfileScreen({ navigation }) {
       <KankregScrollPage
         scrollVariant="inner"
         style={customerScrollFill}
-        contentContainerStyle={Platform.OS === "web" ? { paddingBottom: spacing.sm } : undefined}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -290,15 +294,42 @@ export default function ProfileScreen({ navigation }) {
       >
         {loading ? (
           <ProfileSkeleton styles={profileStyles} />
+        ) : isNativeApp ? (
+          <View style={profileStyles.nativeWrap}>
+            <KankregCustomerPageHeader
+              eyebrow={PROFILE_SCREEN.pageEyebrow}
+              title={PROFILE_SCREEN.pageTitle}
+              showBack={false}
+            />
+            {error ? (
+              <View style={profileStyles.nativeError}>
+                <PremiumErrorBanner severity="error" message={error} />
+              </View>
+            ) : null}
+            <NativeProfileCard
+              name={displayName}
+              email={user?.email}
+              avatarUrl={fullAvatar}
+              memberTag={nativeMemberBadge}
+            />
+            {adminBlock}
+            {deliveryBlock}
+            <NativeMenuList
+              navigation={navigation}
+              onSignOut={handleSignOut}
+              signingOut={isSigningOut}
+            />
+          </View>
         ) : (
           <KankregPageWrap gap={KANKREG_PAGE_SECTION_GAP}>
-            <KankregUnifiedPageHeader
-              eyebrow="Account"
-              title="My profile"
+            <KankregCustomerPageHeader
+              eyebrow={PROFILE_SCREEN.pageEyebrow}
+              title={PROFILE_SCREEN.pageTitle}
               subtitle={PROFILE_SCREEN.pageSubtitle}
               navigation={navigation}
               showBack={false}
               showBrand={false}
+              showHairline
             />
 
             {error ? (
@@ -355,6 +386,13 @@ function createProfileStyles(c, isDark) {
   return StyleSheet.create({
     screen: {
       flex: 1,
+    },
+    nativeWrap: {
+      paddingHorizontal: FIGMA.gutter,
+      paddingBottom: spacing.lg,
+    },
+    nativeError: {
+      marginBottom: spacing.sm,
     },
     ribbonCard: {
       marginBottom: spacing.md,

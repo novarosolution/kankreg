@@ -18,20 +18,24 @@ import RazorpayBrandStrip from "./RazorpayBrandStrip";
  * Two-option payment selector for checkout — Razorpay vs Cash on Delivery.
  * Uses gold-framed selection state + animated checkmark when reduced motion is off.
  */
-function PaymentMethodSelectorBase({ value, onChange, disabled }) {
+function PaymentMethodSelectorBase({ value, onChange, disabled, embedded = false, compact = false }) {
   const { colors: c, isDark } = useTheme();
   const reducedMotion = useReducedMotion();
   const styles = useMemo(() => createStyles(c, isDark), [c, isDark]);
 
   return (
-    <View style={styles.shell} accessibilityRole="radiogroup">
-      <View style={styles.sectionHeader}>
-        <View style={[styles.sectionIconWrap, { backgroundColor: c.primarySoft, borderColor: c.primaryBorder }]}>
-          <Ionicons name="wallet-outline" size={icon.sm} color={c.primaryDark} />
-        </View>
-        <Text style={styles.sectionTitle}>Payment method</Text>
-      </View>
-      <Text style={styles.sectionHint}>Choose how you’d like to settle this order.</Text>
+    <View style={[styles.shell, embedded && styles.shellEmbedded]} accessibilityRole="radiogroup">
+      {embedded ? null : (
+        <>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIconWrap, { backgroundColor: c.primarySoft, borderColor: c.primaryBorder }]}>
+              <Ionicons name="wallet-outline" size={icon.sm} color={c.primaryDark} />
+            </View>
+            <Text style={styles.sectionTitle}>Payment method</Text>
+          </View>
+          <Text style={styles.sectionHint}>Choose how you’d like to settle this order.</Text>
+        </>
+      )}
 
       <View style={styles.grid}>
         {PAYMENT_METHODS.map((method) => (
@@ -41,6 +45,7 @@ function PaymentMethodSelectorBase({ value, onChange, disabled }) {
             selected={value === method.id}
             disabled={disabled}
             reducedMotion={reducedMotion}
+            compact={compact}
             onPress={() => onChange(method.id)}
             styles={styles}
             isDark={isDark}
@@ -52,7 +57,7 @@ function PaymentMethodSelectorBase({ value, onChange, disabled }) {
   );
 }
 
-function PaymentMethodCard({ method, selected, disabled, reducedMotion, onPress, styles, isDark, c }) {
+function PaymentMethodCard({ method, selected, disabled, reducedMotion, compact, onPress, styles, isDark, c }) {
   const scale = useSharedValue(selected ? 1 : 0);
   useEffect(() => {
     scale.value = withTiming(selected ? 1 : 0, {
@@ -92,27 +97,33 @@ function PaymentMethodCard({ method, selected, disabled, reducedMotion, onPress,
           />
         </View>
         <View style={styles.cardTitleCol}>
-          <View style={styles.eyebrowRow}>
-            <Text style={[styles.eyebrow, selected ? styles.eyebrowSelected : null]}>{method.eyebrow}</Text>
-            {method.badge ? (
-              <View style={styles.recBadge}>
-                <Text style={styles.recBadgeText}>{method.badge}</Text>
+          {compact ? (
+            <Text style={[styles.cardTitle, { color: isDark ? c.textPrimary : ALCHEMY.brown }]}>{method.title}</Text>
+          ) : (
+            <>
+              <View style={styles.eyebrowRow}>
+                <Text style={[styles.eyebrow, selected ? styles.eyebrowSelected : null]}>{method.eyebrow}</Text>
+                {method.badge ? (
+                  <View style={styles.recBadge}>
+                    <Text style={styles.recBadgeText}>{method.badge}</Text>
+                  </View>
+                ) : null}
               </View>
-            ) : null}
-          </View>
-          <Text style={[styles.cardTitle, { color: isDark ? c.textPrimary : ALCHEMY.brown }]}>{method.title}</Text>
-          <Text style={styles.cardSubtitle}>{method.subtitle}</Text>
+              <Text style={[styles.cardTitle, { color: isDark ? c.textPrimary : ALCHEMY.brown }]}>{method.title}</Text>
+              <Text style={styles.cardSubtitle}>{method.subtitle}</Text>
+            </>
+          )}
         </View>
         <Animated.View style={[styles.checkWrap, checkStyle]}>
           <Ionicons name="checkmark-circle" size={icon.lg} color={c.primary} />
         </Animated.View>
       </View>
 
-      {isRazorpay && method.brandStrip ? (
+      {!compact && isRazorpay && method.brandStrip ? (
         <RazorpayBrandStrip brands={method.brandStrip} selected={selected} compact />
       ) : null}
 
-      {method.secureNote ? (
+      {!compact && method.secureNote ? (
         <Text style={[styles.secureNote, selected ? styles.secureNoteSelected : null]}>{method.secureNote}</Text>
       ) : null}
     </Pressable>
@@ -123,6 +134,9 @@ function createStyles(c, isDark) {
   return StyleSheet.create({
     shell: {
       marginBottom: spacing.md,
+    },
+    shellEmbedded: {
+      marginBottom: 0,
     },
     sectionHeader: {
       flexDirection: "row",

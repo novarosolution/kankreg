@@ -25,7 +25,7 @@ import { useTheme } from "../context/ThemeContext";
 import {
   customerPanel,
   customerScrollFill,
-  customerScrollPaddingTop} from "../theme/screenLayout";
+} from "../theme/screenLayout";
 import { fonts, icon as sz, layout, lineHeight, radius, semanticRadius, spacing, typography } from "../theme/tokens";
 import { platformShadow } from "../theme/shadowPlatform";
 import { formatINR } from "../utils/currency";
@@ -48,6 +48,7 @@ import SkeletonBlock from "../components/ui/SkeletonBlock";
 import HeroParallax from "../components/motion/HeroParallax";
 import SectionReveal from "../components/motion/SectionReveal";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
+import NativeProductView from "../components/native/NativeProductView";
 
 export default function ProductScreen({ route, navigation }) {
   const { productId } = route.params ?? {};
@@ -340,13 +341,47 @@ export default function ProductScreen({ route, navigation }) {
     stickyShownRef.current = shouldShow;
     setShowStickyCta(shouldShow);
   };
+
+  if (Platform.OS !== "web") {
+    return (
+      <CustomerScreenShell style={styles.screen}>
+        <NativeProductView
+          product={product}
+          navigation={navigation}
+          heroImageUri={selectedImageUri}
+          imageFailed={imageFailed}
+          galleryImages={galleryImages}
+          selectedImage={selectedImage}
+          onSelectImage={setSelectedImage}
+          variants={variants}
+          selectedVariantLabel={selectedVariantLabel}
+          onSelectVariant={setSelectedVariantLabel}
+          displayPrice={displayPrice}
+          showMrp={showMrp}
+          mrp={mrp}
+          liveRatingAvg={liveRatingAvg}
+          reviewCountDisplay={reviewCountDisplay}
+          isOutOfStock={isOutOfStock}
+          onAddToCart={handleAddToCart}
+          relatedProducts={relatedProducts}
+          onRelatedPress={(p) => navigation.push("Product", { productId: p.id })}
+          onAddRelated={(p) => {
+            if (!isAuthenticated) {
+              navigation.navigate("Login");
+              return;
+            }
+            addToCart(productToCartLine(p, ""));
+          }}
+        />
+      </CustomerScreenShell>
+    );
+  }
+
   return (
     <CustomerScreenShell style={styles.screen}>
       <KankregScrollPage
         scrollVariant="inner"
         style={customerScrollFill}
-        contentContainerStyle={{
-          paddingTop: customerScrollPaddingTop(insets, { nativeMin: spacing.xs })}}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
         onScrollJS={onProductScrollJS}

@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { Platform, StyleSheet, View } from "react-native";
+import { KANKREG_PALETTE } from "../theme/kankregWeb";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   interpolate,
@@ -131,6 +132,20 @@ export default function CustomerScreenShell({ children, style, topAccent = true 
     ],
     opacity: cursorOpacity.value,
   }));
+
+  if (Platform.OS !== "web") {
+    return (
+      <View
+        style={[
+          styles.base,
+          { backgroundColor: isDark ? c.background : KANKREG_PALETTE.paper },
+          style,
+        ]}
+      >
+        {children}
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.base, { backgroundColor: c.background }]}>

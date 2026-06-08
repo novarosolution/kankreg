@@ -8,7 +8,8 @@ import CatalogGridReveal from "../components/kankreg/CatalogGridReveal";
 import BottomNavBar from "../components/BottomNavBar";
 import AuthGateShell from "../components/AuthGateShell";
 import CustomerScreenShell from "../components/CustomerScreenShell";
-import KankregUnifiedPageHeader from "../components/kankreg/KankregUnifiedPageHeader";
+import KankregCustomerPageHeader from "../components/kankreg/KankregCustomerPageHeader";
+import { REWARDS_SCREEN_UI } from "../content/appContent";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useTheme } from "../context/ThemeContext";
@@ -27,9 +28,11 @@ import PremiumEmptyState from "../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
 import PremiumLoader from "../components/ui/PremiumLoader";
 import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
-import GoldHairline from "../components/ui/GoldHairline";
 import SectionReveal from "../components/motion/SectionReveal";
 import KankregRewardHero from "../components/kankreg/KankregRewardHero";
+import NativeRewardsBalance from "../components/native/NativeRewardsBalance";
+import NativeRewardOfferRow from "../components/native/NativeRewardOfferRow";
+import { FIGMA } from "../theme/figmaApp";
 
 function formatExpiryShort(iso) {
   if (!iso) return "—";
@@ -71,7 +74,7 @@ export default function RedeemRewardsScreen({ navigation }) {
       );
       setWallet(Array.isArray(walletData?.coupons) ? walletData.coupons : []);
     } catch (err) {
-      setError(err.message || "Unable to load rewards.");
+      setError(err.message || REWARDS_SCREEN_UI.errorFallback);
     } finally {
       setLoading(false);
     }
@@ -91,9 +94,9 @@ export default function RedeemRewardsScreen({ navigation }) {
     if (!s) return;
     try {
       await Clipboard.setStringAsync(s);
-      setToast(label ? `${label} copied` : "Code copied");
+      setToast(REWARDS_SCREEN_UI.copied);
     } catch {
-      setToast("Could not copy");
+      setToast(REWARDS_SCREEN_UI.copyFailed);
     }
   }, []);
 
@@ -123,6 +126,8 @@ export default function RedeemRewardsScreen({ navigation }) {
     navigation.navigate("Cart", { prefillCoupon: String(code || "").trim().toUpperCase() });
   };
 
+  const isNativeApp = Platform.OS !== "web";
+
   if (isAuthLoading || !isAuthenticated) {
     return <AuthGateShell />;
   }
@@ -134,35 +139,47 @@ export default function RedeemRewardsScreen({ navigation }) {
         style={customerScrollFill}
         showsVerticalScrollIndicator={false}
       >
-        <KankregUnifiedPageHeader
-          eyebrow="Loyalty"
-          title="Rewards"
-          subtitle="Earn points · redeem for checkout codes"
+        <KankregCustomerPageHeader
+          eyebrow={REWARDS_SCREEN_UI.pageEyebrow}
+          title={REWARDS_SCREEN_UI.pageTitle}
+          subtitle={REWARDS_SCREEN_UI.pageSubtitle}
           navigation={navigation}
+          showBack={false}
+          showHairline={!isNativeApp}
         />
-        <KankregRewardHero
-          points={balance}
-          tierHint="Earn points on delivered orders and unlock Gold tier perks."
-        />
-        <GoldHairline marginVertical={spacing.sm} />
-
-        <SectionReveal delay={40} preset="fade-up">
-          <View style={[customerPanel(c, shadowPremium, isDark), styles.howItWorksPanel]}>
-          <Text style={[styles.howItWorks, { color: c.textSecondary }]}>
-            1) Open My Orders and claim points on delivered orders. 2) Pick an offer below. 3) Use your code in Cart —
-            same as a coupon.
-          </Text>
-          {Number(totalAmount) > 0 ? (
-            <Text style={[styles.subtotalHint, { color: c.textMuted }]}>
-              Estimates use your current cart subtotal ({formatINR(totalAmount)}).
-            </Text>
-          ) : (
-            <Text style={[styles.subtotalHint, { color: c.textMuted }]}>
-              Add items to your cart to see estimated savings on each reward.
-            </Text>
-          )}
+        {isNativeApp ? (
+          <View style={styles.nativeWrap}>
+            <NativeRewardsBalance
+              points={balance}
+              tierHint="520 pts to Gold tier"
+            />
           </View>
-        </SectionReveal>
+        ) : (
+          <KankregRewardHero
+            points={balance}
+            tierHint="Earn points on delivered orders and unlock Gold tier perks."
+          />
+        )}
+
+        {!isNativeApp ? (
+          <SectionReveal delay={40} preset="fade-up">
+            <View style={[customerPanel(c, shadowPremium, isDark), styles.howItWorksPanel]}>
+              <Text style={[styles.howItWorks, { color: c.textSecondary }]}>
+                1) Open My Orders and claim points on delivered orders. 2) Pick an offer below. 3) Use your code in Cart —
+                same as a coupon.
+              </Text>
+              {Number(totalAmount) > 0 ? (
+                <Text style={[styles.subtotalHint, { color: c.textMuted }]}>
+                  Estimates use your current cart subtotal ({formatINR(totalAmount)}).
+                </Text>
+              ) : (
+                <Text style={[styles.subtotalHint, { color: c.textMuted }]}>
+                  Add items to your cart to see estimated savings on each reward.
+                </Text>
+              )}
+            </View>
+          </SectionReveal>
+        ) : null}
 
         {error ? (
           <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
@@ -209,51 +226,57 @@ export default function RedeemRewardsScreen({ navigation }) {
           </PremiumCard>
         ) : null}
 
-        <PremiumSectionHeader title="Your codes" subtitle="Unused loyalty coupons on your account" compact />
-        {loading ? (
-          <PremiumLoader size="sm" caption="Loading your codes…" />
-        ) : wallet.length === 0 ? (
-          <Text style={[styles.walletEmpty, { color: c.textMuted }]}>
-            No active codes — redeem an offer below.
-          </Text>
-        ) : (
-          wallet.map((w) => (
-            <PremiumCard key={String(w._id || w.code)} padding="md" variant="muted" style={styles.walletCard}>
-              <View style={styles.walletRow}>
-                <View style={styles.walletLeft}>
-                  <Text style={[styles.walletCode, { color: c.textPrimary }]}>{w.code}</Text>
-                  <Text style={[styles.walletMeta, { color: c.textSecondary }]}>
-                    {w.benefitSummary}
-                    {w.minOrderAmount > 0 ? ` · Min ${formatINR(w.minOrderAmount)}` : ""}
-                  </Text>
-                  <Text style={[styles.walletExpiry, { color: c.textMuted }]}>
-                    Expires {formatExpiryShort(w.expiresAt)}
-                  </Text>
-                </View>
-                <View style={styles.walletActions}>
-                  <PremiumButton
-                    label="Copy"
-                    variant="ghost"
-                    size="sm"
-                    onPress={() => copyCode(w.code, "Code")}
-                  />
-                  <PremiumButton
-                    label="Cart"
-                    variant="secondary"
-                    size="sm"
-                    onPress={() => goToCartWithCode(w.code)}
-                  />
-                </View>
-              </View>
-            </PremiumCard>
-          ))
-        )}
+        {!isNativeApp ? (
+          <>
+            <PremiumSectionHeader title="Your codes" subtitle="Unused loyalty coupons on your account" compact />
+            {loading ? (
+              <PremiumLoader size="sm" caption="Loading your codes…" />
+            ) : wallet.length === 0 ? (
+              <Text style={[styles.walletEmpty, { color: c.textMuted }]}>
+                No active codes — redeem an offer below.
+              </Text>
+            ) : (
+              wallet.map((w) => (
+                <PremiumCard key={String(w._id || w.code)} padding="md" variant="muted" style={styles.walletCard}>
+                  <View style={styles.walletRow}>
+                    <View style={styles.walletLeft}>
+                      <Text style={[styles.walletCode, { color: c.textPrimary }]}>{w.code}</Text>
+                      <Text style={[styles.walletMeta, { color: c.textSecondary }]}>
+                        {w.benefitSummary}
+                        {w.minOrderAmount > 0 ? ` · Min ${formatINR(w.minOrderAmount)}` : ""}
+                      </Text>
+                      <Text style={[styles.walletExpiry, { color: c.textMuted }]}>
+                        Expires {formatExpiryShort(w.expiresAt)}
+                      </Text>
+                    </View>
+                    <View style={styles.walletActions}>
+                      <PremiumButton
+                        label="Copy"
+                        variant="ghost"
+                        size="sm"
+                        onPress={() => copyCode(w.code, "Code")}
+                      />
+                      <PremiumButton
+                        label="Cart"
+                        variant="secondary"
+                        size="sm"
+                        onPress={() => goToCartWithCode(w.code)}
+                      />
+                    </View>
+                  </View>
+                </PremiumCard>
+              ))
+            )}
+          </>
+        ) : null}
 
-        <PremiumSectionHeader
-          title="Redeem with points"
-          subtitle="One use per issued code · tied to your account"
-          compact
-        />
+        {!isNativeApp ? (
+          <PremiumSectionHeader
+            title="Redeem with points"
+            subtitle="One use per issued code · tied to your account"
+            compact
+          />
+        ) : null}
 
         {loading ? (
           <PremiumLoader size="sm" caption="Loading catalog…" />
@@ -264,6 +287,23 @@ export default function RedeemRewardsScreen({ navigation }) {
             description="Check back soon — new offers appear here."
             compact
           />
+        ) : isNativeApp ? (
+          <View style={styles.nativeCatalog}>
+            {catalog.map((item) => (
+              <NativeRewardOfferRow
+                key={item._id}
+                title={item.title}
+                subtitle={
+                  item.benefitSummary ||
+                  (item.minOrderAmount > 0 ? `Order above ${formatINR(item.minOrderAmount)}` : item.description)
+                }
+                pointsCost={item.pointsCost}
+                onRedeem={() => handleRedeem(item._id)}
+                busy={busyId === item._id}
+                disabled={!item.canRedeem}
+              />
+            ))}
+          </View>
         ) : (
           <CatalogGridReveal>
           {catalog.map((item) => (
@@ -336,7 +376,7 @@ export default function RedeemRewardsScreen({ navigation }) {
           style={styles.cartLink}
         />
 </KankregScrollPage>
-      <BottomNavBar navigation={navigation} />
+      <BottomNavBar />
     </CustomerScreenShell>
   );
 }
@@ -348,6 +388,13 @@ function createStyles(c, isDark, shadowPremium) {
       width: "100%",
       alignSelf: "center",
       maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" })},
+    nativeWrap: {
+      paddingHorizontal: FIGMA.gutter,
+    },
+    nativeCatalog: {
+      paddingHorizontal: FIGMA.gutter,
+      paddingBottom: spacing.lg,
+    },
     hero: {
       borderRadius: radius.xxl,
       padding: spacing.md,

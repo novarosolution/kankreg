@@ -1,8 +1,9 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import { useKankregLayout } from "../../theme/kankregBreakpoints";
+import { Ionicons } from "@expo/vector-icons";
+import { getCategoryGridCellStyle, useKankregLayout } from "../../theme/kankregBreakpoints";
 import PremiumButton from "../ui/PremiumButton";
 import PremiumEmptyState from "../ui/PremiumEmptyState";
 import HomeSectionHeader from "./HomeSectionHeader";
@@ -11,15 +12,7 @@ import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { createKankregEyebrowStyle, kankregSectionIndex } from "../../theme/kankregScreenStyles";
 import { fonts, radius, spacing, typography } from "../../theme/tokens";
 import { useTheme } from "../../context/ThemeContext";
-
-const MARQUEE_ITEMS = [
-  "Free delivery over ₹1,499",
-  "Live order tracking",
-  "Razorpay secure checkout",
-  "7-day easy returns",
-  "Earn rewards every order",
-  "Crafted in India",
-];
+import { HOME_SCREEN_UI } from "../../content/appContent";
 
 const CATEGORY_GRADIENTS = [
   ["#f3e7cc", "#e3cfa6"],
@@ -28,34 +21,70 @@ const CATEGORY_GRADIENTS = [
   ["#eee7dd", "#d6c7b1"],
 ];
 
+const MARQUEE_KEYFRAMES_ID = "kankreg-home-marquee-keyframes";
+
+function useMarqueeKeyframes() {
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined") return;
+    if (document.getElementById(MARQUEE_KEYFRAMES_ID)) return;
+    const node = document.createElement("style");
+    node.id = MARQUEE_KEYFRAMES_ID;
+    node.textContent =
+      "@keyframes kankregHomeMarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }";
+    document.head.appendChild(node);
+  }, []);
+}
+
 /** Scrolling ticker like kankreg.html `.marquee` */
 export function HomeMarqueeTicker() {
   const { isDark } = useTheme();
-  const text = MARQUEE_ITEMS.join("  ✦  ");
+  useMarqueeKeyframes();
+  const text = HOME_SCREEN_UI.marquee.join("  ✦  ");
+  const segment = `${text}  ✦  `;
+  const isWeb = Platform.OS === "web";
+
   return (
     <View style={[styles.marqueeWrap, isDark && styles.marqueeWrapDark]}>
-      <Text style={[styles.marqueeText, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.inkSoft }]} numberOfLines={1}>
-        {text}  ✦  {text}
-      </Text>
+      {isWeb ? (
+        <View style={styles.marqueeTrack}>
+          <View style={styles.marqueeScroller}>
+            <Text
+              style={[styles.marqueeText, styles.marqueeTextWeb, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.inkSoft }]}
+            >
+              {segment}
+              {segment}
+            </Text>
+          </View>
+        </View>
+      ) : (
+        <Text
+          style={[styles.marqueeText, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.inkSoft }]}
+          numberOfLines={1}
+        >
+          {segment}
+          {segment}
+        </Text>
+      )}
     </View>
   );
 }
 
 /** Category tiles like `.cat-card` — only categories present on products from API. */
 export function HomeCategoryCards({ products = [], onBrowse, onOpenShop, productTypeTitle = "" }) {
-  const { categoryCols } = useKankregLayout();
-  const { isDark } = useTheme();
+  const { categoryCols, categoryCompact } = useKankregLayout();
   const cols = categoryCols;
-  const cellPct = `${100 / cols}%`;
+  const cellStyle = getCategoryGridCellStyle(cols);
 
   const categories = useMemo(() => {
+    const tileIcons = HOME_SCREEN_UI.categories.webTileIcons || [];
     const fromProducts = [...new Set(products.map((p) => String(p.category || "").trim()).filter(Boolean))].slice(0, 4);
     return fromProducts.map((label, i) => ({
       key: label,
       label,
-      count: `${products.filter((p) => p.category === label).length} items`,
+      count: products.filter((p) => p.category === label).length,
       gradient: CATEGORY_GRADIENTS[i % CATEGORY_GRADIENTS.length],
       image: products.find((p) => p.category === label)?.image,
+      icon: tileIcons[i % tileIcons.length] || "grid-outline",
     }));
   }, [products]);
 
@@ -63,30 +92,28 @@ export function HomeCategoryCards({ products = [], onBrowse, onOpenShop, product
     return (
       <PremiumEmptyState
         iconName="grid-outline"
-        title="No categories yet"
-        description="Add products with categories in Admin to show collection tiles here."
-        ctaLabel="Go to shop"
+        title={HOME_SCREEN_UI.empty.categoriesTitle}
+        description={HOME_SCREEN_UI.empty.categoriesDescription}
+        ctaLabel={HOME_SCREEN_UI.empty.categoriesCta}
         onCtaPress={onOpenShop}
       />
     );
   }
 
-  const sectionTitle = productTypeTitle || "Browse the categories";
+  const sectionTitle = productTypeTitle || HOME_SCREEN_UI.categories.webTitleFallback;
 
   return (
     <View style={styles.catSection}>
-      <View style={styles.catHeadRow}>
-        <Text style={createKankregEyebrowStyle(isDark)}>{kankregSectionIndex(1)} Collections</Text>
-      </View>
-      <HomeSectionHeader overline="Shop by category" title={sectionTitle} />
-      <View style={styles.catGrid}>
-        {categories.map((cat, idx) => (
+      <HomeSectionHeader overline={HOME_SCREEN_UI.categories.webShopBy} title={sectionTitle} />
+      <View style={[styles.catGrid, categoryCompact && styles.catGridCompact]}>
+        {categories.map((cat) => (
           <Pressable
             key={cat.key}
             onPress={() => onBrowse?.(cat.label)}
             style={({ hovered }) => [
               styles.catCard,
-              { width: cellPct, maxWidth: cellPct },
+              cellStyle,
+              categoryCompact ? styles.catCardCompact : styles.catCardWide,
               hovered && Platform.OS === "web" ? styles.catCardHover : null,
             ]}
             accessibilityRole="button"
@@ -94,16 +121,33 @@ export function HomeCategoryCards({ products = [], onBrowse, onOpenShop, product
           >
             <LinearGradient colors={cat.gradient} style={StyleSheet.absoluteFillObject} />
             {cat.image ? (
-              <Image source={{ uri: cat.image }} style={styles.catImage} contentFit="cover" />
+              <Image
+                source={{ uri: cat.image }}
+                style={[styles.catImage, categoryCompact && styles.catImageCompact]}
+                contentFit="cover"
+              />
             ) : null}
             <LinearGradient
-              colors={["transparent", "rgba(25,20,15,0.62)"]}
-              locations={[0.3, 1]}
+              colors={
+                categoryCompact
+                  ? ["rgba(25,20,15,0.08)", "rgba(25,20,15,0.72)"]
+                  : ["transparent", "rgba(25,20,15,0.62)"]
+              }
+              locations={categoryCompact ? [0, 1] : [0.3, 1]}
               style={StyleSheet.absoluteFillObject}
             />
-            <View style={styles.catCardFooter}>
-              <Text style={styles.catName}>{cat.label}</Text>
-              <Text style={styles.catCount}>{cat.count}</Text>
+            <View style={[styles.catBadge, categoryCompact && styles.catBadgeCompact]}>
+              <Ionicons name={cat.icon} size={categoryCompact ? 14 : 16} color={KANKREG_PALETTE.goldBright} />
+            </View>
+            <View style={[styles.catCardFooter, categoryCompact && styles.catCardFooterCompact]}>
+              <Text style={[styles.catName, categoryCompact && styles.catNameCompact]} numberOfLines={2}>
+                {cat.label}
+              </Text>
+              <View style={styles.catCountPill}>
+                <Text style={styles.catCount}>
+                  {cat.count} {HOME_SCREEN_UI.categories.itemsSuffix}
+                </Text>
+              </View>
             </View>
           </Pressable>
         ))}
@@ -137,22 +181,31 @@ export function HomeFeaturedEditorial({ product, navigation }) {
         {image ? <Image source={{ uri: image }} style={styles.featureImage} contentFit="contain" /> : null}
       </View>
       <View style={[styles.featureCopy, isDark && { backgroundColor: "#181513" }]}>
-        <Text style={createKankregEyebrowStyle(isDark)}>{kankregSectionIndex(3)} Featured</Text>
-        <Text style={[styles.featureEyebrow, { color: KANKREG_PALETTE.gold }]}>The morning ritual</Text>
+        <Text style={createKankregEyebrowStyle(isDark)}>
+          {kankregSectionIndex(3)} {HOME_SCREEN_UI.featured.sectionLabel}
+        </Text>
+        <Text style={[styles.featureEyebrow, { color: KANKREG_PALETTE.gold }]}>
+          {HOME_SCREEN_UI.featured.eyebrow}
+        </Text>
         <Text style={[styles.featureTitle, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
-          Slow coffee, beautifully made.
+          {HOME_SCREEN_UI.featured.title}
         </Text>
         <Text style={[styles.featureBody, { color: isDark ? "#c8bdaf" : KANKREG_PALETTE.inkSoft }]}>
-          Hand-finished essentials designed to live on the counter — and to last for years.
+          {HOME_SCREEN_UI.featured.body}
         </Text>
         <View style={styles.featureCtas}>
           <PremiumButton
-            label="Shop the set →"
+            label={HOME_SCREEN_UI.featured.ctaPrimary}
             variant="primary"
             size="md"
             onPress={() => product?.id && navigation.navigate("Product", { productId: product.id })}
           />
-          <PremiumButton label="Browse catalog" variant="ghost" size="md" onPress={() => navigation.navigate("Home")} />
+          <PremiumButton
+            label={HOME_SCREEN_UI.featured.ctaSecondary}
+            variant="ghost"
+            size="md"
+            onPress={() => navigation.navigate("Shop")}
+          />
         </View>
       </View>
     </View>
@@ -166,34 +219,52 @@ export function HomeEditorialHero({ navigation, featuredProduct, heroTitle, hero
   if (!showEditorialHero) return null;
 
   const image = featuredProduct?.image || featuredProduct?.images?.[0];
-  const title = heroTitle || "Everyday goods, made extraordinary.";
-  const subtitle =
-    heroSubtitle ||
-    "Design-led home, wellness and lifestyle — live tracking, Razorpay checkout, rewards on every order.";
+  const title = heroTitle || HOME_SCREEN_UI.hero.titleFallback;
+  const subtitle = heroSubtitle || HOME_SCREEN_UI.hero.subtitleFallback;
 
   return (
     <View style={[styles.editorialHero, stackEditorialHero && styles.editorialHeroStack]}>
       <View style={styles.editorialCopy}>
-        <Text style={createKankregEyebrowStyle(isDark)}>Curated essentials · Est. 2025</Text>
+        <Text style={createKankregEyebrowStyle(isDark)}>{HOME_SCREEN_UI.editorial.overline}</Text>
         <Text style={[styles.editorialH1, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
           {title}
         </Text>
-        <Text style={[styles.editorialLead, { color: isDark ? "#c8bdaf" : KANKREG_PALETTE.inkSoft }]}>
-          {subtitle}
-        </Text>
+        {subtitle ? (
+          <Text style={[styles.editorialLead, { color: isDark ? "#c8bdaf" : KANKREG_PALETTE.inkSoft }]}>
+            {subtitle}
+          </Text>
+        ) : null}
         <View style={styles.editorialCtas}>
           <PremiumButton
-            label="Explore the collection →"
+            label={HOME_SCREEN_UI.editorial.ctaExplore}
             variant="primary"
             onPress={() => {
               if (typeof globalThis?.document !== "undefined") {
                 const el = globalThis.document.getElementById("home-catalog");
                 el?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+              } else {
+                navigation.navigate("Shop");
               }
             }}
           />
-          <PremiumButton label="Join rewards" variant="ghost" onPress={() => navigation.navigate("RedeemRewards")} />
+          <PremiumButton
+            label={HOME_SCREEN_UI.editorial.ctaRewards}
+            variant="ghost"
+            onPress={() => navigation.navigate("RedeemRewards")}
+          />
         </View>
+        {HOME_SCREEN_UI.web?.heroStats?.length ? (
+          <View style={styles.editorialStats}>
+            {HOME_SCREEN_UI.web.heroStats.map((stat) => (
+              <View key={stat.key} style={styles.statCell}>
+                <Text style={[styles.statN, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
+                  {stat.value}
+                </Text>
+                <Text style={styles.statL}>{stat.label}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
       </View>
       <View style={styles.editorialVisual}>
         <LinearGradient
@@ -203,14 +274,14 @@ export function HomeEditorialHero({ navigation, featuredProduct, heroTitle, hero
         />
         {image ? <Image source={{ uri: image }} style={styles.editorialPhoto} contentFit="cover" /> : null}
         <View style={styles.floatA}>
-          <Text style={styles.floatEyebrow}>Featured</Text>
-          <Text style={styles.floatTitle}>{featuredProduct?.name || "Bestseller"}</Text>
+          <Text style={styles.floatEyebrow}>{HOME_SCREEN_UI.editorial.featuredLabel}</Text>
+          <Text style={styles.floatTitle}>{featuredProduct?.name || HOME_SCREEN_UI.bestsellers.titleFallback}</Text>
         </View>
         <View style={styles.floatB}>
           <View style={styles.swatch} />
           <View>
-            <Text style={styles.floatFrom}>From</Text>
-            <Text style={styles.floatPrice}>Shop now</Text>
+            <Text style={styles.floatFrom}>{HOME_SCREEN_UI.hero.fromLabel}</Text>
+            <Text style={styles.floatPrice}>{HOME_SCREEN_UI.editorial.shopNowLabel}</Text>
           </View>
         </View>
       </View>
@@ -230,14 +301,35 @@ const styles = StyleSheet.create({
   marqueeWrapDark: {
     borderColor: "#3f3933",
   },
+  marqueeTrack: {
+    width: "100%",
+    overflow: "hidden",
+  },
+  marqueeScroller: {
+    flexDirection: "row",
+    width: "max-content",
+    ...Platform.select({
+      web: {
+        animationName: "kankregHomeMarquee",
+        animationDuration: "32s",
+        animationTimingFunction: "linear",
+        animationIterationCount: "infinite",
+      },
+      default: {},
+    }),
+  },
   marqueeText: {
     fontFamily: fonts.medium,
     fontSize: typography.caption,
     letterSpacing: 0.8,
   },
+  marqueeTextWeb: {
+    flexShrink: 0,
+    paddingRight: spacing.xl,
+  },
   catSection: {
-    marginTop: spacing.xl,
-    marginBottom: spacing.md,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
   },
   catHeadRow: {
     marginBottom: spacing.xs,
@@ -247,29 +339,68 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: spacing.md,
     marginTop: spacing.sm,
+    width: "100%",
+  },
+  catGridCompact: {
+    gap: spacing.sm + 2,
   },
   catCard: {
-    aspectRatio: 3 / 4,
-    borderRadius: radius.xxl,
     overflow: "hidden",
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: KANKREG_PALETTE.line,
-    minHeight: 160,
+    position: "relative",
     ...Platform.select({
-      web: { transition: "transform 0.3s ease, box-shadow 0.3s ease" },
+      web: {
+        transition: "transform 0.28s ease, box-shadow 0.28s ease",
+        boxShadow: "0 10px 28px -18px rgba(25,20,15,.32)",
+      },
       default: {},
     }),
   },
+  catCardWide: {
+    aspectRatio: 5 / 4,
+    borderRadius: radius.xl,
+    minHeight: 0,
+  },
+  catCardCompact: {
+    aspectRatio: 16 / 11,
+    borderRadius: radius.lg + 2,
+    minHeight: 0,
+    maxHeight: 148,
+  },
   catCardHover: {
-    transform: [{ translateY: -5 }],
+    transform: [{ translateY: -4 }],
     ...Platform.select({
-      web: { boxShadow: "0 50px 90px -40px rgba(25,20,15,.40)" },
+      web: { boxShadow: "0 22px 48px -24px rgba(25,20,15,.42)" },
       default: {},
     }),
   },
   catImage: {
     ...StyleSheet.absoluteFillObject,
-    opacity: 0.35,
+    opacity: 0.38,
+  },
+  catImageCompact: {
+    opacity: 0.32,
+  },
+  catBadge: {
+    position: "absolute",
+    top: spacing.sm + 2,
+    left: spacing.sm + 2,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,253,248,0.92)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.65)",
+  },
+  catBadgeCompact: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    top: spacing.sm,
+    left: spacing.sm,
   },
   catCardFooter: {
     position: "absolute",
@@ -278,18 +409,38 @@ const styles = StyleSheet.create({
     bottom: 0,
     flexDirection: "row",
     alignItems: "flex-end",
+    justifyContent: "space-between",
     padding: spacing.md + 2,
     gap: spacing.sm,
   },
+  catCardFooterCompact: {
+    padding: spacing.sm + 2,
+    alignItems: "center",
+  },
   catName: {
     fontFamily: FONT_DISPLAY,
-    fontSize: 19,
+    fontSize: 18,
     color: "#fff",
     flex: 1,
+    lineHeight: 22,
+  },
+  catNameCompact: {
+    fontSize: 15,
+    lineHeight: 18,
+  },
+  catCountPill: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,253,248,0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.22)",
   },
   catCount: {
-    fontSize: 11,
-    color: "rgba(255,255,255,0.85)",
+    fontSize: 10,
+    fontFamily: fonts.semibold,
+    color: "rgba(255,255,255,0.92)",
+    letterSpacing: 0.2,
   },
   feature: {
     flexDirection: "row",
@@ -394,10 +545,17 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: spacing.xl,
     marginTop: spacing.xl + 4,
+    paddingTop: spacing.lg,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: KANKREG_PALETTE.line,
+  },
+  statCell: {
+    minWidth: 88,
   },
   statN: {
     fontFamily: FONT_DISPLAY,
     fontSize: 28,
+    letterSpacing: -0.4,
   },
   statL: {
     fontSize: 11.5,
@@ -405,6 +563,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     textTransform: "uppercase",
     marginTop: 2,
+    fontFamily: fonts.semibold,
   },
   editorialVisual: {
     flex: 0.96,

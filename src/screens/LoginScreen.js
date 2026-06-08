@@ -146,7 +146,7 @@ export default function LoginScreen({ navigation }) {
           }
           keyboardShouldPersistTaps="handled"
         >
-          <AuthScreenBody artSubtitle={AUTH_UI.loginSubtitle} form={form} styles={styles} />
+          <AuthScreenBody artSubtitle={AUTH_UI.loginSubtitle} form={form} styles={styles} mode="login" />
         </KankregScrollPage>
       </KeyboardAvoidingView>
     </CustomerScreenShell>

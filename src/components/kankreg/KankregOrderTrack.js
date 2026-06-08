@@ -1,10 +1,9 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { MY_ORDERS_UI } from "../../content/appContent";
 import { getActiveProgressStep, getOrderStatusLabel } from "../../utils/orderStatus";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { fonts } from "../../theme/tokens";
-
-const STEPS = ["Placed", "Packed", "On the way", "Delivered"];
 
 function stepIndexForStatus(status) {
   const step = getActiveProgressStep(status);
@@ -14,31 +13,53 @@ function stepIndexForStatus(status) {
   return 0;
 }
 
-/** kankreg.html `.track` stepper */
-export default function KankregOrderTrack({ status }) {
+/** kankreg.html `.track` stepper — app + web */
+export default function KankregOrderTrack({
+  status,
+  compact = false,
+  showStatusHint = true,
+}) {
+  const steps = MY_ORDERS_UI.trackSteps;
   const active = stepIndexForStatus(status);
   const statusLabel = getOrderStatusLabel(status);
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, compact && styles.wrapCompact]}>
       <View style={styles.bar}>
-        {STEPS.map((label, i) => {
+        {steps.map((label, i) => {
           const done = i < active;
           const on = i === active;
           return (
             <React.Fragment key={label}>
               {i > 0 ? <View style={[styles.line, (done || on) && styles.lineDone]} /> : null}
               <View style={styles.nodeCol}>
-                <View style={[styles.dot, done && styles.dotDone, on && styles.dotOn]}>
-                  <Text style={styles.dotText}>{done ? "✓" : on ? "●" : ""}</Text>
+                <View
+                  style={[
+                    styles.dot,
+                    compact && styles.dotCompact,
+                    done && styles.dotDone,
+                    on && styles.dotOn,
+                  ]}
+                >
+                  <Text style={[styles.dotText, compact && styles.dotTextCompact]}>
+                    {done ? "✓" : on ? "●" : ""}
+                  </Text>
                 </View>
-                <Text style={[styles.stepLabel, (done || on) && styles.stepLabelOn]}>{label}</Text>
+                <Text
+                  style={[
+                    styles.stepLabel,
+                    compact && styles.stepLabelCompact,
+                    (done || on) && styles.stepLabelOn,
+                  ]}
+                >
+                  {label}
+                </Text>
               </View>
             </React.Fragment>
           );
         })}
       </View>
-      {statusLabel ? (
+      {showStatusHint && statusLabel ? (
         <Text style={[styles.statusHint, { color: KANKREG_PALETTE.gold }]}>
           {statusLabel}
         </Text>
@@ -49,6 +70,7 @@ export default function KankregOrderTrack({ status }) {
 
 const styles = StyleSheet.create({
   wrap: { marginVertical: 14 },
+  wrapCompact: { marginVertical: 10 },
   bar: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -67,7 +89,13 @@ const styles = StyleSheet.create({
   },
   dotDone: { backgroundColor: KANKREG_PALETTE.green, borderColor: KANKREG_PALETTE.green },
   dotOn: { backgroundColor: KANKREG_PALETTE.gold, borderColor: KANKREG_PALETTE.gold },
+  dotCompact: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+  },
   dotText: { fontSize: 12, color: "#fff", fontFamily: fonts.bold },
+  dotTextCompact: { fontSize: 10 },
   stepLabel: {
     marginTop: 6,
     fontSize: 11,
@@ -76,6 +104,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   stepLabelOn: { color: KANKREG_PALETTE.ink, fontFamily: fonts.semibold },
+  stepLabelCompact: {
+    marginTop: 4,
+    fontSize: 8,
+  },
   line: {
     flex: 1,
     height: 2,

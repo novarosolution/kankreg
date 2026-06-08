@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
 import { Alert, Platform, StyleSheet, Text, View } from "react-native";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
+import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { useAuth } from "../../context/AuthContext";
@@ -11,7 +12,18 @@ import {
   updateAdminRole,
   updateDeliveryPartnerRole} from "../../services/adminService";
 import { useTheme } from "../../context/ThemeContext";
-import { adminPanel } from "../../theme/adminLayout";
+import {
+  adminBadgeClusterStyle,
+  adminCardActionsStyle,
+  adminMetricCardStyle,
+  adminPanel,
+  adminRecordHeaderRowStyle,
+  adminRecordMainColStyle,
+  adminStatsGridStyle,
+  adminToolbarPrimary,
+  adminToolbarRow,
+  useAdminCompactLayout,
+} from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { layout, radius, spacing } from "../../theme/tokens";
 import PremiumInput from "../../components/ui/PremiumInput";
@@ -23,7 +35,11 @@ import PremiumChip from "../../components/ui/PremiumChip";
 
 export default function AdminUsersScreen({ navigation, route }) {
   const { colors: c, shadowPremium } = useTheme();
-  const styles = useMemo(() => createAdminUsersStyles(c, shadowPremium), [c, shadowPremium]);
+  const compactAdmin = useAdminCompactLayout();
+  const styles = useMemo(
+    () => createAdminUsersStyles(c, shadowPremium, compactAdmin),
+    [c, shadowPremium, compactAdmin]
+  );
     const { token, user } = useAuth();
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
@@ -90,7 +106,7 @@ export default function AdminUsersScreen({ navigation, route }) {
 
   if (user && !user.isAdmin) {
     return (
-      <CustomerScreenShell style={styles.screen}>
+      <AdminScreenShell style={styles.screen}>
         <KankregScrollPage
         scrollVariant="inner"
         showFooter={false}
@@ -101,11 +117,11 @@ export default function AdminUsersScreen({ navigation, route }) {
             <View style={styles.panel}>
               <PremiumErrorBanner
                 severity="warning"
-                title="Admin access required"
+                title={ADMIN_GATE.title}
                 message="This account does not have admin privileges."
               />
               <PremiumButton
-                label="Back to home"
+                label={ADMIN_GATE.backHome}
                 iconLeft="home-outline"
                 variant="primary"
                 size="md"
@@ -115,7 +131,7 @@ export default function AdminUsersScreen({ navigation, route }) {
             </View>
           </SectionReveal>
         </KankregScrollPage>
-      </CustomerScreenShell>
+      </AdminScreenShell>
     );
   }
 
@@ -195,7 +211,7 @@ export default function AdminUsersScreen({ navigation, route }) {
   };
 
   return (
-    <CustomerScreenShell style={styles.screen}>
+    <AdminScreenShell style={styles.screen}>
       <KankregScrollPage
         scrollVariant="admin"
         showFooter={false}
@@ -205,8 +221,8 @@ export default function AdminUsersScreen({ navigation, route }) {
         <KankregAdminShell
           navigation={navigation}
           route={route}
-          title="Manage Users"
-          subtitle="Accounts, roles, and access"
+          title={ADMIN_SCREEN_COPY.users.title}
+          subtitle={ADMIN_SCREEN_COPY.users.subtitle}
         >
         <View style={styles.panel}>
           <SectionReveal preset="fade-up" delay={0}>
@@ -282,10 +298,16 @@ export default function AdminUsersScreen({ navigation, route }) {
               <PremiumCard key={item._id} padding="md" style={styles.cardWrap}>
                 <View style={styles.cardTopRow}>
                   <View style={styles.userMain}>
-                    <Text style={[styles.cardTitle, { color: c.textPrimary }]}>{item.name || "Unnamed User"}</Text>
-                    <Text style={[styles.cardMeta, { color: c.textSecondary }]}>{item.email}</Text>
+                    <Text style={[styles.cardTitle, { color: c.textPrimary }]} numberOfLines={1}>
+                      {item.name || "Unnamed User"}
+                    </Text>
+                    <Text style={[styles.cardMeta, { color: c.textSecondary }]} numberOfLines={2}>
+                      {item.email}
+                    </Text>
                   </View>
-                  <RoleBadges isAdmin={Boolean(item.isAdmin)} isDeliveryPartner={Boolean(item.isDeliveryPartner)} />
+                  <View style={styles.roleBadgeRow}>
+                    <RoleBadges isAdmin={Boolean(item.isAdmin)} isDeliveryPartner={Boolean(item.isDeliveryPartner)} />
+                  </View>
                 </View>
                 {item.phone ? <Text style={[styles.cardMeta, { color: c.textSecondary }]}>Phone: {item.phone}</Text> : null}
                 <Text style={[styles.cardMeta, { color: c.textSecondary }]}>
@@ -399,11 +421,11 @@ export default function AdminUsersScreen({ navigation, route }) {
         </View>
         </KankregAdminShell>
 </KankregScrollPage>
-    </CustomerScreenShell>
+    </AdminScreenShell>
   );
 }
 
-function createAdminUsersStyles(c, shadowPremium) {
+function createAdminUsersStyles(c, shadowPremium, compact = false) {
   return StyleSheet.create({
   screen: {
     flex: 1,
@@ -417,14 +439,9 @@ function createAdminUsersStyles(c, shadowPremium) {
     alignSelf: "flex-start"},
   bannerSpacer: {
     marginBottom: spacing.sm},
-  statsGrid: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-    flexWrap: "wrap"},
+  statsGrid: adminStatsGridStyle(compact),
   metricCard: {
-    flex: 1,
-    minWidth: 90,
+    ...adminMetricCardStyle(compact),
     borderWidth: 1,
     borderColor: c.border,
     borderRadius: radius.md,
@@ -440,14 +457,10 @@ function createAdminUsersStyles(c, shadowPremium) {
     fontSize: 11,
     fontWeight: "700"},
   actionsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "flex-end",
-    gap: spacing.sm,
+    ...adminToolbarRow,
     marginBottom: spacing.sm},
   searchInputWrap: {
-    flex: 1,
-    minWidth: 0},
+    ...adminToolbarPrimary},
   filtersRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -458,19 +471,9 @@ function createAdminUsersStyles(c, shadowPremium) {
     paddingBottom: spacing.xl},
   cardWrap: {
     width: "100%"},
-  cardTopRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: spacing.sm},
-  userMain: {
-    flex: 1},
-  roleBadgeRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    justifyContent: "flex-end",
-    maxWidth: "48%"},
+  cardTopRow: adminRecordHeaderRowStyle(compact),
+  userMain: adminRecordMainColStyle(compact),
+  roleBadgeRow: adminBadgeClusterStyle(compact),
   cardTitle: {
     fontWeight: "700"},
   cardMeta: {
@@ -478,10 +481,8 @@ function createAdminUsersStyles(c, shadowPremium) {
     fontSize: 12},
   actionsWrap: {
     marginTop: spacing.sm,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-    alignItems: "center"},
+    ...adminCardActionsStyle(compact),
+  },
   detailsWrap: {
     marginTop: spacing.sm,
     paddingTop: spacing.sm,

@@ -6,6 +6,7 @@ import AuthGateShell from "../components/AuthGateShell";
 import KankregSiteHeader from "../components/kankreg/KankregSiteHeader";
 import PageTransition from "../components/motion/PageTransition";
 import KankregHomeScreen from "../screens/KankregHomeScreen";
+import FindLocationScreen from "../screens/FindLocationScreen";
 import ShopScreen from "../screens/ShopScreen";
 import CheckoutScreen from "../screens/CheckoutScreen";
 import ProductScreen from "../screens/ProductScreen";
@@ -15,6 +16,7 @@ import RegisterScreen from "../screens/RegisterScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import EditProfileScreen from "../screens/EditProfileScreen";
 import MyOrdersScreen from "../screens/MyOrdersScreen";
+import OrderConfirmedScreen from "../screens/OrderConfirmedScreen";
 import NotificationsScreen from "../screens/NotificationsScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import RedeemRewardsScreen from "../screens/RedeemRewardsScreen";
@@ -34,6 +36,7 @@ import AdminSupportScreen from "../screens/admin/AdminSupportScreen";
 import AdminHomeViewScreen from "../screens/admin/AdminHomeViewScreen";
 import AdminInventoryScreen from "../screens/admin/AdminInventoryScreen";
 import { useAuth } from "../context/AuthContext";
+import { DeliveryLocationProvider } from "../context/DeliveryLocationContext";
 import { useTheme } from "../context/ThemeContext";
 
 const Stack = createNativeStackNavigator();
@@ -94,6 +97,7 @@ function withRoleGuard(Component, roleCheck) {
 
 const WrappedLogin = withPageTransition(LoginScreen);
 const WrappedRegister = withPageTransition(RegisterScreen);
+const WrappedFindLocation = withPageTransition(FindLocationScreen);
 const WrappedHome = withPageTransition(KankregHomeScreen);
 const WrappedShop = withPageTransition(ShopScreen);
 const WrappedProduct = withPageTransition(ProductScreen);
@@ -103,6 +107,7 @@ const ProtectedCheckout = withAuthGuard(CheckoutScreen);
 const ProtectedProfile = withAuthGuard(ProfileScreen);
 const ProtectedEditProfile = withAuthGuard(EditProfileScreen);
 const ProtectedMyOrders = withAuthGuard(MyOrdersScreen);
+const ProtectedOrderConfirmed = withAuthGuard(OrderConfirmedScreen);
 const ProtectedNotifications = withAuthGuard(NotificationsScreen);
 const ProtectedSettings = withAuthGuard(SettingsScreen);
 const ProtectedRedeemRewards = withAuthGuard(RedeemRewardsScreen);
@@ -145,13 +150,24 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
         {isAuthLoading ? (
           <AppStartupScreen colors={colors} isDark={isDark} useAppFonts footnote="Syncing your session…" />
         ) : (
-    <Stack.Navigator initialRouteName="Home" screenOptions={screenOptions}>
+    <DeliveryLocationProvider>
+    <Stack.Navigator
+      initialRouteName={Platform.OS !== "web" ? "FindLocation" : "Home"}
+      screenOptions={screenOptions}
+    >
       <Stack.Group screenOptions={{ presentation: "card" }}>
         <Stack.Screen name="Login" component={WrappedLogin} />
         <Stack.Screen name="Register" component={WrappedRegister} />
       </Stack.Group>
 
       <Stack.Group>
+        {Platform.OS !== "web" && (
+          <Stack.Screen
+            name="FindLocation"
+            component={WrappedFindLocation}
+            options={{ animation: "fade", gestureEnabled: false }}
+          />
+        )}
         <Stack.Screen name="Home" component={WrappedHome} />
         <Stack.Screen name="Shop" component={WrappedShop} />
         <Stack.Screen
@@ -175,6 +191,15 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
         <Stack.Screen name="Profile" component={ProtectedProfile} />
         <Stack.Screen name="EditProfile" component={ProtectedEditProfile} />
         <Stack.Screen name="MyOrders" component={ProtectedMyOrders} />
+        <Stack.Screen
+          name="OrderConfirmed"
+          component={ProtectedOrderConfirmed}
+          options={
+            Platform.OS === "web"
+              ? undefined
+              : { animation: "fade_from_bottom", gestureEnabled: false }
+          }
+        />
         <Stack.Screen name="Notifications" component={ProtectedNotifications} />
         <Stack.Screen name="Settings" component={ProtectedSettings} />
         <Stack.Screen name="RedeemRewards" component={ProtectedRedeemRewards} />
@@ -201,6 +226,7 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
         <Stack.Screen name="AdminHomeView" component={ProtectedAdminHomeView} />
       </Stack.Group>
     </Stack.Navigator>
+    </DeliveryLocationProvider>
         )}
       </View>
     </View>

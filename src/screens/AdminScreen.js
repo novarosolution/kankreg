@@ -45,6 +45,7 @@ import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
 import PremiumInput from "../components/ui/PremiumInput";
 import PremiumEmptyState from "../components/ui/PremiumEmptyState";
 import PremiumButton from "../components/ui/PremiumButton";
+import { navigateCustomerRoute } from "../navigation/customerNavigate";
 
 const TABS = {
   products: "Products",
@@ -127,7 +128,7 @@ export default function AdminScreen({ navigation }) {
 
   useEffect(() => {
     if (!isAdmin) {
-      navigation.navigate("Home");
+      navigateCustomerRoute(navigation, "Home");
       return;
     }
 
@@ -318,7 +319,7 @@ export default function AdminScreen({ navigation }) {
               iconLeft="home-outline"
               variant="subtle"
               size="md"
-              onPress={() => navigation.navigate("Home")}
+              onPress={() => navigateCustomerRoute(navigation, "Home")}
             />
           </View>
         </View>
@@ -338,7 +339,7 @@ export default function AdminScreen({ navigation }) {
           <View style={styles.heroGoldLine} />
           <TouchableOpacity
             style={styles.backPill}
-            onPress={() => (navigation.canGoBack?.() ? navigation.goBack() : navigation.navigate("Home"))}
+            onPress={() => (navigation.canGoBack?.() ? navigation.goBack() : navigateCustomerRoute(navigation, "Home"))}
             hitSlop={12}
           >
             <Ionicons name="chevron-back" size={22} color={isDark ? c.textPrimary : ALCHEMY.brown} />

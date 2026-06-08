@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
 import { KeyboardAvoidingView, Platform, StyleSheet, Switch, Text, View } from "react-native";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
+import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -17,6 +18,7 @@ import PremiumInput from "../../components/ui/PremiumInput";
 import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumCard from "../../components/ui/PremiumCard";
 import PremiumChip from "../../components/ui/PremiumChip";
+import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
 export default function AdminCouponsScreen({ navigation, route }) {
   const { colors: c, shadowPremium } = useTheme();
@@ -124,7 +126,7 @@ export default function AdminCouponsScreen({ navigation, route }) {
 
   if (user && !user.isAdmin) {
     return (
-      <CustomerScreenShell style={styles.screen}>
+      <AdminScreenShell style={styles.screen}>
         <KankregScrollPage
         scrollVariant="inner"
         showFooter={false}
@@ -135,24 +137,24 @@ export default function AdminCouponsScreen({ navigation, route }) {
             <View style={styles.panel}>
               <PremiumErrorBanner
                 severity="warning"
-                title="Admin access required"
+                title={ADMIN_GATE.title}
                 message="Sign in with an admin account to manage coupons."
               />
               <PremiumButton
-                label="Back to Home"
+                label={ADMIN_GATE.backHome}
                 variant="primary"
-                onPress={() => navigation.navigate("Home")}
+                onPress={() => navigateCustomerRoute(navigation, "Home")}
                 style={styles.gateCta}
               />
             </View>
           </SectionReveal>
         </KankregScrollPage>
-      </CustomerScreenShell>
+      </AdminScreenShell>
     );
   }
 
   return (
-    <CustomerScreenShell style={styles.screen}>
+    <AdminScreenShell style={styles.screen}>
       <KeyboardAvoidingView style={customerScrollFill} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <KankregScrollPage
         scrollVariant="admin"
@@ -161,7 +163,7 @@ export default function AdminCouponsScreen({ navigation, route }) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <KankregAdminShell navigation={navigation} route={route} title="Manage Coupons" subtitle="Checkout discounts">
+        <KankregAdminShell navigation={navigation} route={route} title={ADMIN_SCREEN_COPY.coupons.title} subtitle={ADMIN_SCREEN_COPY.coupons.subtitle}>
         <View style={styles.panel}>
           <SectionReveal preset="fade-up" delay={0}>
           {error ? (
@@ -365,7 +367,7 @@ export default function AdminCouponsScreen({ navigation, route }) {
         </KankregAdminShell>
 </KankregScrollPage>
       </KeyboardAvoidingView>
-    </CustomerScreenShell>
+    </AdminScreenShell>
   );
 }
 

@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>kankreg — App Design Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..600&family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#19140f;--ink-soft:#574d42;--ink-faint:#938778;
+  --paper:#f5efe4;--paper-2:#ece3d2;--card:#fffdf8;--line:#e3d8c4;
+  --gold:#a9772e;--gold-bright:#d6ad5b;--gold-deep:#8a5f22;
+  --green:#3c6248;--danger:#a8442f;
+  --display:"Fraunces",Georgia,serif;--body:"Hanken Grotesk",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:#d9d0c0;
+  background-image:radial-gradient(circle at 1px 1px,rgba(25,20,15,.10) 1px,transparent 0);background-size:26px 26px;
+  color:var(--ink);-webkit-font-smoothing:antialiased;padding:40px clamp(16px,4vw,56px) 80px}
+.serif{font-family:var(--display)}
+
+/* board header */
+.board-head{max-width:1400px;margin:0 auto 38px}
+.board-head .kick{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--gold-deep);font-weight:700}
+.board-head h1{font-family:var(--display);font-weight:400;font-size:clamp(30px,4vw,48px);margin:8px 0;letter-spacing:-.02em}
+.board-head p{color:#6b6052;max-width:60ch;font-size:14.5px}
+.legend{display:flex;gap:22px;flex-wrap:wrap;margin-top:20px;font-size:12px;color:#6b6052}
+.legend b{color:var(--ink)}
+.sw{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:-2px;margin-right:6px;border:1px solid rgba(0,0,0,.1)}
+
+/* canvas of frames */
+.canvas{max-width:1400px;margin:0 auto;display:flex;flex-wrap:wrap;gap:54px 44px;align-items:flex-start;justify-content:center}
+.frame-wrap{display:flex;flex-direction:column;gap:12px}
+.frame-label{font-size:12px;color:#5c5245;font-weight:600;letter-spacing:.02em;display:flex;align-items:center;gap:8px}
+.frame-label .num{font-family:var(--display);color:var(--gold-deep);font-size:13px}
+
+/* phone */
+.phone{width:300px;height:640px;background:#0c0a08;border-radius:42px;padding:9px;box-shadow:0 2px 4px rgba(0,0,0,.2),0 40px 80px -30px rgba(25,20,15,.55);position:relative}
+.screen{width:100%;height:100%;background:var(--paper);border-radius:34px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.notch{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:96px;height:24px;background:#0c0a08;border-radius:0 0 16px 16px;z-index:40}
+
+/* status bar */
+.sb{height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 22px 0 24px;font-size:12px;font-weight:600;flex:0 0 auto;z-index:30}
+.sb .ic{display:flex;gap:5px;align-items:center}
+.sb svg{width:15px;height:11px}
+.sb.light,.sb.light svg{color:#fff;fill:#fff}
+.sb.dark,.sb.dark svg{color:var(--ink);fill:var(--ink)}
+
+/* tab bar */
+.tabbar{flex:0 0 auto;height:66px;background:rgba(255,253,248,.96);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;padding-bottom:6px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink-faint);font-size:9px;font-weight:600}
+.tab svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8}
+.tab.on{color:var(--gold-deep)}
+.tab .badge{position:absolute;margin:-26px 0 0 14px;background:var(--gold);color:#fff;font-size:8px;font-weight:700;min-width:14px;height:14px;border-radius:7px;display:grid;place-items:center}
+
+.body{flex:1;overflow:hidden;position:relative}
+.scroll{position:absolute;inset:0;overflow:hidden;padding:0 16px}
+.eyebrow{font-size:9px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold);font-weight:700}
+.illo{width:100%;height:100%;overflow:visible}
+.grain{position:absolute;inset:0;opacity:.3;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><filter id='n'><feTurbulence baseFrequency='.9'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
+
+.pill-btn{display:flex;align-items:center;justify-content:center;gap:7px;border-radius:999px;font-weight:600;font-size:13px}
+.b-ink{background:var(--ink);color:var(--paper)}
+.b-gold{background:linear-gradient(135deg,#cba24e,#9c6b27);color:#fff}
+.b-ghost{border:1px solid var(--line);color:var(--ink);background:var(--card)}
+
+/* product card */
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.ptile{aspect-ratio:1;position:relative;display:grid;place-items:center}
+.ptile .pad{position:absolute;inset:0;display:grid;place-items:center;padding:20%;color:#5a4326}
+.ptile .floor{position:absolute;left:20%;right:20%;bottom:12%;height:9px;border-radius:50%;background:radial-gradient(closest-side,rgba(25,20,15,.2),transparent 80%);filter:blur(2px)}
+.bg-1{background:radial-gradient(120% 100% at 32% 18%,#f3e7cc,#e3cfa6 70%)}
+.bg-2{background:radial-gradient(120% 100% at 32% 18%,#e7eee6,#cdddcf 70%)}
+.bg-3{background:radial-gradient(120% 100% at 32% 18%,#f1e3d6,#dcc3ad 70%)}
+.bg-6{background:radial-gradient(120% 100% at 32% 18%,#f4e6d2,#e0b98f 70%)}
+.bg-5{background:radial-gradient(120% 100% at 32% 18%,#e8e9ee,#cdd2dc 70%)}
+
+.field{margin-bottom:12px}
+.field label{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);display:block;margin-bottom:5px}
+.field .inp{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:11px 13px;font-size:12.5px;color:var(--ink-soft)}
+.field .inp.focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(169,119,46,.12)}
+
+.dots{display:flex;gap:6px;justify-content:center}
+.dots i{width:6px;height:6px;border-radius:50%;background:var(--line)}
+.dots i.on{width:20px;border-radius:3px;background:var(--gold)}
+
+.tag{display:inline-flex;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px}
+.tag.gold{background:rgba(169,119,46,.14);color:var(--gold-deep)}
+.tag.green{background:rgba(60,98,72,.14);color:var(--green)}
+
+.spec{max-width:1400px;margin:64px auto 0;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:30px;box-shadow:0 30px 70px -40px rgba(25,20,15,.4)}
+.spec h2{font-family:var(--display);font-weight:400;font-size:26px;margin-bottom:18px}
+.spec .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:22px}
+.spec h4{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:12px}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.chipc{font-size:11px;color:var(--ink-soft);display:flex;align-items:center;gap:7px;width:100%}
+.chipc .sq{width:24px;height:24px;border-radius:6px;border:1px solid rgba(0,0,0,.08)}
+.spec p,.spec li{font-size:13px;color:var(--ink-soft);line-height:1.7}
+.spec ul{list-style:none}
+.spec li::before{content:"·";color:var(--gold);font-weight:700;margin-right:8px}
+</style>
+</head>
+<body>
+
+<div class="board-head">
+  <div class="kick">kankreg · Mobile App · iOS / Android · 16 screens</div>
+  <h1 class="serif">Premium app design — full flow</h1>
+  <p>A native-feeling, editorial e-commerce app: splash, onboarding, auth, a tab-bar home, shop + filter sheet, product, cart, checkout, order success, live tracking, rewards, account, notifications and wishlist. Warm cream + gold, serif display, soft depth — designed to feel like a boutique in your pocket.</p>
+  <div class="legend">
+    <span><span class="sw" style="background:#19140f"></span><b>Ink</b> #19140F</span>
+    <span><span class="sw" style="background:#f5efe4"></span><b>Paper</b> #F5EFE4</span>
+    <span><span class="sw" style="background:#a9772e"></span><b>Gold</b> #A9772E</span>
+    <span><span class="sw" style="background:#d6ad5b"></span><b>Gold bright</b> #D6AD5B</span>
+    <span><span class="sw" style="background:#3c6248"></span><b>Green</b> #3C6248</span>
+    <span style="font-family:var(--display)">Fraunces · serif display</span>
+    <span>Hanken Grotesk · body</span>
+  </div>
+</div>
+
+<div class="canvas" id="canvas"></div>
+
+<div class="spec">
+  <h2 class="serif">Design system at a glance</h2>
+  <div class="grid">
+    <div>
+      <h4>Color</h4>
+      <div class="swatches">
+        <div class="chipc"><span class="sq" style="background:#19140f"></span> Ink · text & primary</div>
+        <div class="chipc"><span class="sq" style="background:#574d42"></span> Ink soft · secondary</div>
+        <div class="chipc"><span class="sq" style="background:#f5efe4"></span> Paper · app background</div>
+        <div class="chipc"><span class="sq" style="background:#fffdf8"></span> Card · surfaces</div>
+        <div class="chipc"><span class="sq" style="background:#a9772e"></span> Gold · accent & CTAs</div>
+        <div class="chipc"><span class="sq" style="background:#3c6248"></span> Green · success/delivered</div>
+      </div>
+    </div>
+    <div>
+      <h4>Type scale</h4>
+      <p style="font-family:var(--display);font-size:26px;line-height:1.1">Display 26–34<br><span style="font-size:18px">Title 18–20</span></p>
+      <p style="margin-top:8px">Body 13–15 · Hanken Grotesk<br>Eyebrow 9–11 · 0.26em · uppercase<br>Price · serif, 600 weight</p>
+    </div>
+    <div>
+      <h4>Foundations</h4>
+      <ul>
+        <li>Radii: 11–18 (cards), 999 (pills)</li>
+        <li>Soft layered shadows; gold hairlines</li>
+        <li>Tab bar nav · sticky bottom CTAs</li>
+        <li>Safe-area aware · 44pt+ targets</li>
+        <li>Pressed states + haptics, not hover</li>
+        <li>Subtle rise/fade motion (reduced-motion safe)</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Screens shown</h4>
+      <ul>
+        <li>01 Splash</li><li>02 Onboarding</li><li>03 Sign in</li><li>04 Create account</li>
+        <li>05 Home</li><li>06 Shop</li><li>07 Filter sheet</li><li>08 Product</li>
+        <li>09 Cart</li><li>10 Checkout</li><li>11 Order success</li><li>12 Tracking</li>
+        <li>13 Rewards</li><li>14 Account</li><li>15 Notifications</li><li>16 Wishlist</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== shared bits ===== */
+const sbDark=`<div class="sb dark"><span>9:41</span><span class="ic">
+<svg viewBox="0 0 18 12"><rect x="0" y="6" width="3" height="6" rx="1"/><rect x="4" y="4" width="3" height="8" rx="1"/><rect x="8" y="2" width="3" height="10" rx="1"/><rect x="12" y="0" width="3" height="12" rx="1"/></svg>
+<svg viewBox="0 0 18 12"><path d="M9 3C6 3 3.5 4 2 5.5l1.4 1.4C4.6 5.7 6.7 5 9 5s4.4.7 5.6 1.9L16 5.5C14.5 4 12 3 9 3zm0 4c-1.4 0-2.7.5-3.6 1.4L9 12l3.6-3.6C11.7 7.5 10.4 7 9 7z"/></svg>
+<svg viewBox="0 0 24 12"><rect x="0.5" y="0.5" width="20" height="11" rx="3" fill="none" stroke="currentColor"/><rect x="2" y="2" width="15" height="8" rx="1.5"/><rect x="21" y="4" width="2" height="4" rx="1"/></svg>
+</span></div>`;
+const sbLight=sbDark.replace('sb dark','sb light');
+
+function tab(active){const items=[
+  ['Home','<path d="M3 11 12 3l9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>'],
+  ['Shop','<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>'],
+  ['Cart','<path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6 5 3H2"/>'],
+  ['Rewards','<path d="M12 3l2.6 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.4-.5z"/>'],
+  ['Account','<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>'],
+];
+  return `<div class="tabbar">`+items.map((it,i)=>`<div class="tab ${i===active?'on':''}">${i===2?'<span class="badge">3</span>':''}<svg viewBox="0 0 24 24">${it[1]}</svg>${it[0]}</div>`).join('')+`</div>`;
+}
+
+const illos={
+  coffee:`<svg class="illo" viewBox="0 0 200 200"><g stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M70 70h60l-12 34a14 14 0 0 1-13 9H95a14 14 0 0 1-13-9z"/><path d="M82 70c0-16 8-26 18-26s18 10 18 26"/><path d="M100 44V30"/><path d="M70 122h60v34a10 10 0 0 1-10 10H80a10 10 0 0 1-10-10z"/><path d="M130 132h12a10 10 0 0 1 0 20h-8"/></g></svg>`,
+  candle:`<svg class="illo" viewBox="0 0 200 200"><g stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="66" y="92" width="68" height="58" rx="10"/><path d="M66 110h68"/><path d="M100 92V78"/><path d="M100 78c-8-6-8-16 0-26 8 10 8 20 0 26z"/></g></svg>`,
+  diffuser:`<svg class="illo" viewBox="0 0 200 200"><g stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M74 96a26 30 0 1 0 52 0c0-18-12-26-12-40h-28c0 14-12 22-12 40z"/><path d="M86 56h28"/><path d="M100 56V40"/></g></svg>`,
+  mug:`<svg class="illo" viewBox="0 0 200 200"><g stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="58" y="78" width="48" height="56" rx="10"/><path d="M106 90h12a14 14 0 0 1 0 28h-6"/></g></svg>`,
+  runner:`<svg class="illo" viewBox="0 0 200 200"><g stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M40 90c14-8 28-8 42 0s28 8 42 0 28-8 36-3"/><path d="M40 114c14-8 28-8 42 0s28 8 42 0 28-8 36-3"/></g></svg>`,
+};
+
+function frame(num,label,inner){return `<div class="frame-wrap">
+  <div class="frame-label"><span class="num">${num}</span> ${label}</div>
+  <div class="phone"><div class="notch"></div><div class="screen">${inner}</div></div>
+</div>`;}
+
+/* ===== 01 SPLASH ===== */
+const splash=`
+<div style="position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 20%,#ead9b2,#b6985c 52%,#2a241e 130%)"></div>
+<div class="grain"></div>
+${sbLight}
+<div class="body" style="display:grid;place-items:center;color:#fff;z-index:5">
+  <div style="text-align:center">
+    <div style="width:13px;height:13px;border-radius:50%;background:#fff;margin:0 auto 18px;box-shadow:0 0 0 7px rgba(255,255,255,.18)"></div>
+    <div class="serif" style="font-size:42px;font-weight:600;letter-spacing:.02em">kankreg</div>
+    <div style="font-size:10px;letter-spacing:.4em;text-transform:uppercase;opacity:.8;margin-top:10px">Goods, beautifully delivered</div>
+  </div>
+</div>
+<div style="position:absolute;bottom:40px;left:0;right:0;text-align:center;color:rgba(255,255,255,.7);font-size:10px;letter-spacing:.2em;z-index:5">EST. 2025 · CRAFTED IN INDIA</div>`;
+
+/* ===== 02 ONBOARDING ===== */
+const onboard=`${sbDark}
+<div class="body">
+  <div style="height:54%;margin:6px 16px 0;border-radius:24px;position:relative;overflow:hidden;background:radial-gradient(120% 100% at 30% 12%,#f1e4c6,#d9c096 48%,#2c2620 135%)">
+    <div class="grain"></div>
+    <div style="position:absolute;inset:0;display:grid;place-items:center;padding:22%;color:#fff;opacity:.92">${illos.coffee}</div>
+    <div style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,.9);border-radius:10px;padding:7px 10px"><div style="font-size:8px;color:var(--ink-faint)">From</div><div class="serif" style="font-size:15px;font-weight:600">₹2,450</div></div>
+  </div>
+  <div style="padding:26px 24px 0;text-align:center">
+    <div class="dots" style="margin-bottom:18px"><i class="on"></i><i></i><i></i></div>
+    <div class="serif" style="font-size:27px;font-weight:380;line-height:1.08;letter-spacing:-.01em">Everyday goods,<br>made <em style="color:var(--gold)">extraordinary</em>.</div>
+    <p style="font-size:12.5px;color:var(--ink-soft);margin:12px auto 0;max-width:30ch">Design-led home & lifestyle pieces, delivered with live tracking and rewarded every order.</p>
+  </div>
+</div>
+<div style="padding:0 24px 26px">
+  <div class="pill-btn b-gold" style="padding:14px;margin-bottom:12px">Get started</div>
+  <div style="text-align:center;font-size:12px;color:var(--ink-soft)">Already a member? <b style="color:var(--gold-deep)">Sign in</b></div>
+</div>`;
+
+/* ===== 03 SIGN IN ===== */
+function authScreen(mode){
+  const isLogin=mode==='login';
+  return `
+  <div style="position:absolute;top:0;left:0;right:0;height:40%;background:radial-gradient(120% 100% at 25% 0%,#ead9b2,#b6985c 55%,#2a241e 130%)"></div>
+  <div class="grain" style="height:40%"></div>
+  ${sbLight}
+  <div class="body">
+    <div style="height:30%;display:grid;place-items:center;color:#fff;opacity:.9;padding:14% 30%">${isLogin?illos.candle:illos.diffuser}</div>
+    <div style="background:var(--paper);border-radius:26px 26px 0 0;margin-top:-14px;padding:24px 22px;position:relative;z-index:5;min-height:64%">
+      <div class="eyebrow">${isLogin?'Welcome back':'Join kankreg'}</div>
+      <div class="serif" style="font-size:26px;font-weight:400;margin:4px 0 4px">${isLogin?'Sign in':'Create account'}</div>
+      <p style="font-size:11.5px;color:var(--ink-faint);margin-bottom:16px">${isLogin?'Your orders, rewards and saved items.':'100 bonus points on signup.'}</p>
+      ${!isLogin?`<div class="field"><label>Full name</label><div class="inp">Ananya Rao</div></div>`:''}
+      <div class="field"><label>Email</label><div class="inp focus">ananya.rao@email.com</div></div>
+      <div class="field"><label>Password</label><div class="inp">••••••••</div></div>
+      ${isLogin?`<div style="text-align:right;font-size:11px;color:var(--gold-deep);margin:-4px 0 14px;font-weight:600">Forgot password?</div>`:'<div style="height:8px"></div>'}
+      <div class="pill-btn b-ink" style="padding:13px;margin-bottom:14px">${isLogin?'Sign in':'Create account'} →</div>
+      <div style="text-align:center;font-size:10px;color:var(--ink-faint);margin-bottom:12px">or continue with</div>
+      <div style="display:flex;gap:10px"><div class="pill-btn b-ghost" style="flex:1;padding:11px">Google</div><div class="pill-btn b-ghost" style="flex:1;padding:11px">Apple</div></div>
+    </div>
+  </div>`;
+}
+
+/* ===== 05 HOME ===== */
+function homeCard(bg,illo,cat,name,price,was){return `
+  <div class="pcard">
+    <div class="ptile ${bg}"><div class="pad">${illos[illo]}</div><div class="floor"></div></div>
+    <div style="padding:9px 10px 11px">
+      <div style="font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:700">${cat}</div>
+      <div class="serif" style="font-size:13px;font-weight:500;margin:2px 0 3px;line-height:1.1">${name}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="serif" style="font-size:14px;font-weight:600">${price}${was?`<span style="font-family:var(--body);font-size:10px;color:var(--ink-faint);text-decoration:line-through;margin-left:4px">${was}</span>`:''}</div>
+        <div style="width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:15px">+</div>
+      </div>
+    </div>
+  </div>`;}
+const home=`${sbDark}
+<div class="body" style="display:flex;flex-direction:column">
+  <div style="padding:4px 16px 10px;display:flex;align-items:center;gap:10px;flex:0 0 auto">
+    <div style="flex:1"><div style="font-size:9px;color:var(--ink-faint);letter-spacing:.06em">DELIVER TO</div><div style="font-size:13px;font-weight:600">Mumbai 400020 ▾</div></div>
+    <div style="width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--card);display:grid;place-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>
+    <div style="width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;position:relative"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg><span style="position:absolute;top:5px;right:6px;width:7px;height:7px;background:var(--gold);border-radius:50%;border:1.5px solid var(--card)"></span></div>
+  </div>
+  <div style="flex:1;overflow:hidden;padding:0 16px">
+    <div style="border-radius:20px;overflow:hidden;position:relative;height:150px;background:radial-gradient(120% 100% at 70% 10%,#f0e3c5,#cdb079 55%,#2c2620 140%)">
+      <div class="grain"></div>
+      <div style="position:absolute;right:-6px;top:8px;bottom:8px;width:46%;display:grid;place-items:center;color:#fff;opacity:.9">${illos.coffee}</div>
+      <div style="position:absolute;left:18px;top:22px;color:#fff;max-width:56%">
+        <div style="font-size:8px;letter-spacing:.24em;text-transform:uppercase;opacity:.85">New season</div>
+        <div class="serif" style="font-size:21px;font-weight:400;line-height:1.05;margin:6px 0 10px">The morning ritual</div>
+        <div style="display:inline-flex;background:#fff;color:var(--ink);font-size:10px;font-weight:700;padding:7px 13px;border-radius:999px">Shop now →</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin:16px 2px 10px">
+      <div class="serif" style="font-size:16px;font-weight:500">Categories</div><div style="font-size:10px;color:var(--gold-deep);font-weight:600">See all</div>
+    </div>
+    <div style="display:flex;gap:9px;overflow:hidden">
+      ${[['Home','bg-1','coffee'],['Wellness','bg-2','diffuser'],['Lifestyle','bg-3','runner']].map(c=>`
+        <div style="flex:0 0 78px;text-align:center"><div class="ptile ${c[1]}" style="border-radius:14px;border:1px solid var(--line);height:78px;width:78px"><div class="pad" style="padding:22%">${illos[c[2]]}</div></div><div style="font-size:9.5px;margin-top:6px;font-weight:600">${c[0]}</div></div>`).join('')}
+    </div>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin:16px 2px 10px">
+      <div class="serif" style="font-size:16px;font-weight:500">Bestsellers</div><div style="font-size:10px;color:var(--gold-deep);font-weight:600">See all</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
+      ${homeCard('bg-1','coffee','Kitchen','Pour-Over Set','₹2,450','₹3,200')}
+      ${homeCard('bg-6','candle','Wellness','Soy Candle','₹780')}
+    </div>
+  </div>
+</div>
+${tab(0)}`;
+
+/* ===== 06 PRODUCT ===== */
+const product=`
+<div style="position:absolute;top:0;left:0;right:0;height:46%;" class="bg-1"></div>
+${sbDark}
+<div class="body">
+  <div style="display:flex;justify-content:space-between;padding:2px 18px;position:relative;z-index:6">
+    <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.85);display:grid;place-items:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg></div>
+    <div style="display:flex;gap:8px"><div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.85);display:grid;place-items:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-9.5-9C1 8.5 3 5 6.5 5 9 5 12 8 12 8s3-3 5.5-3C21 5 23 8.5 21.5 12 19 16.5 12 21 12 21z"/></svg></div></div>
+  </div>
+  <div style="height:32%;display:grid;place-items:center;color:#5a4326;padding:0 26%;position:relative;z-index:2">${illos.coffee}<div style="position:absolute;left:24%;right:24%;bottom:6px;height:10px;border-radius:50%;background:radial-gradient(closest-side,rgba(25,20,15,.2),transparent 80%);filter:blur(2px)"></div></div>
+  <div style="background:var(--paper);border-radius:26px 26px 0 0;padding:22px 20px;position:relative;z-index:5;min-height:54%">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><span class="tag gold">Bestseller</span><div class="serif" style="font-size:21px;font-weight:500;margin-top:8px;line-height:1.05">Brass Pour-Over<br>Coffee Set</div></div>
+      <div style="text-align:right"><div style="color:var(--gold-bright);font-size:11px;letter-spacing:1px">★★★★★</div><div style="font-size:10px;color:var(--ink-faint);margin-top:2px">4.9 · 214</div></div>
+    </div>
+    <p style="font-size:11.5px;color:var(--ink-soft);margin:12px 0 16px;line-height:1.55">Hand-finished brass dripper with a borosilicate carafe. Slow-bloom geometry for a cleaner, sweeter cup.</p>
+    <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px">Finish</div>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <div style="padding:8px 14px;border-radius:9px;background:var(--ink);color:#fff;font-size:11px">Brushed</div>
+      <div style="padding:8px 14px;border-radius:9px;border:1px solid var(--line);font-size:11px">Polished</div>
+      <div style="padding:8px 14px;border-radius:9px;border:1px solid var(--line);font-size:11px">Matte</div>
+    </div>
+  </div>
+</div>
+<div style="flex:0 0 auto;background:rgba(255,253,248,.97);border-top:1px solid var(--line);padding:12px 18px 18px;display:flex;align-items:center;gap:12px">
+  <div><div style="font-size:9px;color:var(--ink-faint)">Total</div><div class="serif" style="font-size:20px;font-weight:600">₹2,450</div></div>
+  <div class="pill-btn b-gold" style="flex:1;padding:13px">Add to cart</div>
+</div>`;
+
+/* ===== 07 CART ===== */
+function cartRow(bg,illo,name,opt,price){return `
+  <div style="display:flex;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;margin-bottom:10px;align-items:center">
+    <div class="ptile ${bg}" style="width:60px;height:60px;border-radius:10px;flex:0 0 auto"><div class="pad" style="padding:16%">${illos[illo]}</div></div>
+    <div style="flex:1"><div class="serif" style="font-size:13px;font-weight:500">${name}</div><div style="font-size:10px;color:var(--ink-faint);margin:2px 0 6px">${opt}</div>
+      <div style="display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px"><div style="width:24px;height:24px;display:grid;place-items:center;color:var(--ink-soft)">−</div><div style="width:22px;text-align:center;font-size:11px;font-weight:600">1</div><div style="width:24px;height:24px;display:grid;place-items:center;color:var(--ink-soft)">+</div></div></div>
+    <div class="serif" style="font-size:14px;font-weight:600">${price}</div>
+  </div>`;}
+const cart=`${sbDark}
+<div class="body" style="display:flex;flex-direction:column">
+  <div style="padding:2px 18px 12px"><div class="eyebrow">Your bag · 3 items</div><div class="serif" style="font-size:22px;font-weight:500">Shopping cart</div></div>
+  <div style="flex:1;overflow:hidden;padding:0 16px">
+    ${cartRow('bg-1','coffee','Pour-Over Set','Brushed','₹2,450')}
+    ${cartRow('bg-2','diffuser','Reed Diffuser','White','₹1,890')}
+    ${cartRow('bg-3','runner','Table Runner','Sand','₹990')}
+    <div style="display:flex;gap:8px;margin:6px 0 4px"><div style="flex:1;border:1px dashed var(--line);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--ink-faint)">Add coupon code</div><div class="pill-btn b-ghost" style="padding:10px 16px">Apply</div></div>
+  </div>
+  <div style="flex:0 0 auto;background:rgba(255,253,248,.97);border-top:1px solid var(--line);padding:14px 18px 16px">
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-soft);margin-bottom:4px"><span>Subtotal</span><span>₹5,330</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--green);margin-bottom:4px"><span>Coupon WELCOME10</span><span>−₹533</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 12px"><span class="serif" style="font-size:13px">Total</span><span class="serif" style="font-size:19px;font-weight:600">₹4,846</span></div>
+    <div class="pill-btn b-ink" style="padding:13px">Checkout →</div>
+  </div>
+</div>
+${tab(2)}`;
+
+/* ===== 08 ORDER TRACKING ===== */
+const tracking=`${sbDark}
+<div class="body" style="padding:0 16px;overflow:hidden">
+  <div style="padding:2px 2px 12px"><div class="eyebrow">In transit</div><div class="serif" style="font-size:22px;font-weight:500">Order tracking</div></div>
+  <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden">
+    <div style="height:150px;position:relative;background:linear-gradient(0deg,rgba(60,98,72,.05),rgba(60,98,72,.05)),repeating-linear-gradient(0deg,#ece5d4 0 1px,transparent 1px 30px),repeating-linear-gradient(90deg,#ece5d4 0 1px,transparent 1px 30px),#f3ecdb">
+      <svg viewBox="0 0 260 150" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%"><path d="M30,120 C90,100 80,50 140,60 C200,70 200,30 230,28" fill="none" stroke="#a9772e" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round"/></svg>
+      <div style="position:absolute;left:10%;top:74%;width:18px;height:18px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);background:var(--green)"></div>
+      <div style="position:absolute;left:46%;top:42%;width:32px;height:32px;border-radius:50%;background:#fff;border:2px solid var(--gold);display:grid;place-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep)" stroke-width="2"><circle cx="5.5" cy="17" r="2.5"/><circle cx="18.5" cy="17" r="2.5"/><path d="M8 17h7l3-6h-4l-2-3H8"/></svg></div>
+      <div style="position:absolute;right:8%;top:12%;width:18px;height:18px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);background:var(--gold)"></div>
+      <div style="position:absolute;left:10px;top:10px;background:rgba(25,20,15,.9);color:#fff;font-size:10px;padding:6px 10px;border-radius:9px">⚡ Arriving in <b style="color:var(--gold-bright)">12 min</b></div>
+    </div>
+    <div style="padding:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:9px;color:var(--ink-faint)">ORDER #KG-20451</div><div class="serif" style="font-size:14px;font-weight:500">Pour-Over Set + 2</div></div><span class="tag gold">Out for delivery</span></div>
+      <div style="display:flex;align-items:center;margin-top:16px">
+        ${['Placed','Packed','On the way','Delivered'].map((s,i)=>{
+          const st=i<2?'done':i===2?'active':'';
+          const bg=st==='done'?'var(--green)':st==='active'?'var(--gold)':'var(--paper-2)';
+          const col=st?'#fff':'var(--ink-faint)';
+          const line=i<3?`<div style="flex:1;height:2px;background:${i<2?'var(--green)':'var(--line)'}"></div>`:'';
+          return `<div style="display:flex;flex-direction:column;align-items:center;width:44px"><div style="width:22px;height:22px;border-radius:50%;background:${bg};color:${col};display:grid;place-items:center;font-size:10px">${st==='done'?'✓':'●'}</div><div style="font-size:8px;margin-top:5px;color:${st?'var(--ink)':'var(--ink-faint)'};text-align:center">${s}</div></div>${line}`;
+        }).join('')}
+      </div>
+    </div>
+  </div>
+  <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:12px;display:flex;align-items:center;gap:12px">
+    <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#d9b463,#9c6b27);display:grid;place-items:center;color:#fff" class="serif">S</div>
+    <div style="flex:1"><div style="font-size:12px;font-weight:600">Suresh · Delivery partner</div><div style="font-size:10px;color:var(--ink-faint)">★ 4.9 · On the way</div></div>
+    <div style="width:34px;height:34px;border-radius:50%;background:var(--green);display:grid;place-items:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M5 4h4l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></div>
+  </div>
+</div>
+${tab(0)}`;
+
+/* ===== 09 SHOP ===== */
+const shop=`${sbDark}
+<div class="body" style="display:flex;flex-direction:column">
+  <div style="padding:2px 16px 10px;flex:0 0 auto">
+    <div class="serif" style="font-size:22px;font-weight:500">Shop</div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <div style="flex:1;display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px 12px;color:var(--ink-faint);font-size:12px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg> Search essentials</div>
+      <div style="width:40px;height:40px;border-radius:11px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4"/></svg></div>
+    </div>
+    <div style="display:flex;gap:7px;margin-top:10px;overflow:hidden">
+      ${['All','New in','On sale','Premium'].map((x,i)=>`<div style="padding:6px 13px;border-radius:999px;font-size:10px;font-weight:600;${i===0?'background:var(--ink);color:#fff':'border:1px solid var(--line);color:var(--ink-soft)'}">${x}</div>`).join('')}
+    </div>
+    <div style="font-size:10px;color:var(--ink-faint);margin-top:10px">Showing <b style="color:var(--ink)">16</b> of 115 products</div>
+  </div>
+  <div style="flex:1;overflow:hidden;padding:0 16px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
+      ${homeCard('bg-1','coffee','Kitchen','Pour-Over Set','₹2,450','₹3,200')}
+      ${homeCard('bg-2','diffuser','Wellness','Reed Diffuser','₹1,890')}
+      ${homeCard('bg-3','runner','Lifestyle','Table Runner','₹990','₹1,250')}
+      ${homeCard('bg-6','candle','Wellness','Soy Candle','₹780')}
+    </div>
+  </div>
+</div>
+${tab(1)}`;
+
+/* ===== 10 FILTER SHEET ===== */
+const filter=`${sbDark}
+<div class="body" style="position:relative">
+  <div style="position:absolute;inset:0;background:rgba(25,20,15,.45)"></div>
+  <div style="position:absolute;left:0;right:0;bottom:0;background:var(--paper);border-radius:24px 24px 0 0;padding:16px 18px 22px">
+    <div style="width:38px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 14px"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div class="serif" style="font-size:18px;font-weight:500">Filters</div><div style="font-size:11px;color:var(--gold-deep);font-weight:600">Reset</div></div>
+    <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px">Category</div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px">
+      ${['Home & Kitchen','Lifestyle','Wellness','Accessories'].map((x,i)=>`<div style="padding:8px 13px;border-radius:999px;font-size:11px;${i===0?'background:var(--ink);color:#fff':'border:1px solid var(--line);color:var(--ink-soft)'}">${x}</div>`).join('')}
+    </div>
+    <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:12px">Price</div>
+    <div style="height:4px;border-radius:2px;background:var(--line);position:relative;margin:0 6px 8px"><div style="position:absolute;left:15%;right:35%;top:0;bottom:0;background:var(--gold);border-radius:2px"></div><div style="position:absolute;left:15%;top:50%;width:15px;height:15px;border-radius:50%;background:#fff;border:2px solid var(--gold);transform:translate(-50%,-50%)"></div><div style="position:absolute;left:65%;top:50%;width:15px;height:15px;border-radius:50%;background:#fff;border:2px solid var(--gold);transform:translate(-50%,-50%)"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--ink-faint);margin-bottom:18px"><span>₹500</span><span>₹8,000</span></div>
+    <div class="pill-btn b-gold" style="padding:13px">Apply filters</div>
+  </div>
+</div>
+${tab(1)}`;
+
+/* ===== 11 CHECKOUT ===== */
+const checkout=`${sbDark}
+<div class="body" style="display:flex;flex-direction:column">
+  <div style="padding:2px 16px 8px;flex:0 0 auto">
+    <div class="serif" style="font-size:22px;font-weight:500">Checkout</div>
+    <div style="display:flex;gap:6px;margin-top:12px">
+      ${['Bag','Address','Pay','Done'].map((s,i)=>`<div style="flex:1;text-align:center"><div style="width:22px;height:22px;border-radius:50%;margin:0 auto;display:grid;place-items:center;font-size:10px;${i<2?'background:var(--green);color:#fff':i===2?'background:var(--gold);color:#fff':'background:var(--paper-2);color:var(--ink-faint)'}">${i<2?'✓':i+1}</div><div style="font-size:8px;margin-top:4px;color:${i<=2?'var(--ink)':'var(--ink-faint)'}">${s}</div></div>`).join('')}
+    </div>
+  </div>
+  <div style="flex:1;overflow:hidden;padding:8px 16px 0">
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between"><div class="serif" style="font-size:14px;font-weight:500">Delivery address</div><div style="font-size:10px;color:var(--gold-deep);font-weight:600">Change</div></div>
+      <div style="font-size:11.5px;color:var(--ink-soft);line-height:1.6;margin-top:8px">Ananya Rao<br>14 Marine Drive, Sea View Apartments<br>Mumbai 400020 · +91 98765 43210</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px">
+      <div class="serif" style="font-size:14px;font-weight:500;margin-bottom:10px">Payment</div>
+      <div style="display:flex;align-items:center;gap:10px;border:1px solid var(--gold);border-radius:11px;padding:11px;margin-bottom:8px"><div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--gold);box-shadow:inset 0 0 0 3px var(--gold)"></div><div style="flex:1"><div style="font-size:12px;font-weight:600">Pay online</div><div style="font-size:9px;color:var(--ink-faint)">UPI · Cards · Netbanking</div></div><b style="color:#3395ff;font-size:11px">Razorpay</b></div>
+      <div style="display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:11px;padding:11px"><div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--line)"></div><div style="font-size:12px;font-weight:600">Cash on delivery</div></div>
+    </div>
+  </div>
+  <div style="flex:0 0 auto;background:rgba(255,253,248,.97);border-top:1px solid var(--line);padding:12px 18px 16px;display:flex;align-items:center;gap:12px">
+    <div><div style="font-size:9px;color:var(--ink-faint)">Pay now</div><div class="serif" style="font-size:19px;font-weight:600">₹4,846</div></div>
+    <div class="pill-btn b-gold" style="flex:1;padding:13px">Pay securely</div>
+  </div>
+</div>`;
+
+/* ===== 12 ORDER SUCCESS ===== */
+const success=`<div style="position:absolute;inset:0" class="bg-1"></div>${sbDark}
+<div class="body" style="display:grid;place-items:center;text-align:center;padding:0 30px">
+  <div>
+    <div style="width:76px;height:76px;border-radius:50%;background:var(--green);display:grid;place-items:center;margin:0 auto 18px;box-shadow:0 0 0 10px rgba(60,98,72,.14)"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4 10-11"/></svg></div>
+    <div class="serif" style="font-size:26px;font-weight:500">Order placed</div>
+    <p style="font-size:12.5px;color:var(--ink-soft);margin:8px auto 0;max-width:28ch">Your order #KG-20451 is confirmed. We'll keep you posted as it moves.</p>
+    <div class="pill-btn b-ink" style="padding:13px;margin-top:22px">Track order →</div>
+    <div style="font-size:11px;color:var(--ink-faint);margin-top:14px">Continue shopping</div>
+  </div>
+</div>`;
+
+/* ===== 13 REWARDS ===== */
+const rewards=`${sbDark}
+<div class="body" style="padding:0 16px;overflow:hidden">
+  <div style="padding:2px 2px 12px"><div class="eyebrow">Loyalty</div><div class="serif" style="font-size:22px;font-weight:500">Rewards</div></div>
+  <div style="background:linear-gradient(135deg,#221d17,#3b332a);color:#fff;border-radius:18px;padding:18px;display:flex;align-items:center;gap:16px">
+    <div><div style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-bright)">Balance</div><div class="serif" style="font-size:34px;font-weight:500;color:var(--gold-bright);line-height:1">2,480</div><div style="font-size:10px;opacity:.8;margin-top:4px">520 pts to Gold tier</div></div>
+    <div style="margin-left:auto;width:74px;height:74px;border-radius:50%;background:conic-gradient(var(--gold-bright) 0 68%,rgba(255,255,255,.12) 68%);display:grid;place-items:center;flex:0 0 auto"><div style="width:56px;height:56px;border-radius:50%;background:#2a241e;display:grid;place-items:center;font-size:11px;text-align:center;line-height:1.3">68%<br>Gold</div></div>
+  </div>
+  <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
+    ${[['₹100 off','Order above ₹1,500','500'],['Free delivery','Next 3 orders','350'],['₹250 voucher','Storewide','1,000']].map(r=>`
+    <div style="display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px">
+      <div style="width:38px;height:38px;border-radius:11px;background:rgba(169,119,46,.12);display:grid;place-items:center;color:var(--gold);flex:0 0 auto"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2.6 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.4-.5z"/></svg></div>
+      <div style="flex:1"><div class="serif" style="font-size:14px;font-weight:500">${r[0]}</div><div style="font-size:10px;color:var(--ink-faint)">${r[1]}</div></div>
+      <div style="text-align:right"><div style="color:var(--gold);font-weight:700;font-size:12px">${r[2]} pts</div><div style="font-size:9px;color:var(--gold-deep);font-weight:600;margin-top:2px">Redeem</div></div>
+    </div>`).join('')}
+  </div>
+</div>
+${tab(3)}`;
+
+/* ===== 14 ACCOUNT ===== */
+const account=`${sbDark}
+<div class="body" style="padding:0 16px;overflow:hidden">
+  <div style="padding:2px 2px 14px"><div class="eyebrow">Account</div><div class="serif" style="font-size:22px;font-weight:500">My profile</div></div>
+  <div style="display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px">
+    <div style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#d9b463,#9c6b27);display:grid;place-items:center;color:#fff;font-size:24px;flex:0 0 auto" class="serif">A</div>
+    <div style="flex:1"><div class="serif" style="font-size:16px;font-weight:500">Ananya Rao</div><div style="font-size:11px;color:var(--ink-faint)">ananya.rao@email.com</div><div style="display:inline-flex;margin-top:6px;font-size:9px;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(169,119,46,.14);color:var(--gold-deep)">SILVER · 2,480 PTS</div></div>
+  </div>
+  <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden">
+    ${[['My orders','M6 6h15l-1.5 9h-12z'],['Saved addresses','M3 11 12 3l9 8v9H4z'],['Wishlist','M12 21s-7-4.5-9.5-9C1 8.5 3 5 6.5 5 9 5 12 8 12 8s3-3 5.5-3'],['Rewards','M12 3l2.6 5.5L20 9l-4 4 1 6-5-3'],['Settings','M12 8a4 4 0 100 8 4 4 0 000-8z'],['Help & support','M12 2a10 10 0 100 20 10 10 0 000-20z']].map((r,i)=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:13px 14px;${i<5?'border-bottom:1px solid var(--line)':''}">
+      <div style="color:var(--gold)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="${r[1]}"/></svg></div>
+      <div style="flex:1;font-size:13px;font-weight:500">${r[0]}</div>
+      <div style="color:var(--ink-faint);font-size:16px">›</div>
+    </div>`).join('')}
+  </div>
+</div>
+${tab(4)}`;
+
+/* ===== 15 NOTIFICATIONS ===== */
+const notifications=`${sbDark}
+<div class="body" style="padding:0 16px;overflow:hidden">
+  <div style="padding:2px 2px 12px"><div class="eyebrow">Updates</div><div class="serif" style="font-size:22px;font-weight:500">Notifications</div></div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    ${[['Out for delivery','Order #KG-20451 is 12 min away','now',true],['Points earned','+533 pts added to your balance','2h',true],['Price drop','Soy Candle is now ₹780','1d',false],['Welcome to kankreg','100 bonus points added to your account','3d',false]].map(n=>`
+    <div style="display:flex;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;${n[3]?'border-left:3px solid var(--gold)':''}">
+      <div style="width:34px;height:34px;border-radius:10px;background:rgba(169,119,46,.12);display:grid;place-items:center;color:var(--gold);flex:0 0 auto"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9a6 6 0 0112 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 19a2 2 0 004 0"/></svg></div>
+      <div style="flex:1"><div style="font-size:12.5px;font-weight:600">${n[0]}</div><div style="font-size:11px;color:var(--ink-faint);margin-top:2px">${n[1]}</div></div>
+      <div style="font-size:9px;color:var(--ink-faint)">${n[2]}</div>
+    </div>`).join('')}
+  </div>
+</div>`;
+
+/* ===== 16 WISHLIST ===== */
+const wishlist=`${sbDark}
+<div class="body" style="padding:0 16px;overflow:hidden">
+  <div style="padding:2px 2px 12px"><div class="eyebrow">Saved</div><div class="serif" style="font-size:22px;font-weight:500">Wishlist · 4</div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
+    ${homeCard('bg-5','mug','Kitchen','Mug Duo','₹1,150','₹1,400')}
+    ${homeCard('bg-3','runner','Lifestyle','Table Runner','₹990')}
+    ${homeCard('bg-1','coffee','Kitchen','Pour-Over Set','₹2,450','₹3,200')}
+    ${homeCard('bg-6','candle','Wellness','Soy Candle','₹780')}
+  </div>
+</div>
+${tab(4)}`;
+
+/* render board */
+document.getElementById('canvas').innerHTML=[
+  frame('01','Splash',splash),
+  frame('02','Onboarding',onboard),
+  frame('03','Sign in',authScreen('login')),
+  frame('04','Create account',authScreen('signup')),
+  frame('05','Home · tab bar',home),
+  frame('06','Shop · catalog',shop),
+  frame('07','Filter sheet',filter),
+  frame('08','Product · sticky buy',product),
+  frame('09','Cart',cart),
+  frame('10','Checkout',checkout),
+  frame('11','Order success',success),
+  frame('12','Order tracking',tracking),
+  frame('13','Rewards',rewards),
+  frame('14','Account',account),
+  frame('15','Notifications',notifications),
+  frame('16','Wishlist',wishlist),
+].join('');
+</script>
+</body>
+</html>

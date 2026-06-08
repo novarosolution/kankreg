@@ -25,7 +25,7 @@ export default function KankregUnifiedPageHeader({
   const mobileCompact = isNative || isXs || compactHeader;
   const resolvedShowBrand = showBrand ?? !mobileCompact;
   const resolvedShowLocation = showLocation ?? !mobileCompact;
-  const resolvedSubtitle = subtitle ?? (mobileCompact && eyebrow ? eyebrow : undefined);
+  const resolvedSubtitle = subtitle ?? (!mobileCompact && eyebrow ? eyebrow : undefined);
 
   if (useEditorialHead) {
     return (
@@ -40,6 +40,7 @@ export default function KankregUnifiedPageHeader({
 
   return (
     <ScreenPageHeader
+      eyebrow={mobileCompact ? eyebrow : undefined}
       title={title}
       subtitle={resolvedSubtitle}
       navigation={navigation}

@@ -1,4 +1,5 @@
 const HomeViewConfig = require("../models/HomeViewConfig");
+const { normalizeShopLocation } = require("../utils/shopLocation");
 
 /** In-memory defaults when the config document cannot be created (e.g. DB name case mismatch). */
 function buildDefaultHomeViewConfig() {
@@ -85,6 +86,7 @@ async function updateAdminHomeViewConfig(req, res, next) {
       showHomeSections,
       showProductTypeSections,
       productCardStyle,
+      shopLocation,
     } = req.body || {};
 
     if (heroTitle !== undefined) config.heroTitle = heroTitle;
@@ -105,6 +107,12 @@ async function updateAdminHomeViewConfig(req, res, next) {
     }
     if (productCardStyle !== undefined && ["compact", "comfortable"].includes(String(productCardStyle))) {
       config.productCardStyle = productCardStyle;
+    }
+
+    if (shopLocation !== undefined && shopLocation && typeof shopLocation === "object") {
+      const next = normalizeShopLocation({ ...config.shopLocation?.toObject?.() || config.shopLocation, ...shopLocation });
+      config.shopLocation = next;
+      config.markModified("shopLocation");
     }
 
     await config.save();

@@ -11,8 +11,8 @@ import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 import BottomNavBar from "../components/BottomNavBar";
 import AuthGateShell from "../components/AuthGateShell";
 import CustomerScreenShell from "../components/CustomerScreenShell";
-import KankregUnifiedPageHeader from "../components/kankreg/KankregUnifiedPageHeader";
-import GoldHairline from "../components/ui/GoldHairline";
+import KankregCustomerPageHeader from "../components/kankreg/KankregCustomerPageHeader";
+import { MANAGE_ADDRESS_SCREEN_UI } from "../content/appContent";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { getCurrentAddressFromGPS } from "../services/locationService";
@@ -31,6 +31,8 @@ import AddressTypeSelector from "../components/address/AddressTypeSelector";
 import { ALCHEMY } from "../theme/customerAlchemy";
 import SectionReveal from "../components/motion/SectionReveal";
 import PremiumStickyBar from "../components/ui/PremiumStickyBar";
+import NativeCard from "../components/native/NativeCard";
+import { FIGMA } from "../theme/figmaApp";
 
 export default function ManageAddressScreen({ navigation }) {
   const { colors: c, shadowPremium, isDark } = useTheme();
@@ -39,6 +41,7 @@ export default function ManageAddressScreen({ navigation }) {
   const { isXs, useSplitLayout } = useKankregLayout();
   const isCompact = isXs;
   const isWide = useSplitLayout;
+  const isNativeApp = Platform.OS !== "web";
   const [addressType, setAddressType] = useState("Home");
   const [houseNumber, setHouseNumber] = useState("");
   const [line1, setLine1] = useState("");
@@ -153,50 +156,63 @@ export default function ManageAddressScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <KankregUnifiedPageHeader
-          eyebrow="Account"
+        <KankregCustomerPageHeader
+          eyebrow={MANAGE_ADDRESS_SCREEN_UI.pageEyebrow}
+          title={MANAGE_ADDRESS_SCREEN_UI.pageTitle}
+          subtitle={MANAGE_ADDRESS_SCREEN_UI.pageSubtitle}
           navigation={navigation}
-          title="Delivery address"
-          subtitle="Shipping address"
           showLocation={false}
+          showHairline={!isNativeApp}
         />
-        <GoldHairline marginVertical={spacing.sm} />
         <View style={isWide ? styles.desktopGrid : null}>
           <View style={isWide ? styles.desktopColPreview : null}>
             {(line1 || city) ? (
               <SectionReveal delay={40} preset="fade-up">
-                <View style={styles.previewWrap}>
-                  <PremiumCard goldAccent padding="lg">
-                    <View style={styles.previewHead}>
-                      <View style={styles.previewIconWrap}>
-                        <Ionicons name="location" size={18} color={ALCHEMY.brown} />
+                <View style={[styles.previewWrap, isNativeApp && styles.nativePreviewWrap]}>
+                  {isNativeApp ? (
+                    <NativeCard style={styles.nativePreviewCard}>
+                      <Text style={styles.previewKicker}>Saved address</Text>
+                      <Text style={styles.previewTitle}>{addressType || "Home"} · Default</Text>
+                      <Text style={styles.previewLine}>
+                        {[houseNumber, line1].filter(Boolean).join(", ")}
+                      </Text>
+                      <Text style={styles.previewLine}>
+                        {[city, postalCode].filter(Boolean).join(" - ")}
+                      </Text>
+                    </NativeCard>
+                  ) : (
+                    <PremiumCard goldAccent padding="lg">
+                      <View style={styles.previewHead}>
+                        <View style={styles.previewIconWrap}>
+                          <Ionicons name="location" size={18} color={ALCHEMY.brown} />
+                        </View>
+                        <View style={styles.previewTitleCol}>
+                          <Text style={styles.previewKicker}>Saved address</Text>
+                          <Text style={styles.previewTitle}>{addressType || "Home"} · Default</Text>
+                        </View>
+                        <View style={styles.previewRibbon}>
+                          <Ionicons name="star" size={11} color={ALCHEMY.brown} />
+                          <Text style={styles.previewRibbonText}>Default</Text>
+                        </View>
                       </View>
-                      <View style={styles.previewTitleCol}>
-                        <Text style={styles.previewKicker}>Saved address</Text>
-                        <Text style={styles.previewTitle}>{addressType || "Home"} · Default</Text>
-                      </View>
-                      <View style={styles.previewRibbon}>
-                        <Ionicons name="star" size={11} color={ALCHEMY.brown} />
-                        <Text style={styles.previewRibbonText}>Default</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.previewLine}>
-                      {[houseNumber, line1].filter(Boolean).join(", ")}
-                    </Text>
-                    {landmark ? (
-                      <Text style={styles.previewLineMuted}>Near {landmark}</Text>
-                    ) : null}
-                    <Text style={styles.previewLine}>
-                      {[city, postalCode].filter(Boolean).join(" - ")}
-                    </Text>
-                    {country ? <Text style={styles.previewLineMuted}>{country}</Text> : null}
-                    {latitude != null && longitude != null ? (
-                      <View style={styles.gpsBadge}>
-                        <Ionicons name="locate-outline" size={12} color={c.secondaryDark} />
-                        <Text style={styles.gpsBadgeText}>GPS verified</Text>
-                      </View>
-                    ) : null}
-                  </PremiumCard>
+                      <Text style={styles.previewLine}>
+                        {[houseNumber, line1].filter(Boolean).join(", ")}
+                      </Text>
+                      {landmark ? (
+                        <Text style={styles.previewLineMuted}>Near {landmark}</Text>
+                      ) : null}
+                      <Text style={styles.previewLine}>
+                        {[city, postalCode].filter(Boolean).join(" - ")}
+                      </Text>
+                      {country ? <Text style={styles.previewLineMuted}>{country}</Text> : null}
+                      {latitude != null && longitude != null ? (
+                        <View style={styles.gpsBadge}>
+                          <Ionicons name="locate-outline" size={12} color={c.secondaryDark} />
+                          <Text style={styles.gpsBadgeText}>GPS verified</Text>
+                        </View>
+                      ) : null}
+                    </PremiumCard>
+                  )}
                 </View>
               </SectionReveal>
             ) : null}
@@ -204,108 +220,108 @@ export default function ManageAddressScreen({ navigation }) {
 
           <View style={isWide ? styles.desktopColForm : null}>
             <SectionReveal delay={60} preset="fade-up">
-              <View style={styles.panel}>
-            <SectionReveal delay={100}>
-              <View style={styles.sectionIntro}>
-                <PremiumSectionHeader
-                  overline="Delivery"
-                  title={(line1 || city) ? "Update your address" : "Add your address"}
-                  subtitle="Used for shipping and checkout."
-                  compact
-                />
-              </View>
-            </SectionReveal>
-            {error ? (
-              <View style={styles.bannerWrap}>
-                <PremiumErrorBanner severity="error" message={error} compact />
-              </View>
-            ) : null}
-            {success ? (
-              <View style={styles.bannerWrap}>
-                <PremiumErrorBanner severity="success" message={success} compact />
-              </View>
-            ) : null}
-
-            <SectionReveal delay={140}>
-              <PremiumButton
-                label={detecting ? "Detecting…" : "Use current location"}
-                iconLeft="locate"
-                variant="ghost"
-                size="md"
-                loading={detecting}
-                disabled={detecting}
-                onPress={handleDetect}
-                pulse={detecting}
-                style={styles.detectBtnSpacer}
-              />
-            </SectionReveal>
-
-            <View style={styles.fieldStack}>
-              <SectionReveal delay={170}>
-                <AddressTypeSelector value={addressType} onChange={setAddressType} />
-              </SectionReveal>
-              <SectionReveal delay={200}>
-                <PremiumInput
-                  label="House / Flat / Building no."
-                  value={houseNumber}
-                  onChangeText={setHouseNumber}
-                  iconLeft="business-outline"
-                  errorText={fieldErrors.houseNumber}
-                />
-              </SectionReveal>
-              <SectionReveal delay={230}>
-                <PremiumInput
-                  label="Street / Area / Colony"
-                  value={line1}
-                  onChangeText={setLine1}
-                  iconLeft="map-outline"
-                  errorText={fieldErrors.line1}
-                />
-              </SectionReveal>
-              <SectionReveal delay={260}>
-                <PremiumInput
-                  label="Landmark (optional)"
-                  value={landmark}
-                  onChangeText={setLandmark}
-                  iconLeft="navigate-outline"
-                  placeholder="e.g. Near city mall"
-                />
-              </SectionReveal>
-              <SectionReveal delay={290}>
-                <View style={[styles.row, isCompact ? styles.rowCompact : null]}>
-                  <View style={styles.half}>
-                    <PremiumInput label="City" value={city} onChangeText={setCity} iconLeft="business-outline" errorText={fieldErrors.city} />
+              <View style={[styles.panel, isNativeApp && styles.nativePanel]}>
+                <SectionReveal delay={100}>
+                  <View style={styles.sectionIntro}>
+                    <PremiumSectionHeader
+                      overline="Delivery"
+                      title={(line1 || city) ? "Update your address" : "Add your address"}
+                      subtitle="Used for shipping and checkout."
+                      compact
+                    />
                   </View>
-                  <View style={styles.half}>
-                    <PremiumInput label="Pincode" value={postalCode} onChangeText={setPostalCode} keyboardType="number-pad" iconLeft="pin-outline" errorText={fieldErrors.postalCode} />
+                </SectionReveal>
+                {error ? (
+                  <View style={styles.bannerWrap}>
+                    <PremiumErrorBanner severity="error" message={error} compact />
                   </View>
+                ) : null}
+                {success ? (
+                  <View style={styles.bannerWrap}>
+                    <PremiumErrorBanner severity="success" message={success} compact />
+                  </View>
+                ) : null}
+
+                <SectionReveal delay={140}>
+                  <PremiumButton
+                    label={detecting ? MANAGE_ADDRESS_SCREEN_UI.useGpsLoading : MANAGE_ADDRESS_SCREEN_UI.useGps}
+                    iconLeft="locate"
+                    variant="ghost"
+                    size="md"
+                    loading={detecting}
+                    disabled={detecting}
+                    onPress={handleDetect}
+                    pulse={detecting}
+                    style={styles.detectBtnSpacer}
+                  />
+                </SectionReveal>
+
+                <View style={styles.fieldStack}>
+                  <SectionReveal delay={170}>
+                    <AddressTypeSelector value={addressType} onChange={setAddressType} />
+                  </SectionReveal>
+                  <SectionReveal delay={200}>
+                    <PremiumInput
+                      label="House / Flat / Building no."
+                      value={houseNumber}
+                      onChangeText={setHouseNumber}
+                      iconLeft="business-outline"
+                      errorText={fieldErrors.houseNumber}
+                    />
+                  </SectionReveal>
+                  <SectionReveal delay={230}>
+                    <PremiumInput
+                      label="Street / Area / Colony"
+                      value={line1}
+                      onChangeText={setLine1}
+                      iconLeft="map-outline"
+                      errorText={fieldErrors.line1}
+                    />
+                  </SectionReveal>
+                  <SectionReveal delay={260}>
+                    <PremiumInput
+                      label="Landmark (optional)"
+                      value={landmark}
+                      onChangeText={setLandmark}
+                      iconLeft="navigate-outline"
+                      placeholder="e.g. Near city mall"
+                    />
+                  </SectionReveal>
+                  <SectionReveal delay={290}>
+                    <View style={[styles.row, isCompact ? styles.rowCompact : null]}>
+                      <View style={styles.half}>
+                        <PremiumInput label="City" value={city} onChangeText={setCity} iconLeft="business-outline" errorText={fieldErrors.city} />
+                      </View>
+                      <View style={styles.half}>
+                        <PremiumInput label="Pincode" value={postalCode} onChangeText={setPostalCode} keyboardType="number-pad" iconLeft="pin-outline" errorText={fieldErrors.postalCode} />
+                      </View>
+                    </View>
+                  </SectionReveal>
+                  <SectionReveal delay={320}>
+                    <PremiumInput
+                      label="Country (optional)"
+                      value={country}
+                      onChangeText={setCountry}
+                      iconLeft="flag-outline"
+                      placeholder="India"
+                    />
+                  </SectionReveal>
                 </View>
-              </SectionReveal>
-              <SectionReveal delay={320}>
-                <PremiumInput
-                  label="Country (optional)"
-                  value={country}
-                  onChangeText={setCountry}
-                  iconLeft="flag-outline"
-                  placeholder="India"
-                />
-              </SectionReveal>
-            </View>
 
-            <SectionReveal delay={320}>
-              <PremiumButton
-                label={saving ? "Saving…" : "Save address"}
-                iconLeft="save-outline"
-                variant="primary"
-                size="lg"
-                fullWidth
-                loading={saving}
-                disabled={saving}
-                onPress={handleSave}
-                pulse={!saving && !error}
-                style={styles.saveBtnSpacer}
-              />
-            </SectionReveal>
+                <SectionReveal delay={320}>
+                  <PremiumButton
+                    label={saving ? "Saving…" : "Save address"}
+                    iconLeft="save-outline"
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    loading={saving}
+                    disabled={saving}
+                    onPress={handleSave}
+                    pulse={!saving && !error}
+                    style={styles.saveBtnSpacer}
+                  />
+                </SectionReveal>
               </View>
             </SectionReveal>
           </View>
@@ -334,6 +350,16 @@ function createManageStyles(c, shadowPremium, isDark) {
   return StyleSheet.create({
     screen: {
       flex: 1},
+    nativePreviewWrap: {
+      paddingHorizontal: FIGMA.gutter,
+      marginBottom: spacing.sm,
+    },
+    nativePreviewCard: {
+      padding: 14,
+    },
+    nativePanel: {
+      paddingHorizontal: FIGMA.gutter,
+    },
     panel: {
       ...customerPanel(c, shadowPremium, isDark),
       overflow: "hidden"},

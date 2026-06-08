@@ -2,16 +2,17 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
 import Animated from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
 import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 
 import BottomNavBar from "../components/BottomNavBar";
 import AuthGateShell from "../components/AuthGateShell";
 import CustomerScreenShell from "../components/CustomerScreenShell";
-import KankregUnifiedPageHeader from "../components/kankreg/KankregUnifiedPageHeader";
+import KankregCustomerPageHeader from "../components/kankreg/KankregCustomerPageHeader";
+import { NOTIFICATIONS_SCREEN_UI } from "../content/appContent";
 import SectionReveal from "../components/motion/SectionReveal";
 import { staggerDelay } from "../theme/motion";
 import { useAuth } from "../context/AuthContext";
+import { useLiveSocket } from "../context/LiveSocketContext";
 import { useTheme } from "../context/ThemeContext";
 import {
   archiveMyNotification,
@@ -30,7 +31,8 @@ import PremiumChip from "../components/ui/PremiumChip";
 import SkeletonBlock from "../components/ui/SkeletonBlock";
 import PremiumButton from "../components/ui/PremiumButton";
 import PremiumCard from "../components/ui/PremiumCard";
-import GoldHairline from "../components/ui/GoldHairline";
+import NativeNotificationRow from "../components/native/NativeNotificationRow";
+import { FIGMA } from "../theme/figmaApp";
 
 function UnreadDot({ color }) {
   return (
@@ -72,6 +74,7 @@ function groupByDate(items) {
 
 export default function NotificationsScreen({ navigation }) {
   const { isXs, isSm } = useKankregLayout();
+  const isNativeApp = Platform.OS !== "web";
   const isCompactWeb = Platform.OS === "web" && (isXs || isSm);
   const { colors: c, shadowPremium, shadowLift, isDark } = useTheme();
   const styles = useMemo(
@@ -103,10 +106,11 @@ export default function NotificationsScreen({ navigation }) {
   }, [filter, activeNotifications, archivedNotifications]);
   const notificationSections = useMemo(() => {
     const groups = groupByDate(filteredNotifications);
+    const { groups: groupLabels } = NOTIFICATIONS_SCREEN_UI;
     return [
-      { key: "today", label: "Today", items: groups.today },
-      { key: "week", label: "This week", items: groups.week },
-      { key: "earlier", label: "Earlier", items: groups.earlier },
+      { key: "today", label: groupLabels.today, items: groups.today },
+      { key: "week", label: groupLabels.week, items: groups.week },
+      { key: "earlier", label: groupLabels.earlier, items: groups.earlier },
     ].filter((s) => s.items.length > 0);
   }, [filteredNotifications]);
 
@@ -153,6 +157,22 @@ export default function NotificationsScreen({ navigation }) {
     loadNotifications();
   }, [isAuthLoading, isAuthenticated, loadNotifications]);
 
+  const { on: onLiveEvent } = useLiveSocket();
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    return onLiveEvent("notifications:new", ({ notification }) => {
+      if (!notification?._id) return;
+      const id = String(notification._id);
+      setNotifications((prev) => {
+        if (prev.some((item) => String(item._id) === id)) return prev;
+        return [
+          { ...notification, isRead: false, isArchived: false },
+          ...prev,
+        ];
+      });
+    });
+  }, [isAuthenticated, onLiveEvent]);
+
   const handleOpenNotification = async (notification) => {
     try {
       if (!notification?.isRead) {
@@ -188,6 +208,17 @@ export default function NotificationsScreen({ navigation }) {
     return <AuthGateShell />;
   }
 
+  const headerRefresh =
+    Platform.OS === "web" ? (
+      <PremiumButton
+        label={NOTIFICATIONS_SCREEN_UI.refresh}
+        iconLeft="refresh-outline"
+        variant="ghost"
+        size="sm"
+        onPress={() => loadNotifications()}
+      />
+    ) : undefined;
+
   return (
     <CustomerScreenShell style={styles.screen}>
       <KankregScrollPage
@@ -200,43 +231,16 @@ export default function NotificationsScreen({ navigation }) {
           )
         }
       >
-        <KankregUnifiedPageHeader
-          eyebrow="Inbox"
-          title="Notifications"
-          subtitle="Orders, offers & updates"
+        <KankregCustomerPageHeader
+          eyebrow={NOTIFICATIONS_SCREEN_UI.pageEyebrow}
+          title={NOTIFICATIONS_SCREEN_UI.pageTitle}
           navigation={navigation}
-          right={
-            Platform.OS !== "web" ? (
-              <PremiumButton
-                label="Refresh"
-                iconLeft="refresh-outline"
-                variant="ghost"
-                size="sm"
-                onPress={() => loadNotifications()}
-              />
-            ) : undefined
-          }
+          showBack={false}
+          right={headerRefresh}
+          showHairline={!isNativeApp}
         />
-        <GoldHairline marginVertical={spacing.sm} />
         <SectionReveal preset="fade-up" delay={40}>
         <View style={styles.panel}>
-          {Platform.OS === "web" ? (
-            <View style={styles.headerRow}>
-              <View style={styles.titleRow}>
-                <View style={styles.titleIconWrap}>
-                  <Ionicons name="mail-unread-outline" size={22} color={c.secondary} />
-                </View>
-                <Text style={styles.title}>Notifications</Text>
-              </View>
-              <PremiumButton
-                label="Refresh"
-                iconLeft="refresh-outline"
-                variant="ghost"
-                size="sm"
-                onPress={loadNotifications}
-              />
-            </View>
-          ) : null}
           {error ? (
             <View style={styles.bannerWrap}>
               <PremiumErrorBanner severity="error" message={error} compact />
@@ -254,14 +258,14 @@ export default function NotificationsScreen({ navigation }) {
             <SkeletonBlock width="100%" height={86} rounded="lg" />
             <SkeletonBlock width="100%" height={86} rounded="lg" />
             <SkeletonBlock width="100%" height={86} rounded="lg" />
-            <PremiumLoader size="sm" caption="Loading notifications…" />
+            <PremiumLoader size="sm" caption={NOTIFICATIONS_SCREEN_UI.loadingCaption} />
           </View>
         ) : notifications.length === 0 ? (
           <View style={styles.panel}>
             <PremiumEmptyState
               iconName="notifications-off-outline"
-              title="You're all caught up"
-              description="No messages yet. We'll notify you when something arrives."
+              title={NOTIFICATIONS_SCREEN_UI.emptyTitle}
+              description={NOTIFICATIONS_SCREEN_UI.emptyDescription}
             />
           </View>
         ) : (
@@ -269,34 +273,33 @@ export default function NotificationsScreen({ navigation }) {
             let cardIdx = 0;
             return (
               <>
-                <View style={styles.filterRow}>
-                  <PremiumChip
-                    label={`All · ${activeNotifications.length}`}
-                    tone={filter === "all" ? "gold" : "neutral"}
-                    selected={filter === "all"}
-                    size="lg"
-                    onPress={() => setFilter("all")}
-                  />
-                  <PremiumChip
-                    label={unreadCount > 0 ? `Unread · ${unreadCount}` : "Unread"}
-                    tone={filter === "unread" ? "info" : "neutral"}
-                    selected={filter === "unread"}
-                    size="lg"
-                    onPress={() => setFilter("unread")}
-                  />
-                  <PremiumChip
-                    label={`Archived · ${archivedNotifications.length}`}
-                    tone={filter === "archived" ? "info" : "neutral"}
-                    selected={filter === "archived"}
-                    size="lg"
-                    onPress={() => setFilter("archived")}
-                  />
-                </View>
-                <Text style={styles.filterMetaText}>
-                  {filter === "archived"
-                    ? "Archived items stay here until restored."
-                    : "Tap any notification to open details and mark it as read."}
-                </Text>
+                {!isNativeApp ? (
+                  <>
+                    <View style={styles.filterRow}>
+                      <PremiumChip
+                        label={`${NOTIFICATIONS_SCREEN_UI.filters.all} · ${activeNotifications.length}`}
+                        tone={filter === "all" ? "gold" : "neutral"}
+                        selected={filter === "all"}
+                        size="lg"
+                        onPress={() => setFilter("all")}
+                      />
+                      <PremiumChip
+                        label={unreadCount > 0 ? `${NOTIFICATIONS_SCREEN_UI.filters.unread} · ${unreadCount}` : NOTIFICATIONS_SCREEN_UI.filters.unread}
+                        tone={filter === "unread" ? "info" : "neutral"}
+                        selected={filter === "unread"}
+                        size="lg"
+                        onPress={() => setFilter("unread")}
+                      />
+                      <PremiumChip
+                        label={`${NOTIFICATIONS_SCREEN_UI.filters.archived} · ${archivedNotifications.length}`}
+                        tone={filter === "archived" ? "info" : "neutral"}
+                        selected={filter === "archived"}
+                        size="lg"
+                        onPress={() => setFilter("archived")}
+                      />
+                    </View>
+                  </>
+                ) : null}
                 {filteredNotifications.length === 0 ? (
                   <View style={styles.panel}>
                     <PremiumEmptyState
@@ -306,46 +309,58 @@ export default function NotificationsScreen({ navigation }) {
                     />
                   </View>
                 ) : null}
-                {notificationSections.map((section) => (
-                  <View key={section.key} style={styles.groupBlock}>
-                    <Text style={styles.groupHeading}>{section.label}</Text>
-                    {section.items.map((item) => {
-                      const localIdx = cardIdx++;
-                      return (
-                        <SectionReveal
-                          key={item._id}
-                          preset="fade-up"
-                          index={localIdx}
-                          delay={staggerDelay(localIdx, { initialDelay: 60 })}
-                        >
-                          <PremiumCard
-                            onPress={() => handleOpenNotification(item)}
-                            variant={!item.isRead ? "list" : "default"}
-                            padding="md"
-                            style={[styles.noticeCard, !item.isRead ? styles.noticeCardUnread : null]}
-                          >
-                            <View style={styles.noticeHeader}>
-                              <Text style={styles.noticeTitle}>{item.title}</Text>
-                              {!item.isRead ? <UnreadDot color={c.primary} /> : null}
-                            </View>
-                            <Text style={styles.noticeText}>{item.message}</Text>
-                            <Text style={styles.noticeTime}>
-                              {item.createdAt ? new Date(item.createdAt).toLocaleString() : ""}
-                            </Text>
-                            <View style={styles.noticeActionRow}>
-                              <PremiumChip
-                                label={item.isArchived ? "Restore" : "Archive"}
-                                tone="neutral"
-                                size="sm"
-                                onPress={() => handleArchiveToggle(item)}
-                              />
-                            </View>
-                          </PremiumCard>
-                        </SectionReveal>
-                      );
-                    })}
+                {isNativeApp ? (
+                  <View style={styles.nativeList}>
+                    {filteredNotifications.map((item) => (
+                      <NativeNotificationRow
+                        key={item._id}
+                        item={item}
+                        onPress={() => handleOpenNotification(item)}
+                      />
+                    ))}
                   </View>
-                ))}
+                ) : (
+                  notificationSections.map((section) => (
+                    <View key={section.key} style={styles.groupBlock}>
+                      <Text style={styles.groupHeading}>{section.label}</Text>
+                      {section.items.map((item) => {
+                        const localIdx = cardIdx++;
+                        return (
+                          <SectionReveal
+                            key={item._id}
+                            preset="fade-up"
+                            index={localIdx}
+                            delay={staggerDelay(localIdx, { initialDelay: 60 })}
+                          >
+                            <PremiumCard
+                              onPress={() => handleOpenNotification(item)}
+                              variant={!item.isRead ? "list" : "default"}
+                              padding="md"
+                              style={[styles.noticeCard, !item.isRead ? styles.noticeCardUnread : null]}
+                            >
+                              <View style={styles.noticeHeader}>
+                                <Text style={styles.noticeTitle}>{item.title}</Text>
+                                {!item.isRead ? <UnreadDot color={c.primary} /> : null}
+                              </View>
+                              <Text style={styles.noticeText}>{item.message}</Text>
+                              <Text style={styles.noticeTime}>
+                                {item.createdAt ? new Date(item.createdAt).toLocaleString() : ""}
+                              </Text>
+                              <View style={styles.noticeActionRow}>
+                                <PremiumChip
+                                  label={item.isArchived ? "Restore" : "Archive"}
+                                  tone="neutral"
+                                  size="sm"
+                                  onPress={() => handleArchiveToggle(item)}
+                                />
+                              </View>
+                            </PremiumCard>
+                          </SectionReveal>
+                        );
+                      })}
+                    </View>
+                  ))
+                )}
               </>
             );
           })()
@@ -435,6 +450,10 @@ function createNotificationsStyles(c, shadowPremium, shadowLift, isDark, layoutF
     fontSize: typography.caption,
     fontFamily: fonts.regular,
     lineHeight: 18},
+  nativeList: {
+    paddingHorizontal: FIGMA.gutter,
+    paddingBottom: spacing.lg,
+  },
   groupBlock: {
     marginBottom: spacing.sm + 2},
   groupHeading: {

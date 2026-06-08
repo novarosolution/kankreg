@@ -2,46 +2,35 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import {
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
   View} from "react-native";
-import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import BottomNavBar from "../components/BottomNavBar";
 import CustomerScreenShell from "../components/CustomerScreenShell";
 import KankregUnifiedPageHeader from "../components/kankreg/KankregUnifiedPageHeader";
-import CheckoutInfoCard from "../components/checkout/CheckoutInfoCard";
-import AddressTypeSelector from "../components/address/AddressTypeSelector";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import KankregCustomerPageHeader from "../components/kankreg/KankregCustomerPageHeader";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import {
   createOrderRequest,
-  fetchAvailableCouponsRequest,
   validateCouponRequest} from "../services/orderService";
 import { getCurrentAddressFromGPS } from "../services/locationService";
 import { useTheme } from "../context/ThemeContext";
 import {
-  customerFloatingNavOffset,
   customerPanel,
-  customerScrollFill} from "../theme/screenLayout";
-import { fonts, icon, layout, radius, semanticRadius, spacing, typography } from "../theme/tokens";
+  customerScrollFill,
+  FIGMA_STICKY_FOOTER_HEIGHT,
+} from "../theme/screenLayout";
+import { fonts, layout, radius, semanticRadius, spacing, typography } from "../theme/tokens";
 import { formatINR } from "../utils/currency";
-import { getImageUriCandidates } from "../utils/image";
-import { HOME_CATALOG_ALL, matchesShelfProduct } from "../utils/shelfMatch";
-import { getProducts } from "../services/productService";
 import { BRAND_LOGO_SIZE } from "../constants/brand";
 import BrandLogo from "../components/BrandLogo";
 import { ALCHEMY, FONT_DISPLAY } from "../theme/customerAlchemy";
 import PremiumEmptyState from "../components/ui/PremiumEmptyState";
-import PremiumInput from "../components/ui/PremiumInput";
-import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
-import PremiumButton from "../components/ui/PremiumButton";
-import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
 import PremiumCard from "../components/ui/PremiumCard";
 import GoldHairline from "../components/ui/GoldHairline";
 import SectionReveal from "../components/motion/SectionReveal";
@@ -56,8 +45,6 @@ import Animated, {
   withTiming} from "react-native-reanimated";
 import useReducedMotion from "../hooks/useReducedMotion";
 import PaymentMethodSelector from "../components/payments/PaymentMethodSelector";
-import {
-  KankregCheckoutSteps} from "../components/kankreg/KankregPageChrome";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
 import KankregSplitLayout from "../components/kankreg/KankregSplitLayout";
 import KankregScrollPage from "../components/kankreg/KankregScrollPage";
@@ -67,6 +54,14 @@ import {
   loadRazorpayWebSdk,
   openRazorpayCheckout,
   verifyOrderPayment} from "../services/paymentService";
+import KankregCartRow from "../components/kankreg/KankregCartRow";
+import KankregCartCouponStrip from "../components/kankreg/KankregCartCouponStrip";
+import KankregCartPayBar from "../components/kankreg/KankregCartPayBar";
+import KankregCartSummaryCard from "../components/kankreg/KankregCartSummaryCard";
+import KankregCheckoutForm from "../components/kankreg/KankregCheckoutForm";
+import KankregCheckoutSectionCard from "../components/kankreg/KankregCheckoutSectionCard";
+import KankregCheckoutSteps from "../components/kankreg/KankregCheckoutSteps";
+import { FIGMA } from "../theme/figmaApp";
 
 /** Same required fields as ManageAddressScreen save. */
 function getProfileAddressCompletion(defaultAddress) {
@@ -84,14 +79,16 @@ export default function CartScreen({ navigation, route }) {
   const { cartItems, totalAmount, totalItems, addToCart, removeFromCart, removeLineFromCart, clearCart } = useCart();
   const { isAuthenticated, token, user } = useAuth();
   const { toastSuccess } = useToast();
-    const isCheckoutFlow = route?.name === "Checkout" || route?.params?.flow === "checkout";
+  const isCheckoutFlow = route?.name === "Checkout" || route?.params?.flow === "checkout";
   const { useSplitLayout, isXs } = useKankregLayout();
   const kankregWebSplit = useSplitLayout;
   const isCompact = isXs;
   const isDesktop = useSplitLayout;
-  const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
-  const nativeStickyPay = Platform.OS !== "web" && cartItems.length > 0;
+  const isNativeApp = Platform.OS !== "web";
+  const isCartBagView = !isCheckoutFlow && (isNativeApp || kankregWebSplit);
+  const showCheckoutDetails = isCheckoutFlow || (!kankregWebSplit && !isNativeApp);
+  const figmaStickyPay = cartItems.length > 0 && (isNativeApp || !kankregWebSplit);
   const checkoutPulse = useSharedValue(0);
   const checkoutPulseStyle = useAnimatedStyle(() => ({
     opacity: 0.18 + checkoutPulse.value * 0.55,
@@ -113,25 +110,9 @@ export default function CartScreen({ navigation, route }) {
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
-  const [availableCoupons, setAvailableCoupons] = useState([]);
-  const [catalogProducts, setCatalogProducts] = useState([]);
   /** `"Razorpay"` | `"Cash on Delivery"` — must match backend `Order.paymentMethod`. */
   const [paymentMethod, setPaymentMethod] = useState("Razorpay");
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const data = await getProducts();
-        if (!cancelled) setCatalogProducts(Array.isArray(data) ? data : []);
-      } catch {
-        if (!cancelled) setCatalogProducts([]);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   useEffect(() => {
     if (reducedMotion || cartItems.length === 0 || isPlacingOrder) {
@@ -178,27 +159,6 @@ export default function CartScreen({ navigation, route }) {
     }
   }, [appliedCoupon, totalAmount]);
 
-  useEffect(() => {
-    if (!isAuthenticated || !token) return;
-    let cancelled = false;
-    const timer = setTimeout(async () => {
-      try {
-        const data = await fetchAvailableCouponsRequest(token, totalAmount);
-        if (!cancelled) {
-          setAvailableCoupons(Array.isArray(data?.coupons) ? data.coupons : []);
-        }
-      } catch {
-        if (!cancelled) {
-          setAvailableCoupons([]);
-        }
-      }
-    }, 350);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [isAuthenticated, token, totalAmount]);
-
   useFocusEffect(
     useCallback(() => {
       const raw = route?.params?.prefillCoupon;
@@ -215,7 +175,6 @@ export default function CartScreen({ navigation, route }) {
           setAppliedCoupon(result.coupon || null);
           setCouponCode(normalized);
           toastSuccess(result.message || "Coupon applied.", { title: "Coupon applied" });
-          setAvailableCoupons((current) => current.filter((coupon) => coupon.code !== normalized));
           navigation.setParams({ prefillCoupon: undefined });
         } catch (err) {
           if (!cancelled) {
@@ -235,24 +194,23 @@ export default function CartScreen({ navigation, route }) {
   const { colors: c, shadowLift, shadowPremium, isDark } = useTheme();
   const styles = useMemo(() => createCartStyles(c, shadowLift, shadowPremium, isDark), [c, shadowLift, shadowPremium, isDark]);
 
-  const cartIdSet = useMemo(() => new Set(cartItems.map((i) => i.id)), [cartItems]);
-  const upsellProducts = useMemo(() => {
-    return catalogProducts
-      .filter((p) => matchesShelfProduct(p, HOME_CATALOG_ALL) && !cartIdSet.has(p.id) && p.inStock !== false)
-      .slice(0, 2);
-  }, [catalogProducts, cartIdSet]);
-
   const profileAddress = useMemo(() => getProfileAddressCompletion(user?.defaultAddress), [user?.defaultAddress]);
 
   if (!isAuthenticated) {
     return (
       <CustomerScreenShell style={styles.screen}>
-        <KankregScrollPage scrollVariant="inner" style={customerScrollFill} showFooter={false}>
-          <KankregUnifiedPageHeader
+        <KankregScrollPage
+          scrollVariant="inner"
+          style={customerScrollFill}
+          showFooter={false}
+          stickyFooterExtra={figmaStickyPay ? FIGMA_STICKY_FOOTER_HEIGHT : 0}
+        >
+          <KankregCustomerPageHeader
             navigation={navigation}
             eyebrow={CART_UI.pageEyebrow}
             title={CART_UI.pageTitle}
             showBack={false}
+            figmaOnWeb
           />
           <View style={styles.loginCard}>
             <BrandLogo width={BRAND_LOGO_SIZE.footerCompact} height={BRAND_LOGO_SIZE.footerCompact} style={styles.loginBrandLogo} />
@@ -273,90 +231,60 @@ export default function CartScreen({ navigation, route }) {
     );
   }
 
-  const goBackOrHome = () => {
-    if (navigation.canGoBack?.()) {
-      navigation.goBack();
-    } else {
-      navigation.navigate("Home");
-    }
-  };
-
   const renderCartItem = (item, index = 0) => {
-    const lineTotal = item.price * item.quantity;
-    const revealDelay = staggerDelay(index);
-    return (
-      <SectionReveal key={item.id} delay={revealDelay} style={styles.selectionCard}>
-        <View style={[styles.selectionCardRow, isCompact ? styles.selectionCardRowStack : null]}>
-          <RetryCartImage
-            sourceUri={item.image || ""}
-            style={[styles.selectionThumb, isCompact ? styles.selectionThumbStack : null]}
-            placeholderStyle={styles.selectionImagePlaceholder}
-            iconSize={icon.xxl}
-            c={c}
-          />
-          <View style={[styles.selectionBody, isCompact ? styles.selectionBodyStack : null]}>
-            <View style={styles.selectionTitleRow}>
-            <Text style={styles.selectionName} numberOfLines={2}>
-              {item.name}
-            </Text>
-            <Text style={styles.selectionPrice}>{formatINR(lineTotal)}</Text>
-            </View>
-            {String(item.description || "").trim() ? (
-              <Text style={styles.selectionDesc} numberOfLines={2}>
-                {String(item.description).trim()}
-              </Text>
-            ) : null}
-            {item.unit ? (
-              <View style={styles.sizeBadge}>
-                <Text style={styles.sizeBadgeText}>{String(item.unit).toUpperCase()}</Text>
-              </View>
-            ) : null}
-            <View style={styles.selectionActionsRow}>
-              <View style={styles.qtyPillBar}>
-                <TouchableOpacity
-                  style={styles.qtyPillHit}
-                  onPress={() => removeFromCart(item.id, item.variantLabel)}
-                  accessibilityLabel="Decrease quantity"
-                >
-                  <Ionicons name="remove" size={icon.sm} color={isDark ? c.textPrimary : ALCHEMY.brown} />
-                </TouchableOpacity>
-                <Text style={styles.qtyPillNum}>{item.quantity}</Text>
-                <TouchableOpacity
-                  style={styles.qtyPillHit}
-                  onPress={() => addToCart(item)}
-                  accessibilityLabel="Increase quantity"
-                >
-                  <Ionicons name="add" size={icon.sm} color={isDark ? c.textPrimary : ALCHEMY.brown} />
-                </TouchableOpacity>
-              </View>
-              <TouchableOpacity
-                style={styles.removeRow}
-                onPress={() => removeLineFromCart(item.id, item.variantLabel)}
-                activeOpacity={0.75}
-              >
-                <Ionicons name="trash-outline" size={icon.xs} color={isDark ? c.textMuted : ALCHEMY.brownMuted} />
-                <Text style={styles.removeRowText}>REMOVE</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </SectionReveal>
+    const row = (
+      <KankregCartRow
+        item={item}
+        index={index}
+        onDecrease={() => removeFromCart(item.id, item.variantLabel)}
+        onIncrease={() => addToCart(item)}
+        onRemove={() => removeLineFromCart(item.id, item.variantLabel)}
+      />
     );
+
+    if (Platform.OS === "web" && !reducedMotion) {
+      return (
+        <SectionReveal key={item.id} delay={staggerDelay(index)}>
+          {row}
+        </SectionReveal>
+      );
+    }
+
+    return <React.Fragment key={item.id}>{row}</React.Fragment>;
   };
 
   const validateAddress = () => {
-    if (
-      !fullName.trim() ||
-      !phone.trim() ||
-      !houseNumber.trim() ||
-      !line1.trim() ||
-      !city.trim() ||
-      !postalCode.trim()
-    ) {
-      setError("Please complete delivery address details.");
+    const nextErrors = {
+      fullName: fullName.trim() ? "" : "Full name is required.",
+      phone: phone.trim() ? "" : "Mobile number is required.",
+      houseNumber: houseNumber.trim() ? "" : "House / flat number is required.",
+      line1: line1.trim() ? "" : "Street / area is required.",
+      city: city.trim() ? "" : "City is required.",
+      postalCode: postalCode.trim() ? "" : "Pincode is required.",
+    };
+    setFieldErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      setError("Please complete the required delivery fields.");
       return false;
     }
+    setError("");
     return true;
+  };
+
+  const handleUseSavedAddress = () => {
+    const a = user?.defaultAddress;
+    if (!a) return;
+    setAddressType(a.addressType || "Home");
+    setHouseNumber(a.houseNumber || "");
+    setLine1(a.line1 || "");
+    setLandmark(a.landmark || "");
+    setCity(a.city || "");
+    setPostalCode(a.postalCode || "");
+    setCountry(a.country || "India");
+    setLatitude(Number.isFinite(Number(a.latitude)) ? Number(a.latitude) : null);
+    setLongitude(Number.isFinite(Number(a.longitude)) ? Number(a.longitude) : null);
+    setFieldErrors({});
+    toastSuccess("Saved address applied.", { title: "Address loaded" });
   };
 
   const handlePlaceOrder = async () => {
@@ -400,8 +328,10 @@ export default function CartScreen({ navigation, route }) {
       clearCart();
 
       if (paymentMethod === "Cash on Delivery") {
-        toastSuccess("Order placed—track it in Profile.", { title: "Order confirmed" });
-        navigation.navigate("Profile");
+        navigation.reset({
+          index: 1,
+          routes: [{ name: "Home" }, { name: "OrderConfirmed", params: { order: created } }],
+        });
         return;
       }
 
@@ -422,12 +352,17 @@ export default function CartScreen({ navigation, route }) {
 
       if (checkout.status === "success" && checkout.payload) {
         const p = checkout.payload;
-        await verifyOrderPayment(token, orderId, {
+        const verified = await verifyOrderPayment(token, orderId, {
           razorpay_order_id: p.razorpay_order_id,
           razorpay_payment_id: p.razorpay_payment_id,
           razorpay_signature: p.razorpay_signature});
-        toastSuccess("Payment confirmed.", { title: "Order confirmed" });
-        navigation.navigate("MyOrders");
+        navigation.reset({
+          index: 1,
+          routes: [
+            { name: "Home" },
+            { name: "OrderConfirmed", params: { order: verified || created } },
+          ],
+        });
         return;
       }
 
@@ -456,7 +391,6 @@ export default function CartScreen({ navigation, route }) {
       setAppliedCoupon(result.coupon || null);
       setCouponCode(normalized);
       toastSuccess(result.message || "Coupon applied.", { title: "Coupon applied" });
-      setAvailableCoupons((current) => current.filter((coupon) => coupon.code !== normalized));
     } catch (err) {
       setAppliedCoupon(null);
       setError(err.message || "Unable to apply coupon.");
@@ -468,19 +402,28 @@ export default function CartScreen({ navigation, route }) {
   const discountAmount = Number(appliedCoupon?.discountAmount || 0);
   const payableAmount = Math.max(0, totalAmount + deliveryFee + platformFee - discountAmount);
   const isRazorpayMethod = paymentMethod === "Razorpay";
-  const primaryCtaLabel = kankregWebSplit && !isCheckoutFlow
-    ? "Proceed to checkout →"
+  const primaryCtaLabel = isCartBagView
+    ? "Checkout →"
     : isRazorpayMethod
-      ? `Pay ${formatINR(payableAmount)} securely`
-      : "PLACE ORDER · COD";
+      ? `Pay ${formatINR(payableAmount)}`
+      : "Place order";
 
   const handlePrimaryCta = () => {
-    if (kankregWebSplit && !isCheckoutFlow) {
+    if (isCartBagView) {
       navigation.navigate("Checkout");
       return;
     }
     handlePlaceOrder();
   };
+
+  const cartEyebrow =
+    cartItems.length > 0
+      ? `Your bag · ${totalItems} item${totalItems === 1 ? "" : "s"}`
+      : CART_UI.pageEyebrow;
+
+  const appliedCouponText = appliedCoupon
+    ? `−${formatINR(appliedCoupon.discountAmount || 0)}`
+    : "";
 
   const handleUseCurrentLocation = async () => {
     try {
@@ -508,35 +451,27 @@ export default function CartScreen({ navigation, route }) {
         style={styles.scrollFill}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        stickyFooterExtra={figmaStickyPay ? FIGMA_STICKY_FOOTER_HEIGHT : 0}
       >
-        <KankregUnifiedPageHeader
-          navigation={navigation}
-          eyebrow={isCheckoutFlow ? CART_UI.checkoutEyebrow : CART_UI.pageEyebrow}
-          title={isCheckoutFlow ? CART_UI.checkoutTitle : CART_UI.pageTitle}
-          subtitle={
-            cartItems.length === 0
-              ? "Add items from the shop."
-              : `${totalItems} item${totalItems === 1 ? "" : "s"}`
-          }
-          showBack={isCheckoutFlow}
-          onBack={isCheckoutFlow ? () => navigation.navigate("Cart") : goBackOrHome}
-          right={
-            isCheckoutFlow && kankregWebSplit ? (
-              <PremiumButton
-                label={CART_UI.backToBag}
-                variant="ghost"
-                size="sm"
-                iconLeft="arrow-back-outline"
-                onPress={() => navigation.navigate("Cart")}
-              />
-            ) : undefined
-          }
-        />
-        {isCheckoutFlow ? (
-          <SectionReveal index={0} preset="fade-in">
-            <KankregCheckoutSteps active={2} />
-          </SectionReveal>
-        ) : null}
+        {isCheckoutFlow && kankregWebSplit ? (
+          <KankregUnifiedPageHeader
+            navigation={navigation}
+            title={CART_UI.checkoutTitle}
+            showBack
+            onBack={() => navigation.navigate("Cart")}
+            showBrand={false}
+            showLocation={false}
+          />
+        ) : (
+          <KankregCustomerPageHeader
+            eyebrow={isCheckoutFlow ? undefined : cartEyebrow}
+            title={isCheckoutFlow ? CART_UI.checkoutTitle : CART_UI.pageTitle}
+            navigation={navigation}
+            showBack={false}
+            figmaOnWeb
+          />
+        )}
+        {isCheckoutFlow ? <KankregCheckoutSteps active={2} /> : null}
 
         <KankregSplitLayout
           asideStyle={isDesktop ? styles.cartRightCol : undefined}
@@ -559,285 +494,97 @@ export default function CartScreen({ navigation, route }) {
           </SectionReveal>
         ) : (!kankregWebSplit || !isCheckoutFlow) ? (
           <>
-            {!kankregWebSplit ? (
-              <PremiumSectionHeader
-                compact
-                overline={CART_UI.itemsOverline}
-                title={CART_UI.itemsTitle}
-              />
+            <View style={[styles.listSection, styles.figmaListSection]}>
+              {cartItems.map((item, idx) => renderCartItem(item, idx))}
+            </View>
+            {isCartBagView ? (
+              <View style={styles.figmaCouponWrap}>
+                <KankregCartCouponStrip
+                  value={couponCode}
+                  onChangeText={setCouponCode}
+                  onApply={handleApplyCoupon}
+                  appliedLabel={appliedCouponText}
+                />
+              </View>
             ) : null}
-            <View style={styles.listSection}>{cartItems.map((item, idx) => renderCartItem(item, idx))}</View>
           </>
         ) : null}
 
-        {!kankregWebSplit && cartItems.length > 0 && upsellProducts.length > 0 ? (
-          <View style={styles.upsellSection}>
-            <PremiumSectionHeader
-              compact
-              overline={CART_UI.pairOverline}
-              title={CART_UI.pairTitle}
-            />
-            {upsellProducts.map((p) => {
-              return (
-                <View key={p.id} style={styles.upsellRow}>
-                  <RetryCartImage
-                    sourceUri={p.image || ""}
-                    style={styles.upsellThumb}
-                    placeholderStyle={styles.selectionImagePlaceholder}
-                    iconSize={icon.md}
-                    c={c}
-                  />
-                  <View style={styles.upsellMeta}>
-                    <Text style={styles.upsellName} numberOfLines={2}>
-                      {p.name}
-                    </Text>
-                    <Text style={styles.upsellPrice}>{formatINR(p.price)}</Text>
-                    <TouchableOpacity onPress={() => addToCart(p)} style={styles.upsellAdd} activeOpacity={0.85}>
-                      <Text style={styles.upsellAddText}>ADD TO CART</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        ) : null}
+        {cartItems.length > 0 && isCheckoutFlow && kankregWebSplit ? <GoldHairline marginVertical={spacing.md} /> : null}
 
-        {cartItems.length > 0 && (!kankregWebSplit || isCheckoutFlow) ? <GoldHairline marginVertical={spacing.md} /> : null}
-
-        {(!kankregWebSplit || (kankregWebSplit && isCheckoutFlow)) ? (
-        <View style={styles.couponBox}>
-          <PremiumSectionHeader compact overline={CART_UI.couponOverline} title={CART_UI.couponTitle} />
-          {availableCoupons.length > 0 ? (
-            <View style={styles.availableCouponsWrap}>
-              {availableCoupons.slice(0, 6).map((coupon) => (
-                <TouchableOpacity
-                  key={coupon.code}
-                  style={styles.availableCouponChip}
-                  onPress={() => setCouponCode(coupon.code)}
-                >
-                  <Text style={styles.availableCouponCode}>{coupon.code}</Text>
-                  <Text style={styles.availableCouponMeta}>
-                    Save {formatINR(coupon.estimatedDiscount || 0)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          ) : (
-            <Text style={styles.noCouponText}>No eligible coupons for current cart.</Text>
-          )}
-          <View style={styles.couponRow}>
-            <View style={styles.couponInputWrap}>
-              <PremiumInput
-                label="Coupon code"
-                value={couponCode}
-                onChangeText={setCouponCode}
-                autoCapitalize="characters"
-                iconLeft="pricetag-outline"
-                returnKeyType="done"
-                onSubmitEditing={handleApplyCoupon}
-              />
-            </View>
-            <PremiumButton
-              label="Apply"
-              variant="subtle"
-              size="sm"
-              onPress={handleApplyCoupon}
-              style={styles.applyCouponBtn}
-            />
-          </View>
-          {appliedCoupon ? (
-            <Text style={styles.couponSuccessText}>
-              {appliedCoupon.code} applied. You saved {formatINR(appliedCoupon.discountAmount || 0)}.
-            </Text>
-          ) : null}
-        </View>
-        ) : null}
-
-        {(!kankregWebSplit || isCheckoutFlow) && !profileAddress.complete ? (
-          <TouchableOpacity
-            style={styles.addressProfileBanner}
-            onPress={() => navigation.navigate("ManageAddress")}
-            activeOpacity={0.88}
-            accessibilityRole="button"
-            accessibilityLabel="Open delivery address settings"
-          >
-            <View style={styles.addressProfileBannerIconWrap}>
-              <Ionicons name="location-outline" size={icon.lg} color={c.secondary} />
-            </View>
-            <View style={styles.addressProfileBannerTextCol}>
-              <Text style={styles.addressProfileBannerTitle}>
-                {profileAddress.partial ? CART_ADDRESS.profileIncompleteTitle : CART_ADDRESS.profileEmptyTitle}
-              </Text>
-              <Text style={styles.addressProfileBannerSub}>
-                {profileAddress.partial ? CART_ADDRESS.profileIncompleteSub : CART_ADDRESS.profileEmptySub}
-              </Text>
-            </View>
-            <Text style={styles.addressProfileBannerCta}>Add</Text>
-          </TouchableOpacity>
-        ) : null}
-
-        {cartItems.length > 0 && (!kankregWebSplit || isCheckoutFlow) ? <GoldHairline marginVertical={spacing.md} /> : null}
-
-        {(!kankregWebSplit || isCheckoutFlow) ? (
-        <CheckoutInfoCard title={CART_ADDRESS.panelTitle}>
-        <View style={styles.addressBoxInner}>
-          {error ? (
-            <View style={styles.bannerSpacer}>
-              <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
-            </View>
-          ) : null}
-          <PremiumButton
-            label={isDetectingLocation ? CART_ADDRESS.useGpsLoading : CART_ADDRESS.useGps}
-            iconLeft="locate-outline"
-            variant="ghost"
-            size="sm"
-            loading={isDetectingLocation}
-            disabled={isDetectingLocation}
-            onPress={handleUseCurrentLocation}
-            style={styles.savedAddressBtn}
+        {showCheckoutDetails && (!kankregWebSplit || isCheckoutFlow) ? (
+          <KankregCheckoutForm
+            fullName={fullName}
+            onFullNameChange={setFullName}
+            phone={phone}
+            onPhoneChange={setPhone}
+            addressType={addressType}
+            onAddressTypeChange={setAddressType}
+            houseNumber={houseNumber}
+            onHouseNumberChange={setHouseNumber}
+            line1={line1}
+            onLine1Change={setLine1}
+            landmark={landmark}
+            onLandmarkChange={setLandmark}
+            city={city}
+            onCityChange={setCity}
+            postalCode={postalCode}
+            onPostalCodeChange={setPostalCode}
+            country={country}
+            onCountryChange={setCountry}
+            note={note}
+            onNoteChange={setNote}
+            error={error}
+            onDismissError={() => setError("")}
+            fieldErrors={fieldErrors}
+            isDetectingLocation={isDetectingLocation}
+            onUseGps={handleUseCurrentLocation}
+            onUseSavedAddress={handleUseSavedAddress}
+            hasSavedAddress={profileAddress.complete}
+            isCompact={isCompact}
           />
-          <View style={styles.addressFieldGap}>
-            <PremiumInput
-              label="Full name"
-              value={fullName}
-              onChangeText={setFullName}
-              iconLeft="person-outline"
-              autoCapitalize="words"
-              autoComplete="name"
-              textContentType="name"
-            />
-          </View>
-          <View style={styles.addressFieldGap}>
-            <PremiumInput
-              label="Phone"
-              value={phone}
-              onChangeText={setPhone}
-              iconLeft="call-outline"
-              keyboardType="phone-pad"
-              autoComplete="tel"
-              textContentType="telephoneNumber"
-            />
-          </View>
-          <View style={styles.addressFieldGap}>
-            <AddressTypeSelector value={addressType} onChange={setAddressType} />
-          </View>
-          <View style={styles.addressFieldGap}>
-            <PremiumInput
-              label="House / Flat / Building no."
-              value={houseNumber}
-              onChangeText={setHouseNumber}
-              iconLeft="business-outline"
-              autoCapitalize="characters"
-            />
-          </View>
-          <View style={styles.addressFieldGap}>
-            <PremiumInput
-              label="Street / Area / Colony"
-              value={line1}
-              onChangeText={setLine1}
-              iconLeft="map-outline"
-              autoCapitalize="sentences"
-              autoComplete="street-address"
-              textContentType="streetAddressLine1"
-            />
-          </View>
-          <View style={styles.addressFieldGap}>
-            <PremiumInput
-              label="Landmark (optional)"
-              value={landmark}
-              onChangeText={setLandmark}
-              iconLeft="navigate-outline"
-              placeholder="e.g. Near city mall"
-              autoCapitalize="sentences"
-            />
-          </View>
-          <View style={[styles.addressRow, isCompact ? styles.addressRowCompact : null]}>
-            <View style={[styles.addressFieldGap, styles.halfField]}>
-              <PremiumInput
-                label="City"
-                value={city}
-                onChangeText={setCity}
-                iconLeft="business-outline"
-                autoCapitalize="words"
-                autoComplete="address-level2"
-                textContentType="addressCity"
-              />
-            </View>
-            <View style={[styles.addressFieldGap, styles.halfField]}>
-              <PremiumInput
-                label="Pincode"
-                value={postalCode}
-                onChangeText={setPostalCode}
-                iconLeft="pin-outline"
-                keyboardType="number-pad"
-                autoComplete="postal-code"
-                textContentType="postalCode"
-              />
-            </View>
-          </View>
-          <View style={styles.addressFieldGap}>
-            <PremiumInput
-              label="Delivery note (optional)"
-              value={note}
-              onChangeText={setNote}
-              multiline
-              numberOfLines={3}
-              iconLeft="chatbubbles-outline"
-            />
-          </View>
-
-        </View>
-        </CheckoutInfoCard>
         ) : null}
 
-        {(!kankregWebSplit || isCheckoutFlow) && cartItems.length > 0 ? (
-          <CheckoutInfoCard title="Payment method">
+        {showCheckoutDetails && (!kankregWebSplit || isCheckoutFlow) && cartItems.length > 0 ? (
+          <KankregCheckoutSectionCard title="Payment">
             <PaymentMethodSelector
               value={paymentMethod}
               onChange={setPaymentMethod}
               disabled={isPlacingOrder}
+              embedded
+              compact
             />
-          </CheckoutInfoCard>
+          </KankregCheckoutSectionCard>
         ) : null}
 
         </>
           }
           aside={
         <>
+        {kankregWebSplit && !isCheckoutFlow ? (
+          <KankregCartSummaryCard
+            subtotal={totalAmount}
+            discount={discountAmount}
+            discountLabel={appliedCoupon?.code ? `Coupon ${appliedCoupon.code}` : undefined}
+            platformFee={platformFee}
+            total={payableAmount}
+            ctaLabel={primaryCtaLabel}
+            onPress={handlePrimaryCta}
+            disabled={cartItems.length === 0}
+            loading={isPlacingOrder}
+            showCoupon
+            couponCode={couponCode}
+            onCouponChange={setCouponCode}
+            onApplyCoupon={handleApplyCoupon}
+            appliedCouponText={appliedCouponText}
+            itemCount={totalItems}
+          />
+        ) : !figmaStickyPay ? (
         <PremiumCard variant="muted" padding="md" style={styles.summaryCardWrap}>
           {kankregWebSplit ? (
             <Text style={styles.summarySerifTitle}>
               {isCheckoutFlow ? "Order total" : "Order summary"}
             </Text>
-          ) : (
-            <PremiumSectionHeader compact overline={CART_UI.summaryOverline} title={CART_UI.summaryTitle} />
-          )}
-          {isCheckoutFlow && totalItems > 0 ? (
-            <Text style={[styles.summaryMetaLine, { color: c.textSecondary }]}>
-              Items ({totalItems}) · {formatINR(totalAmount)}
-            </Text>
-          ) : null}
-          {kankregWebSplit && !isCheckoutFlow ? (
-            <View style={styles.couponRow}>
-              <View style={styles.couponInputWrap}>
-                <PremiumInput
-                  label="Coupon code"
-                  value={couponCode}
-                  onChangeText={setCouponCode}
-                  autoCapitalize="characters"
-                  iconLeft="pricetag-outline"
-                  returnKeyType="done"
-                  onSubmitEditing={handleApplyCoupon}
-                />
-              </View>
-              <PremiumButton
-                label="Apply"
-                variant="ghost"
-                size="sm"
-                onPress={handleApplyCoupon}
-                style={styles.applyCouponBtn}
-              />
-            </View>
           ) : null}
           <View style={styles.summaryInner}>
             <View style={styles.summaryRow}>
@@ -866,29 +613,11 @@ export default function CartScreen({ navigation, route }) {
                 <Text style={styles.inrBadgeText}>INR</Text>
               </View>
             </View>
-            <Text style={[styles.summaryPaymentHint, isRazorpayMethod ? styles.summaryPaymentHintOnline : styles.summaryPaymentHintCod]}>
-              {isRazorpayMethod
-                ? `Pay ${formatINR(payableAmount)} via Razorpay`
-                : "Pay cash when your order arrives"}
-            </Text>
-            <View style={styles.summaryTrustRow}>
-              <View style={styles.summaryTrustItem}>
-                <Ionicons name="flame-outline" size={icon.micro} color={ALCHEMY.brownMuted} />
-                <Text style={styles.summaryTrustText}>{CART_UI.trustPure}</Text>
-              </View>
-              <View style={styles.summaryTrustItem}>
-                <Ionicons name="shield-checkmark-outline" size={icon.micro} color={ALCHEMY.brownMuted} />
-                <Text style={styles.summaryTrustText}>{CART_UI.trustPay}</Text>
-              </View>
-              <View style={styles.summaryTrustItem}>
-                <Ionicons name="leaf-outline" size={icon.micro} color={ALCHEMY.brownMuted} />
-                <Text style={styles.summaryTrustText}>{CART_UI.trustOrganic}</Text>
-              </View>
-            </View>
           </View>
         </PremiumCard>
+        ) : null}
 
-        {!nativeStickyPay ? (
+        {!figmaStickyPay && !(kankregWebSplit && !isCheckoutFlow) ? (
         <View style={styles.cartCtaDock}>
           <View style={styles.checkoutCtaWrap}>
             {cartItems.length > 0 && !isPlacingOrder && !reducedMotion ? (
@@ -926,46 +655,24 @@ export default function CartScreen({ navigation, route }) {
               )}
             </TouchableOpacity>
           </View>
-
-          <Pressable
-            onPress={() => navigation.navigate("Home")}
-            style={({ pressed, hovered }) => [
-              styles.continueExploreWrap,
-              styles.continueExploreInner,
-              Platform.OS === "web" && hovered ? styles.continueExploreInnerHover : null,
-              pressed ? styles.continueExploreWrapPressed : null,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Continue exploring the store"
-          >
-            <Ionicons name="chevron-back" size={15} color={isDark ? ALCHEMY.gold : ALCHEMY.brown} />
-            <Text style={styles.continueExploreText}>CONTINUE EXPLORING</Text>
-          </Pressable>
         </View>
         ) : null}
         </>
           }
         />
 </KankregScrollPage>
-      {nativeStickyPay ? (
-        <View style={[styles.stickyPayBar, { bottom: customerFloatingNavOffset(insets) }]}>
-          <TouchableOpacity
-            activeOpacity={0.92}
-            onPress={handlePrimaryCta}
-            disabled={isPlacingOrder}
-            style={styles.checkoutGradientWrap}
-          >
-            <LinearGradient
-              colors={["#cba24e", "#a9772e", "#8a5f22"]}
-              locations={[0, 0.45, 1]}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={styles.checkoutGradientBtn}
-            >
-              <Text style={styles.checkoutGradientText}>{primaryCtaLabel}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
+      {figmaStickyPay ? (
+        <KankregCartPayBar
+          mode="sticky"
+          subtotal={totalAmount}
+          discount={discountAmount}
+          discountLabel={appliedCoupon?.code ? `Coupon ${appliedCoupon.code}` : undefined}
+          total={payableAmount}
+          ctaLabel={primaryCtaLabel}
+          onPress={handlePrimaryCta}
+          disabled={cartItems.length === 0}
+          loading={isPlacingOrder}
+        />
       ) : null}
       <BottomNavBar />
     </CustomerScreenShell>
@@ -1505,6 +1212,17 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     marginBottom: spacing.sm},
   listSection: {
     marginBottom: spacing.md},
+  nativeListSection: {
+    paddingHorizontal: FIGMA.gutter,
+    paddingBottom: spacing.xl * 3,
+  },
+  figmaListSection: {
+    paddingHorizontal: FIGMA.gutter,
+  },
+  figmaCouponWrap: {
+    paddingHorizontal: FIGMA.gutter,
+    marginBottom: spacing.md,
+  },
   listContent: {
     gap: spacing.sm},
   cartItemCard: {
@@ -1861,33 +1579,4 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     marginBottom: spacing.lg},
   peNone: {
     pointerEvents: "none"}});
-}
-
-function RetryCartImage({ sourceUri, style, placeholderStyle, iconSize, c }) {
-  const candidates = useMemo(() => getImageUriCandidates(sourceUri), [sourceUri]);
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    setIndex(0);
-  }, [sourceUri]);
-
-  const currentUri = candidates[index] || "";
-  if (!currentUri) {
-    return (
-      <View style={[style, placeholderStyle]}>
-        <Ionicons name="image-outline" size={iconSize} color={c.textMuted} />
-      </View>
-    );
-  }
-
-  return (
-    <Image
-      source={{ uri: currentUri }}
-      style={style}
-      contentFit="cover"
-      transition={200}
-      recyclingKey={currentUri}
-      onError={() => setIndex((prev) => prev + 1)}
-    />
-  );
 }

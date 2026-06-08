@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
+import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -19,6 +20,7 @@ import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumInput from "../../components/ui/PremiumInput";
 import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumCard from "../../components/ui/PremiumCard";
+import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
 export default function AdminSupportScreen({ navigation, route }) {
   const { colors: c, shadowPremium } = useTheme();
@@ -87,7 +89,7 @@ export default function AdminSupportScreen({ navigation, route }) {
 
   if (user && !user.isAdmin) {
     return (
-      <CustomerScreenShell style={styles.screen}>
+      <AdminScreenShell style={styles.screen}>
         <KankregScrollPage
         scrollVariant="inner"
         showFooter={false}
@@ -98,24 +100,24 @@ export default function AdminSupportScreen({ navigation, route }) {
             <View style={styles.panel}>
               <PremiumErrorBanner
                 severity="warning"
-                title="Admin access required"
+                title={ADMIN_GATE.title}
                 message="Sign in with an admin account to view support."
               />
               <PremiumButton
-                label="Back to Home"
+                label={ADMIN_GATE.backHome}
                 variant="primary"
-                onPress={() => navigation.navigate("Home")}
+                onPress={() => navigateCustomerRoute(navigation, "Home")}
                 style={styles.gateCta}
               />
             </View>
           </SectionReveal>
         </KankregScrollPage>
-      </CustomerScreenShell>
+      </AdminScreenShell>
     );
   }
 
   return (
-    <CustomerScreenShell style={styles.screen}>
+    <AdminScreenShell style={styles.screen}>
       <KeyboardAvoidingView style={customerScrollFill} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <KankregScrollPage
         scrollVariant="admin"
@@ -127,8 +129,8 @@ export default function AdminSupportScreen({ navigation, route }) {
         <KankregAdminShell
           navigation={navigation}
           route={route}
-          title="Support Inbox"
-          subtitle="Customer conversations"
+          title={ADMIN_SCREEN_COPY.support.title}
+          subtitle={ADMIN_SCREEN_COPY.support.subtitle}
           headerRight={
             <PremiumButton label="Refresh" iconLeft="refresh-outline" variant="secondary" size="sm" onPress={loadThreads} />
           }
@@ -253,7 +255,7 @@ export default function AdminSupportScreen({ navigation, route }) {
         </KankregAdminShell>
 </KankregScrollPage>
       </KeyboardAvoidingView>
-    </CustomerScreenShell>
+    </AdminScreenShell>
   );
 }
 

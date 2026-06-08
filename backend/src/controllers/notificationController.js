@@ -1,5 +1,6 @@
 const Notification = require("../models/Notification");
 const User = require("../models/User");
+const { emitNotificationCreated } = require("../realtime/socketHub");
 
 function chunkArray(items, chunkSize) {
   const chunks = [];
@@ -98,6 +99,7 @@ async function createBroadcastNotification(req, res, next) {
       console.warn("[notifications] Broadcast push failed (notification still saved):", pushErr?.message || pushErr);
     }
 
+    emitNotificationCreated(created);
     res.status(201).json({ ...created.toObject(), pushSent: pushResult.sent });
   } catch (error) {
     next(error);

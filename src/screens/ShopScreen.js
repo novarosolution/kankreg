@@ -14,9 +14,11 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import CustomerScreenShell from "../components/CustomerScreenShell";
+import BottomNavBar from "../components/BottomNavBar";
 import { HomeCatalogGridCard } from "../components/home/HomeCatalogProductViews";
 import { KankregGrainOverlay, KankregPageWrap } from "../components/kankreg/KankregPageChrome";
-import KankregUnifiedPageHeader from "../components/kankreg/KankregUnifiedPageHeader";
+import KankregCustomerPageHeader from "../components/kankreg/KankregCustomerPageHeader";
+import { SHOP_SCREEN_UI } from "../content/appContent";
 import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 import PremiumEmptyState from "../components/ui/PremiumEmptyState";
 import { useCart } from "../context/CartContext";
@@ -41,6 +43,11 @@ import { fonts, spacing } from "../theme/tokens";
 import { productToCartLine } from "../utils/productCart";
 import { Ionicons } from "@expo/vector-icons";
 import useReducedMotion from "../hooks/useReducedMotion";
+import NativeSearchBar from "../components/native/NativeSearchBar";
+import NativePillRow from "../components/native/NativePillRow";
+import NativeProductCard from "../components/native/NativeProductCard";
+import { FIGMA, figmaBody } from "../theme/figmaApp";
+import { applyShopFilters, getProductCategoryLabels } from "../utils/shopFilters";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -92,9 +99,10 @@ export default function ShopScreen({ navigation, route }) {
   });
   const reducedMotion = useReducedMotion();
   const sortPulse = useSharedValue(1);
-  const [minRating, setMinRating] = useState(4);
+  const [minRating, setMinRating] = useState(0);
   const [pill, setPill] = useState("All");
   const [sortKey, setSortKey] = useState("featured");
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const { showShopSidebar, isXs, catalogCardCompact } = useKankregLayout();
   const showSidebar = showShopSidebar;
@@ -131,13 +139,23 @@ export default function ShopScreen({ navigation, route }) {
   }, [route.params?.pill]);
 
   const toggleCategory = (label) => {
-    setCategories((prev) => {
-      if (prev.includes(label)) {
-        const next = prev.filter((cat) => cat !== label);
-        return next.length ? next : [label];
-      }
-      return [...prev, label];
-    });
+    setCategories((prev) =>
+      prev.includes(label) ? prev.filter((cat) => cat !== label) : [...prev, label]
+    );
+  };
+
+  const clearAllFilters = () => {
+    setPill("All");
+    setCategories([]);
+    setMinRating(0);
+    setSortKey("featured");
+  };
+
+  const handlePillSelect = (next) => {
+    setPill(next);
+    if (next === "All") {
+      setCategories([]);
+    }
   };
 
   const handleRatingChip = (label) => {
@@ -146,50 +164,20 @@ export default function ShopScreen({ navigation, route }) {
     else setMinRating(0);
   };
 
-  const categoryOptions = useMemo(
-    () =>
-      [...new Set(products.map((p) => String(p.category || "").trim()).filter(Boolean))].sort((a, b) =>
-        a.localeCompare(b)
-      ),
-    [products]
-  );
+  const categoryOptions = useMemo(() => {
+    const labels = products.flatMap((p) => getProductCategoryLabels(p));
+    return [...new Set(labels)].sort((a, b) => a.localeCompare(b));
+  }, [products]);
 
-  const filtered = useMemo(() => {
-    let list = products.filter((p) => p.inStock !== false);
-    if (categories.length) {
-      list = list.filter((p) => {
-        const cat = String(p.category || "").trim();
-        return categories.some((c) => c === cat || cat.toLowerCase() === c.toLowerCase());
-      });
-    }
-    if (pill === "On sale") {
-      list = list.filter((p) => {
-        const mrp = Number(p.mrp);
-        const price = Number(p.price);
-        return Number.isFinite(mrp) && mrp > price;
-      });
-    } else if (pill === "Premium") {
-      list = list.filter((p) => Number(p.price) >= 1500);
-    } else if (pill === "New in") {
-      list = [...list].reverse().slice(0, Math.max(list.length, 8));
-    }
-    if (minRating >= 4) {
-      list = list.filter((p) => Number(p.rating || p.averageRating || 5) >= 4);
-    } else if (minRating >= 3) {
-      list = list.filter((p) => Number(p.rating || p.averageRating || 5) >= 3);
-    }
-    if (sortKey === "price-asc") {
-      list = [...list].sort((a, b) => Number(a.price) - Number(b.price));
-    } else if (sortKey === "newest") {
-      list = [...list].reverse();
-    }
-    return list;
-  }, [products, categories, pill, minRating, sortKey]);
+  const filtered = useMemo(
+    () => applyShopFilters(products, { categories, pill, minRating, sortKey }),
+    [products, categories, pill, minRating, sortKey]
+  );
 
   const activeCategoryLabel = categories.length === 1 ? categories[0] : "All categories";
   const sortLabel = SORT_OPTIONS.find((o) => o.key === sortKey)?.label || "Featured";
-  const mobileTitle = isXs ? "Shop" : "Shop everything";
-  const headerSubtitle = showSidebar ? undefined : "Curated pieces for home & kitchen";
+  const mobileTitle = isXs ? SHOP_SCREEN_UI.pageTitle : SHOP_SCREEN_UI.pageTitleWide;
+  const headerSubtitle = showSidebar ? undefined : SHOP_SCREEN_UI.pageSubtitle;
 
   const sortAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: sortPulse.value }],
@@ -204,6 +192,84 @@ export default function ShopScreen({ navigation, route }) {
     setSortKey(next.key);
   };
 
+  if (Platform.OS !== "web") {
+    const resultMeta = figmaBody(10, isDark);
+    return (
+      <CustomerScreenShell style={{ flex: 1 }}>
+        <KankregScrollPage
+          scrollVariant="page"
+          showFooter={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={KANKREG_PALETTE.gold} />
+          }
+        >
+          <KankregCustomerPageHeader
+            eyebrow={SHOP_SCREEN_UI.pageEyebrow}
+            title={SHOP_SCREEN_UI.pageTitle}
+            showBack={false}
+          />
+          <NativeSearchBar
+            onPress={() => {}}
+            onFilterPress={() => setFiltersOpen((open) => !open)}
+            placeholder={SHOP_SCREEN_UI.searchPlaceholder}
+          />
+          <NativePillRow options={SHOP_PILLS} selected={pill} onSelect={handlePillSelect} />
+          {filtersOpen ? (
+            <View style={styles.nativeFilters}>
+              <KankregFilterChips
+                title={SHOP_SCREEN_UI.filterCategory}
+                options={categoryOptions}
+                selected={categories}
+                multi
+                onToggle={toggleCategory}
+                compact
+              />
+              <KankregFilterChips
+                title={SHOP_SCREEN_UI.filterRating}
+                options={RATING_OPTIONS}
+                selected={ratingLabelFromValue(minRating)}
+                multi={false}
+                onToggle={handleRatingChip}
+                compact
+              />
+            </View>
+          ) : null}
+          <Text style={[resultMeta, styles.nativeMeta]}>
+            {SHOP_SCREEN_UI.showingPrefix}{" "}
+            <Text style={{ color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink, fontFamily: fonts.semibold }}>{filtered.length}</Text>{" "}
+            {SHOP_SCREEN_UI.showingOf} {products.length} {SHOP_SCREEN_UI.showingSuffix}
+          </Text>
+          {loading ? (
+            <CatalogGridSkeleton count={6} />
+          ) : filtered.length ? (
+            <View style={nativeShopGrid.grid}>
+              {filtered.map((item, idx) => (
+                <View key={item.id} style={nativeShopGrid.cell}>
+                  <NativeProductCard
+                    product={item}
+                    index={idx}
+                    isOutOfStock={item.inStock === false}
+                    onPress={() => navigation.navigate("Product", { productId: item.id })}
+                    onAddToCart={() => addToCart(productToCartLine(item))}
+                  />
+                </View>
+              ))}
+            </View>
+          ) : (
+            <PremiumEmptyState
+              iconName="search-outline"
+              title={SHOP_SCREEN_UI.emptyTitle}
+              description={SHOP_SCREEN_UI.emptyDescription}
+              ctaLabel={SHOP_SCREEN_UI.clearFilters}
+              onCtaPress={clearAllFilters}
+            />
+          )}
+        </KankregScrollPage>
+        <BottomNavBar />
+      </CustomerScreenShell>
+    );
+  }
+
   return (
     <CustomerScreenShell style={{ flex: 1 }}>
       <KankregGrainOverlay />
@@ -215,8 +281,8 @@ export default function ShopScreen({ navigation, route }) {
       >
         <KankregPageWrap gap={KANKREG_PAGE_SECTION_GAP}>
           <KankregAnimatedSection index={0}>
-            <KankregUnifiedPageHeader
-              eyebrow="Catalog"
+            <KankregCustomerPageHeader
+              eyebrow={SHOP_SCREEN_UI.pageEyebrow}
               title={mobileTitle}
               subtitle={headerSubtitle}
               navigation={navigation}
@@ -229,7 +295,7 @@ export default function ShopScreen({ navigation, route }) {
               <KankregAnimatedSection index={1} style={styles.filters}>
               <View style={[styles.filtersInner, filterPanelStyle]}>
                 <View style={styles.filterGroup}>
-                  <Text style={[styles.filterH5, isDark && styles.filterH5Dark]}>Category</Text>
+                  <Text style={[styles.filterH5, isDark && styles.filterH5Dark]}>{SHOP_SCREEN_UI.filterCategory}</Text>
                   {categoryOptions.map((label) => (
                     <FilterCheck
                       key={label}
@@ -241,7 +307,7 @@ export default function ShopScreen({ navigation, route }) {
                   ))}
                 </View>
                 <View style={styles.filterGroup}>
-                  <Text style={[styles.filterH5, isDark && styles.filterH5Dark]}>Price</Text>
+                  <Text style={[styles.filterH5, isDark && styles.filterH5Dark]}>{SHOP_SCREEN_UI.filterPrice}</Text>
                   <View style={styles.rangeTrack}>
                     <View style={styles.rangeFill} />
                   </View>
@@ -251,7 +317,7 @@ export default function ShopScreen({ navigation, route }) {
                   </View>
                 </View>
                 <View style={styles.filterGroup}>
-                  <Text style={[styles.filterH5, isDark && styles.filterH5Dark]}>Rating</Text>
+                  <Text style={[styles.filterH5, isDark && styles.filterH5Dark]}>{SHOP_SCREEN_UI.filterRating}</Text>
                   <FilterCheck
                     label="4★ & above"
                     on={minRating === 4}
@@ -264,6 +330,12 @@ export default function ShopScreen({ navigation, route }) {
                     onPress={() => setMinRating(3)}
                     isDark={isDark}
                   />
+                  <FilterCheck
+                    label="Any rating"
+                    on={minRating === 0}
+                    onPress={() => setMinRating(0)}
+                    isDark={isDark}
+                  />
                 </View>
               </View>
               </KankregAnimatedSection>
@@ -274,7 +346,7 @@ export default function ShopScreen({ navigation, route }) {
                 <KankregAnimatedSection index={1}>
                 <View style={styles.mobileFilters}>
                   <KankregFilterChips
-                    title="Category"
+                    title={SHOP_SCREEN_UI.filterCategory}
                     options={categoryOptions}
                     selected={categories}
                     multi
@@ -286,11 +358,11 @@ export default function ShopScreen({ navigation, route }) {
                     options={SHOP_PILLS}
                     selected={pill}
                     multi={false}
-                    onToggle={setPill}
+                    onToggle={handlePillSelect}
                     compact
                   />
                   <KankregFilterChips
-                    title="Rating"
+                    title={SHOP_SCREEN_UI.filterRating}
                     options={RATING_OPTIONS}
                     selected={ratingLabelFromValue(minRating)}
                     multi={false}
@@ -318,7 +390,7 @@ export default function ShopScreen({ navigation, route }) {
                       {SHOP_PILLS.map((p) => (
                         <Pressable
                           key={p}
-                          onPress={() => setPill(p)}
+                          onPress={() => handlePillSelect(p)}
                           style={[styles.pill, pill === p && styles.pillOn]}
                         >
                           <Text style={[styles.pillText, pill === p && styles.pillTextOn]}>{p}</Text>
@@ -353,11 +425,7 @@ export default function ShopScreen({ navigation, route }) {
                     title="No matches"
                     description="Try another category or clear filters to see more products."
                     ctaLabel="View all"
-                    onCtaPress={() => {
-                      setPill("All");
-                      setCategories([]);
-                      setMinRating(0);
-                    }}
+                    onCtaPress={clearAllFilters}
                   />
                 </SectionReveal>
               ) : (
@@ -382,6 +450,7 @@ export default function ShopScreen({ navigation, route }) {
           </View>
         </KankregPageWrap>
       </KankregScrollPage>
+      <BottomNavBar />
     </CustomerScreenShell>
   );
 }
@@ -392,6 +461,20 @@ const gridStyles = StyleSheet.create({
   productListRow: {},
 });
 
+const nativeShopGrid = StyleSheet.create({
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: FIGMA.gutter,
+    gap: 11,
+    paddingBottom: spacing.md,
+  },
+  cell: {
+    width: "47.5%",
+    minWidth: 0,
+  },
+});
+
 const styles = StyleSheet.create({
   shopGrid: {
     flexDirection: "row",
@@ -399,6 +482,10 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   shopGridStack: { flexDirection: "column", gap: 0 },
+  nativeFilters: {
+    paddingHorizontal: FIGMA.gutter,
+    paddingBottom: spacing.xs,
+  },
   filters: {
     width: 248,
     flexShrink: 0,
@@ -512,4 +599,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   sortNative: { fontSize: 13, fontFamily: fonts.semibold, color: KANKREG_PALETTE.ink },
+  nativeMeta: {
+    paddingHorizontal: FIGMA.gutter,
+    marginTop: spacing.sm + 2,
+    marginBottom: spacing.sm,
+  },
 });

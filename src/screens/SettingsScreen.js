@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Platform, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
 import { Ionicons } from "@expo/vector-icons";
 import KankregScrollPage from "../components/kankreg/KankregScrollPage";
@@ -8,7 +8,7 @@ import { KANKREG_PAGE_SECTION_GAP } from "../theme/kankregScreenStyles";
 
 import BottomNavBar from "../components/BottomNavBar";
 import CustomerScreenShell from "../components/CustomerScreenShell";
-import KankregUnifiedPageHeader from "../components/kankreg/KankregUnifiedPageHeader";
+import KankregCustomerPageHeader from "../components/kankreg/KankregCustomerPageHeader";
 import SectionReveal from "../components/motion/SectionReveal";
 import { staggerDelay } from "../theme/motion";
 import { useAuth } from "../context/AuthContext";
@@ -22,10 +22,12 @@ import { fonts, icon as glyphSize, radius, spacing, typography } from "../theme/
 import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
 import PremiumCard from "../components/ui/PremiumCard";
 import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
-import GoldHairline from "../components/ui/GoldHairline";
 import PremiumSwitch from "../components/ui/PremiumSwitch";
 import CollapsibleSection from "../components/ui/CollapsibleSection";
 import { SETTINGS_SCREEN } from "../content/appContent";
+import NativeMenuList from "../components/native/NativeMenuList";
+import NativeCard from "../components/native/NativeCard";
+import { FIGMA } from "../theme/figmaApp";
 
 function SettingsItem({ icon, title, subtitle, onPress, danger = false, styles, c }) {
   const [hovered, setHovered] = useState(false);
@@ -99,6 +101,69 @@ export default function SettingsScreen({ navigation }) {
   };
 
   let groupIndex = 0;
+  const isNativeApp = Platform.OS !== "web";
+
+  const nativeMenuItems = [
+    { key: "edit", label: "Edit profile", icon: "create-outline", route: "EditProfile" },
+    { key: "profile", label: "Account overview", icon: "person-outline", route: "Profile" },
+    { key: "address", label: "Manage address", icon: "location-outline", route: "ManageAddress" },
+    { key: "orders", label: "My orders", icon: "bag-handle-outline", route: "MyOrders" },
+    { key: "notifications", label: "Notification inbox", icon: "mail-unread-outline", route: "Notifications" },
+    { key: "support", label: "Help & support", icon: "chatbubble-ellipses-outline", route: "Support" },
+  ];
+
+  const handleNativeSignOut = async () => {
+    try {
+      await logout();
+      resetNavigationToHome(navigation);
+    } catch (err) {
+      setError(err.message || "Could not sign out.");
+    }
+  };
+
+  if (isNativeApp) {
+    return (
+      <CustomerScreenShell style={styles.screen}>
+        <KankregScrollPage scrollVariant="inner" style={customerScrollFill} showsVerticalScrollIndicator={false}>
+          <View style={styles.nativeWrap}>
+            <KankregCustomerPageHeader
+              eyebrow={SETTINGS_SCREEN.pageEyebrow}
+              title={SETTINGS_SCREEN.pageTitle}
+              showBack={false}
+            />
+            {error ? (
+              <View style={styles.bannerWrap}>
+                <PremiumErrorBanner severity="error" message={error} compact />
+              </View>
+            ) : null}
+            {permissionMsg ? (
+              <View style={styles.bannerWrap}>
+                <PremiumErrorBanner severity="success" message={permissionMsg} compact />
+              </View>
+            ) : null}
+            <NativeCard style={styles.nativeCard}>
+              <Pressable style={styles.nativeRow} onPress={cycleTheme}>
+                <Ionicons name="contrast-outline" size={17} color={FIGMA.gold} />
+                <Text style={styles.nativeRowLabel}>Theme</Text>
+                <Text style={styles.nativeRowMeta}>{themeSubtitle}</Text>
+              </Pressable>
+              <Pressable style={styles.nativeRow} onPress={handleEnableNotifications}>
+                <Ionicons name="notifications-outline" size={17} color={FIGMA.gold} />
+                <Text style={styles.nativeRowLabel}>Push notifications</Text>
+                <Text style={styles.nativeRowChevron}>›</Text>
+              </Pressable>
+            </NativeCard>
+            <NativeMenuList
+              navigation={navigation}
+              items={nativeMenuItems}
+              onSignOut={isAuthenticated ? handleNativeSignOut : undefined}
+            />
+          </View>
+        </KankregScrollPage>
+        <BottomNavBar />
+      </CustomerScreenShell>
+    );
+  }
 
   return (
     <CustomerScreenShell style={styles.screen}>
@@ -108,14 +173,14 @@ export default function SettingsScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         <KankregPageWrap gap={KANKREG_PAGE_SECTION_GAP}>
-        <KankregUnifiedPageHeader
-          eyebrow="Account"
-          title="Settings"
+        <KankregCustomerPageHeader
+          eyebrow={SETTINGS_SCREEN.pageEyebrow}
+          title={SETTINGS_SCREEN.pageTitle}
           subtitle={SETTINGS_SCREEN.pageSubtitle}
           navigation={navigation}
           showBack={false}
+          showHairline
         />
-        <GoldHairline marginVertical={spacing.sm} />
         <SectionReveal preset="fade-up" delay={40}>
         <View style={styles.panel}>
           {error ? (
@@ -351,6 +416,38 @@ function createSettingsStyles(c, shadowPremium, isDark, layoutFlags = {}) {
   return StyleSheet.create({
     screen: {
       flex: 1},
+    nativeWrap: {
+      paddingHorizontal: FIGMA.gutter,
+      paddingBottom: spacing.lg,
+    },
+    nativeCard: {
+      marginBottom: 14,
+      paddingVertical: 4,
+    },
+    nativeRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      paddingVertical: 13,
+      paddingHorizontal: 14,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: FIGMA.line,
+    },
+    nativeRowLabel: {
+      flex: 1,
+      fontFamily: fonts.semibold,
+      fontSize: 13,
+      color: FIGMA.ink,
+    },
+    nativeRowMeta: {
+      fontFamily: fonts.regular,
+      fontSize: 11,
+      color: FIGMA.inkFaint,
+    },
+    nativeRowChevron: {
+      fontSize: 16,
+      color: FIGMA.inkFaint,
+    },
     panel: {
       ...customerPanel(c, shadowPremium, isDark),
       marginBottom: spacing.md + 2,

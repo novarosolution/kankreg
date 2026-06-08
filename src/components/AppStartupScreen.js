@@ -5,7 +5,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { Easing, FadeIn, FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import { fonts, radius, spacing, typography } from "../theme/tokens";
-import { BRAND_LOGO_SIZE, APP_TAGLINE } from "../constants/brand";
+import { BRAND_LOGO_SIZE } from "../constants/brand";
+import { APP_SPLASH_TAGLINE, APP_TAGLINE } from "../content/appContent";
 import { ALCHEMY, CUSTOMER_SHELL_GRADIENT_LOCATIONS, FONT_DISPLAY_SEMI, getCustomerShellGradient } from "../theme/customerAlchemy";
 import BrandLogo from "./BrandLogo";
 
@@ -19,6 +20,32 @@ export default function AppStartupScreen({ colors: c, useAppFonts = true, footno
   const footFont = useAppFonts ? { fontFamily: fonts.medium } : {};
   const displayFont = useAppFonts ? { fontFamily: FONT_DISPLAY_SEMI } : {};
   const shell = getCustomerShellGradient(isDark, c);
+
+  const isNative = Platform.OS !== "web";
+
+  if (isNative) {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+        <LinearGradient
+          colors={["#ead9b2", "#b6985c", "#2a241e"]}
+          locations={[0, 0.52, 1]}
+          start={{ x: 0.5, y: 0.2 }}
+          end={{ x: 0.5, y: 1 }}
+          style={styles.root}
+        >
+          <View style={styles.figmaSplashCenter}>
+            <View style={styles.figmaDot} />
+            <Text style={[styles.figmaBrand, displayFont]}>kankreg</Text>
+            {useAppFonts ? (
+              <Text style={[styles.figmaTag, footFont]}>{APP_SPLASH_TAGLINE}</Text>
+            ) : null}
+            <Text style={[styles.footnote, { color: "rgba(255,255,255,0.7)" }, footFont]}>{footnote}</Text>
+          </View>
+          <Text style={styles.figmaEst}>EST. 2025 · CRAFTED IN INDIA</Text>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -60,9 +87,14 @@ export default function AppStartupScreen({ colors: c, useAppFonts = true, footno
               <View style={styles.logoCardInner}>
                 <BrandLogo width={BRAND_LOGO_SIZE.startup} height={BRAND_LOGO_SIZE.startup} />
                 {useAppFonts ? (
-                  <Text style={[styles.tagline, { color: c.textSecondary }, displayFont]} numberOfLines={2}>
-                    {APP_TAGLINE}
-                  </Text>
+                  <>
+                    <Text style={[styles.splashTagline, { color: c.textPrimary }, displayFont]} numberOfLines={2}>
+                      {APP_SPLASH_TAGLINE}
+                    </Text>
+                    <Text style={[styles.tagline, { color: c.textSecondary }]} numberOfLines={2}>
+                      {APP_TAGLINE}
+                    </Text>
+                  </>
                 ) : null}
               </View>
             </View>
@@ -196,12 +228,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     alignItems: "center",
   },
-  tagline: {
+  splashTagline: {
     marginTop: spacing.md,
-    fontSize: typography.bodySmall,
+    fontSize: typography.body + 1,
+    letterSpacing: 0.2,
+    textAlign: "center",
+    lineHeight: 24,
+  },
+  tagline: {
+    marginTop: spacing.xs,
+    fontSize: typography.caption,
     letterSpacing: 0.35,
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: 18,
+    opacity: 0.88,
   },
   ornamentSpacer: {
     height: spacing.md,
@@ -245,6 +285,47 @@ const styles = StyleSheet.create({
   footnote: {
     fontSize: typography.caption,
     letterSpacing: 0.3,
+  },
+  figmaSplashCenter: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.lg,
+  },
+  figmaDot: {
+    width: 13,
+    height: 13,
+    borderRadius: 7,
+    backgroundColor: "#fff",
+    marginBottom: 18,
+    shadowColor: "#fff",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.18,
+    shadowRadius: 7,
+  },
+  figmaBrand: {
+    fontSize: 42,
+    fontWeight: "600",
+    letterSpacing: 0.8,
+    color: "#fff",
+  },
+  figmaTag: {
+    marginTop: 10,
+    fontSize: 10,
+    letterSpacing: 4,
+    textTransform: "uppercase",
+    color: "rgba(255,255,255,0.8)",
+    textAlign: "center",
+  },
+  figmaEst: {
+    position: "absolute",
+    bottom: 40,
+    left: 0,
+    right: 0,
+    textAlign: "center",
+    fontSize: 10,
+    letterSpacing: 2,
+    color: "rgba(255,255,255,0.7)",
   },
   peNone: {
     pointerEvents: "none",

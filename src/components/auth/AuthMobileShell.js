@@ -1,152 +1,103 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import BrandLogo from "../BrandLogo";
-import { BRAND_LOGO_SIZE } from "../../constants/brand";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
-import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
-import { fonts, lineHeight, spacing, typography } from "../../theme/tokens";
+import { FIGMA, figmaDisplayTitle, figmaEyebrow, figmaBody } from "../../theme/figmaApp";
+import { spacing } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
 
+const cardShadow = platformShadow({
+  ios: {
+    shadowColor: "#3D2A12",
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 18,
+  },
+  android: { elevation: 8 },
+});
+
 /**
- * Phone-native auth shell: single card with gradient header + form (kankreg.html `.auth` stacked).
+ * figmaforkankreg.html auth — gradient hero top + sheet form sliding up.
  */
-export default function AuthMobileShell({ children, artTitle, artSubtitle }) {
+export default function AuthMobileShell({ children, artTitle, artSubtitle, eyebrow, mode = "login" }) {
   const { isXs } = useKankregLayout();
-  const title =
-    artTitle ||
-    (isXs ? "Goods worth coming back for." : "Goods worth\ncoming back for.");
+  const isLogin = mode === "login";
+
+  if (Platform.OS === "web") {
+    return <View style={styles.webFallback}>{children}</View>;
+  }
 
   return (
-    <View style={[styles.card, cardShadow]}>
-      <View style={[styles.art, isXs && styles.artCompact]}>
-        <LinearGradient
-          colors={["#ead9b2", "#b6985c", "#2a241e"]}
-          locations={[0, 0.48, 1]}
-          start={{ x: 0.15, y: 0 }}
-          end={{ x: 0.85, y: 1 }}
-          style={StyleSheet.absoluteFillObject}
+    <View style={styles.root}>
+      <LinearGradient
+        colors={["#ead9b2", "#b6985c", "#2a241e"]}
+        locations={[0, 0.55, 1]}
+        start={{ x: 0.25, y: 0 }}
+        end={{ x: 0.75, y: 1 }}
+        style={styles.heroGrad}
+      />
+      <View style={styles.heroIcon} pointerEvents="none">
+        <Ionicons
+          name={isLogin ? "flame-outline" : "leaf-outline"}
+          size={isXs ? 56 : 72}
+          color="rgba(255,255,255,0.28)"
         />
-        <LinearGradient
-          colors={["rgba(255, 247, 224, 0.45)", "rgba(255, 247, 224, 0)"]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 0.85 }}
-          style={[StyleSheet.absoluteFillObject, styles.artSpotlight]}
-          pointerEvents="none"
-        />
-        <View style={styles.artIconWrap} pointerEvents="none">
-          <Ionicons name="bag-handle" size={isXs ? 56 : 72} color="rgba(255,255,255,0.28)" />
-        </View>
-        <BrandLogo
-          width={isXs ? BRAND_LOGO_SIZE.authHero - 20 : BRAND_LOGO_SIZE.authHero - 8}
-          height={isXs ? BRAND_LOGO_SIZE.authHero - 20 : BRAND_LOGO_SIZE.authHero - 8}
-          style={styles.logo}
-        />
-        <Text style={styles.eyebrow}>Welcome to kankreg</Text>
-        <Text style={[styles.artTitle, isXs && styles.artTitleCompact]}>{title}</Text>
-        {artSubtitle ? (
-          <Text style={styles.artSub} numberOfLines={2}>
-            {artSubtitle}
-          </Text>
-        ) : null}
       </View>
-      <View style={[styles.form, isXs && styles.formCompact]}>{children}</View>
+      <View style={[styles.sheet, cardShadow]}>
+        <Text style={figmaEyebrow()}>{eyebrow || (isLogin ? "Welcome back" : "Join kankreg")}</Text>
+        <Text style={[figmaDisplayTitle(26), styles.sheetTitle]}>
+          {artTitle || (isLogin ? "Sign in" : "Create account")}
+        </Text>
+        {artSubtitle ? <Text style={[figmaBody(11.5), styles.sheetSub]}>{artSubtitle}</Text> : null}
+        {children}
+      </View>
     </View>
   );
 }
 
-const cardShadow = platformShadow({
-  web: {
-    boxShadow: "0 18px 44px rgba(25, 20, 15, 0.1), 0 4px 14px rgba(25, 20, 15, 0.06)",
-  },
-  ios: {
-    shadowColor: "#3D2A12",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.12,
-    shadowRadius: 22,
-  },
-  android: { elevation: 5 },
-});
-
 const styles = StyleSheet.create({
-  card: {
+  webFallback: {
     width: "100%",
-    maxWidth: 468,
-    alignSelf: "center",
-    borderRadius: 22,
-    overflow: "hidden",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: KANKREG_PALETTE.line,
-    backgroundColor: KANKREG_PALETTE.card,
   },
-  art: {
-    minHeight: 168,
-    paddingVertical: spacing.lg + 4,
-    paddingHorizontal: spacing.lg,
-    alignItems: "center",
-    justifyContent: "flex-end",
-    position: "relative",
+  root: {
+    flex: 1,
+    width: "100%",
   },
-  artCompact: {
-    minHeight: 148,
-    paddingVertical: spacing.md + 4,
-    paddingHorizontal: spacing.md + 2,
+  heroGrad: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "40%",
   },
-  artSpotlight: {
-    opacity: 0.9,
-  },
-  artIconWrap: {
-    ...StyleSheet.absoluteFillObject,
+  heroIcon: {
+    position: "absolute",
+    top: "12%",
+    left: 0,
+    right: 0,
     alignItems: "center",
     justifyContent: "center",
-    paddingTop: spacing.md,
+    paddingHorizontal: "30%",
   },
-  logo: {
-    marginBottom: spacing.sm,
-    zIndex: 1,
-  },
-  eyebrow: {
-    zIndex: 1,
-    fontFamily: fonts.semibold,
-    fontSize: typography.overline,
-    letterSpacing: 2.6,
-    textTransform: "uppercase",
-    color: ALCHEMY.goldBright,
-    marginBottom: spacing.xs,
-  },
-  artTitle: {
-    zIndex: 1,
-    textAlign: "center",
-    fontFamily: FONT_DISPLAY,
-    fontSize: typography.h2 + 2,
-    lineHeight: lineHeight.h2 + 4,
-    color: KANKREG_PALETTE.paper,
-    letterSpacing: -0.4,
-  },
-  artTitleCompact: {
-    fontSize: typography.h3,
-    lineHeight: lineHeight.h3 + 2,
-  },
-  artSub: {
-    zIndex: 1,
-    marginTop: spacing.xs,
-    textAlign: "center",
-    fontSize: typography.caption,
-    color: "rgba(245, 239, 228, 0.88)",
-    maxWidth: 300,
-    lineHeight: 18,
-  },
-  form: {
-    paddingHorizontal: spacing.lg + 4,
+  sheet: {
+    flex: 1,
+    marginTop: "34%",
+    backgroundColor: FIGMA.paper,
+    borderTopLeftRadius: FIGMA.radiusSheet,
+    borderTopRightRadius: FIGMA.radiusSheet,
+    paddingHorizontal: 22,
     paddingTop: spacing.lg,
-    paddingBottom: spacing.lg + 6,
-    backgroundColor: KANKREG_PALETTE.card,
+    paddingBottom: spacing.xl,
+    zIndex: 2,
   },
-  formCompact: {
-    paddingHorizontal: spacing.md + 2,
-    paddingTop: spacing.md + 4,
-    paddingBottom: spacing.md + 6,
+  sheetTitle: {
+    marginTop: 4,
+    marginBottom: 4,
+    fontWeight: "400",
+  },
+  sheetSub: {
+    marginBottom: spacing.md,
+    color: FIGMA.inkFaint,
   },
 });

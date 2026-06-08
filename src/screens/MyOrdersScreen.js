@@ -24,9 +24,10 @@ import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 import BottomNavBar from "../components/BottomNavBar";
 import AuthGateShell from "../components/AuthGateShell";
 import CustomerScreenShell from "../components/CustomerScreenShell";
-import KankregUnifiedPageHeader from "../components/kankreg/KankregUnifiedPageHeader";
 import KankregResponsiveGrid from "../components/kankreg/KankregResponsiveGrid";
 import { useAuth } from "../context/AuthContext";
+import { useLiveSocket } from "../context/LiveSocketContext";
+import { useOrderCelebration } from "../context/OrderCelebrationContext";
 import { useTheme } from "../context/ThemeContext";
 import { useCart } from "../context/CartContext";
 import {
@@ -45,7 +46,6 @@ import PremiumEmptyState from "../components/ui/PremiumEmptyState";
 import PremiumLoader from "../components/ui/PremiumLoader";
 import PremiumInput from "../components/ui/PremiumInput";
 import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
-import PremiumChip from "../components/ui/PremiumChip";
 import PremiumStatCard from "../components/ui/PremiumStatCard";
 import SkeletonBlock from "../components/ui/SkeletonBlock";
 import PremiumButton from "../components/ui/PremiumButton";
@@ -63,8 +63,13 @@ import {
 import PaymentStatusBanner from "../components/payments/PaymentStatusBanner";
 import OrderLiveMapCard from "../components/orders/OrderLiveMapCard";
 import KankregOrderTrack from "../components/kankreg/KankregOrderTrack";
+import KankregOrderTrackingCard from "../components/kankreg/KankregOrderTrackingCard";
+import KankregOrdersFilterRow from "../components/kankreg/KankregOrdersFilterRow";
+import KankregCustomerPageHeader from "../components/kankreg/KankregCustomerPageHeader";
+import { FIGMA } from "../theme/figmaApp";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
 import { MY_ORDERS_UI } from "../content/appContent";
+import { getOrdersPageEyebrow } from "../utils/orderDisplay";
 import { formatCompactShippingLine } from "../utils/shippingAddressFormat";
 
 const ORDER_STATUSES_WITH_LIVE_MAP = new Set(["ready_for_pickup", "shipped", "out_for_delivery"]);
@@ -818,6 +823,7 @@ export default function MyOrdersScreen({ navigation, route }) {
     const { useSplitLayout, isXs } = useKankregLayout();
   const isWide = useSplitLayout;
   const isPhoneCompact = isXs;
+  const isNativeApp = Platform.OS !== "web";
   const styles = useMemo(
     () => createMyOrdersStyles(c, shadowPremium, isDark, { isWide, isPhoneCompact }),
     [c, shadowPremium, isDark, isWide, isPhoneCompact]
@@ -826,6 +832,7 @@ export default function MyOrdersScreen({ navigation, route }) {
   const [filter, setFilter] = useState("all");
   const { isAuthenticated, token, user, isAuthLoading, refreshProfile } = useAuth();
   const { refreshCartFromServer } = useCart();
+  const { seedOrderStatuses } = useOrderCelebration();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -861,13 +868,15 @@ export default function MyOrdersScreen({ navigation, route }) {
       if (!silent) setLoading(true);
       setError("");
       const data = await fetchMyOrders(token);
-      setOrders(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : [];
+      setOrders(list);
+      seedOrderStatuses(list);
     } catch (err) {
       setError(err.message || "Unable to load orders.");
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [token]);
+  }, [token, seedOrderStatuses]);
 
   const onPullRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -882,6 +891,23 @@ export default function MyOrdersScreen({ navigation, route }) {
     if (isAuthLoading || !isAuthenticated) return;
     loadOrders();
   }, [isAuthLoading, isAuthenticated, loadOrders]);
+
+  const { on: onLiveEvent } = useLiveSocket();
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    return onLiveEvent("orders:updated", ({ order }) => {
+      if (!order?._id) return;
+      const orderId = String(order._id);
+      setOrders((prev) => {
+        const idx = prev.findIndex((item) => String(item._id) === orderId);
+        if (idx < 0) return [order, ...prev];
+        const next = [...prev];
+        next[idx] = { ...next[idx], ...order };
+        return next;
+      });
+    });
+  }, [isAuthenticated, onLiveEvent]);
+
   useEffect(() => {
     if (!routeInitialFilter) return;
     const allowedFilters = new Set(["all", "active", "delivered", "cancelled"]);
@@ -977,6 +1003,19 @@ export default function MyOrdersScreen({ navigation, route }) {
     active: statsActive,
     reducedMotion,
     duration: 1100});
+
+  const filterCounts = useMemo(
+    () => ({
+      all: orders.length,
+      active: activeOrders.length,
+      delivered: orderStats.delivered,
+      cancelled: Math.max(0, orders.length - orderStats.delivered - activeOrders.length),
+    }),
+    [orders.length, activeOrders.length, orderStats.delivered]
+  );
+
+  const useFigmaOrderCard = isNativeApp || isPhoneCompact;
+  const pageEyebrow = getOrdersPageEyebrow(activeOrders.length);
 
   function StatusChip({ status }) {
     const s = String(status || "");
@@ -1165,21 +1204,22 @@ export default function MyOrdersScreen({ navigation, route }) {
           )
         }
       >
-        <KankregUnifiedPageHeader
-          eyebrow="In transit"
-          title="My orders"
-          subtitle="Track orders and reorder"
+        <KankregCustomerPageHeader
+          eyebrow={pageEyebrow}
+          title={MY_ORDERS_UI.pageTitle}
           navigation={navigation}
+          showBack={false}
+          figmaOnWeb
           right={
-            isPhoneCompact ? undefined : (
+            !isPhoneCompact ? (
               <PremiumButton
-                label="Refresh"
+                label={MY_ORDERS_UI.refresh}
                 iconLeft="refresh-outline"
                 size="sm"
                 variant="ghost"
                 onPress={loadOrders}
               />
-            )
+            ) : undefined
           }
         />
         {error ? (
@@ -1193,42 +1233,38 @@ export default function MyOrdersScreen({ navigation, route }) {
           </View>
         ) : null}
 
-        {!loading && orders.length > 0 ? (
+        {!loading && orders.length > 0 && !isNativeApp ? (
           <SectionReveal preset="fade-up" delay={60}>
             <KankregResponsiveGrid variant="stats">
               <PremiumStatCard
                 iconName="receipt-outline"
-                label="Total"
+                label={MY_ORDERS_UI.statTotal}
                 value={String(Math.round(totalOrdersCount))}
-                hint="All-time orders"
                 tone="gold"
               />
               <PremiumStatCard
                 iconName="rocket-outline"
-                label="In-flight"
+                label={MY_ORDERS_UI.statInFlight}
                 value={String(Math.round(inFlightCount))}
-                hint="Currently active"
                 tone="navy"
               />
               <PremiumStatCard
                 iconName="checkmark-done-outline"
-                label="Delivered"
+                label={MY_ORDERS_UI.statDelivered}
                 value={String(Math.round(deliveredCount))}
-                hint="Successfully completed"
                 tone="green"
               />
               <PremiumStatCard
                 iconName="wallet-outline"
-                label="Lifetime spend"
+                label={MY_ORDERS_UI.statSpend}
                 value={formatINR(Math.round(totalSpentCount))}
-                hint="Across all orders"
                 tone="neutral"
               />
             </KankregResponsiveGrid>
           </SectionReveal>
         ) : null}
 
-        {!loading && orders.length > 0 ? <GoldHairline marginVertical={spacing.md} /> : null}
+        {!loading && orders.length > 0 && !isNativeApp ? <GoldHairline marginVertical={spacing.md} /> : null}
 
         {loading ? (
           <View style={styles.loaderWrap}>
@@ -1246,7 +1282,7 @@ export default function MyOrdersScreen({ navigation, route }) {
             </View>
             <SkeletonBlock width="100%" height={140} rounded="xl" />
             <SkeletonBlock width="100%" height={140} rounded="xl" />
-            <PremiumLoader size="sm" caption="Loading your orders…" />
+            <PremiumLoader size="sm" caption={MY_ORDERS_UI.loadingCaption} />
           </View>
         ) : orders.length === 0 ? (
           <View style={[styles.panel, styles.emptyPanel]}>
@@ -1262,9 +1298,9 @@ export default function MyOrdersScreen({ navigation, route }) {
             >
               <PremiumEmptyState
                 iconName="cube-outline"
-                title="No orders yet"
-                description={MY_ORDERS_UI.emptyDescriptionShort}
-                ctaLabel="Browse catalog"
+                title={MY_ORDERS_UI.emptyTitle}
+                description={MY_ORDERS_UI.emptyDescription}
+                ctaLabel={MY_ORDERS_UI.emptyCta}
                 ctaIconLeft="storefront-outline"
                 onCtaPress={() => navigation.navigate("Home")}
               />
@@ -1272,34 +1308,12 @@ export default function MyOrdersScreen({ navigation, route }) {
           </View>
         ) : (
           <>
-          <View style={styles.filterChipBar}>
-            {[
-              { key: "all", label: "All", count: orders.length, tone: "gold" },
-              { key: "active", label: "Active", count: activeOrders.length, tone: "info" },
-              { key: "delivered", label: "Delivered", count: orderStats.delivered, tone: "green" },
-              { key: "cancelled", label: "Cancelled", count: orders.length - orderStats.delivered - activeOrders.length, tone: "red" },
-            ].map((chip) => {
-              const active = filter === chip.key;
-              const label = chip.count > 0 ? `${chip.label} · ${chip.count}` : chip.label;
-              return (
-                <PremiumChip
-                  key={chip.key}
-                  label={label}
-                  tone={active ? chip.tone : "neutral"}
-                  selected={active}
-                  size="lg"
-                  onPress={() => setFilter(chip.key)}
-                  accessibilityLabel={`Filter ${chip.label}`}
-                />
-              );
-            })}
-          </View>
+          <KankregOrdersFilterRow selected={filter} onSelect={setFilter} counts={filterCounts} />
 
           {isWide && filter === "all" && activeOrders.length > 0 ? (
             <View style={styles.inFlightSection}>
               <PremiumSectionHeader
                 compact
-                overline={MY_ORDERS_UI.inFlightOverline}
                 title={MY_ORDERS_UI.inFlightTitle}
                 count={activeOrders.length}
               />
@@ -1341,7 +1355,6 @@ export default function MyOrdersScreen({ navigation, route }) {
                 <View style={styles.historyHeaderTitle}>
                   <PremiumSectionHeader
                     compact
-                    overline={MY_ORDERS_UI.historyOverline}
                     title={MY_ORDERS_UI.historyTitle}
                     count={historyOrders.length}
                   />
@@ -1362,135 +1375,10 @@ export default function MyOrdersScreen({ navigation, route }) {
             const statusStr = String(item.status || "");
             const showLiveMapCard = ORDER_STATUSES_WITH_LIVE_MAP.has(statusStr);
             const compactShipLine = formatCompactShippingLine(item.shippingAddress);
-            const panel = (
-              <View style={styles.panel}>
-              <View style={[styles.orderCardHeader, isPhoneCompact && styles.orderCardHeaderCompact]}>
-                <View style={styles.orderTitleBlock}>
-                  <Text style={styles.orderKicker}>Order</Text>
-                  <Text style={[styles.orderTitle, isDark ? null : styles.orderTitleLight]}>
-                    #{item._shortId}
-                  </Text>
-                  <View style={styles.placedRow}>
-                    <Ionicons name="calendar-outline" size={14} color={c.textMuted} />
-                    <Text style={styles.placedAt}>{item._createdAtLabel}</Text>
-                  </View>
-                  <Text style={styles.orderMetaSummary}>
-                    {item._itemCount} items · {item._lineCount} line{item._lineCount === 1 ? "" : "s"}
-                  </Text>
-                </View>
-                <StatusChip status={item.status} />
-              </View>
 
-              {item.status === "pending_payment" && item.paymentStatus === "pending" ? (
-                <PaymentStatusBanner order={item} token={token} user={user} onRefresh={loadOrders} />
-              ) : null}
-
-              <OrderProgressStrip status={item.status} styles={styles} c={c} isDark={isDark} />
-
-              {getOrderStatusHint(item.status) ? (
-                <View
-                  style={[
-                    styles.hintCallout,
-                    isCancelledOrder(item.status) ? styles.hintCalloutDanger : null,
-                    !isCancelledOrder(item.status) && !isDeliveredOrder(item.status)
-                      ? styles.hintCalloutProgress
-                      : null,
-                    isDeliveredOrder(item.status) ? styles.hintCalloutSuccess : null,
-                  ]}
-                >
-                  <Ionicons
-                    name={
-                      isCancelledOrder(item.status)
-                        ? "alert-circle-outline"
-                        : isDeliveredOrder(item.status)
-                          ? "checkmark-circle-outline"
-                          : "pulse-outline"
-                    }
-                    size={20}
-                    color={
-                      isCancelledOrder(item.status)
-                        ? c.danger
-                        : isDeliveredOrder(item.status)
-                          ? c.secondary
-                          : c.primary
-                    }
-                  />
-                  <Text style={styles.hintCalloutText}>{getOrderStatusHint(item.status)}</Text>
-                </View>
-              ) : null}
-
-              <View style={styles.summaryBand}>
-                <View style={styles.summaryBandMain}>
-                  <Text style={styles.summaryBandLabel}>Total</Text>
-                  <Text style={[styles.amountMain, styles.amountMainHero]}>{formatINR(item.totalPrice)}</Text>
-                </View>
-                <View style={styles.summaryBandMeta}>
-                  <View style={[styles.metaChip, { borderColor: c.border, backgroundColor: c.surfaceMuted }]}>
-                    <Ionicons name="layers-outline" size={14} color={c.textSecondary} />
-                    <Text style={styles.metaChipText}>
-                      {item._lineCount} line{item._lineCount === 1 ? "" : "s"}
-                    </Text>
-                  </View>
-                  <View style={[styles.metaChip, { borderColor: c.border, backgroundColor: c.surfaceMuted }]}>
-                    <Ionicons name="bag-handle-outline" size={14} color={c.textSecondary} />
-                    <Text style={styles.metaChipText}>
-                      {item._itemCount} items
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              <View style={styles.orderMetaRow}>
-                <InvoiceChip invoice={item.invoice} />
-                {item.invoice?.number ? (
-                  <Text style={styles.invoiceNumberText} numberOfLines={1}>
-                    {item.invoice.number}
-                  </Text>
-                ) : null}
-              </View>
-
-              {compactShipLine && !showLiveMapCard ? (
-                <View style={styles.shipRow}>
-                  <Ionicons name="location-outline" size={16} color={c.primary} />
-                  <Text style={styles.shipRowText} numberOfLines={2}>
-                    {compactShipLine}
-                  </Text>
-                </View>
-              ) : null}
-              {item.coupon?.code ? (
-                <View style={styles.couponRow}>
-                  <Ionicons name="pricetag-outline" size={16} color={c.secondary} />
-                  <Text style={styles.couponText}>
-                    {item.coupon.code} · −{formatINR(item.coupon.discountAmount || 0)}
-                  </Text>
-                </View>
-              ) : null}
-
-              {showLiveMapCard ? (
-                <>
-                  <KankregOrderTrack status={statusStr} />
-                  <OrderLiveMapCard orderId={item._id} />
-                </>
-              ) : null}
-
-              {(item.products || []).length > 0 ? (
-                <View style={styles.itemsPreview}>
-                  <Text style={styles.itemsPreviewTitle}>{MY_ORDERS_UI.itemsPreviewTitle}</Text>
-                  {(item.products || []).slice(0, 4).map((productItem, index) => (
-                    <View key={`${item._id}-${index}`} style={[styles.itemLineRow, isPhoneCompact && styles.itemLineRowCompact]}>
-                      <View style={[styles.itemBullet, { backgroundColor: c.primarySoft }]} />
-                      <Text style={styles.itemLine} numberOfLines={2}>
-                        {productItem.name}{" "}
-                        <Text style={styles.itemQty}>× {productItem.quantity}</Text>
-                      </Text>
-                    </View>
-                  ))}
-                  {(item.products || []).length > 4 ? (
-                    <Text style={styles.itemsMore}>+{(item.products || []).length - 4} more items</Text>
-                  ) : null}
-                </View>
-              ) : null}
-              <View style={styles.rowButtons}>
+            const orderFooter = (
+              <>
+              <View style={[styles.rowButtons, useFigmaOrderCard && styles.figmaRowButtons]}>
                 <PremiumButton
                   label={
                     expandedOrderId === item._id ? MY_ORDERS_UI.detailsCollapse : MY_ORDERS_UI.detailsExpand
@@ -1512,7 +1400,11 @@ export default function MyOrdersScreen({ navigation, route }) {
                   />
                 ) : null}
                 <PremiumButton
-                  label={downloadingOrderId === item._id ? "Generating invoice..." : "Download invoice PDF"}
+                  label={
+                    downloadingOrderId === item._id
+                      ? MY_ORDERS_UI.invoiceGenerating
+                      : MY_ORDERS_UI.invoiceDownload
+                  }
                   iconLeft="document-text-outline"
                   size="sm"
                   variant="ghost"
@@ -1524,10 +1416,10 @@ export default function MyOrdersScreen({ navigation, route }) {
                   <PremiumButton
                     label={
                       item.reward?.claimedAt
-                        ? `Reward claimed (${Number(item.reward?.claimedPoints || item.reward?.eligiblePoints || 25)} pts)`
+                        ? MY_ORDERS_UI.claimedReward
                         : claimingRewardOrderId === item._id
-                          ? "Claiming reward..."
-                          : `Claim reward (${Number(item.reward?.eligiblePoints || 25)} pts)`
+                          ? MY_ORDERS_UI.claimRewardLoading
+                          : MY_ORDERS_UI.claimReward
                     }
                     iconLeft={item.reward?.claimedAt ? "checkmark-circle-outline" : "gift-outline"}
                     size="sm"
@@ -1656,14 +1548,14 @@ export default function MyOrdersScreen({ navigation, route }) {
                   </View>
                   <View style={styles.rowButtons}>
                     <PremiumButton
-                      label={savingOrderId === item._id ? "Saving..." : "Save address"}
+                      label={savingOrderId === item._id ? MY_ORDERS_UI.savingAddress : MY_ORDERS_UI.saveAddress}
                       size="sm"
                       variant="primary"
                       onPress={() => handleSaveAddress(item._id)}
                       disabled={savingOrderId === item._id}
                     />
                     <PremiumButton
-                      label="Cancel"
+                      label={MY_ORDERS_UI.cancel}
                       size="sm"
                       variant="ghost"
                       onPress={() => setEditingOrderId("")}
@@ -1672,7 +1564,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                 </View>
               ) : null}
               <PremiumButton
-                label={reorderingOrderId === item._id ? "Adding..." : "Reorder in-stock items"}
+                label={reorderingOrderId === item._id ? MY_ORDERS_UI.reorderLoading : MY_ORDERS_UI.reorder}
                 iconLeft="refresh-outline"
                 variant="primary"
                 size="md"
@@ -1681,8 +1573,155 @@ export default function MyOrdersScreen({ navigation, route }) {
                 onPress={() => handleReorder(item._id)}
                 disabled={reorderingOrderId === item._id}
               />
+              </>
+            );
+
+            const panel = useFigmaOrderCard ? (
+              <KankregOrderTrackingCard
+                order={item}
+                showLiveMap={showLiveMapCard}
+                liveMapSlot={showLiveMapCard ? <OrderLiveMapCard orderId={item._id} /> : null}
+                etaLabel={showLiveMapCard ? MY_ORDERS_UI.etaFallback : undefined}
+                style={isNativeApp ? styles.nativeFigmaOrderCard : undefined}
+              >
+                {item.status === "pending_payment" && item.paymentStatus === "pending" ? (
+                  <PaymentStatusBanner order={item} token={token} user={user} onRefresh={loadOrders} />
+                ) : null}
+                <Text style={[styles.figmaOrderTotal, { color: c.text }]}>{formatINR(item.totalPrice)}</Text>
+                {orderFooter}
+              </KankregOrderTrackingCard>
+            ) : (
+              <View style={[styles.panel, isNativeApp && styles.nativeOrderPanel]}>
+              <View style={[styles.orderCardHeader, isPhoneCompact && styles.orderCardHeaderCompact]}>
+                <View style={styles.orderTitleBlock}>
+                  <Text style={styles.orderKicker}>Order</Text>
+                  <Text style={[styles.orderTitle, isDark ? null : styles.orderTitleLight]}>
+                    #{item._shortId}
+                  </Text>
+                  <View style={styles.placedRow}>
+                    <Ionicons name="calendar-outline" size={14} color={c.textMuted} />
+                    <Text style={styles.placedAt}>{item._createdAtLabel}</Text>
+                  </View>
+                  <Text style={styles.orderMetaSummary}>
+                    {item._itemCount} items · {item._lineCount} line{item._lineCount === 1 ? "" : "s"}
+                  </Text>
+                </View>
+                <StatusChip status={item.status} />
+              </View>
+
+              {item.status === "pending_payment" && item.paymentStatus === "pending" ? (
+                <PaymentStatusBanner order={item} token={token} user={user} onRefresh={loadOrders} />
+              ) : null}
+
+              <OrderProgressStrip status={item.status} styles={styles} c={c} isDark={isDark} />
+
+              {getOrderStatusHint(item.status) ? (
+                <View
+                  style={[
+                    styles.hintCallout,
+                    isCancelledOrder(item.status) ? styles.hintCalloutDanger : null,
+                    !isCancelledOrder(item.status) && !isDeliveredOrder(item.status)
+                      ? styles.hintCalloutProgress
+                      : null,
+                    isDeliveredOrder(item.status) ? styles.hintCalloutSuccess : null,
+                  ]}
+                >
+                  <Ionicons
+                    name={
+                      isCancelledOrder(item.status)
+                        ? "alert-circle-outline"
+                        : isDeliveredOrder(item.status)
+                          ? "checkmark-circle-outline"
+                          : "pulse-outline"
+                    }
+                    size={20}
+                    color={
+                      isCancelledOrder(item.status)
+                        ? c.danger
+                        : isDeliveredOrder(item.status)
+                          ? c.secondary
+                          : c.primary
+                    }
+                  />
+                  <Text style={styles.hintCalloutText}>{getOrderStatusHint(item.status)}</Text>
+                </View>
+              ) : null}
+
+              <View style={styles.summaryBand}>
+                <View style={styles.summaryBandMain}>
+                  <Text style={styles.summaryBandLabel}>Total</Text>
+                  <Text style={[styles.amountMain, styles.amountMainHero]}>{formatINR(item.totalPrice)}</Text>
+                </View>
+                <View style={styles.summaryBandMeta}>
+                  <View style={[styles.metaChip, { borderColor: c.border, backgroundColor: c.surfaceMuted }]}>
+                    <Ionicons name="layers-outline" size={14} color={c.textSecondary} />
+                    <Text style={styles.metaChipText}>
+                      {item._lineCount} line{item._lineCount === 1 ? "" : "s"}
+                    </Text>
+                  </View>
+                  <View style={[styles.metaChip, { borderColor: c.border, backgroundColor: c.surfaceMuted }]}>
+                    <Ionicons name="bag-handle-outline" size={14} color={c.textSecondary} />
+                    <Text style={styles.metaChipText}>
+                      {item._itemCount} items
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.orderMetaRow}>
+                <InvoiceChip invoice={item.invoice} />
+                {item.invoice?.number ? (
+                  <Text style={styles.invoiceNumberText} numberOfLines={1}>
+                    {item.invoice.number}
+                  </Text>
+                ) : null}
+              </View>
+
+              {compactShipLine && !showLiveMapCard ? (
+                <View style={styles.shipRow}>
+                  <Ionicons name="location-outline" size={16} color={c.primary} />
+                  <Text style={styles.shipRowText} numberOfLines={2}>
+                    {compactShipLine}
+                  </Text>
+                </View>
+              ) : null}
+              {item.coupon?.code ? (
+                <View style={styles.couponRow}>
+                  <Ionicons name="pricetag-outline" size={16} color={c.secondary} />
+                  <Text style={styles.couponText}>
+                    {item.coupon.code} · −{formatINR(item.coupon.discountAmount || 0)}
+                  </Text>
+                </View>
+              ) : null}
+
+              {showLiveMapCard ? (
+                <>
+                  <KankregOrderTrack status={statusStr} />
+                  <OrderLiveMapCard orderId={item._id} />
+                </>
+              ) : null}
+
+              {(item.products || []).length > 0 ? (
+                <View style={styles.itemsPreview}>
+                  <Text style={styles.itemsPreviewTitle}>{MY_ORDERS_UI.itemsPreviewTitle}</Text>
+                  {(item.products || []).slice(0, 4).map((productItem, index) => (
+                    <View key={`${item._id}-${index}`} style={[styles.itemLineRow, isPhoneCompact && styles.itemLineRowCompact]}>
+                      <View style={[styles.itemBullet, { backgroundColor: c.primarySoft }]} />
+                      <Text style={styles.itemLine} numberOfLines={2}>
+                        {productItem.name}{" "}
+                        <Text style={styles.itemQty}>× {productItem.quantity}</Text>
+                      </Text>
+                    </View>
+                  ))}
+                  {(item.products || []).length > 4 ? (
+                    <Text style={styles.itemsMore}>+{(item.products || []).length - 4} more items</Text>
+                  ) : null}
+                </View>
+              ) : null}
+              {orderFooter}
               </View>
             );
+
             if (idx > 7) {
               return <View key={item._id}>{panel}</View>;
             }
@@ -1699,7 +1738,7 @@ export default function MyOrdersScreen({ navigation, route }) {
           })}
           {displayedOrderViewModels.length < allDisplayedOrders.length ? (
             <PremiumButton
-              label={`Load more orders (${allDisplayedOrders.length - displayedOrderViewModels.length} remaining)`}
+              label={MY_ORDERS_UI.loadMore}
               variant="subtle"
               size="md"
               onPress={() => setRenderCount((prev) => prev + 20)}
@@ -1733,6 +1772,26 @@ function createMyOrdersStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     justifyContent: "center"},
   flashBar: {
     marginBottom: spacing.md},
+  nativeOrderPanel: {
+    marginHorizontal: FIGMA.gutter,
+    backgroundColor: FIGMA.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: FIGMA.line,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 10,
+  },
+  nativeFigmaOrderCard: {
+    marginBottom: 10,
+  },
+  figmaOrderTotal: {
+    fontFamily: fonts.bold,
+    fontSize: 18,
+    marginTop: 10,
+  },
+  figmaRowButtons: {
+    marginTop: 8,
+  },
   filterChipBar: {
     flexDirection: "row",
     flexWrap: "wrap",

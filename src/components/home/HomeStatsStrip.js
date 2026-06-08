@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { fonts, icon, layout, lineHeight, radius, spacing, typography } from "../../theme/tokens";
 import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
 import { HOME_STATS_STRIP } from "../../content/appContent";
+import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import useInViewport from "../../hooks/useInViewport";
 import useCountUp from "../../hooks/useCountUp";
 import useReducedMotion from "../../hooks/useReducedMotion";
@@ -25,7 +26,7 @@ function formatStat(value, { precision = 0, prefix = "", suffix = "" }) {
   return `${prefix}${n}${suffix}`;
 }
 
-function StatCell({ item, active, reducedMotion, c, isDark }) {
+function StatCell({ item, active, reducedMotion, c, isDark, compact = false }) {
   const value = useCountUp({
     target: item.target,
     duration: 1500,
@@ -52,7 +53,10 @@ function StatCell({ item, active, reducedMotion, c, isDark }) {
           color={isDark ? ALCHEMY.goldBright : ALCHEMY.brown}
         />
       </View>
-      <Text style={[styles.statValue, { color: c.textPrimary }]} numberOfLines={1}>
+      <Text
+        style={[styles.statValue, compact && styles.statValueCompact, { color: c.textPrimary }]}
+        numberOfLines={1}
+      >
         {display}
       </Text>
       <Text style={[styles.statLabel, { color: c.textSecondary }]} numberOfLines={2}>
@@ -64,6 +68,7 @@ function StatCell({ item, active, reducedMotion, c, isDark }) {
 
 export default function HomeStatsStrip({ c, isDark }) {
   const reduced = useReducedMotion();
+  const { isMobileWeb } = useKankregLayout();
   const { ref: ioRef, inView } = useInViewport({ threshold: 0.35, once: true });
   const { ref: revealRef } = useGsapReveal({ preset: "fade-up", start: "top 90%", reducedMotion: reduced });
 
@@ -97,18 +102,19 @@ export default function HomeStatsStrip({ c, isDark }) {
       <Text style={[styles.overline, { color: c.textMuted }]} numberOfLines={1}>
         {HOME_STATS_STRIP.overline}
       </Text>
-      <View style={styles.row}>
+      <View style={[styles.row, isMobileWeb && styles.rowMobileWeb]}>
         {HOME_STATS_STRIP.items.map((item, idx) => (
           <React.Fragment key={item.key}>
             {idx > 0 ? (
               <View
                 style={[
                   styles.divider,
+                  isMobileWeb && styles.dividerMobileWeb,
                   { backgroundColor: isDark ? "rgba(232, 200, 90, 0.28)" : "rgba(116, 79, 28, 0.16)" },
                 ]}
               />
             ) : null}
-            <StatCell item={item} active={inView} reducedMotion={reduced} c={c} isDark={isDark} />
+            <StatCell item={item} active={inView} reducedMotion={reduced} c={c} isDark={isDark} compact={isMobileWeb} />
           </React.Fragment>
         ))}
       </View>
@@ -157,6 +163,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "stretch",
     justifyContent: "space-between",
+    width: "100%",
+  },
+  rowMobileWeb: {
+    gap: spacing.xs,
   },
   divider: {
     width: StyleSheet.hairlineWidth,
@@ -184,6 +194,13 @@ const styles = StyleSheet.create({
     lineHeight: Platform.OS === "web" ? 36 : 32,
     letterSpacing: -0.4,
     fontVariant: ["tabular-nums"],
+  },
+  statValueCompact: {
+    fontSize: 22,
+    lineHeight: 28,
+  },
+  dividerMobileWeb: {
+    marginVertical: spacing.sm,
   },
   statLabel: {
     fontSize: typography.caption,

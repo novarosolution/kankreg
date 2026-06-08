@@ -6,7 +6,7 @@ import BrandHeaderMark from "./BrandHeaderMark";
 import LocationIconButton from "./LocationIconButton";
 import { useTheme } from "../context/ThemeContext";
 import { BRAND_LOGO_SIZE } from "../constants/brand";
-import { getSemanticColors, icon, lineHeight, semanticRadius, spacing, typography } from "../theme/tokens";
+import { fonts, getSemanticColors, icon, lineHeight, semanticRadius, spacing, typography } from "../theme/tokens";
 import { customerContentWidth } from "../theme/screenLayout";
 import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../theme/customerAlchemy";
 
@@ -19,6 +19,7 @@ const ROW_MIN_H = HEADER_LOGO;
  * Card-style bar aligned with page content width (`customerContentWidth`).
  */
 export default function ScreenPageHeader({
+  eyebrow,
   title,
   subtitle,
   navigation,
@@ -100,9 +101,21 @@ export default function ScreenPageHeader({
           {showBrand ? <BrandHeaderMark navigation={navigation} compact /> : null}
           {!backVisible && !showBrand ? <View style={[styles.leadSpacer, styles.leadSpacerCompact]} /> : null}
           <View style={styles.titleCol}>
+            {eyebrow ? (
+              <Text
+                style={[
+                  styles.eyebrow,
+                  { color: isDark ? c.primaryBright : ALCHEMY.gold },
+                ]}
+                numberOfLines={1}
+              >
+                {eyebrow}
+              </Text>
+            ) : null}
             <Text
               style={[
                 styles.title,
+                eyebrow && compact ? styles.titleAfterEyebrow : null,
                 { color: titleColor || c.textPrimary, fontFamily: FONT_DISPLAY },
               ]}
               numberOfLines={2}
@@ -198,13 +211,8 @@ function createStyles(rowMinH, isDark, compact) {
       alignItems: "center",
       gap: compact ? 6 : 8,
       minHeight: compact ? Math.max(rowMinH - 4, 36) : rowMinH,
-      ...Platform.select({
-        web: {
-          flexWrap: "wrap",
-          rowGap: 10,
-        },
-        default: {},
-      }),
+      flexWrap: "wrap",
+      rowGap: 8,
     },
     backBtn: {
       marginLeft: -2,
@@ -232,6 +240,16 @@ function createStyles(rowMinH, isDark, compact) {
       flex: 1,
       minWidth: 0,
       justifyContent: "center",
+    },
+    eyebrow: {
+      fontSize: typography.overline,
+      letterSpacing: 2.4,
+      textTransform: "uppercase",
+      fontFamily: fonts.semibold,
+      marginBottom: 2,
+    },
+    titleAfterEyebrow: {
+      marginTop: 0,
     },
     title: {
       fontSize: compact ? typography.h3 : typography.h3 + 1,

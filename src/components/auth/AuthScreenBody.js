@@ -9,7 +9,7 @@ import { authPanel } from "../../theme/screenLayout";
 /**
  * Shared Login / Register layout: split panel on wide web, unified mobile card on phone.
  */
-export default function AuthScreenBody({ artSubtitle, form, styles: screenStyles }) {
+export default function AuthScreenBody({ artSubtitle, form, styles: screenStyles, mode = "login" }) {
   const { useAuthSplit, isXs } = useKankregLayout();
   const { colors: c, shadowPremium, isDark } = useTheme();
   const useSplit = useAuthSplit && Platform.OS === "web";
@@ -18,7 +18,9 @@ export default function AuthScreenBody({ artSubtitle, form, styles: screenStyles
   if (useMobileShell) {
     return (
       <SectionReveal index={0} preset="fade-up" style={screenStyles.revealFill}>
-        <AuthMobileShell artSubtitle={artSubtitle}>{form}</AuthMobileShell>
+        <AuthMobileShell artSubtitle={artSubtitle} mode={mode}>
+          {form}
+        </AuthMobileShell>
       </SectionReveal>
     );
   }

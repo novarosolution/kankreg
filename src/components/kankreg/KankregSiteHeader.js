@@ -9,6 +9,7 @@ import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { platformElevation } from "../../theme/platformStyles";
 import { fonts, spacing } from "../../theme/tokens";
 import {
+  NATIVE_HEADER_HEIGHT,
   WEB_ANNOUNCE_HEIGHT,
   WEB_CHROME_TOP,
   WEB_HEADER_HEIGHT,
@@ -22,12 +23,7 @@ import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { KANKREG_HEADER } from "../../content/appContent";
 export const KANKREG_HEADER_BODY_HEIGHT = WEB_HEADER_HEIGHT;
 export const KANKREG_ANNOUNCE_HEIGHT = WEB_ANNOUNCE_HEIGHT;
-
-/** Total chrome height for scroll padding (web: fixed; native: safe area + bar). */
-export function getKankregChromeTop(insets) {
-  if (Platform.OS === "web") return WEB_CHROME_TOP;
-  return (insets?.top || 0) + WEB_HEADER_HEIGHT;
-}
+export { getKankregChromeTop } from "../../theme/kankregChrome";
 
 /**
  * kankreg.html `.announce` + `.topbar` — all platforms.
@@ -86,17 +82,28 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
     [go, goProduct, user]
   );
 
+  const isNative = Platform.OS !== "web";
+
+  /** Native app uses per-screen chrome + bottom tab bar (figmaforkankreg.html). */
+  if (isNative) {
+    return null;
+  }
+
+  const nativeHeaderHeight = NATIVE_HEADER_HEIGHT;
+
   const shellHeight =
     Platform.OS === "web"
       ? WEB_CHROME_TOP
-      : insets.top + WEB_HEADER_HEIGHT;
+      : insets.top + nativeHeaderHeight;
 
   const topbarStyle = [
     styles.topbar,
+    isNative && styles.topbarNative,
     {
       backgroundColor: isDark ? "rgba(20, 17, 15, 0.92)" : "rgba(245, 239, 228, 0.85)",
       borderBottomColor: KANKREG_PALETTE.line,
       paddingTop: Platform.OS === "web" ? 0 : insets.top,
+      minHeight: isNative ? nativeHeaderHeight : WEB_HEADER_HEIGHT,
     },
   ];
 
@@ -165,7 +172,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
                 </View>
               ) : null}
             </Pressable>
-            {!compactHeader ? (
+            {isNative ? null : !compactHeader ? (
               <Pressable
                 onPress={() => (isAuthenticated ? go("Profile", true) : go("Login"))}
                 style={({ hovered, pressed }) => [
@@ -189,7 +196,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
                 <Ionicons name="person-outline" size={18} color={KANKREG_PALETTE.inkSoft} />
               </Pressable>
             )}
-            {!showDesktopNav ? (
+            {!showDesktopNav && !isNative ? (
               <Pressable
                 onPress={() => setMobileOpen((v) => !v)}
                 style={styles.hamb}
@@ -202,7 +209,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
             ) : null}
           </View>
         </View>
-        {!showDesktopNav ? (
+        {!showDesktopNav && !isNative ? (
           <KankregMobileNav
             open={mobileOpen}
             items={items}
@@ -227,20 +234,22 @@ const styles = StyleSheet.create({
     minHeight: WEB_HEADER_HEIGHT,
     justifyContent: "center",
   },
+  topbarNative: {
+    minHeight: NATIVE_HEADER_HEIGHT,
+  },
   wrap: {
     flexDirection: "row",
     alignItems: "center",
     gap: 26,
-    minHeight: WEB_HEADER_HEIGHT,
-    height: WEB_HEADER_HEIGHT,
+    minHeight: Platform.OS === "web" ? WEB_HEADER_HEIGHT : NATIVE_HEADER_HEIGHT,
+    height: Platform.OS === "web" ? WEB_HEADER_HEIGHT : NATIVE_HEADER_HEIGHT,
     maxWidth: 1280,
     width: "100%",
     alignSelf: "center",
     paddingHorizontal: Platform.OS === "web" ? "clamp(18px, 4vw, 40px)" : spacing.lg,
   },
   wrapCompact: {
-    gap: 10,
-    paddingHorizontal: spacing.md,
+    gap: 8,
   },
   nav: {
     flex: 1,

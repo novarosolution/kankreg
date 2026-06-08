@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
 import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
+import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -22,6 +23,7 @@ import PremiumInput from "../../components/ui/PremiumInput";
 import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumChip from "../../components/ui/PremiumChip";
 import PremiumSectionHeader from "../../components/ui/PremiumSectionHeader";
+import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
 function dedupeUrls(urls = []) {
   const seen = new Set();
@@ -297,7 +299,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
 
   if (user && !user.isAdmin) {
     return (
-      <CustomerScreenShell style={styles.screen}>
+      <AdminScreenShell style={styles.screen}>
         <KankregScrollPage
         scrollVariant="inner"
         showFooter={false}
@@ -308,26 +310,26 @@ export default function AdminAddProductScreen({ navigation, route }) {
             <View style={styles.panel}>
               <PremiumErrorBanner
                 severity="warning"
-                title="Admin access required"
+                title={ADMIN_GATE.title}
                 message="This account does not have admin privileges."
               />
               <PremiumButton
-                label="Back to home"
+                label={ADMIN_GATE.backHome}
                 iconLeft="home-outline"
                 variant="primary"
                 size="md"
-                onPress={() => navigation.navigate("Home")}
+                onPress={() => navigateCustomerRoute(navigation, "Home")}
                 style={styles.gateCta}
               />
             </View>
           </SectionReveal>
         </KankregScrollPage>
-      </CustomerScreenShell>
+      </AdminScreenShell>
     );
   }
 
   return (
-    <CustomerScreenShell style={styles.screen}>
+    <AdminScreenShell style={styles.screen}>
     <KeyboardAvoidingView style={customerScrollFill} behavior={Platform.OS === "ios" ? "padding" : "height"}>
     <KankregScrollPage
         scrollVariant="admin"
@@ -336,7 +338,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
-      <KankregAdminShell navigation={navigation} route={route} title={title} subtitle="Creates a live catalog SKU">
+      <KankregAdminShell navigation={navigation} route={route} title={title} subtitle={ADMIN_SCREEN_COPY.addProduct.subtitle}>
       <View style={styles.panel}>
         {error ? (
           <View style={styles.fieldGap}>
@@ -786,7 +788,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
       </KankregAdminShell>
 </KankregScrollPage>
     </KeyboardAvoidingView>
-    </CustomerScreenShell>
+    </AdminScreenShell>
   );
 }
 

@@ -15,7 +15,7 @@ import { useTheme } from "./ThemeContext";
 import useReducedMotion from "../hooks/useReducedMotion";
 import { fonts, icon, radius, spacing, typography } from "../theme/tokens";
 import { platformShadow } from "../theme/shadowPlatform";
-import { getKankregChromeTop } from "../components/kankreg/KankregSiteHeader";
+import { getKankregChromeTop } from "../theme/kankregChrome";
 
 const ToastContext = createContext(undefined);
 

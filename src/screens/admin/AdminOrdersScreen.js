@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -17,9 +18,10 @@ import { Ionicons } from "@expo/vector-icons";
 import SectionReveal from "../../components/motion/SectionReveal";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
+import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import { useAuth } from "../../context/AuthContext";
+import { useLiveSocket } from "../../context/LiveSocketContext";
 import {
   deleteAdminOrder,
   fetchAdminOrders,
@@ -27,9 +29,21 @@ import {
   updateAdminOrderDetails,
   updateOrderStatus} from "../../services/adminService";
 import { useTheme } from "../../context/ThemeContext";
-import { adminPanel } from "../../theme/adminLayout";
+import {
+  adminBadgeClusterStyle,
+  adminCardActionsStyle,
+  adminMetricCardStyle,
+  adminPanel,
+  adminRecordHeaderRowStyle,
+  adminRecordMainColStyle,
+  adminStatsGridStyle,
+  adminToolbarPrimary,
+  adminToolbarRow,
+  useAdminCompactLayout,
+} from "../../theme/adminLayout";
+import { FONT_DISPLAY } from "../../theme/customerAlchemy";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { layout, radius, spacing } from "../../theme/tokens";
+import { fonts, layout, radius, spacing, typography } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
 import {
   ALL_ORDER_STATUSES,
@@ -125,8 +139,12 @@ export default function AdminOrdersScreen({ navigation, route }) {
   const [renderCount, setRenderCount] = useState(30);
 
   const { colors: c, shadowPremium } = useTheme();
-  const styles = useMemo(() => createAdminOrdersStyles(c, shadowPremium), [c, shadowPremium]);
-    const reducedMotion = useReducedMotion();
+  const compactAdmin = useAdminCompactLayout();
+  const styles = useMemo(
+    () => createAdminOrdersStyles(c, shadowPremium, compactAdmin),
+    [c, shadowPremium, compactAdmin]
+  );
+  const reducedMotion = useReducedMotion();
 
   const loadOrders = useCallback(async () => {
     try {
@@ -149,6 +167,22 @@ export default function AdminOrdersScreen({ navigation, route }) {
     if (!user.isAdmin) return;
     loadOrders();
   }, [user, loadOrders]);
+
+  const { on: onLiveEvent } = useLiveSocket();
+  useEffect(() => {
+    if (!user?.isAdmin) return undefined;
+    return onLiveEvent("orders:updated", ({ order }) => {
+      if (!order?._id) return;
+      const orderId = String(order._id);
+      setOrders((prev) => {
+        const idx = prev.findIndex((item) => String(item._id) === orderId);
+        if (idx < 0) return [order, ...prev];
+        const next = [...prev];
+        next[idx] = { ...next[idx], ...order };
+        return next;
+      });
+    });
+  }, [user?.isAdmin, onLiveEvent]);
 
   useEffect(() => {
     const incomingQuery = String(route?.params?.query || "").trim();
@@ -195,7 +229,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
 
   if (user && !user.isAdmin) {
     return (
-      <CustomerScreenShell style={styles.screen}>
+      <AdminScreenShell style={styles.screen}>
         <KankregScrollPage
         scrollVariant="inner"
         showFooter={false}
@@ -206,11 +240,11 @@ export default function AdminOrdersScreen({ navigation, route }) {
             <View style={styles.panel}>
               <PremiumErrorBanner
                 severity="warning"
-                title="Admin access required"
+                title={ADMIN_GATE.title}
                 message="This account does not have admin privileges."
               />
               <PremiumButton
-                label="Back to home"
+                label={ADMIN_GATE.backHome}
                 iconLeft="home-outline"
                 variant="primary"
                 size="md"
@@ -220,7 +254,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
             </View>
           </SectionReveal>
         </KankregScrollPage>
-      </CustomerScreenShell>
+      </AdminScreenShell>
     );
   }
 
@@ -372,7 +406,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
   }
 
   return (
-    <CustomerScreenShell style={styles.screen}>
+    <AdminScreenShell style={styles.screen}>
       <KeyboardAvoidingView style={customerScrollFill} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <KankregScrollPage
         scrollVariant="admin"
@@ -384,8 +418,8 @@ export default function AdminOrdersScreen({ navigation, route }) {
         <KankregAdminShell
           navigation={navigation}
           route={route}
-          title="Manage orders"
-          subtitle="Live order queue and fulfillment"
+          title={ADMIN_SCREEN_COPY.orders.title}
+          subtitle={ADMIN_SCREEN_COPY.orders.subtitle}
         >
         <View style={styles.panel}>
           <SectionReveal preset="fade-up" delay={0}>
@@ -426,6 +460,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
               iconLeft="refresh-outline"
               variant="secondary"
               size="sm"
+              fullWidth={compactAdmin}
               onPress={loadOrders}
               style={styles.refreshBtn}
             />
@@ -470,9 +505,14 @@ export default function AdminOrdersScreen({ navigation, route }) {
               >
                 <View style={styles.orderTopRow}>
                   <View style={styles.orderMain}>
-                    <Text style={styles.cardTitle}>Order #{item._id.slice(-6).toUpperCase()}</Text>
-                    <Text style={styles.cardMeta}>
-                      {item.user?.name || "User"} • {item.user?.email || "N/A"}
+                    <Text style={styles.cardTitle} numberOfLines={1}>
+                      Order #{item._id.slice(-6).toUpperCase()}
+                    </Text>
+                    <Text style={styles.cardCustomer} numberOfLines={1}>
+                      {item.user?.name || "Customer"}
+                    </Text>
+                    <Text style={styles.cardEmail} numberOfLines={2}>
+                      {item.user?.email || "No email on file"}
                     </Text>
                   </View>
                   <View style={styles.badgeCluster}>
@@ -513,6 +553,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                       iconLeft="arrow-forward-outline"
                       variant="primary"
                       size="sm"
+                      fullWidth={compactAdmin}
                       loading={busyOrderId === item._id}
                       disabled={busyOrderId === item._id}
                       onPress={() => handleStatus(item._id, ORDER_ADMIN_NEXT_STATUS[item.status])}
@@ -523,6 +564,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                     iconLeft={expandedOrderId === item._id ? "chevron-up-outline" : "chevron-down-outline"}
                     variant="ghost"
                     size="sm"
+                    fullWidth={compactAdmin}
                     onPress={() =>
                       setExpandedOrderId((current) => (current === item._id ? "" : item._id))
                     }
@@ -787,6 +829,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                     iconLeft="trash-outline"
                     variant="danger"
                     size="sm"
+                    fullWidth={compactAdmin}
                     loading={busyOrderId === item._id}
                     disabled={busyOrderId === item._id}
                     onPress={() => handleDelete(item._id)}
@@ -818,11 +861,11 @@ export default function AdminOrdersScreen({ navigation, route }) {
         </KankregAdminShell>
 </KankregScrollPage>
       </KeyboardAvoidingView>
-    </CustomerScreenShell>
+    </AdminScreenShell>
   );
 }
 
-function createAdminOrdersStyles(c, shadowPremium) {
+function createAdminOrdersStyles(c, shadowPremium, compact = false) {
   return StyleSheet.create({
   screen: {
     flex: 1,
@@ -835,40 +878,34 @@ function createAdminOrdersStyles(c, shadowPremium) {
     marginTop: spacing.md,
     alignSelf: "flex-start"},
   orderCardShell: {
-    width: "100%"},
+    width: "100%",
+    overflow: "hidden"},
   bannerSpacer: {
     marginBottom: spacing.sm},
-  statsGrid: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-    flexWrap: "wrap"},
+  statsGrid: adminStatsGridStyle(compact),
   metricCard: {
-    flex: 1,
-    minWidth: 90,
+    ...adminMetricCardStyle(compact),
     borderWidth: 1,
     borderColor: c.border,
     borderRadius: radius.md,
     backgroundColor: c.surfaceMuted,
     paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
     alignItems: "center"},
   metricValue: {
     color: c.primary,
-    fontSize: 18,
-    fontWeight: "800"},
+    fontSize: typography.h3,
+    fontFamily: fonts.bold},
   metricLabel: {
     color: c.textSecondary,
-    fontSize: 11,
-    fontWeight: "700"},
+    fontSize: typography.caption,
+    fontFamily: fonts.semibold,
+    textAlign: "center"},
   actionsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "flex-end",
-    gap: spacing.sm,
+    ...adminToolbarRow,
     marginBottom: spacing.sm},
   searchInputWrap: {
-    flex: 1,
-    minWidth: 0},
+    ...adminToolbarPrimary},
   refreshBtn: {
     alignSelf: "flex-end"},
   filtersRow: {
@@ -881,28 +918,34 @@ function createAdminOrdersStyles(c, shadowPremium) {
   listContent: {
     gap: spacing.sm,
     paddingBottom: spacing.xl},
-  orderTopRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: spacing.sm},
-  orderMain: {
-    flex: 1},
-  badgeCluster: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    gap: 8,
-    maxWidth: "100%"},
+  orderTopRow: adminRecordHeaderRowStyle(compact),
+  orderMain: adminRecordMainColStyle(compact),
+  badgeCluster: adminBadgeClusterStyle(compact),
   cardTitle: {
     color: c.textPrimary,
-    fontWeight: "700"},
-  amountText: {
-    marginTop: spacing.xs,
+    fontFamily: FONT_DISPLAY,
+    fontSize: typography.body + 1,
+    letterSpacing: -0.2},
+  cardCustomer: {
+    marginTop: 4,
     color: c.textPrimary,
-    fontSize: 18,
-    fontWeight: "800"},
+    fontFamily: fonts.semibold,
+    fontSize: typography.bodySmall},
+  cardEmail: {
+    marginTop: 2,
+    color: c.textSecondary,
+    fontFamily: fonts.regular,
+    fontSize: typography.caption,
+    lineHeight: 18},
+  amountText: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+    color: c.textPrimary,
+    fontFamily: FONT_DISPLAY,
+    fontSize: typography.h3,
+    letterSpacing: -0.3},
   statusBadge: {
     borderWidth: 1,
     borderColor: c.primaryBorder,
@@ -937,12 +980,13 @@ function createAdminOrdersStyles(c, shadowPremium) {
   cardMeta: {
     marginTop: 4,
     color: c.textSecondary,
-    fontSize: 12},
+    fontSize: typography.caption,
+    fontFamily: fonts.regular,
+    lineHeight: 18},
   quickActionsRow: {
-    marginTop: spacing.sm,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs},
+    marginTop: spacing.md,
+    ...adminCardActionsStyle(compact),
+  },
   orderFieldGap: {
     marginBottom: spacing.sm},
   orderHalfField: {
@@ -996,9 +1040,8 @@ function createAdminOrdersStyles(c, shadowPremium) {
     paddingBottom: spacing.xs},
   actionsWrap: {
     marginTop: spacing.sm,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs},
+    ...adminCardActionsStyle(compact),
+  },
   loadMoreBtn: {
     marginTop: spacing.sm,
     alignSelf: "center"},

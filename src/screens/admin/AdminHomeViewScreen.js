@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { ADMIN_GATE } from "../../content/adminContent";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
+import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -11,12 +12,14 @@ import { adminPanel } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { fonts, radius, spacing, typography } from "../../theme/tokens";
 import { ADMIN_HOME_VIEW_COPY, HOME_VIEW_DEFAULTS } from "../../content/appContent";
+import { getCurrentAddressFromGPS } from "../../services/locationService";
 import PremiumInput from "../../components/ui/PremiumInput";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumChip from "../../components/ui/PremiumChip";
 import PremiumCard from "../../components/ui/PremiumCard";
 import SectionReveal from "../../components/motion/SectionReveal";
+import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
 function Section({ label, hint, children, styles, revealIndex = 0 }) {
   return (
@@ -65,6 +68,14 @@ export default function AdminHomeViewScreen({ navigation, route }) {
   const [showHomeSections, setShowHomeSections] = useState(true);
   const [showProductTypeSections, setShowProductTypeSections] = useState(true);
   const [productCardStyle, setProductCardStyle] = useState("compact");
+  const [shopName, setShopName] = useState(HOME_VIEW_DEFAULTS.shopLocation.name);
+  const [shopLine1, setShopLine1] = useState("");
+  const [shopCity, setShopCity] = useState("");
+  const [shopState, setShopState] = useState("");
+  const [shopPostalCode, setShopPostalCode] = useState("");
+  const [shopLatitude, setShopLatitude] = useState("");
+  const [shopLongitude, setShopLongitude] = useState("");
+  const [gpsLoading, setGpsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [saving, setSaving] = useState(false);
@@ -81,6 +92,18 @@ export default function AdminHomeViewScreen({ navigation, route }) {
       setShowHomeSections(data.showHomeSections !== false);
       setShowProductTypeSections(data.showProductTypeSections !== false);
       setProductCardStyle(data.productCardStyle === "comfortable" ? "comfortable" : "compact");
+      const shop = data.shopLocation || HOME_VIEW_DEFAULTS.shopLocation;
+      setShopName(shop.name || HOME_VIEW_DEFAULTS.shopLocation.name);
+      setShopLine1(shop.line1 || "");
+      setShopCity(shop.city || "");
+      setShopState(shop.state || "");
+      setShopPostalCode(shop.postalCode || "");
+      setShopLatitude(
+        Number.isFinite(Number(shop.latitude)) ? String(shop.latitude) : ""
+      );
+      setShopLongitude(
+        Number.isFinite(Number(shop.longitude)) ? String(shop.longitude) : ""
+      );
     } catch (err) {
       setError(err.message || "Unable to load home view settings.");
     }
@@ -90,6 +113,24 @@ export default function AdminHomeViewScreen({ navigation, route }) {
     if (!user?.isAdmin) return;
     loadSettings();
   }, [user, loadSettings]);
+
+  const handleUseShopGps = async () => {
+    try {
+      setGpsLoading(true);
+      setError("");
+      const resolved = await getCurrentAddressFromGPS();
+      if (resolved.line1) setShopLine1(resolved.line1);
+      if (resolved.city) setShopCity(resolved.city);
+      if (resolved.state) setShopState(resolved.state);
+      if (resolved.postalCode) setShopPostalCode(resolved.postalCode);
+      if (Number.isFinite(Number(resolved.latitude))) setShopLatitude(String(resolved.latitude));
+      if (Number.isFinite(Number(resolved.longitude))) setShopLongitude(String(resolved.longitude));
+    } catch (err) {
+      setError(err.message || "Unable to read location.");
+    } finally {
+      setGpsLoading(false);
+    }
+  };
 
   const handleSave = async () => {
     try {
@@ -104,7 +145,17 @@ export default function AdminHomeViewScreen({ navigation, route }) {
         showPrimeSection,
         showHomeSections,
         showProductTypeSections,
-        productCardStyle});
+        productCardStyle,
+        shopLocation: {
+          name: shopName.trim() || HOME_VIEW_DEFAULTS.shopLocation.name,
+          line1: shopLine1.trim(),
+          city: shopCity.trim(),
+          state: shopState.trim(),
+          postalCode: shopPostalCode.trim(),
+          latitude: shopLatitude.trim() ? Number(shopLatitude) : null,
+          longitude: shopLongitude.trim() ? Number(shopLongitude) : null,
+        },
+      });
       setSuccess("Storefront settings saved.");
     } catch (err) {
       setError(err.message || "Unable to save settings.");
@@ -115,21 +166,21 @@ export default function AdminHomeViewScreen({ navigation, route }) {
 
   if (user && !user.isAdmin) {
     return (
-      <CustomerScreenShell style={styles.screen}>
+      <AdminScreenShell style={styles.screen}>
         <View style={[styles.panel, { margin: spacing.lg }]}>
           <PremiumErrorBanner
             severity="warning"
-            title="Admin access required"
+            title={ADMIN_GATE.title}
             message="This account does not have admin privileges."
           />
-          <PremiumButton label="Back to Home" variant="primary" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
+          <PremiumButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
         </View>
-      </CustomerScreenShell>
+      </AdminScreenShell>
     );
   }
 
   return (
-    <CustomerScreenShell style={styles.screen}>
+    <AdminScreenShell style={styles.screen}>
       <KankregScrollPage
         scrollVariant="inner"
         showFooter={false}
@@ -239,7 +290,69 @@ export default function AdminHomeViewScreen({ navigation, route }) {
             </PremiumCard>
           </Section>
 
-          <Section label={copy.cardLayoutSection} hint={copy.cardLayoutHint} styles={styles} revealIndex={3}>
+          <Section label={copy.shopLocationSection} hint={copy.shopLocationHint} styles={styles} revealIndex={3}>
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label={copy.shopNameLabel}
+                value={shopName}
+                onChangeText={setShopName}
+                iconLeft="storefront-outline"
+              />
+            </View>
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label={copy.shopAddressLabel}
+                value={shopLine1}
+                onChangeText={setShopLine1}
+                iconLeft="home-outline"
+              />
+            </View>
+            <View style={styles.splitRow}>
+              <View style={[styles.fieldGap, styles.halfField]}>
+                <PremiumInput label={copy.shopCityLabel} value={shopCity} onChangeText={setShopCity} />
+              </View>
+              <View style={[styles.fieldGap, styles.halfField]}>
+                <PremiumInput label={copy.shopStateLabel} value={shopState} onChangeText={setShopState} />
+              </View>
+            </View>
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label={copy.shopPostalLabel}
+                value={shopPostalCode}
+                onChangeText={setShopPostalCode}
+                keyboardType="number-pad"
+              />
+            </View>
+            <View style={styles.splitRow}>
+              <View style={[styles.fieldGap, styles.halfField]}>
+                <PremiumInput
+                  label="Latitude"
+                  value={shopLatitude}
+                  onChangeText={setShopLatitude}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+              <View style={[styles.fieldGap, styles.halfField]}>
+                <PremiumInput
+                  label="Longitude"
+                  value={shopLongitude}
+                  onChangeText={setShopLongitude}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+            </View>
+            <PremiumButton
+              label={gpsLoading ? copy.shopUseGpsLoading : copy.shopUseGps}
+              iconLeft="locate-outline"
+              variant="secondary"
+              size="md"
+              onPress={handleUseShopGps}
+              disabled={gpsLoading}
+              loading={gpsLoading}
+            />
+          </Section>
+
+          <Section label={copy.cardLayoutSection} hint={copy.cardLayoutHint} styles={styles} revealIndex={4}>
             <View style={styles.row}>
               <PremiumChip
                 label="Compact"
@@ -260,7 +373,7 @@ export default function AdminHomeViewScreen({ navigation, route }) {
             </View>
           </Section>
 
-          <Section label={copy.quickLinks} hint={null} styles={styles} revealIndex={4}>
+          <Section label={copy.quickLinks} hint={null} styles={styles} revealIndex={5}>
             <View style={[styles.linkStack, { borderColor: c.border }]}>
               <QuickLinkRow
                 title={copy.linkProductsTitle}
@@ -294,7 +407,7 @@ export default function AdminHomeViewScreen({ navigation, route }) {
         </View>
         </KankregAdminShell>
 </KankregScrollPage>
-    </CustomerScreenShell>
+    </AdminScreenShell>
   );
 }
 
@@ -342,6 +455,12 @@ function createAdminHomeViewStyles(c, shadowPremium) {
       marginBottom: spacing.sm},
     fieldGap: {
       marginBottom: spacing.sm},
+    splitRow: {
+      flexDirection: "row",
+      gap: spacing.sm},
+    halfField: {
+      flex: 1,
+      minWidth: 0},
     toggleBtnText: {
       fontWeight: "700",
       fontSize: typography.bodySmall,

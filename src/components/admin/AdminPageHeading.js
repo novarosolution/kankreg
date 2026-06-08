@@ -8,16 +8,16 @@ import { spacing, typography } from "../../theme/tokens";
 /**
  * Shared title + subtitle for admin tool screens (matches customer display weight).
  */
-export default function AdminPageHeading({ title, subtitle, right }) {
+export default function AdminPageHeading({ title, subtitle, right, compact = false }) {
   const { colors: c, isDark } = useTheme();
-  const styles = useMemo(() => createStyles(c, isDark), [c, isDark]);
+  const styles = useMemo(() => createStyles(c, isDark, compact), [c, isDark, compact]);
 
   return (
     <View style={styles.wrap}>
       <View style={styles.row}>
         <View style={styles.textCol}>
           <Text style={[styles.title, { color: c.textPrimary, fontFamily: FONT_DISPLAY }]}>{title}</Text>
-          {subtitle ? (
+          {subtitle && !compact ? (
             <Text style={[styles.subtitle, { color: c.textSecondary }]}>{subtitle}</Text>
           ) : null}
         </View>
@@ -40,10 +40,12 @@ export default function AdminPageHeading({ title, subtitle, right }) {
   );
 }
 
-function createStyles(_c, isDark) {
+function createStyles(_c, isDark, compact) {
   return StyleSheet.create({
     wrap: {
-      marginBottom: spacing.md + 4,
+      marginBottom: compact ? spacing.sm : spacing.md + 4,
+      flex: 1,
+      minWidth: 0,
     },
     row: {
       flexDirection: "row",
@@ -56,8 +58,8 @@ function createStyles(_c, isDark) {
       minWidth: 0,
     },
     title: {
-      fontSize: typography.h2,
-      letterSpacing: -0.35,
+      fontSize: compact ? typography.h3 : typography.h2,
+      letterSpacing: compact ? -0.2 : -0.35,
     },
     subtitle: {
       marginTop: spacing.xs,

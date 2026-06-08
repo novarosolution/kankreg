@@ -11,8 +11,9 @@ import {
   View} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
 import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
+import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -30,6 +31,7 @@ import PremiumChip from "../../components/ui/PremiumChip";
 import PremiumCard from "../../components/ui/PremiumCard";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { staggerDelay } from "../../theme/motion";
+import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
 /** Counts as “low stock” when qty is 1..LOW_STOCK_MAX and still sellable. */
 const LOW_STOCK_MAX = 5;
@@ -161,26 +163,26 @@ export default function AdminInventoryScreen({ navigation, route }) {
 
   if (!user) {
     return (
-      <CustomerScreenShell style={styles.screen}>
+      <AdminScreenShell style={styles.screen}>
         <View style={[styles.denied, { padding: spacing.lg, paddingTop: insets.top + spacing.md, flex: 1 }]}>
           <Text style={styles.deniedTitle}>Sign in</Text>
           <Text style={styles.deniedSub}>Log in with an admin account to manage inventory.</Text>
           <PremiumButton label="Go to login" variant="primary" onPress={() => navigation.navigate("Login")} style={styles.gateCta} />
         </View>
-      </CustomerScreenShell>
+      </AdminScreenShell>
     );
   }
 
   if (!user.isAdmin) {
     return (
-      <CustomerScreenShell style={styles.screen}>
+      <AdminScreenShell style={styles.screen}>
         <View style={[styles.denied, customerScrollFill, { padding: spacing.lg, paddingTop: insets.top + spacing.md }]}>
           <Ionicons name="shield-half-outline" size={44} color={c.primary} />
           <Text style={styles.deniedTitle}>Admins only</Text>
           <Text style={styles.deniedSub}>Sign in with an admin account to manage stock.</Text>
-          <PremiumButton label="Back to home" variant="primary" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
+          <PremiumButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
         </View>
-      </CustomerScreenShell>
+      </AdminScreenShell>
     );
   }
 
@@ -208,12 +210,12 @@ export default function AdminInventoryScreen({ navigation, route }) {
   );
 
   return (
-    <CustomerScreenShell style={styles.screen}>
+    <AdminScreenShell style={styles.screen}>
       <KankregAdminShell
         navigation={navigation}
         route={route}
-        title="Inventory & stock"
-        subtitle="Quantities and availability"
+        title={ADMIN_SCREEN_COPY.inventory.title}
+        subtitle={ADMIN_SCREEN_COPY.inventory.subtitle}
       >
       <FlatList
         data={visible}
@@ -428,7 +430,7 @@ export default function AdminInventoryScreen({ navigation, route }) {
         showsVerticalScrollIndicator={false}
       />
       </KankregAdminShell>
-    </CustomerScreenShell>
+    </AdminScreenShell>
   );
 }
 

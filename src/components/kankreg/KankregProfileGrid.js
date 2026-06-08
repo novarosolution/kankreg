@@ -10,6 +10,17 @@ import { fonts, spacing } from "../../theme/tokens";
 import { useTheme } from "../../context/ThemeContext";
 import { platformShadow } from "../../theme/shadowPlatform";
 
+const sideShadow = platformShadow({
+  web: { boxShadow: "0 12px 32px rgba(25, 20, 15, 0.07)" },
+  ios: {
+    shadowColor: "#19140f",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+  },
+  android: { elevation: 3 },
+});
+
 const MENU = [
   { key: "overview", label: "Account overview", icon: "person-outline", route: null },
   { key: "orders", label: "My orders", icon: "bag-handle-outline", route: "MyOrders" },
@@ -106,21 +117,10 @@ export default function KankregProfileGrid({
           ) : null}
         </View>
       </View>
-      <View style={styles.main}>{children}</View>
+      <View style={[styles.main, stack && styles.mainStack]}>{children}</View>
     </View>
   );
 }
-
-const sideShadow = platformShadow({
-  web: { boxShadow: "0 12px 32px rgba(25, 20, 15, 0.07)" },
-  ios: {
-    shadowColor: "#19140f",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-  },
-  android: { elevation: 3 },
-});
 
 const styles = StyleSheet.create({
   grid: {
@@ -247,5 +247,11 @@ const styles = StyleSheet.create({
   main: {
     flex: 1,
     minWidth: 0,
+  },
+  mainStack: {
+    width: "100%",
+    flexGrow: 0,
+    flexShrink: 0,
+    alignSelf: "stretch",
   },
 });

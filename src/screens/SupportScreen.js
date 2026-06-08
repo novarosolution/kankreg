@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { KeyboardAvoidingView, Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { KeyboardAvoidingView, Linking, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
 import Animated, { FadeInLeft, FadeInRight } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,9 +12,9 @@ import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 import BottomNavBar from "../components/BottomNavBar";
 import AuthGateShell from "../components/AuthGateShell";
 import CustomerScreenShell from "../components/CustomerScreenShell";
-import KankregUnifiedPageHeader from "../components/kankreg/KankregUnifiedPageHeader";
-import GoldHairline from "../components/ui/GoldHairline";
+import KankregCustomerPageHeader from "../components/kankreg/KankregCustomerPageHeader";
 import { useAuth } from "../context/AuthContext";
+import { useLiveSocket } from "../context/LiveSocketContext";
 import { useTheme } from "../context/ThemeContext";
 import { fetchMySupportThread, sendMySupportMessage } from "../services/userService";
 import {
@@ -29,6 +29,8 @@ import PremiumInput from "../components/ui/PremiumInput";
 import PremiumButton from "../components/ui/PremiumButton";
 import PremiumCard from "../components/ui/PremiumCard";
 import SkeletonBlock from "../components/ui/SkeletonBlock";
+import NativeCard from "../components/native/NativeCard";
+import { FIGMA } from "../theme/figmaApp";
 
 function buildSupportContactLinks() {
   return [
@@ -57,21 +59,6 @@ function buildSupportContactLinks() {
       url: "https://wa.me/919999999999"},
   ];
 }
-
-const SUPPORT_FAQS = [
-  {
-    q: "When will my order arrive?",
-    a: "Same-day in many areas; otherwise a few days. Track everything in My Orders."},
-  {
-    q: "How do I cancel or change an order?",
-    a: "My Orders → cancel or edit address until the order is packed."},
-  {
-    q: "Can I pay after delivery?",
-    a: "Yes—Cash on Delivery. Online checkout uses Razorpay (UPI, cards, wallets)."},
-  {
-    q: "How do refunds work?",
-    a: "Refunds go back to your original payment method in a few business days."},
-];
 
 export default function SupportScreen({ navigation }) {
   const { isXs, isSm } = useKankregLayout();
@@ -123,6 +110,14 @@ export default function SupportScreen({ navigation }) {
     loadThread();
   }, [isAuthLoading, isAuthenticated, loadThread]);
 
+  const { on: onLiveEvent } = useLiveSocket();
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    return onLiveEvent("support:thread", ({ thread: incoming }) => {
+      if (incoming) setThread(incoming);
+    });
+  }, [isAuthenticated, onLiveEvent]);
+
   const handleSend = async () => {
     const text = String(message || "").trim();
     if (!text) return;
@@ -155,6 +150,8 @@ export default function SupportScreen({ navigation }) {
     }
   }, []);
 
+  const isNativeApp = Platform.OS !== "web";
+
   if (isAuthLoading || !isAuthenticated) {
     return <AuthGateShell />;
   }
@@ -172,27 +169,36 @@ export default function SupportScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <KankregUnifiedPageHeader
-          eyebrow="Help"
-          title="Support"
-          subtitle="Help when you need it"
+        <KankregCustomerPageHeader
+          eyebrow={SUPPORT_SCREEN.pageEyebrow}
+          title={SUPPORT_SCREEN.pageTitle}
+          subtitle={SUPPORT_SCREEN.pageSubtitle}
           navigation={navigation}
-          right={
-            Platform.OS !== "web" ? (
-              <PremiumButton
-                label="Refresh"
-                iconLeft="refresh-outline"
-                variant="ghost"
-                size="sm"
-                onPress={loadThread}
-              />
-            ) : undefined
-          }
+          showHairline={!isNativeApp}
         />
-        <GoldHairline marginVertical={spacing.sm} />
         <SectionReveal preset="fade-up" delay={20}>
-          <View style={styles.contactGrid}>
+          <View style={[styles.contactGrid, isNativeApp && styles.nativeContactGrid]}>
             {buildSupportContactLinks().map((link) => {
+              if (isNativeApp) {
+                const palette = getContactPalette(link.accent, c, isDark);
+                return (
+                  <NativeCard key={link.key} style={styles.nativeContactCard}>
+                    <Pressable
+                      onPress={() => handleContactPress(link)}
+                      style={styles.nativeContactInner}
+                    >
+                      <View style={[styles.contactIconWrap, { backgroundColor: palette.bg, borderColor: palette.border }]}>
+                        <Ionicons name={link.icon} size={icon.md} color={palette.icon} />
+                      </View>
+                      <View style={styles.nativeContactText}>
+                        <Text style={styles.contactTitle}>{link.title}</Text>
+                        <Text style={styles.contactDescription} numberOfLines={2}>{link.description}</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color={FIGMA.inkFaint} />
+                    </Pressable>
+                  </NativeCard>
+                );
+              }
               const palette = getContactPalette(link.accent, c, isDark);
               return (
                 <PremiumCard
@@ -324,10 +330,10 @@ export default function SupportScreen({ navigation }) {
         <SectionReveal preset="fade-up" delay={100}>
           <View style={styles.faqWrap}>
             <View style={styles.faqHeader}>
-              <Text style={styles.faqEyebrow}>Quick answers</Text>
-              <Text style={styles.faqHeading}>Frequently asked</Text>
+              <Text style={styles.faqEyebrow}>{SUPPORT_SCREEN.pageEyebrow}</Text>
+              <Text style={styles.faqHeading}>{SUPPORT_SCREEN.faqTitle}</Text>
             </View>
-            {SUPPORT_FAQS.map((item, idx) => {
+            {SUPPORT_SCREEN.faqs.map((item, idx) => {
               const isOpen = openFaqIndex === idx;
               return (
                 <TouchableOpacity
@@ -388,6 +394,23 @@ function createSupportStyles(c, shadowPremium, isDark, layoutFlags = {}) {
   return StyleSheet.create({
   screen: {
     flex: 1},
+  nativeContactGrid: {
+    paddingHorizontal: FIGMA.gutter,
+    gap: 10,
+  },
+  nativeContactCard: {
+    marginBottom: 0,
+  },
+  nativeContactInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 12,
+  },
+  nativeContactText: {
+    flex: 1,
+    minWidth: 0,
+  },
   titleRow: {
     flexDirection: "row",
     alignItems: "center",

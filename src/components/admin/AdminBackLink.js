@@ -8,7 +8,7 @@ import { fonts, getSemanticColors, icon, semanticRadius, spacing, typography } f
 /**
  * Gold-accent back link to the admin dashboard (shared across admin tools).
  */
-export default function AdminBackLink({ navigation, label = "Dashboard", target = "AdminDashboard" }) {
+export default function AdminBackLink({ navigation, label = "Dashboard", target = "AdminDashboard", style }) {
   const { colors: c, isDark } = useTheme();
   const semantic = getSemanticColors(c);
   const styles = useMemo(() => createStyles(c, isDark, semantic), [c, isDark, semantic]);
@@ -17,6 +17,7 @@ export default function AdminBackLink({ navigation, label = "Dashboard", target 
     <Pressable
       style={({ hovered, pressed }) => [
         styles.row,
+        style,
         hovered && Platform.OS === "web" ? styles.rowHover : null,
         pressed ? { opacity: 0.86 } : null,
       ]}
@@ -36,7 +37,7 @@ function createStyles(c, isDark, semantic) {
       flexDirection: "row",
       alignItems: "center",
       alignSelf: "flex-start",
-      marginBottom: spacing.lg,
+      marginBottom: 0,
       paddingVertical: 8,
       paddingRight: spacing.md,
       paddingLeft: spacing.sm,

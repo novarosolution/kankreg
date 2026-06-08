@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
+import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -18,6 +19,7 @@ import PremiumInput from "../../components/ui/PremiumInput";
 import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumCard from "../../components/ui/PremiumCard";
 import SectionReveal from "../../components/motion/SectionReveal";
+import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
 export default function AdminNotificationsScreen({ navigation, route }) {
   const { colors: c, shadowPremium } = useTheme();
@@ -74,7 +76,7 @@ export default function AdminNotificationsScreen({ navigation, route }) {
 
   if (user && !user.isAdmin) {
     return (
-      <CustomerScreenShell style={styles.screen}>
+      <AdminScreenShell style={styles.screen}>
         <KankregScrollPage
         scrollVariant="inner"
         showFooter={false}
@@ -85,26 +87,26 @@ export default function AdminNotificationsScreen({ navigation, route }) {
             <View style={styles.panel}>
               <PremiumErrorBanner
                 severity="warning"
-                title="Admin access required"
+                title={ADMIN_GATE.title}
                 message="This account does not have admin privileges."
               />
               <PremiumButton
-                label="Back to home"
+                label={ADMIN_GATE.backHome}
                 iconLeft="home-outline"
                 variant="primary"
                 size="md"
-                onPress={() => navigation.navigate("Home")}
+                onPress={() => navigateCustomerRoute(navigation, "Home")}
                 style={styles.gateCta}
               />
             </View>
           </SectionReveal>
         </KankregScrollPage>
-      </CustomerScreenShell>
+      </AdminScreenShell>
     );
   }
 
   return (
-    <CustomerScreenShell style={styles.screen}>
+    <AdminScreenShell style={styles.screen}>
       <KeyboardAvoidingView style={customerScrollFill} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <KankregScrollPage
         scrollVariant="admin"
@@ -113,7 +115,7 @@ export default function AdminNotificationsScreen({ navigation, route }) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <KankregAdminShell navigation={navigation} route={route} title="Broadcast Notifications" subtitle="Push to all customers">
+          <KankregAdminShell navigation={navigation} route={route} title={ADMIN_SCREEN_COPY.notifications.title} subtitle={ADMIN_SCREEN_COPY.notifications.subtitle}>
           <View style={styles.panel}>
             {error ? (
               <View style={styles.bannerSpacer}>
@@ -206,7 +208,7 @@ export default function AdminNotificationsScreen({ navigation, route }) {
           </KankregAdminShell>
 </KankregScrollPage>
       </KeyboardAvoidingView>
-    </CustomerScreenShell>
+    </AdminScreenShell>
   );
 }
 

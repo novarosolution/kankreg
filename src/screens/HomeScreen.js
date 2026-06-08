@@ -68,6 +68,7 @@ import { HomeCatalogGridCard, HomeCatalogListRow } from "../components/home/Home
 import { fetchMyOrders } from "../services/userService";
 import { formatINR } from "../utils/currency";
 import { getOrderStatusLabel } from "../utils/orderStatus";
+import { navigateCustomerRoute } from "../navigation/customerNavigate";
 
 if (Platform.OS === "web") {
   gsap.registerPlugin(ScrollTrigger);
@@ -646,7 +647,7 @@ export default function HomeScreen({ navigation }) {
                     </Text>
                   </View>
                   <Pressable
-                    onPress={() => navigation.navigate("Cart")}
+                    onPress={() => navigateCustomerRoute(navigation, "Cart")}
                     style={({ pressed }) => [styles.alchemyIconBtn, pressed && { opacity: 0.75 }]}
                     hitSlop={10}
                     accessibilityRole="button"
@@ -1186,7 +1187,7 @@ export default function HomeScreen({ navigation }) {
                 ]}
                 onPress={() => {
                   setMenuOpen(false);
-                  navigation.navigate("Profile");
+                  navigateCustomerRoute(navigation, "Profile");
                 }}
               >
                 <View style={[styles.menuIconCircle, { backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt }]}>

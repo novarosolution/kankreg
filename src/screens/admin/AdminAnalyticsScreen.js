@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
 import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { BarChart, LineChart, PieChart } from "react-native-chart-kit";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
+import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
@@ -28,6 +29,7 @@ import PremiumStatCard from "../../components/ui/PremiumStatCard";
 import PremiumChip from "../../components/ui/PremiumChip";
 import PremiumInput from "../../components/ui/PremiumInput";
 import SectionReveal from "../../components/motion/SectionReveal";
+import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
 function hexToRgb(hex) {
   const h = String(hex || "").replace("#", "");
@@ -260,7 +262,7 @@ export default function AdminAnalyticsScreen({ navigation, route }) {
 
   if (user && !user.isAdmin) {
     return (
-      <CustomerScreenShell style={styles.screen}>
+      <AdminScreenShell style={styles.screen}>
         <KankregScrollPage
         scrollVariant="inner"
         showFooter={false}
@@ -271,20 +273,20 @@ export default function AdminAnalyticsScreen({ navigation, route }) {
             <View style={styles.deniedGate}>
               <PremiumErrorBanner
                 severity="warning"
-                title="Admin access required"
+                title={ADMIN_GATE.title}
                 message="This account does not have admin privileges."
               />
               <PremiumButton
-                label="Back to home"
+                label={ADMIN_GATE.backHome}
                 iconLeft="home-outline"
                 variant="primary"
-                onPress={() => navigation.navigate("Home")}
+                onPress={() => navigateCustomerRoute(navigation, "Home")}
                 style={styles.gateCta}
               />
             </View>
           </SectionReveal>
         </KankregScrollPage>
-      </CustomerScreenShell>
+      </AdminScreenShell>
     );
   }
 
@@ -295,14 +297,14 @@ export default function AdminAnalyticsScreen({ navigation, route }) {
   const isFiltered = Boolean(analytics?.range?.filtered);
 
   return (
-    <CustomerScreenShell style={styles.screen}>
+    <AdminScreenShell style={styles.screen}>
       <KankregScrollPage
         scrollVariant="admin"
         showFooter={false}
         style={customerScrollFill}
         showsVerticalScrollIndicator={false}
       >
-      <KankregAdminShell navigation={navigation} route={route} title="Analytics" subtitle="Sales and engagement reports">
+      <KankregAdminShell navigation={navigation} route={route} title={ADMIN_SCREEN_COPY.analytics.title} subtitle={ADMIN_SCREEN_COPY.analytics.subtitle}>
       <LinearGradient colors={heroColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.heroGradient, { borderColor: hairline }]}>
         {!isDark ? <View style={styles.heroGoldHairline} /> : null}
         <Text style={[styles.subtitle, !isDark && styles.subtitleLight, styles.heroIntro]}>
@@ -882,7 +884,7 @@ export default function AdminAnalyticsScreen({ navigation, route }) {
       ) : null}
       </KankregAdminShell>
 </KankregScrollPage>
-    </CustomerScreenShell>
+    </AdminScreenShell>
   );
 }
 

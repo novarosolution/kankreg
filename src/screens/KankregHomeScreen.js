@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import CustomerScreenShell from "../components/CustomerScreenShell";
+import BottomNavBar from "../components/BottomNavBar";
 import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 import {
   HomeCategoryCards,
@@ -9,6 +10,8 @@ import {
   HomeFeaturedEditorial,
   HomeMarqueeTicker,
 } from "../components/home/HomeKankregSections";
+import HomeStatsStrip from "../components/home/HomeStatsStrip";
+import HomeTestimonials from "../components/home/HomeTestimonials";
 import { HomeCatalogGridCard } from "../components/home/HomeCatalogProductViews";
 import { KankregGrainOverlay, KankregPageWrap, KankregSectionHead } from "../components/kankreg/KankregPageChrome";
 import KankregTrustStrip from "../components/kankreg/KankregTrustStrip";
@@ -26,83 +29,82 @@ import { KANKREG_PAGE_SECTION_GAP } from "../theme/kankregScreenStyles";
 import { useCart } from "../context/CartContext";
 import { useTheme } from "../context/ThemeContext";
 import { getHomeViewConfig, getProducts } from "../services/productService";
-import { HOME_BRAND_QUOTE } from "../content/appContent";
+import { HOME_SCREEN_UI } from "../content/appContent";
 import { CUSTOMER_SHELL_GRADIENT_LOCATIONS, getCustomerShellGradient } from "../theme/customerAlchemy";
-import { spacing } from "../theme/tokens";
+import { createQuoteBlockStyles } from "../theme/screenThemes";
 import { productToCartLine } from "../utils/productCart";
+import NativeHomeHeader from "../components/native/NativeHomeHeader";
+import NativeHeroBanner from "../components/native/NativeHeroBanner";
+import NativeSectionHeader from "../components/native/NativeSectionHeader";
+import NativeCategoryRow from "../components/native/NativeCategoryRow";
+import NativeBestsellersGrid from "../components/native/NativeBestsellersGrid";
+import NativeHomeSkeleton from "../components/native/NativeHomeSkeleton";
+import { FIGMA } from "../theme/figmaApp";
+import { useAuth } from "../context/AuthContext";
+import { fetchMyNotifications } from "../services/userService";
+import { spacing } from "../theme/tokens";
+import { useDeliveryLocation } from "../hooks/useDeliveryLocation";
 
-function HomeQuote() {
+const nativeHomeStyles = StyleSheet.create({
+  shell: {
+    flex: 1,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingTop: spacing.xs,
+    paddingHorizontal: 0,
+    gap: spacing.md,
+  },
+  bannerWrap: {
+    paddingHorizontal: FIGMA.gutter,
+    marginBottom: spacing.xs,
+  },
+  emptyWrap: {
+    paddingHorizontal: FIGMA.gutter,
+  },
+  divider: {
+    marginHorizontal: FIGMA.gutter,
+    marginTop: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+});
+
+const homeGridStyles = StyleSheet.create({
+  productGridWrap: {},
+  productGridCell: {},
+  productListRow: {},
+});
+
+function HomeQuote({ isDark }) {
   const { isXs } = useKankregLayout();
+  const quoteStyles = createQuoteBlockStyles(isDark);
   return (
     <View style={[quoteStyles.wrap, isXs && quoteStyles.wrapXs]}>
       <Text style={quoteStyles.mark} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         “
       </Text>
       <View style={quoteStyles.block}>
-        <Text style={[quoteStyles.text, isXs && quoteStyles.textXs]}>{HOME_BRAND_QUOTE.text}</Text>
-        <Text style={quoteStyles.who}>{HOME_BRAND_QUOTE.attribution}</Text>
+        <Text style={[quoteStyles.text, isXs && quoteStyles.textXs]}>{HOME_SCREEN_UI.quote.text}</Text>
+        <Text style={quoteStyles.who}>{HOME_SCREEN_UI.quote.attribution}</Text>
       </View>
     </View>
   );
 }
 
-const quoteStyles = StyleSheet.create({
-  wrap: {
-    borderRadius: 26,
-    overflow: "hidden",
-    paddingVertical: 48,
-    paddingHorizontal: 24,
-    marginVertical: spacing.xl,
-    backgroundColor: "#211c16",
-  },
-  wrapXs: {
-    paddingVertical: 32,
-    paddingHorizontal: 18,
-    marginVertical: spacing.lg,
-    borderRadius: 20,
-  },
-  mark: {
-    position: "absolute",
-    top: 20,
-    left: 24,
-    fontSize: 120,
-    lineHeight: 72,
-    color: "rgba(214, 173, 91, 0.2)",
-    fontFamily: "Fraunces_700Bold",
-  },
-  block: { alignItems: "center" },
-  text: {
-    fontFamily: "Fraunces_400Regular_Italic",
-    fontSize: 28,
-    lineHeight: 36,
-    color: "#f5efe4",
-    textAlign: "center",
-    maxWidth: 320,
-    fontStyle: "italic",
-  },
-  textXs: {
-    fontSize: 20,
-    lineHeight: 28,
-    maxWidth: "100%",
-  },
-  who: {
-    marginTop: 22,
-    fontSize: 12.5,
-    letterSpacing: 1,
-    color: "#d6ad5b",
-    textTransform: "uppercase",
-  },
-});
-
 export default function KankregHomeScreen({ navigation }) {
   const { colors: c, isDark } = useTheme();
-  const { catalogCardCompact: layoutCompact, showEditorialHero } = useKankregLayout();
+  const { catalogCardCompact: layoutCompact, showEditorialHero, isMobileWeb } = useKankregLayout();
   const { addToCart, removeFromCart, getItemQuantity } = useCart();
+  const { isAuthenticated, token } = useAuth();
   const [products, setProducts] = useState([]);
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
   const [homeView, setHomeView] = useState(null);
   const [loading, setLoading] = useState(true);
   const [configError, setConfigError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+  const { displayLabel } = useDeliveryLocation();
 
   const load = useCallback(async (pull = false) => {
     if (pull) setRefreshing(true);
@@ -134,6 +136,26 @@ export default function KankregHomeScreen({ navigation }) {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (!isAuthenticated || !token) {
+      setHasUnreadNotifications(false);
+      return;
+    }
+    let cancelled = false;
+    fetchMyNotifications(token)
+      .then((list) => {
+        if (cancelled) return;
+        const items = Array.isArray(list) ? list : [];
+        setHasUnreadNotifications(items.some((n) => !n.isRead && !n.isArchived));
+      })
+      .catch(() => {
+        if (!cancelled) setHasUnreadNotifications(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, token]);
+
   const catalogCardCompact =
     homeView?.productCardStyle === "comfortable" ? false : homeView?.productCardStyle === "compact" ? true : layoutCompact;
 
@@ -144,12 +166,14 @@ export default function KankregHomeScreen({ navigation }) {
 
   const heroTitle = homeView?.heroTitle;
   const heroSubtitle = homeView?.heroSubtitle;
-  const primeTitle = homeView?.primeSectionTitle || "Prime picks";
+  const primeTitle = homeView?.primeSectionTitle || HOME_SCREEN_UI.bestsellers.titleFallback;
+  const heroEyebrow = HOME_SCREEN_UI.hero.eyebrow;
+  const heroTitleFallback = HOME_SCREEN_UI.hero.titleFallback;
+  const heroSubtitleFallback = HOME_SCREEN_UI.hero.subtitleFallback;
   const showPrime = homeView?.showPrimeSection !== false;
   const showCategories = homeView?.showProductTypeSections !== false;
   const showHomeExtras = homeView?.showHomeSections !== false;
   const ready = !loading && homeView != null;
-
   const editorialHero = (
     <HomeEditorialHero
       navigation={navigation}
@@ -158,6 +182,94 @@ export default function KankregHomeScreen({ navigation }) {
       heroSubtitle={heroSubtitle}
     />
   );
+
+  if (Platform.OS !== "web") {
+    return (
+      <CustomerScreenShell style={nativeHomeStyles.shell}>
+        <NativeHomeHeader
+          navigation={navigation}
+          hasNotifications={hasUnreadNotifications}
+          locationLabel={displayLabel}
+          onRefreshLocation={() => navigation.navigate("FindLocation", { force: true })}
+        />
+        <KankregScrollPage
+          scrollVariant="inner"
+          topInsetOwner="external"
+          style={nativeHomeStyles.scroll}
+          showFooter={false}
+          contentContainerStyle={nativeHomeStyles.scrollContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={FIGMA.gold} />
+          }
+        >
+          {configError && !loading ? (
+            <View style={nativeHomeStyles.bannerWrap}>
+              <PremiumErrorBanner
+                severity="error"
+                message={configError}
+                actionLabel="Retry"
+                onActionPress={() => load()}
+              />
+            </View>
+          ) : null}
+
+          <NativeHeroBanner
+            eyebrow={heroEyebrow}
+            title={heroTitle || heroTitleFallback}
+            subtitle={heroSubtitle || heroSubtitleFallback}
+            featuredProduct={products[0]}
+            onPress={() => navigation.navigate("Shop")}
+            loading={loading && !ready}
+          />
+
+          {ready ? <GoldHairline style={nativeHomeStyles.divider} /> : null}
+
+          {loading && !ready ? <NativeHomeSkeleton /> : null}
+
+          {showCategories && ready ? (
+            <>
+              <NativeSectionHeader
+                title={HOME_SCREEN_UI.categories.title}
+                actionLabel={HOME_SCREEN_UI.categories.action}
+                onAction={() => navigation.navigate("Shop")}
+                tight
+              />
+              <NativeCategoryRow onPress={(label) => navigation.navigate("Shop", { category: label })} />
+            </>
+          ) : null}
+
+          {showPrime && ready ? (
+            <>
+              <NativeSectionHeader
+                title={primeTitle}
+                actionLabel={HOME_SCREEN_UI.bestsellers.action}
+                onAction={() => navigation.navigate("Shop")}
+              />
+              {bestsellers.length ? (
+                <NativeBestsellersGrid
+                  products={bestsellers}
+                  onProductPress={(item) => navigation.navigate("Product", { productId: item.id })}
+                  onAddToCart={handleAdd}
+                />
+              ) : ready ? (
+                <View style={nativeHomeStyles.emptyWrap}>
+                  <PremiumEmptyState
+                    iconName="bag-outline"
+                    title={HOME_SCREEN_UI.empty.productsTitle}
+                    description={HOME_SCREEN_UI.empty.productsDescription}
+                    ctaLabel={HOME_SCREEN_UI.empty.productsCta}
+                    onCtaPress={() => navigation.navigate("Shop")}
+                  />
+                </View>
+              ) : null}
+            </>
+          ) : null}
+
+        </KankregScrollPage>
+        <BottomNavBar />
+      </CustomerScreenShell>
+    );
+  }
 
   return (
     <CustomerScreenShell style={{ flex: 1 }}>
@@ -211,14 +323,21 @@ export default function KankregHomeScreen({ navigation }) {
               <KankregAnimatedSection index={2}>
                 <KankregTrustStrip />
               </KankregAnimatedSection>
-              <KankregAnimatedSection index={3} preset="fade-in">
-                <HomeMarqueeTicker />
-              </KankregAnimatedSection>
+              {HOME_SCREEN_UI.web?.showStatsStrip && !isMobileWeb ? (
+                <KankregAnimatedSection index={3} preset="fade-up">
+                  <HomeStatsStrip c={c} isDark={isDark} />
+                </KankregAnimatedSection>
+              ) : null}
+              {!isMobileWeb ? (
+                <KankregAnimatedSection index={4} preset="fade-in">
+                  <HomeMarqueeTicker />
+                </KankregAnimatedSection>
+              ) : null}
             </>
           ) : null}
 
           {showCategories && ready ? (
-            <KankregAnimatedSection index={4}>
+            <KankregAnimatedSection index={5}>
               <GoldHairline />
               <HomeCategoryCards
                 products={products}
@@ -231,15 +350,15 @@ export default function KankregHomeScreen({ navigation }) {
 
           {showPrime && ready ? (
             <>
-              <KankregAnimatedSection index={5}>
+              <KankregAnimatedSection index={6}>
                 <GoldHairline />
                 <KankregSectionHead
                   index={2}
-                  eyebrow="Catalog"
+                  eyebrow={HOME_SCREEN_UI.bestsellers.webEyebrow}
                   title={primeTitle}
                   right={
                     <PremiumButton
-                      label="View all"
+                      label={HOME_SCREEN_UI.bestsellers.webAction}
                       variant="ghost"
                       size="sm"
                       onPress={() => navigation.navigate("Shop")}
@@ -270,9 +389,9 @@ export default function KankregHomeScreen({ navigation }) {
                 ) : (
                   <PremiumEmptyState
                     iconName="bag-outline"
-                    title="No products yet"
-                    description="Add inventory in Admin to populate your catalog."
-                    ctaLabel="Browse shop"
+                    title={HOME_SCREEN_UI.empty.productsTitle}
+                    description={HOME_SCREEN_UI.empty.productsDescription}
+                    ctaLabel={HOME_SCREEN_UI.empty.productsCta}
                     onCtaPress={() => navigation.navigate("Shop")}
                   />
                 )}
@@ -281,27 +400,29 @@ export default function KankregHomeScreen({ navigation }) {
           ) : null}
 
           {showHomeExtras && products[0] && ready ? (
-            <KankregAnimatedSection index={6}>
+            <KankregAnimatedSection index={7}>
               <GoldHairline />
               <HomeFeaturedEditorial product={products[0]} navigation={navigation} />
             </KankregAnimatedSection>
           ) : null}
 
-          {showHomeExtras && ready ? (
-            <KankregAnimatedSection index={7} preset="scale-in">
-              <HomeQuote />
+          {showHomeExtras && HOME_SCREEN_UI.web?.showTestimonials && !isMobileWeb && ready ? (
+            <KankregAnimatedSection index={8} preset="fade-up">
+              <GoldHairline />
+              <HomeTestimonials c={c} isDark={isDark} />
+            </KankregAnimatedSection>
+          ) : null}
+
+          {showHomeExtras && HOME_SCREEN_UI.web?.showBrandQuote && !isMobileWeb && ready ? (
+            <KankregAnimatedSection index={9} preset="scale-in">
+              <HomeQuote isDark={isDark} />
             </KankregAnimatedSection>
           ) : null}
 
           {loading && !ready ? <CatalogGridSkeleton count={4} /> : null}
         </KankregPageWrap>
       </KankregScrollPage>
+      <BottomNavBar />
     </CustomerScreenShell>
   );
 }
-
-const homeGridStyles = StyleSheet.create({
-  productGridWrap: {},
-  productGridCell: {},
-  productListRow: {},
-});

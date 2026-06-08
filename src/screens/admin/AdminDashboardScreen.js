@@ -1,16 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
 import {
   Platform,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
+import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminOrders, fetchAdminProducts, fetchAdminUsers } from "../../services/adminService";
@@ -289,7 +289,7 @@ export default function AdminDashboardScreen({ navigation, route }) {
 
   if (user && !user.isAdmin) {
     return (
-      <CustomerScreenShell style={styles.screen}>
+      <AdminScreenShell style={styles.screen}>
         <KankregScrollPage
         scrollVariant="inner"
         showFooter={false}
@@ -299,11 +299,11 @@ export default function AdminDashboardScreen({ navigation, route }) {
           <View style={styles.deniedCard}>
             <PremiumErrorBanner
               severity="warning"
-              title="Admin access required"
+              title={ADMIN_GATE.title}
               message="This account does not have admin privileges."
             />
             <PremiumButton
-              label="Back to home"
+              label={ADMIN_GATE.backHome}
               iconLeft="home-outline"
               variant="primary"
               size="md"
@@ -312,12 +312,12 @@ export default function AdminDashboardScreen({ navigation, route }) {
             />
           </View>
         </KankregScrollPage>
-      </CustomerScreenShell>
+      </AdminScreenShell>
     );
   }
 
   return (
-    <CustomerScreenShell style={styles.screen}>
+    <AdminScreenShell style={styles.screen}>
       <KankregScrollPage
         scrollVariant="admin"
         showFooter={false}
@@ -338,8 +338,8 @@ export default function AdminDashboardScreen({ navigation, route }) {
         <KankregAdminShell
           navigation={navigation}
           route={route || { name: "AdminDashboard" }}
-          title="Dashboard"
-          subtitle="Live counts from products, orders, and users"
+          title={ADMIN_SCREEN_COPY.dashboard.title}
+          subtitle={ADMIN_SCREEN_COPY.dashboard.subtitle}
           headerRight={
             <PremiumButton
               label="Refresh"
@@ -387,48 +387,23 @@ export default function AdminDashboardScreen({ navigation, route }) {
               </View>
 
               <SectionReveal index={0} preset="fade-up">
-              {Platform.OS === "web" ? (
-                <View style={styles.statsRowWrap}>
-                  <StatCard icon="cube-outline" label="Products" value={stats.products} />
-                  <StatCard icon="receipt-outline" label="Orders" value={stats.orders} />
-                  <StatCard icon="people-outline" label="Users" value={stats.users} />
-                  <StatCard icon="shield-checkmark-outline" label="Admins" value={stats.admins} />
-                  <StatCard
-                    icon="hourglass-outline"
-                    label="Pending"
-                    value={stats.pendingOrders}
-                    warnHighlight={stats.pendingOrders > 0}
-                  />
-                </View>
-              ) : (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.statsScrollInner}
-                  style={styles.statsScroll}
-                >
-                  <StatCard icon="cube-outline" label="Products" value={stats.products} />
-                  <StatCard icon="receipt-outline" label="Orders" value={stats.orders} />
-                  <StatCard icon="people-outline" label="Users" value={stats.users} />
-                  <StatCard icon="shield-checkmark-outline" label="Admins" value={stats.admins} />
-                  <StatCard
-                    icon="hourglass-outline"
-                    label="Pending"
-                    value={stats.pendingOrders}
-                    warnHighlight={stats.pendingOrders > 0}
-                  />
-                </ScrollView>
-              )}
+              <View style={styles.statsRowWrap}>
+                <StatCard icon="cube-outline" label="Products" value={stats.products} />
+                <StatCard icon="receipt-outline" label="Orders" value={stats.orders} />
+                <StatCard icon="people-outline" label="Users" value={stats.users} />
+                <StatCard icon="shield-checkmark-outline" label="Admins" value={stats.admins} />
+                <StatCard
+                  icon="hourglass-outline"
+                  label="Pending"
+                  value={stats.pendingOrders}
+                  warnHighlight={stats.pendingOrders > 0}
+                />
+              </View>
               </SectionReveal>
 
               <SectionReveal index={1} preset="fade-in">
               <Text style={[styles.quickOverline, !isDark ? styles.sectionOverlineLight : null]}>Quick open</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.quickScrollInner}
-                style={styles.quickScroll}
-              >
+              <View style={styles.quickGrid}>
                 {quickActions.map((qa) => (
                   <PremiumCard
                     key={qa.route}
@@ -452,7 +427,7 @@ export default function AdminDashboardScreen({ navigation, route }) {
                     </Text>
                   </PremiumCard>
                 ))}
-              </ScrollView>
+              </View>
               </SectionReveal>
 
               <SectionReveal index={2} preset="fade-up">
@@ -481,7 +456,7 @@ export default function AdminDashboardScreen({ navigation, route }) {
         </View>
         </KankregAdminShell>
 </KankregScrollPage>
-    </CustomerScreenShell>
+    </AdminScreenShell>
   );
 }
 
@@ -613,8 +588,8 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium, isDark) {
       color: ALCHEMY.brownMuted,
       fontFamily: FONT_DISPLAY_SEMI},
     overviewHeaderRow: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: Platform.OS === "web" ? "row" : "column",
+      alignItems: Platform.OS === "web" ? "center" : "flex-start",
       justifyContent: "space-between",
       gap: spacing.sm,
       marginBottom: spacing.sm,
@@ -644,16 +619,14 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium, isDark) {
       textTransform: "uppercase",
       marginTop: spacing.md,
       marginBottom: spacing.sm},
-    quickScroll: {
-      marginHorizontal: -4,
-      marginBottom: spacing.lg},
-    quickScrollInner: {
+    quickGrid: {
       flexDirection: "row",
+      flexWrap: "wrap",
       gap: spacing.sm,
-      paddingHorizontal: 4,
-      paddingBottom: 2},
+      marginBottom: spacing.lg},
     quickTileCard: {
-      width: 104,
+      width: Platform.OS === "web" ? 104 : "47%",
+      minWidth: Platform.OS === "web" ? 104 : 140,
       minHeight: 108,
       alignItems: "center",
       justifyContent: "center"},
@@ -808,10 +781,10 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium, isDark) {
       paddingBottom: 2},
     statPremiumTile: {
       flexGrow: 1,
-      flexBasis: "30%",
+      flexBasis: Platform.OS === "web" ? "30%" : "46%",
       minWidth: 108,
       flexShrink: 0,
-      maxWidth: Platform.OS === "web" ? 168 : 140},
+      maxWidth: Platform.OS === "web" ? 168 : undefined},
     sectionLabel: {
       fontSize: typography.caption,
       fontFamily: fonts.bold,
@@ -837,6 +810,13 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium, isDark) {
         web: {
           boxShadow: "0 8px 18px rgba(61, 42, 18, 0.08), inset 0 1px 0 rgba(255,255,255,0.8)",
           transition: "background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease"},
+        ios: {
+          shadowColor: "#3D2A12",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 6,
+        },
+        android: { elevation: 1 },
         default: {}})},
     actionRowLast: {
       marginBottom: 0},

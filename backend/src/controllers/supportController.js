@@ -1,5 +1,6 @@
 const SupportThread = require("../models/SupportThread");
 const User = require("../models/User");
+const { emitSupportThreadUpdated } = require("../realtime/socketHub");
 
 async function getOrCreateMySupportThread(req, res, next) {
   try {
@@ -44,6 +45,7 @@ async function sendMessageToSupport(req, res, next) {
     await thread.save();
 
     const populated = await SupportThread.findById(thread._id).populate("user", "name email");
+    emitSupportThreadUpdated(populated);
     res.status(201).json(populated);
   } catch (error) {
     next(error);
@@ -86,6 +88,7 @@ async function replyToSupportThread(req, res, next) {
     await thread.save();
 
     const populated = await SupportThread.findById(thread._id).populate("user", "name email phone");
+    emitSupportThreadUpdated(populated);
     res.json(populated);
   } catch (error) {
     next(error);

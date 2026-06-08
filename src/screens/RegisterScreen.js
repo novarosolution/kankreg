@@ -183,6 +183,7 @@ export default function RegisterScreen({ navigation }) {
             artSubtitle={AUTH_UI.registerSubtitle}
             form={formBody}
             styles={styles}
+            mode="register"
           />
         </KankregScrollPage>
       </KeyboardAvoidingView>

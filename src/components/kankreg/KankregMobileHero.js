@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import PremiumButton from "../ui/PremiumButton";
 import { createKankregEyebrowStyle } from "../../theme/kankregScreenStyles";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
@@ -7,19 +7,28 @@ import { FONT_DISPLAY } from "../../theme/customerAlchemy";
 import { fonts, spacing, typography } from "../../theme/tokens";
 import { useTheme } from "../../context/ThemeContext";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
+import { navigateCustomerRoute } from "../../navigation/customerNavigate";
+import { HOME_SCREEN_UI } from "../../content/appContent";
 
 /** Compact hero when editorial split hero is hidden (<900px) */
 export default function KankregMobileHero({ navigation, featuredProduct, heroTitle, heroSubtitle }) {
   const { isDark } = useTheme();
-  const { useSplitLayout, isXs } = useKankregLayout();
+  const { useSplitLayout, isXs, isMobileWeb } = useKankregLayout();
   if (useSplitLayout) return null;
 
-  const title = heroTitle || "Everyday goods, made extraordinary.";
-  const subtitle = heroSubtitle || "Live tracking, secure checkout, and rewards on every order.";
+  const title = heroTitle || HOME_SCREEN_UI.hero.titleFallback;
+  const subtitle = heroSubtitle || HOME_SCREEN_UI.hero.subtitleFallback;
+  const welcomeTag = HOME_SCREEN_UI.web?.welcomeTag;
 
   return (
-    <View style={[styles.wrap, isXs && styles.wrapXs]}>
-      <Text style={createKankregEyebrowStyle(isDark)}>Curated essentials</Text>
+    <View style={[styles.wrap, isXs && styles.wrapXs, isMobileWeb && styles.wrapMobileWeb, isDark && styles.wrapDark]}>
+      {welcomeTag && isMobileWeb ? (
+        <Text style={[styles.welcomeTag, { color: isDark ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.goldDeep }]}>
+          {welcomeTag}
+        </Text>
+      ) : (
+        <Text style={createKankregEyebrowStyle(isDark)}>{HOME_SCREEN_UI.editorial.overline}</Text>
+      )}
       <Text
         style={[
           styles.h1,
@@ -29,22 +38,26 @@ export default function KankregMobileHero({ navigation, featuredProduct, heroTit
       >
         {title}
       </Text>
-      <Text style={[styles.lead, { color: isDark ? "#c8bdaf" : KANKREG_PALETTE.inkSoft }]}>
-        {subtitle}
-      </Text>
-      <View style={styles.ctas}>
+      {subtitle ? (
+        <Text style={[styles.lead, { color: isDark ? "#c8bdaf" : KANKREG_PALETTE.inkSoft }]}>
+          {subtitle}
+        </Text>
+      ) : null}
+      <View style={[styles.ctas, isXs && styles.ctasStack, !subtitle && styles.ctasTight]}>
         <PremiumButton
-          label="Shop now"
+          label={HOME_SCREEN_UI.editorial.ctaShop}
           variant="primary"
-          onPress={() => navigation.navigate("Shop")}
+          onPress={() => navigateCustomerRoute(navigation, "Shop")}
+          style={isXs ? styles.ctaFull : null}
         />
         <PremiumButton
-          label="Rewards"
+          label={HOME_SCREEN_UI.editorial.ctaRewards}
           variant="ghost"
           onPress={() => navigation.navigate("RedeemRewards")}
+          style={isXs ? styles.ctaFull : null}
         />
       </View>
-      {featuredProduct?.name ? (
+      {featuredProduct?.name && !isMobileWeb ? (
         <Text style={styles.featured} numberOfLines={1}>
           Featured: {featuredProduct.name}
         </Text>
@@ -58,9 +71,35 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
     paddingVertical: spacing.md,
   },
+  wrapMobileWeb: {
+    marginBottom: spacing.lg,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md + 2,
+    borderRadius: 22,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: KANKREG_PALETTE.line,
+    backgroundColor: KANKREG_PALETTE.card,
+    ...Platform.select({
+      web: {
+        boxShadow: "0 18px 44px -28px rgba(25,20,15,.28), inset 0 1px 0 rgba(255,255,255,.92)",
+      },
+      default: {},
+    }),
+  },
+  wrapDark: {
+    backgroundColor: "#181513",
+    borderColor: "#3f3933",
+  },
   wrapXs: {
     marginBottom: spacing.lg,
     paddingVertical: spacing.sm,
+  },
+  welcomeTag: {
+    fontFamily: fonts.semibold,
+    fontSize: typography.caption,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+    marginBottom: spacing.xs,
   },
   h1: {
     fontFamily: FONT_DISPLAY,
@@ -83,6 +122,16 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: spacing.sm,
     marginTop: spacing.lg,
+  },
+  ctasStack: {
+    flexDirection: "column",
+    alignItems: "stretch",
+  },
+  ctasTight: {
+    marginTop: spacing.md,
+  },
+  ctaFull: {
+    width: "100%",
   },
   featured: {
     marginTop: spacing.md,

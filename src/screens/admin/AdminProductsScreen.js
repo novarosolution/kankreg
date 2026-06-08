@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
 import { Platform, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
+import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { deleteAdminProduct, fetchAdminProducts } from "../../services/adminService";
-import { adminPanel } from "../../theme/adminLayout";
+import { adminPanel, adminToolbarPrimary, adminToolbarRow } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { ALCHEMY } from "../../theme/customerAlchemy";
 import { layout, radius, spacing, typography } from "../../theme/tokens";
@@ -20,6 +21,7 @@ import PremiumCard from "../../components/ui/PremiumCard";
 import PremiumChip from "../../components/ui/PremiumChip";
 import SectionReveal from "../../components/motion/SectionReveal";
 import SkeletonBlock from "../../components/ui/SkeletonBlock";
+import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
 const LOW_STOCK_MAX = 5;
 
@@ -118,7 +120,7 @@ export default function AdminProductsScreen({ navigation, route }) {
 
   if (user && !user.isAdmin) {
     return (
-      <CustomerScreenShell style={styles.screen}>
+      <AdminScreenShell style={styles.screen}>
         <KankregScrollPage
         scrollVariant="inner"
         showFooter={false}
@@ -129,19 +131,19 @@ export default function AdminProductsScreen({ navigation, route }) {
             <View style={styles.panel}>
               <PremiumErrorBanner
                 severity="warning"
-                title="Admin access required"
-                message="Sign in with an admin account to manage the catalog."
+                title={ADMIN_GATE.title}
+                message={ADMIN_GATE.message}
               />
               <PremiumButton
-                label="Back to Home"
+                label={ADMIN_GATE.backHome}
                 variant="primary"
-                onPress={() => navigation.navigate("Home")}
+                onPress={() => navigateCustomerRoute(navigation, "Home")}
                 style={styles.gateCta}
               />
             </View>
           </SectionReveal>
         </KankregScrollPage>
-      </CustomerScreenShell>
+      </AdminScreenShell>
     );
   }
 
@@ -156,7 +158,7 @@ export default function AdminProductsScreen({ navigation, route }) {
   };
 
   return (
-    <CustomerScreenShell style={styles.screen}>
+    <AdminScreenShell style={styles.screen}>
       <KankregScrollPage
         scrollVariant="admin"
         showFooter={false}
@@ -171,8 +173,8 @@ export default function AdminProductsScreen({ navigation, route }) {
         <KankregAdminShell
           navigation={navigation}
           route={route}
-          title="Manage Products"
-          subtitle="Live catalog from your database"
+          title={ADMIN_SCREEN_COPY.products.title}
+          subtitle={ADMIN_SCREEN_COPY.products.subtitle}
         >
         <View style={styles.panel}>
           {error ? (
@@ -334,7 +336,7 @@ export default function AdminProductsScreen({ navigation, route }) {
         </View>
         </KankregAdminShell>
 </KankregScrollPage>
-    </CustomerScreenShell>
+    </AdminScreenShell>
   );
 }
 
@@ -375,14 +377,10 @@ function createAdminProductsStyles(c, shadowPremium) {
       marginTop: 2,
       fontSize: typography.caption},
     actionsRow: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      alignItems: "flex-end",
-      gap: spacing.sm,
+      ...adminToolbarRow,
       marginBottom: spacing.sm},
     searchInputWrap: {
-      flex: 1,
-      minWidth: 0},
+      ...adminToolbarPrimary},
     ctaRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.md },
     ctaFlex: { flex: 1, minWidth: 140 },
     listContent: {

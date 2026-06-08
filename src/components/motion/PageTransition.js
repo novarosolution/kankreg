@@ -1,18 +1,15 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import Animated, { FadeInDown } from "react-native-reanimated";
 import useReducedMotion from "../../hooks/useReducedMotion";
-import { motionDuration } from "../../theme/motion";
 
 const WEB_DURATION = 320;
 const WEB_DISTANCE = 12;
-const NATIVE_DURATION = motionDuration.base;
 
 /**
  * Screen-level focus transition on navigation.
  * - Web: CSS fade + slide-up (skips first focus).
- * - Native: Reanimated FadeInDown on refocus (skips first focus).
+ * - Native: static wrapper (Reanimated remount/entering races Fabric on Android).
  * - Reduced motion: passthrough.
  */
 export default function PageTransition({
@@ -24,11 +21,6 @@ export default function PageTransition({
   const reducedMotion = useReducedMotion();
   const ref = useRef(null);
   const firstFocusRef = useRef(true);
-  const [nativeKey, setNativeKey] = useState(0);
-
-  const bumpNative = useCallback(() => {
-    setNativeKey((k) => k + 1);
-  }, []);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -59,13 +51,8 @@ export default function PageTransition({
         };
       }
 
-      if (firstFocusRef.current) {
-        firstFocusRef.current = false;
-        return undefined;
-      }
-      bumpNative();
       return undefined;
-    }, [distance, duration, reducedMotion, bumpNative]),
+    }, [distance, duration, reducedMotion]),
   );
 
   useEffect(() => {
@@ -78,17 +65,8 @@ export default function PageTransition({
     }
   }, [reducedMotion]);
 
-  if (reducedMotion) {
+  if (reducedMotion || Platform.OS !== "web") {
     return <View style={[styles.fill, style]}>{children}</View>;
-  }
-
-  if (Platform.OS !== "web") {
-    const entering = FadeInDown.duration(NATIVE_DURATION).springify().damping(20).stiffness(240);
-    return (
-      <Animated.View key={nativeKey} entering={entering} style={[styles.fill, style]}>
-        {children}
-      </Animated.View>
-    );
   }
 
   return (

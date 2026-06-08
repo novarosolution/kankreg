@@ -2,7 +2,7 @@ import { Platform, StyleSheet } from "react-native";
 import { adminPanel } from "./adminLayout";
 import { ALCHEMY } from "./customerAlchemy";
 import { platformElevation, sectionStackGap } from "./platformStyles";
-import { container, layout, semanticRadius, spacing } from "./tokens";
+import { layout, semanticRadius, spacing } from "./tokens";
 import { getKankregChromeTop } from "../components/kankreg/KankregSiteHeader";
 import { WEB_CHROME_TOP } from "./web";
 
@@ -140,8 +140,17 @@ export const customerContentWidth = {
   maxWidth: Platform.select({ web: 1280, default: "100%" }),
 };
 
-/** Inner height of floating `BottomNavBar` row (paddingVertical 10×2 + min tab ~44). */
-export const CUSTOMER_BOTTOM_NAV_BAR_HEIGHT = 64;
+/** Native tab bar body height (figmaforkankreg.html `.tabbar` = 66px). */
+export const CUSTOMER_BOTTOM_NAV_BAR_HEIGHT = 66;
+
+/** Bottom scroll inset when the fixed mobile-web tab bar is visible. */
+export function mobileWebTabBarScrollPadding(insets = {}) {
+  const safeBottom = Math.max(insets?.bottom ?? 0, 8);
+  return CUSTOMER_BOTTOM_NAV_BAR_HEIGHT + spacing.lg + safeBottom;
+}
+
+/** Approximate height of figma sticky pay / buy bars above the tab bar. */
+export const FIGMA_STICKY_FOOTER_HEIGHT = 140;
 
 /**
  * Bottom padding for scroll content: clears floating bottom nav + home indicator + breathing room.
@@ -157,13 +166,24 @@ export function customerScrollPaddingBottom(insets = {}) {
 }
 
 /** Distance from screen bottom for fixed/sticky UI (e.g. Product CTA) so it clears the floating bottom nav. */
-export function customerFloatingNavOffset(insets = {}) {
+export function customerFloatingNavOffset(insets = {}, { mobileWebTabBar = false } = {}) {
+  const safeBottom = Math.max(insets?.bottom ?? 0, 8);
   if (Platform.OS === "web") {
-    return Math.max(insets?.bottom ?? 0, spacing.md);
+    if (mobileWebTabBar) {
+      return safeBottom + CUSTOMER_BOTTOM_NAV_BAR_HEIGHT + spacing.sm;
+    }
+    return Math.max(safeBottom, spacing.md);
   }
-  const safeBottom = insets?.bottom ?? 0;
   const dockFromBottom = Math.max(spacing.md, safeBottom + 6);
   return dockFromBottom + CUSTOMER_BOTTOM_NAV_BAR_HEIGHT + spacing.sm;
+}
+
+/** Scroll bottom inset: sticky pay bar + optional mobile-web tab bar (web checkout/cart). */
+export function customerWebScrollBottomInset(insets = {}, { stickyFooter = 0, mobileWebTabBar = false } = {}) {
+  let pad = spacing.xl;
+  if (stickyFooter > 0) pad += stickyFooter + spacing.sm;
+  if (mobileWebTabBar) pad += CUSTOMER_BOTTOM_NAV_BAR_HEIGHT + Math.max(insets?.bottom ?? 0, 8);
+  return pad;
 }
 
 /** Admin / auth flows without floating customer bottom nav — home indicator + comfortable end padding. */
@@ -180,12 +200,20 @@ export function adminScrollPaddingBottom(insets = {}) {
  * @param {{ nativeMin?: number; webMin?: number }} [opts] override minimum padding below status bar
  */
 export function customerScrollPaddingTop(insets, opts = {}) {
-  const { nativeMin = spacing.md, webMin = spacing.md } = opts;
+  const { nativeMin = spacing.md, webMin = spacing.md, owner = "scroll" } = opts;
   if (Platform.OS === "web") {
     return getKankregChromeTop(insets) + Math.max(insets?.top ?? 0, webMin);
   }
-  /** Native: `KankregSiteHeader` is in-flow and already applies safe-area top. */
-  return nativeMin;
+  /** External header (e.g. home) already applied safe-area — scroll only needs a breath. */
+  if (owner === "external") {
+    return spacing.xs;
+  }
+  return (insets?.top ?? 0) + nativeMin;
+}
+
+/** Bottom scroll inset when a sticky pay/buy bar floats above the tab bar. */
+export function customerScrollPaddingBottomWithSticky(insets = {}, footerHeight = FIGMA_STICKY_FOOTER_HEIGHT) {
+  return customerScrollPaddingBottom(insets) + Math.max(0, footerHeight);
 }
 
 /** Shared sticky-top offset for panels pinned below the fixed web header. */
@@ -199,9 +227,9 @@ export function customerWebStickyTop(insets, extra = 0) {
  * Merge with `{ paddingTop: … }` and optional `{ paddingBottom: … }` when a screen needs extra room.
  */
 export const customerPageScrollBase = {
-  /** Balanced gutters: generous on web for an editorial, premium layout. */
+  /** Horizontal gutters on web are set in `KankregScrollPage` via `pageGutterClamp`. */
   paddingHorizontal: Platform.select({
-    web: "clamp(14px, 4vw, 40px)",
+    web: 0,
     default: spacing.md + 2,
   }),
   width: "100%",
@@ -219,17 +247,39 @@ export const CUSTOMER_INNER_PAGE_GAP = spacing.lg;
  * @param {object} [extra] merged last (e.g. `{ paddingBottom: … }`, `{ gap: 0 }`)
  */
 export function customerInnerPageScrollContent(insets, extra = {}) {
+  const {
+    topInsetOwner = "scroll",
+    topInsetMin = spacing.xs,
+    flushNativeGutter = Platform.OS !== "web",
+    stickyFooterExtra = 0,
+    compactWebGap = false,
+    ...rest
+  } = extra;
+  const bottomPad =
+    stickyFooterExtra > 0
+      ? Platform.OS === "web"
+        ? customerWebScrollBottomInset(insets, { stickyFooter: stickyFooterExtra })
+        : customerScrollPaddingBottomWithSticky(insets, stickyFooterExtra)
+      : customerScrollPaddingBottom(insets);
+
   return [
     customerPageScrollBase,
+    Platform.OS !== "web" && flushNativeGutter ? { paddingHorizontal: 0 } : null,
     {
-      paddingTop: customerScrollPaddingTop(insets),
-      paddingBottom: customerScrollPaddingBottom(insets),
-      gap: Platform.select({ web: sectionStackGap, default: CUSTOMER_INNER_PAGE_GAP }),
+      paddingTop: customerScrollPaddingTop(insets, {
+        nativeMin: topInsetMin,
+        owner: topInsetOwner,
+      }),
+      paddingBottom: bottomPad,
+      gap: Platform.select({
+        web: compactWebGap ? CUSTOMER_INNER_PAGE_GAP : sectionStackGap,
+        default: CUSTOMER_INNER_PAGE_GAP,
+      }),
       ...Platform.select({
         web: { flexGrow: 1 },
         default: {},
       }),
-      ...extra,
+      ...rest,
     },
   ];
 }
@@ -241,7 +291,7 @@ export function adminInnerPageScrollContent(insets, extra = {}) {
     {
       paddingTop: customerScrollPaddingTop(insets),
       paddingBottom: adminScrollPaddingBottom(insets),
-      gap: CUSTOMER_INNER_PAGE_GAP,
+      gap: Platform.select({ web: CUSTOMER_INNER_PAGE_GAP, default: spacing.md }),
       ...Platform.select({
         web: { flexGrow: 1 },
         default: {},
@@ -263,7 +313,7 @@ export function getAuthScrollContent(pageGutter = spacing.md + 2) {
       web: {
         maxWidth: layout.maxContentWidth + 72,
         alignSelf: "center",
-        paddingHorizontal: container.gutter.desktop,
+        paddingHorizontal: pageGutter,
         paddingTop: spacing.lg,
         paddingBottom: spacing.xl + 4,
         flexGrow: 1,
