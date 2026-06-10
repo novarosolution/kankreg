@@ -209,7 +209,7 @@ export const HOME_HERO_WEB_SLIDER_SLIDES = [
  * Order: `WhatsApp Iae2026-04-30…`, `WhatsApp Image …18.41.08`, `WhatsApp Image …18.41.09`
  * → `hero-slide-06-wa`, `hero-slide-04-wa`, `hero-slide-05-wa`.
  */
-/** Phone product hero — portrait `imgs/ChatGPT Image Jun 10, 2026, 04_56_13 PM.png` (1111×1416). */
+/** Phone web hero slide 1 — portrait `imgs/ChatGPT Image Jun 10, 2026, 07_02_57 PM.png` (875×1798). */
 export const HOME_HERO_PRODUCT_PHONE_SLIDE = {
   key: "phone-hero-product",
   image: require("../../assets/marketing/hero-slide-kankreg-product-phone.png"),
@@ -220,10 +220,13 @@ export const HOME_HERO_PRODUCT_PHONE_SLIDE = {
   variant: HOME_HERO_PRODUCT_SLIDE.variant,
   badge: HOME_HERO_PRODUCT_SLIDE.badge,
   contentPosition: "center",
+  heightRatio: 1798 / 875,
+  imageFit: "cover",
+  captionAlign: "center",
 };
 
-/** Portrait product slide height ratio (1111×1416). */
-export const HOME_HERO_PRODUCT_PHONE_SLIDE_HEIGHT_PER_WIDTH = 1416 / 1111;
+/** Portrait product slide height ratio (875×1798). */
+export const HOME_HERO_PRODUCT_PHONE_SLIDE_HEIGHT_PER_WIDTH = 1798 / 875;
 
 export const HOME_HERO_MOBILE_SLIDER_SLIDES = [
   HOME_HERO_PRODUCT_PHONE_SLIDE,
