@@ -14,7 +14,7 @@ import {
   homeHeroTitleSize,
 } from "../../theme/homeEditorial";
 import { createKankregEyebrowStyle } from "../../theme/kankregScreenStyles";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { platformShadow } from "../../theme/shadowPlatform";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
@@ -26,6 +26,7 @@ import {
   HOME_HERO_PHONE_SLIDE_HEIGHT_PER_WIDTH,
   HOME_HERO_PRODUCT_PHONE_SLIDE_HEIGHT_PER_WIDTH,
   HOME_HERO_PRODUCT_SLIDE_HEIGHT_PER_WIDTH,
+  HOME_HERO_WEB_LANDSCAPE_HEIGHT_PER_WIDTH,
 } from "../../constants/marketingAssets";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 
@@ -83,6 +84,26 @@ const cardShadow = platformShadow({
   },
   android: { elevation: 10 },
 });
+
+function resolveHeroSlideHeightRatio(slide, { isNative, isMobileWeb }) {
+  if (slide?.heightRatio > 0) return slide.heightRatio;
+  if (slide?.variant === "product") {
+    return isNative || isMobileWeb
+      ? HOME_HERO_PRODUCT_PHONE_SLIDE_HEIGHT_PER_WIDTH
+      : HOME_HERO_PRODUCT_SLIDE_HEIGHT_PER_WIDTH;
+  }
+  if (isNative || isMobileWeb) {
+    if (slide?.layout === "landscape") return HOME_HERO_WEB_LANDSCAPE_HEIGHT_PER_WIDTH;
+    return HOME_HERO_PHONE_SLIDE_HEIGHT_PER_WIDTH;
+  }
+  return HOME_HERO_WEB_LANDSCAPE_HEIGHT_PER_WIDTH;
+}
+
+function resolveHeroImageFit(slide, { isTop, isMobileWebTop }) {
+  if (slide?.imageFit === "contain" || slide?.imageFit === "cover") return slide.imageFit;
+  if (isTop && !isMobileWebTop) return "contain";
+  return "cover";
+}
 
 function HeroNavButton({ direction, onPress, style, quiet = false }) {
   const name = direction === "prev" ? "chevron-back" : "chevron-forward";
@@ -199,9 +220,12 @@ function HeroSlideCard({
     : isProduct && isTop
       ? Math.min(52, homeHeroTitleSize(layoutWidth) + 4)
       : homeHeroTitleSize(layoutWidth);
-  const kenBurns = isTop && active && Platform.OS === "web" && !reducedMotion && !isMobileWebTop;
+  const imageFit = resolveHeroImageFit(slide, { isTop, isMobileWebTop });
+  const kenBurns =
+    imageFit === "cover" && isTop && active && Platform.OS === "web" && !reducedMotion && !isMobileWebTop;
   const kenClass = isProduct && kenBurns ? KEN_BURNS_PRODUCT_CLASS : kenBurns ? KEN_BURNS_CLASS : undefined;
   const contentPosition = slide.contentPosition || "center";
+  const captionLeft = isTop && !isMobileWebTop && slide.captionAlign !== "center";
   const eyebrowLabel =
     isNative && editorialEyebrow
       ? editorialEyebrow
@@ -238,7 +262,7 @@ function HeroSlideCard({
           source={imageSource}
           className={kenClass}
           style={styles.mediaFill}
-          contentFit="cover"
+          contentFit={imageFit}
           contentPosition={contentPosition}
           transition={320}
           placeholder={{ blurhash: PRODUCT_HERO_BLURHASH }}
@@ -253,10 +277,10 @@ function HeroSlideCard({
       ) : null}
 
       <HeroBottomScrim
-        editorial={isTop && !isMobileWebTop && !isProduct}
+        editorial={isTop && !isMobileWebTop && !isProduct && slide.layout !== "landscape"}
         isBanner={isBanner}
         isNative={isNative || isMobileWebTop}
-        isProduct={isProduct}
+        isProduct={isProduct || (isTop && !isMobileWebTop && slide.layout === "landscape")}
       />
 
       {slide.title || slide.subtitle || (showCta && slide.cta) ? (
@@ -267,6 +291,7 @@ function HeroSlideCard({
             isNative && styles.slideCaptionNative,
             isMobileWebTop && styles.slideCaptionMobileWeb,
             isTop && !isMobileWebTop && styles.slideCaptionTop,
+            captionLeft && styles.slideCaptionTopLeft,
           ]}
           pointerEvents="box-none"
         >
@@ -274,6 +299,7 @@ function HeroSlideCard({
             <Text
               style={[
                 isNative ? styles.heroEyebrowNative : styles.heroEyebrow,
+                captionLeft && styles.heroEyebrowLeft,
                 { color: scrimMuted },
               ]}
               numberOfLines={1}
@@ -304,7 +330,8 @@ function HeroSlideCard({
                 isProduct && isTop && styles.slideTitleProduct,
                 isBanner && !isTop && !isNative && styles.slideTitleBanner,
                 isNative && styles.slideTitleNative,
-                (isBanner || isTop) && styles.captionTextCenter,
+                (isBanner || isTop) && !captionLeft && styles.captionTextCenter,
+                captionLeft && styles.captionTextLeft,
               ]}
               numberOfLines={isMobileWebTop ? 2 : isTop ? 3 : 2}
             >
@@ -319,7 +346,8 @@ function HeroSlideCard({
                 isBanner && !isTop && !isNative && styles.slideSubtitleBanner,
                 isNative && styles.slideSubtitleNative,
                 isMobileWebTop && styles.slideSubtitleMobileWeb,
-                (isBanner || isTop) && styles.captionTextCenter,
+                (isBanner || isTop) && !captionLeft && styles.captionTextCenter,
+                captionLeft && styles.captionTextLeft,
               ]}
               numberOfLines={isMobileWebTop ? 2 : isTop ? 2 : isBanner ? 3 : 2}
             >
@@ -331,9 +359,11 @@ function HeroSlideCard({
               onPress={onCta}
               style={({ hovered, focused, pressed }) => [
                 useGoldCta ? styles.ctaPillGold : styles.ctaPill,
-                (isBanner || isTop) && styles.ctaPillCenter,
+                (isBanner || isTop) && !captionLeft && styles.ctaPillCenter,
+                captionLeft && styles.ctaPillStart,
                 isNative && styles.ctaPillNative,
-                useGoldCta && styles.ctaPillGoldCenter,
+                useGoldCta && !captionLeft && styles.ctaPillGoldCenter,
+                useGoldCta && captionLeft && styles.ctaPillGoldStart,
                 pressed && Platform.OS !== "web" ? styles.ctaPillPressed : null,
                 hovered && Platform.OS === "web" ? (useGoldCta ? styles.ctaPillGoldHover : styles.ctaPillHover) : null,
                 focused && Platform.OS === "web" ? styles.ctaFocus : null,
@@ -358,7 +388,8 @@ export default function HeroMediaSlider({
   editorialEyebrow = "",
 }) {
   const { isDark } = useTheme();
-  const { isXs, isSm, isMd, isLg, isXl, isMobileWeb, width: layoutWidth } = useKankregLayout();
+  const { isXs, isSm, isMd, isLg, isXl, isMobileWeb, width: layoutWidth, height: layoutHeight } =
+    useKankregLayout();
   const reducedMotion = useReducedMotion();
   const isTop = variant === "top";
   const isNative = variant === "native";
@@ -375,30 +406,32 @@ export default function HeroMediaSlider({
   const slideWidth = pageWidth > 0 ? pageWidth : Math.floor(layoutWidth);
 
   const activeSlide = slides[index] || slides[0];
-  const isProductSlide = activeSlide?.variant === "product";
 
   const bannerHeight = useMemo(() => {
     const w = slideWidth;
-    const productRatio = isNative || isMobileWeb
-      ? HOME_HERO_PRODUCT_PHONE_SLIDE_HEIGHT_PER_WIDTH
-      : HOME_HERO_PRODUCT_SLIDE_HEIGHT_PER_WIDTH;
+    if (!w) return undefined;
+    const ratio = resolveHeroSlideHeightRatio(activeSlide, { isNative, isMobileWeb });
+    const natural = Math.round(w * ratio);
+    const viewportCap = Math.round((layoutHeight || 800) * (isMobileWeb ? 0.68 : 0.78));
+
     if (isNative) {
-      const ratio = isProductSlide ? productRatio : HOME_HERO_PHONE_SLIDE_HEIGHT_PER_WIDTH;
-      return Math.min(500, Math.max(300, Math.round(w * ratio)));
+      return Math.min(520, Math.max(300, Math.min(natural, viewportCap)));
     }
     if (isTop) {
-      if (isMobileWeb) {
-        const ratio = isProductSlide ? productRatio : HOME_HERO_PHONE_SLIDE_HEIGHT_PER_WIDTH;
-        return Math.min(520, Math.max(360, Math.round(w * ratio)));
-      }
-      if (isXs) return Math.min(380, Math.max(300, Math.round(w * 0.62)));
-      if (isSm) return Math.min(440, Math.max(320, Math.round(w * 0.52)));
-      if (isMd) return 460;
-      if (isXl) return 540;
-      return isLg ? 500 : 440;
+      const maxH = isMobileWeb ? Math.min(580, viewportCap) : Math.min(860, viewportCap);
+      const minH = isMobileWeb ? 340 : isXs ? 320 : 380;
+      return Math.min(maxH, Math.max(minH, natural));
     }
     return undefined;
-  }, [isLg, isMd, isMobileWeb, isNative, isProductSlide, isSm, isTop, isXl, isXs, slideWidth]);
+  }, [
+    activeSlide,
+    isMobileWeb,
+    isNative,
+    isTop,
+    isXs,
+    layoutHeight,
+    slideWidth,
+  ]);
 
   const goTo = useCallback(
     (next) => {
@@ -772,6 +805,19 @@ const styles = StyleSheet.create({
       default: {},
     }),
   },
+  slideCaptionTopLeft: {
+    alignItems: "flex-start",
+    alignSelf: "stretch",
+    maxWidth: "52%",
+    ...Platform.select({
+      web: {
+        paddingLeft: "max(32px, 5vw)",
+        paddingRight: 24,
+        maxWidth: "min(560px, 48vw)",
+      },
+      default: { maxWidth: "58%" },
+    }),
+  },
   slideCaptionMobileWeb: {
     left: 0,
     right: 0,
@@ -813,6 +859,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
     textTransform: "uppercase",
   },
+  heroEyebrowLeft: {
+    textAlign: "left",
+    alignSelf: "flex-start",
+  },
   heroEyebrowNative: {
     fontFamily: fonts.semibold,
     fontSize: 10,
@@ -827,6 +877,10 @@ const styles = StyleSheet.create({
   },
   captionTextCenter: {
     textAlign: "center",
+  },
+  captionTextLeft: {
+    textAlign: "left",
+    alignSelf: "flex-start",
   },
   slideTitle: {
     fontFamily: FONT_DISPLAY,
@@ -901,12 +955,15 @@ const styles = StyleSheet.create({
   ctaPillCenter: {
     alignSelf: "center",
   },
+  ctaPillStart: {
+    alignSelf: "flex-start",
+  },
   ctaPillGold: {
     marginTop: HOME_SPACE.md,
     paddingVertical: 12,
     paddingHorizontal: 22,
     borderRadius: radius.pill,
-    backgroundColor: KANKREG_PALETTE.gold,
+    backgroundColor: KANKREG_CHROME.buttonAccent,
     borderWidth: 0,
     ...Platform.select({
       web: {
@@ -919,6 +976,9 @@ const styles = StyleSheet.create({
   },
   ctaPillGoldCenter: {
     alignSelf: "center",
+  },
+  ctaPillGoldStart: {
+    alignSelf: "flex-start",
   },
   ctaPillNative: {
     marginTop: spacing.sm + 2,
@@ -944,7 +1004,7 @@ const styles = StyleSheet.create({
   },
   ctaPillGoldHover: {
     transform: [{ translateY: -1 }],
-    backgroundColor: KANKREG_PALETTE.goldBright,
+    backgroundColor: KANKREG_CHROME.buttonAccentHover,
   },
   ctaFocus: {
     ...Platform.select({
@@ -961,7 +1021,7 @@ const styles = StyleSheet.create({
   ctaTextGold: {
     fontFamily: fonts.semibold,
     fontSize: HOME_TYPE.kicker,
-    color: "#fffdf8",
+    color: KANKREG_CHROME.onAccent,
     letterSpacing: 0.3,
   },
   navBtn: {
@@ -1097,7 +1157,7 @@ const styles = StyleSheet.create({
     borderRadius: 1,
   },
   progressFillTop: {
-    backgroundColor: KANKREG_PALETTE.gold,
+    backgroundColor: KANKREG_CHROME.buttonAccent,
     opacity: 0.85,
   },
   chromeRow: {
@@ -1157,6 +1217,6 @@ const styles = StyleSheet.create({
     width: 20,
     height: 3,
     borderRadius: 2,
-    backgroundColor: KANKREG_PALETTE.goldBright,
+    backgroundColor: KANKREG_CHROME.buttonAccent,
   },
 });

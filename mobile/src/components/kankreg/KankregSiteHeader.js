@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { platformElevation } from "../../theme/platformStyles";
 import { fonts, spacing } from "../../theme/tokens";
 import {
@@ -100,8 +100,8 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
     styles.topbar,
     isNative && styles.topbarNative,
     {
-      backgroundColor: isDark ? "rgba(20, 17, 15, 0.92)" : "rgba(245, 239, 228, 0.85)",
-      borderBottomColor: isDark ? c.border : KANKREG_PALETTE.line,
+      backgroundColor: isDark ? "rgba(20, 17, 15, 0.92)" : KANKREG_CHROME.topbarBg,
+      borderBottomColor: isDark ? c.border : KANKREG_PALETTE.lineSoft,
       paddingTop: Platform.OS === "web" ? 0 : insets.top,
       minHeight: isNative ? nativeHeaderHeight : WEB_HEADER_HEIGHT,
     },
@@ -114,7 +114,8 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
         Platform.OS === "web"
           ? { height: WEB_CHROME_TOP, position: "fixed", zIndex: WEB_Z_INDEX.header }
           : { minHeight: shellHeight, zIndex: WEB_Z_INDEX.header },
-        Platform.OS === "web" ? { backdropFilter: "blur(16px)" } : null,
+        !isDark && Platform.OS === "web" ? styles.shellLightWeb : null,
+        Platform.OS === "web" && isDark ? { backdropFilter: "blur(16px)" } : null,
       ]}
       accessibilityRole="header"
     >
@@ -258,10 +259,23 @@ const styles = StyleSheet.create({
     right: 0,
     width: "100%",
   },
+  shellLightWeb: {
+    backgroundColor: KANKREG_CHROME.topbarBg,
+    ...Platform.select({
+      web: {
+        boxShadow: "0 1px 0 rgba(227, 216, 196, 0.65)",
+      },
+      default: {},
+    }),
+  },
   topbar: {
     borderBottomWidth: 1,
     minHeight: WEB_HEADER_HEIGHT,
     justifyContent: "center",
+    ...Platform.select({
+      web: { backgroundColor: KANKREG_CHROME.topbarBg },
+      default: {},
+    }),
   },
   topbarNative: {
     minHeight: NATIVE_HEADER_HEIGHT,
@@ -297,7 +311,7 @@ const styles = StyleSheet.create({
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
   navBtnActive: {
-    backgroundColor: KANKREG_PALETTE.card,
+    backgroundColor: KANKREG_CHROME.onAccent,
     ...platformElevation({
       web: { boxShadow: "0 1px 2px rgba(25, 20, 15, 0.04), 0 4px 14px -6px rgba(25, 20, 15, 0.12)" },
       ios: {
@@ -369,7 +383,7 @@ const styles = StyleSheet.create({
     minWidth: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: KANKREG_PALETTE.gold,
+    backgroundColor: KANKREG_CHROME.buttonAccent,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 4,
@@ -383,14 +397,14 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 18,
     borderRadius: 999,
-    backgroundColor: KANKREG_PALETTE.gold,
+    backgroundColor: KANKREG_CHROME.buttonAccent,
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
-  signInHover: { opacity: 0.92 },
+  signInHover: { backgroundColor: KANKREG_CHROME.buttonAccentHover },
   signInText: {
     fontSize: 13,
     fontFamily: fonts.semibold,
-    color: KANKREG_PALETTE.ink,
+    color: KANKREG_CHROME.onAccent,
   },
   hamb: {
     width: 44,

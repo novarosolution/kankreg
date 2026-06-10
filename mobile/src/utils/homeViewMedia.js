@@ -57,6 +57,10 @@ export function mapMarketingSlidesToHero(marketingSlides = []) {
     variant: slide.variant || "",
     badge: slide.badge || "",
     contentPosition: slide.contentPosition || "center",
+    heightRatio: slide.heightRatio,
+    layout: slide.layout || "",
+    imageFit: slide.imageFit || "",
+    captionAlign: slide.captionAlign || "",
   }));
 }
 

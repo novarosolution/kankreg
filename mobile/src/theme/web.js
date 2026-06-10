@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import { ALCHEMY } from "./customerAlchemy";
+import { KANKREG_CHROME } from "./kankregWeb";
 
 /** Fixed top bar height on web (kankreg.html `.topbar` ≈ 76px). */
 export const WEB_HEADER_HEIGHT = 76;
@@ -54,7 +55,7 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
     html.style.background = backgroundSolid || "#0A0908";
     html.style.colorScheme = "dark";
   } else {
-    const g = `radial-gradient(1100px 560px at 88% -8%, rgba(214, 173, 91, 0.12), transparent 60%), radial-gradient(900px 500px at -8% 108%, rgba(60, 98, 72, 0.06), transparent 55%), ${ALCHEMY.cream}`;
+    const g = `radial-gradient(1100px 560px at 88% -8%, rgba(214, 173, 91, 0.12), transparent 60%), radial-gradient(900px 500px at -8% 108%, rgba(60, 98, 72, 0.06), transparent 55%), ${KANKREG_CHROME.cream}`;
     body.style.background = g;
     body.style.backgroundAttachment = "fixed";
     html.style.background = g;

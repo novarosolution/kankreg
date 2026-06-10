@@ -128,14 +128,26 @@ export const HOME_HERO_CAROUSEL_SLIDES = [
   },
 ];
 
+/** Product packaging slide height ratio — web/desktop landscape (1672×941). */
+export const HOME_HERO_PRODUCT_SLIDE_HEIGHT_PER_WIDTH = 941 / 1672;
+
+/** Default landscape hero height ratio for web (1535×1024 class assets). */
+export const HOME_HERO_WEB_LANDSCAPE_HEIGHT_PER_WIDTH = 1024 / 1535;
+
+/** Phone hero band height per point of slider width — portrait reference JPEG. */
+export const HOME_HERO_PHONE_SLIDE_HEIGHT_PER_WIDTH = 1537 / 1023;
+
 /**
  * Web home hero only — three PNGs from `img/` (bundled as `hero-slide-13`, `hero-slide-10`, `hero-slide-07`).
  * Order matches: file_00000000a7b47208…, file_0000000054c47208…, file_0000000005007208…
  */
-/** Landscape product hero — `imgs/ChatGPT Image Jun 10, 2026, 04_51_37 PM.png` (1672×941). */
+/** Wide landscape product hero — desktop slide 1 (1915×821 panoramic). */
+export const HOME_HERO_PRODUCT_WIDE_HEIGHT_PER_WIDTH = 821 / 1915;
+
+/** Landscape product hero — `imgs/ChatGPT Image Jun 10, 2026, 06_44_25 PM.png` (1915×821). */
 export const HOME_HERO_PRODUCT_SLIDE = {
   key: "web-hero-product",
-  image: require("../../assets/marketing/hero-slide-kankreg-product.png"),
+  image: require("../../assets/marketing/hero-slide-kankreg-product-wide.png"),
   title: "The benchmark of purity",
   subtitle: "A2 Kankrej cow ghee — Bilona method, farm to table.",
   cta: "Shop ghee",
@@ -143,6 +155,9 @@ export const HOME_HERO_PRODUCT_SLIDE = {
   variant: "product",
   badge: "Bilona · Farm to table",
   contentPosition: "center",
+  heightRatio: HOME_HERO_PRODUCT_WIDE_HEIGHT_PER_WIDTH,
+  imageFit: "contain",
+  captionAlign: "left",
 };
 
 /** Photo-based web hero slides (no baked-in PNG typography — overlay copy only). */
@@ -150,16 +165,19 @@ export const HOME_HERO_WEB_SLIDER_SLIDES = [
   HOME_HERO_PRODUCT_SLIDE,
   {
     key: "web-hero-ghee",
-    /** Desktop slide 2 — `imgs/ChatGPT Image Jun 10, 2026, 05_20_34 PM.png` (1672×941). */
+    /** Desktop slide 2 — `imgs/ChatGPT Image Jun 10, 2026, 06_45_06 PM.png` (1915×821). */
     image: require("../../assets/marketing/hero-slide-kankreg-web-02.png"),
     title: "Pure A2 Kankrej ghee",
     subtitle: "Hand-churned Bilona ghee — grainy, golden, and honest.",
     cta: "Shop ghee",
     action: "catalog",
+    heightRatio: HOME_HERO_PRODUCT_WIDE_HEIGHT_PER_WIDTH,
+    imageFit: "contain",
+    captionAlign: "left",
   },
   {
     key: "web-hero-craft",
-    /** Slide 3 — `imgs/ChatGPT Image Jun 10, 2026, 05_31_15 PM.png` (1536×1024). Dal-chawal + ghee pour. */
+    /** Desktop slide 3 — `imgs/ChatGPT Image Jun 10, 2026, 06_53_12 PM.png` (1915×821). */
     image: require("../../assets/marketing/hero-slide-kankreg-hero-03.png"),
     title: "A golden touch on every meal",
     subtitle:
@@ -167,31 +185,30 @@ export const HOME_HERO_WEB_SLIDER_SLIDES = [
     cta: "Shop ghee",
     action: "catalog",
     contentPosition: "center",
+    heightRatio: HOME_HERO_PRODUCT_WIDE_HEIGHT_PER_WIDTH,
+    imageFit: "contain",
+    captionAlign: "left",
   },
   {
     key: "web-hero-pure",
-    image: require("../../assets/marketing/hero-slide-05-wa.jpeg"),
-    title: "Nothing rushed, nothing added",
-    subtitle: "100% pure — no preservatives, no shortcuts.",
-    cta: "Shop now",
-    action: "featured",
+    /** Desktop slide 4 — `imgs/ChatGPT Image Jun 10, 2026, 06_59_11 PM.png` (1915×821). */
+    image: require("../../assets/marketing/hero-slide-kankreg-web-04.png"),
+    title: "The benchmark of purity",
+    subtitle: "A2 Kankrej cow ghee — Bilona-crafted, farm to table.",
+    cta: "Shop ghee",
+    action: "catalog",
+    contentPosition: "center",
+    heightRatio: HOME_HERO_PRODUCT_WIDE_HEIGHT_PER_WIDTH,
+    imageFit: "contain",
+    captionAlign: "left",
   },
 ];
-
-/**
- * Phone hero band height per point of slider width — matches reference JPEG aspect (minimal `cover` crop on that shot).
- * Reference: `img/WhatsApp Image 2026-04-30 at 18.41.09.jpeg` @ 1023×1537 px (same asset as `hero-slide-05-wa.jpeg`).
- */
-export const HOME_HERO_PHONE_SLIDE_HEIGHT_PER_WIDTH = 1537 / 1023;
 
 /**
  * Native (iOS/Android) home hero only — three WhatsApp JPEGs from `img/`.
  * Order: `WhatsApp Iae2026-04-30…`, `WhatsApp Image …18.41.08`, `WhatsApp Image …18.41.09`
  * → `hero-slide-06-wa`, `hero-slide-04-wa`, `hero-slide-05-wa`.
  */
-/** Product packaging slide height ratio — web/desktop landscape (1672×941). */
-export const HOME_HERO_PRODUCT_SLIDE_HEIGHT_PER_WIDTH = 941 / 1672;
-
 /** Phone product hero — portrait `imgs/ChatGPT Image Jun 10, 2026, 04_56_13 PM.png` (1111×1416). */
 export const HOME_HERO_PRODUCT_PHONE_SLIDE = {
   key: "phone-hero-product",
@@ -232,11 +249,16 @@ export const HOME_HERO_MOBILE_SLIDER_SLIDES = [
   },
   {
     key: "phone-hero-0909",
-    image: require("../../assets/marketing/hero-slide-05-wa.jpeg"),
-    title: "Nothing rushed, nothing added",
-    subtitle: "100% pure — no preservatives, no shortcuts.",
-    cta: "Shop now",
-    action: "featured",
+    /** Phone slide 4 — portrait `imgs/ChatGPT Image Jun 10, 2026, 06_15_51 PM phone.png` (498×1024). */
+    image: require("../../assets/marketing/hero-slide-kankreg-phone-04.png"),
+    title: "The benchmark of purity",
+    subtitle: "A2 Kankrej cow ghee — Bilona-crafted, farm to table.",
+    cta: "Shop ghee",
+    action: "catalog",
+    contentPosition: "center",
+    heightRatio: 1024 / 498,
+    imageFit: "cover",
+    captionAlign: "center",
   },
 ];
 

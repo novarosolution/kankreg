@@ -28,6 +28,7 @@ import CatalogGridReveal from "../components/kankreg/CatalogGridReveal";
 import PremiumEmptyState from "../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
+import { KANKREG_CHROME } from "../theme/kankregWeb";
 import { HOME_SECTION_GAP, HOME_SPACE } from "../theme/homeEditorial";
 import { useCart } from "../context/CartContext";
 import { useTheme } from "../context/ThemeContext";
@@ -325,7 +326,7 @@ export default function KankregHomeScreen({ navigation }) {
     ready &&
     normalizeCommunitySection(communitySection).enabled;
   const webCreamShell =
-    Platform.OS === "web" && !isDark ? { backgroundColor: "#FBF6EC" } : null;
+    Platform.OS === "web" && !isDark ? { backgroundColor: KANKREG_CHROME.cream } : null;
 
   return (
     <CustomerScreenShell style={[{ flex: 1 }, webCreamShell]} topAccent={!showWebHero}>

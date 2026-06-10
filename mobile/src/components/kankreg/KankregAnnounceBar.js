@@ -1,8 +1,8 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { KANKREG_ANNOUNCE_COPY } from "../../content/appContent";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { KANKREG_CHROME } from "../../theme/kankregWeb";
 import { fonts } from "../../theme/tokens";
 
 /** kankreg.html `.announce` — all platforms */
@@ -30,14 +30,19 @@ export default function KankregAnnounceBar({ onPressSeason }) {
 
 const styles = StyleSheet.create({
   bar: {
-    backgroundColor: KANKREG_PALETTE.ink,
+    backgroundColor: KANKREG_CHROME.announceBg,
     paddingVertical: 9,
     paddingHorizontal: 16,
     alignItems: "center",
     justifyContent: "center",
+    width: "100%",
+    ...Platform.select({
+      web: { minHeight: 34 },
+      default: {},
+    }),
   },
   text: {
-    color: KANKREG_PALETTE.paper,
+    color: KANKREG_CHROME.onAccent,
     fontSize: 12,
     fontFamily: fonts.medium,
     letterSpacing: 0.5,
@@ -45,7 +50,8 @@ const styles = StyleSheet.create({
   },
   sep: { opacity: 0.4 },
   bold: {
-    color: KANKREG_PALETTE.goldBright,
+    color: KANKREG_CHROME.onAccent,
     fontFamily: fonts.semibold,
+    textDecorationLine: "underline",
   },
 });

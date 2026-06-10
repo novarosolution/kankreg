@@ -16,7 +16,7 @@ import {
   homeEditorialMuted,
 } from "../../theme/homeEditorial";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon } from "../../theme/tokens";
 import HeroMediaSlider from "./HeroMediaSlider";
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   trustBand: {
     width: "100%",
     alignItems: "center",
-    backgroundColor: "rgba(255, 253, 248, 0.42)",
+    backgroundColor: KANKREG_CHROME.cream,
   },
   trustBandDark: {
     backgroundColor: "rgba(24, 21, 19, 0.28)",

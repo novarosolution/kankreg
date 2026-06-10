@@ -19,6 +19,18 @@ export const KANKREG_PALETTE = {
   danger: "#a8442f",
 };
 
+/** Web chrome — matches kankreg homepage screenshot (announce, header, trust band, CTAs). */
+export const KANKREG_CHROME = {
+  /** Top announce strip — dark forest green */
+  announceBg: "#1B3022",
+  /** Nav topbar + trust band — warm off-white cream */
+  cream: "#FDF9F0",
+  topbarBg: "#FDF9F0",
+  buttonAccent: "#A67C37",
+  buttonAccentHover: "#B88A45",
+  onAccent: "#FFFFFF",
+};
+
 /** Display radius from HTML --r */
 export const KANKREG_RADIUS = {
   card: 20,
