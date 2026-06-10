@@ -68,7 +68,7 @@ export default function AppFooter({ webTight = false }) {
   return (
     <View ref={footerRef} style={styles.footer}>
       <View style={styles.brandBlock}>
-        <BrandLogo width={BRAND_LOGO_SIZE.footerCompact} height={BRAND_LOGO_SIZE.footerCompact} style={styles.brandLogoMark} />
+        <BrandLogo height={BRAND_LOGO_SIZE.footerCompact} style={styles.brandLogoMark} />
         <View style={styles.brandMeta}>
           <Text style={styles.brandTitle}>KankreG</Text>
           <Text style={styles.brandSub}>Curated everyday essentials</Text>

@@ -17,6 +17,24 @@ function unique(items) {
   return Array.from(new Set(items.filter(Boolean)));
 }
 
+/** Metro / Expo web bundled media (`/assets/…`, `unstable_path=`). Not API uploads. */
+function isBundlerMediaPath(uri) {
+  return (
+    uri.startsWith("/assets") ||
+    uri.includes("unstable_path=") ||
+    uri.startsWith("data:image/") ||
+    uri.startsWith("data:video/")
+  );
+}
+
+/** Same-origin absolute URL for bundled web assets (Metro dev + static export). */
+function resolveBundlerMediaUri(uri) {
+  if (Platform.OS === "web" && typeof window !== "undefined" && window.location?.origin) {
+    return `${window.location.origin}${uri.startsWith("/") ? uri : `/${uri}`}`;
+  }
+  return uri;
+}
+
 function withHost(urlString, hostname) {
   try {
     const url = new URL(urlString);
@@ -63,7 +81,7 @@ function hostVariants(urlString) {
 export function resolveImageUri(rawUri) {
   const uri = encodeURI(String(rawUri || "").trim());
   if (!uri) return "";
-  if (uri.startsWith("data:image/")) return uri;
+  if (isBundlerMediaPath(uri)) return resolveBundlerMediaUri(uri);
 
   const apiBase = getApiBaseUrl();
   if (uri.startsWith("/")) return `${apiBase}${uri}`;
@@ -89,7 +107,7 @@ export function resolveImageUri(rawUri) {
 export function getImageUriCandidates(rawUri) {
   const uri = encodeURI(String(rawUri || "").trim());
   if (!uri) return [];
-  if (uri.startsWith("data:image/")) return [uri];
+  if (isBundlerMediaPath(uri)) return [resolveBundlerMediaUri(uri)];
 
   const apiBase = getApiBaseUrl();
   if (uri.startsWith("/")) {

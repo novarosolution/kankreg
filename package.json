@@ -7,11 +7,14 @@
     "install:all": "npm install --prefix mobile && npm install --prefix backend",
     "mobile:start": "npm run start --prefix mobile",
     "mobile:start:clean": "npm run start:clean --prefix mobile",
+    "web": "npm run web --prefix mobile",
     "mobile:web": "npm run web --prefix mobile",
     "mobile:android": "npm run android --prefix mobile",
     "mobile:ios": "npm run ios --prefix mobile",
     "mobile:lint": "npm run lint --prefix mobile",
     "mobile:export:web": "npm run export:web --prefix mobile",
+    "landing:dev": "npm run dev --prefix landing",
+    "landing:build": "npm run build --prefix landing",
     "backend:dev": "npm run dev --prefix backend",
     "backend:start": "npm run start --prefix backend"
   }

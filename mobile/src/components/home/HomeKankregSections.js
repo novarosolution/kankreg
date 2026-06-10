@@ -6,13 +6,23 @@ import { Ionicons } from "@expo/vector-icons";
 import { getCategoryGridCellStyle, useKankregLayout } from "../../theme/kankregBreakpoints";
 import PremiumButton from "../ui/PremiumButton";
 import PremiumEmptyState from "../ui/PremiumEmptyState";
-import HomeSectionHeader from "./HomeSectionHeader";
+import { SectionHeader } from "./editorial";
+import {
+  HOME_EYEBROW_LETTER_SPACING,
+  HOME_SPACE,
+  HOME_TYPE,
+  homeEditorialInk,
+  homeEditorialMuted,
+} from "../../theme/homeEditorial";
 import { FONT_DISPLAY } from "../../theme/customerAlchemy";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
-import { createKankregEyebrowStyle, kankregSectionIndex } from "../../theme/kankregScreenStyles";
-import { fonts, radius, spacing, typography } from "../../theme/tokens";
+import { createKankregEyebrowStyle } from "../../theme/kankregScreenStyles";
+import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
 import { useTheme } from "../../context/ThemeContext";
 import { HOME_SCREEN_UI } from "../../content/appContent";
+import { formatINR } from "../../utils/currency";
+import { isWebLean } from "../../theme/webLean";
+import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 
 const CATEGORY_GRADIENTS = [
   ["#f3e7cc", "#e3cfa6"],
@@ -21,17 +31,102 @@ const CATEGORY_GRADIENTS = [
   ["#eee7dd", "#d6c7b1"],
 ];
 
-const MARQUEE_KEYFRAMES_ID = "kankreg-home-marquee-keyframes";
+const MARQUEE_CSS_ID = "kankreg-home-marquee-keyframes";
+const MARQUEE_CLASS = "kankreg-home-marquee";
+
+const CAT_CARD_CSS_ID = "kankreg-home-category-card";
+const CAT_CARD_CLASS = "kankreg-cat-card";
+const CAT_PHOTO_CLASS = "kankreg-cat-photo";
+
+/** Uniform lookbook tile aspect ratio (image frame). */
+const CATEGORY_IMAGE_ASPECT = 4 / 5;
+
+function useCategoryCardHoverCss() {
+  useEffect(() => {
+    injectWebCssOnce(
+      CAT_CARD_CSS_ID,
+      `.${CAT_CARD_CLASS} {
+  transition: transform 0.38s ease, box-shadow 0.38s ease;
+}
+.${CAT_CARD_CLASS}:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 44px -28px rgba(25, 20, 15, 0.28);
+}
+.${CAT_PHOTO_CLASS} {
+  transition: transform 0.6s ease-out;
+}
+.${CAT_CARD_CLASS}:hover .${CAT_PHOTO_CLASS} {
+  transform: scale(1.04);
+}
+@media (prefers-reduced-motion: reduce) {
+  .${CAT_CARD_CLASS}, .${CAT_PHOTO_CLASS} { transition: none !important; }
+  .${CAT_CARD_CLASS}:hover { transform: none; box-shadow: 0 8px 24px -20px rgba(25, 20, 15, 0.18); }
+  .${CAT_CARD_CLASS}:hover .${CAT_PHOTO_CLASS} { transform: none; }
+}`
+    );
+  }, []);
+}
+
+function CategoryLookbookCard({ cat, cellStyle, onPress, isDark }) {
+  const ink = homeEditorialInk(isDark);
+  const muted = homeEditorialMuted(isDark);
+  const isWeb = Platform.OS === "web";
+
+  return (
+    <Pressable
+      onPress={onPress}
+      className={isWeb ? CAT_CARD_CLASS : undefined}
+      style={({ focused }) => [
+        styles.catCard,
+        cellStyle,
+        isDark && styles.catCardDark,
+        focused && isWeb ? styles.catCardFocus : null,
+      ]}
+      accessibilityRole="button"
+      accessibilityLabel={`Browse ${cat.label}`}
+    >
+      <View style={styles.catImageFrame}>
+        <LinearGradient colors={cat.gradient} style={StyleSheet.absoluteFillObject} />
+        {cat.image ? (
+          <Image
+            source={{ uri: cat.image }}
+            className={isWeb ? CAT_PHOTO_CLASS : undefined}
+            style={styles.catPhoto}
+            contentFit="cover"
+            contentPosition="center"
+            transition={280}
+          />
+        ) : null}
+        {cat.icon ? (
+          <View style={[styles.catIconRing, isDark && styles.catIconRingDark]} pointerEvents="none">
+            <Ionicons
+              name={cat.icon}
+              size={icon.lg}
+              color={isDark ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.gold}
+            />
+          </View>
+        ) : null}
+      </View>
+      <View style={styles.catCopy}>
+        <View style={[styles.catGoldMark, isDark && styles.catGoldMarkDark]} />
+        <Text style={[styles.catLabel, { color: ink }]} numberOfLines={2}>
+          {cat.label.toUpperCase()}
+        </Text>
+        <Text style={[styles.catMeta, { color: muted }]} numberOfLines={1}>
+          {cat.count} {HOME_SCREEN_UI.categories.itemsSuffix}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
 
 function useMarqueeKeyframes() {
   useEffect(() => {
-    if (Platform.OS !== "web" || typeof document === "undefined") return;
-    if (document.getElementById(MARQUEE_KEYFRAMES_ID)) return;
-    const node = document.createElement("style");
-    node.id = MARQUEE_KEYFRAMES_ID;
-    node.textContent =
-      "@keyframes kankregHomeMarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }";
-    document.head.appendChild(node);
+    injectWebCssOnce(
+      MARQUEE_CSS_ID,
+      `@keyframes kankregHomeMarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.${MARQUEE_CLASS} { animation: kankregHomeMarquee 32s linear infinite; }`
+    );
   }, []);
 }
 
@@ -47,7 +142,7 @@ export function HomeMarqueeTicker() {
     <View style={[styles.marqueeWrap, isDark && styles.marqueeWrapDark]}>
       {isWeb ? (
         <View style={styles.marqueeTrack}>
-          <View style={styles.marqueeScroller}>
+          <View className={MARQUEE_CLASS} style={styles.marqueeScroller}>
             <Text
               style={[styles.marqueeText, styles.marqueeTextWeb, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.inkSoft }]}
             >
@@ -69,11 +164,12 @@ export function HomeMarqueeTicker() {
   );
 }
 
-/** Category tiles like `.cat-card` — only categories present on products from API. */
+/** Category lookbook grid — categories present on products from API. */
 export function HomeCategoryCards({ products = [], onBrowse, onOpenShop, productTypeTitle = "" }) {
-  const { categoryCols, categoryCompact } = useKankregLayout();
-  const cols = categoryCols;
-  const cellStyle = getCategoryGridCellStyle(cols);
+  const { isDark } = useTheme();
+  const { categoryCols } = useKankregLayout();
+  const cellStyle = getCategoryGridCellStyle(categoryCols);
+  useCategoryCardHoverCss();
 
   const categories = useMemo(() => {
     const tileIcons = HOME_SCREEN_UI.categories.webTileIcons || [];
@@ -104,52 +200,19 @@ export function HomeCategoryCards({ products = [], onBrowse, onOpenShop, product
 
   return (
     <View style={styles.catSection}>
-      <HomeSectionHeader overline={HOME_SCREEN_UI.categories.webShopBy} title={sectionTitle} />
-      <View style={[styles.catGrid, categoryCompact && styles.catGridCompact]}>
+      <SectionHeader
+        eyebrow={HOME_SCREEN_UI.categories.webShopBy}
+        title={sectionTitle}
+      />
+      <View style={styles.catGrid}>
         {categories.map((cat) => (
-          <Pressable
+          <CategoryLookbookCard
             key={cat.key}
+            cat={cat}
+            cellStyle={cellStyle}
+            isDark={isDark}
             onPress={() => onBrowse?.(cat.label)}
-            style={({ hovered }) => [
-              styles.catCard,
-              cellStyle,
-              categoryCompact ? styles.catCardCompact : styles.catCardWide,
-              hovered && Platform.OS === "web" ? styles.catCardHover : null,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={`Browse ${cat.label}`}
-          >
-            <LinearGradient colors={cat.gradient} style={StyleSheet.absoluteFillObject} />
-            {cat.image ? (
-              <Image
-                source={{ uri: cat.image }}
-                style={[styles.catImage, categoryCompact && styles.catImageCompact]}
-                contentFit="cover"
-              />
-            ) : null}
-            <LinearGradient
-              colors={
-                categoryCompact
-                  ? ["rgba(25,20,15,0.08)", "rgba(25,20,15,0.72)"]
-                  : ["transparent", "rgba(25,20,15,0.62)"]
-              }
-              locations={categoryCompact ? [0, 1] : [0.3, 1]}
-              style={StyleSheet.absoluteFillObject}
-            />
-            <View style={[styles.catBadge, categoryCompact && styles.catBadgeCompact]}>
-              <Ionicons name={cat.icon} size={categoryCompact ? 14 : 16} color={KANKREG_PALETTE.goldBright} />
-            </View>
-            <View style={[styles.catCardFooter, categoryCompact && styles.catCardFooterCompact]}>
-              <Text style={[styles.catName, categoryCompact && styles.catNameCompact]} numberOfLines={2}>
-                {cat.label}
-              </Text>
-              <View style={styles.catCountPill}>
-                <Text style={styles.catCount}>
-                  {cat.count} {HOME_SCREEN_UI.categories.itemsSuffix}
-                </Text>
-              </View>
-            </View>
-          </Pressable>
+          />
         ))}
       </View>
     </View>
@@ -161,6 +224,9 @@ export function HomeFeaturedEditorial({ product, navigation }) {
   const { isDark } = useTheme();
   const { useAuthSplit } = useKankregLayout();
   const image = product?.image || product?.images?.[0];
+  const title = String(product?.name || "").trim();
+  const body = String(product?.description || "").trim();
+  if (!title) return null;
 
   return (
     <View
@@ -181,30 +247,20 @@ export function HomeFeaturedEditorial({ product, navigation }) {
         {image ? <Image source={{ uri: image }} style={styles.featureImage} contentFit="contain" /> : null}
       </View>
       <View style={[styles.featureCopy, isDark && { backgroundColor: "#181513" }]}>
-        <Text style={createKankregEyebrowStyle(isDark)}>
-          {kankregSectionIndex(3)} {HOME_SCREEN_UI.featured.sectionLabel}
-        </Text>
-        <Text style={[styles.featureEyebrow, { color: KANKREG_PALETTE.gold }]}>
-          {HOME_SCREEN_UI.featured.eyebrow}
-        </Text>
         <Text style={[styles.featureTitle, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
-          {HOME_SCREEN_UI.featured.title}
+          {title}
         </Text>
-        <Text style={[styles.featureBody, { color: isDark ? "#c8bdaf" : KANKREG_PALETTE.inkSoft }]}>
-          {HOME_SCREEN_UI.featured.body}
-        </Text>
+        {body ? (
+          <Text style={[styles.featureBody, { color: isDark ? "#c8bdaf" : KANKREG_PALETTE.inkSoft }]} numberOfLines={4}>
+            {body}
+          </Text>
+        ) : null}
         <View style={styles.featureCtas}>
           <PremiumButton
-            label={HOME_SCREEN_UI.featured.ctaPrimary}
+            label={formatINR(product?.price)}
             variant="primary"
             size="md"
             onPress={() => product?.id && navigation.navigate("Product", { productId: product.id })}
-          />
-          <PremiumButton
-            label={HOME_SCREEN_UI.featured.ctaSecondary}
-            variant="ghost"
-            size="md"
-            onPress={() => navigation.navigate("Shop")}
           />
         </View>
       </View>
@@ -225,7 +281,9 @@ export function HomeEditorialHero({ navigation, featuredProduct, heroTitle, hero
   return (
     <View style={[styles.editorialHero, stackEditorialHero && styles.editorialHeroStack]}>
       <View style={styles.editorialCopy}>
-        <Text style={createKankregEyebrowStyle(isDark)}>{HOME_SCREEN_UI.editorial.overline}</Text>
+        {!isWebLean() ? (
+          <Text style={createKankregEyebrowStyle(isDark)}>{HOME_SCREEN_UI.editorial.overline}</Text>
+        ) : null}
         <Text style={[styles.editorialH1, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
           {title}
         </Text>
@@ -253,7 +311,7 @@ export function HomeEditorialHero({ navigation, featuredProduct, heroTitle, hero
             onPress={() => navigation.navigate("RedeemRewards")}
           />
         </View>
-        {HOME_SCREEN_UI.web?.heroStats?.length ? (
+        {!isWebLean() && HOME_SCREEN_UI.web?.heroStats?.length ? (
           <View
             style={[
               styles.editorialStats,
@@ -289,10 +347,11 @@ export function HomeEditorialHero({ navigation, featuredProduct, heroTitle, hero
             },
           ]}
         >
-          <Text style={styles.floatEyebrow}>{HOME_SCREEN_UI.editorial.featuredLabel}</Text>
-          <Text style={[styles.floatTitle, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
-            {featuredProduct?.name || HOME_SCREEN_UI.bestsellers.titleFallback}
-          </Text>
+          {featuredProduct?.name ? (
+            <Text style={[styles.floatTitle, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
+              {featuredProduct.name}
+            </Text>
+          ) : null}
         </View>
         <View
           style={[
@@ -309,7 +368,7 @@ export function HomeEditorialHero({ navigation, featuredProduct, heroTitle, hero
               {HOME_SCREEN_UI.hero.fromLabel}
             </Text>
             <Text style={[styles.floatPrice, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
-              {HOME_SCREEN_UI.editorial.shopNowLabel}
+              {featuredProduct?.price != null ? formatINR(featuredProduct.price) : HOME_SCREEN_UI.editorial.shopNowLabel}
             </Text>
           </View>
         </View>
@@ -337,15 +396,6 @@ const styles = StyleSheet.create({
   marqueeScroller: {
     flexDirection: "row",
     width: "max-content",
-    ...Platform.select({
-      web: {
-        animationName: "kankregHomeMarquee",
-        animationDuration: "32s",
-        animationTimingFunction: "linear",
-        animationIterationCount: "infinite",
-      },
-      default: {},
-    }),
   },
   marqueeText: {
     fontFamily: fonts.medium,
@@ -357,119 +407,111 @@ const styles = StyleSheet.create({
     paddingRight: spacing.xl,
   },
   catSection: {
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  catHeadRow: {
-    marginBottom: spacing.xs,
+    width: "100%",
   },
   catGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: spacing.md,
-    marginTop: spacing.sm,
+    gap: HOME_SPACE.lg,
     width: "100%",
-  },
-  catGridCompact: {
-    gap: spacing.sm + 2,
+    ...Platform.select({
+      web: { rowGap: HOME_SPACE.lg, columnGap: HOME_SPACE.lg },
+      default: { gap: HOME_SPACE.md },
+    }),
   },
   catCard: {
     overflow: "hidden",
+    borderRadius: radius.lg,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: KANKREG_PALETTE.line,
-    position: "relative",
+    backgroundColor: KANKREG_PALETTE.card,
     ...Platform.select({
       web: {
-        transition: "transform 0.28s ease, box-shadow 0.28s ease",
-        boxShadow: "0 10px 28px -18px rgba(25,20,15,.32)",
+        boxShadow: "0 8px 24px -20px rgba(25, 20, 15, 0.18)",
+        cursor: "pointer",
       },
       default: {},
     }),
   },
-  catCardWide: {
-    aspectRatio: 5 / 4,
-    borderRadius: radius.xl,
-    minHeight: 0,
-  },
-  catCardCompact: {
-    aspectRatio: 16 / 11,
-    borderRadius: radius.lg + 2,
-    minHeight: 0,
-    maxHeight: 148,
-  },
-  catCardHover: {
-    transform: [{ translateY: -4 }],
+  catCardDark: {
+    backgroundColor: "#181513",
+    borderColor: "#3f3933",
     ...Platform.select({
-      web: { boxShadow: "0 22px 48px -24px rgba(25,20,15,.42)" },
+      web: { boxShadow: "0 12px 32px -24px rgba(0, 0, 0, 0.42)" },
       default: {},
     }),
   },
-  catImage: {
-    ...StyleSheet.absoluteFillObject,
-    opacity: 0.38,
+  catCardFocus: {
+    ...Platform.select({
+      web: {
+        outlineStyle: "solid",
+        outlineWidth: 2,
+        outlineColor: KANKREG_PALETTE.gold,
+        outlineOffset: 2,
+      },
+      default: {},
+    }),
   },
-  catImageCompact: {
-    opacity: 0.32,
+  catImageFrame: {
+    width: "100%",
+    aspectRatio: CATEGORY_IMAGE_ASPECT,
+    overflow: "hidden",
+    backgroundColor: KANKREG_PALETTE.paper2,
   },
-  catBadge: {
+  catPhoto: {
+    width: "100%",
+    height: "100%",
+  },
+  catIconRing: {
     position: "absolute",
-    top: spacing.sm + 2,
-    left: spacing.sm + 2,
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+    alignSelf: "center",
+    top: "32%",
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,253,248,0.92)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.65)",
+    backgroundColor: "rgba(255, 253, 248, 0.72)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(169, 119, 46, 0.28)",
+    ...Platform.select({
+      web: { backdropFilter: "blur(6px)" },
+      default: {},
+    }),
   },
-  catBadgeCompact: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    top: spacing.sm,
-    left: spacing.sm,
+  catIconRingDark: {
+    backgroundColor: "rgba(24, 21, 19, 0.62)",
+    borderColor: "rgba(232, 200, 90, 0.22)",
   },
-  catCardFooter: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    padding: spacing.md + 2,
-    gap: spacing.sm,
+  catCopy: {
+    paddingHorizontal: HOME_SPACE.md,
+    paddingTop: HOME_SPACE.sm + 2,
+    paddingBottom: HOME_SPACE.md,
+    gap: HOME_SPACE.xs,
   },
-  catCardFooterCompact: {
-    padding: spacing.sm + 2,
-    alignItems: "center",
+  catGoldMark: {
+    width: 22,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: KANKREG_PALETTE.gold,
+    opacity: 0.55,
+    marginBottom: 2,
   },
-  catName: {
-    fontFamily: FONT_DISPLAY,
-    fontSize: 18,
-    color: "#fff",
-    flex: 1,
-    lineHeight: 22,
+  catGoldMarkDark: {
+    backgroundColor: KANKREG_PALETTE.goldBright,
+    opacity: 0.42,
   },
-  catNameCompact: {
-    fontSize: 15,
-    lineHeight: 18,
-  },
-  catCountPill: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,253,248,0.16)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.22)",
-  },
-  catCount: {
-    fontSize: 10,
+  catLabel: {
     fontFamily: fonts.semibold,
-    color: "rgba(255,255,255,0.92)",
-    letterSpacing: 0.2,
+    fontSize: HOME_TYPE.eyebrow,
+    lineHeight: HOME_TYPE.eyebrow + 4,
+    letterSpacing: HOME_EYEBROW_LETTER_SPACING,
+  },
+  catMeta: {
+    fontFamily: fonts.regular,
+    fontSize: HOME_TYPE.kicker - 1,
+    lineHeight: 18,
+    letterSpacing: 0.15,
   },
   feature: {
     flexDirection: "row",

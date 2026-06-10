@@ -43,7 +43,6 @@ import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../theme/customerAlche
 import { fonts, layout, lineHeight, radius, semanticRadius, spacing, typography } from "../theme/tokens";
 import { formatINR } from "../utils/currency";
 import PremiumEmptyState from "../components/ui/PremiumEmptyState";
-import PremiumLoader from "../components/ui/PremiumLoader";
 import PremiumInput from "../components/ui/PremiumInput";
 import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
 import PremiumStatCard from "../components/ui/PremiumStatCard";
@@ -1282,7 +1281,7 @@ export default function MyOrdersScreen({ navigation, route }) {
             </View>
             <SkeletonBlock width="100%" height={140} rounded="xl" />
             <SkeletonBlock width="100%" height={140} rounded="xl" />
-            <PremiumLoader size="sm" caption={MY_ORDERS_UI.loadingCaption} />
+            <SkeletonBlock width="100%" height={140} rounded="xl" />
           </View>
         ) : orders.length === 0 ? (
           <View style={[styles.panel, styles.emptyPanel]}>

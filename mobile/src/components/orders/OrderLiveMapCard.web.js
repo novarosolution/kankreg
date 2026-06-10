@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import "../../styles/leafletWeb.css";
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import { useTheme } from "../../context/ThemeContext";
 import { ORDER_LIVE_TRACKING } from "../../content/appContent";

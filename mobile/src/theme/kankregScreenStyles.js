@@ -1,6 +1,7 @@
 import { Platform, StyleSheet } from "react-native";
 import { KANKREG_PALETTE, KANKREG_RADIUS } from "./kankregWeb";
 import { FONT_DISPLAY } from "./customerAlchemy";
+import { HOME_SPACE } from "./homeEditorial";
 import { fonts, typography } from "./tokens";
 
 /** Section index label like kankreg.html `.ix` */
@@ -62,5 +63,8 @@ export function createKankregResultBold(isDark) {
   };
 }
 
-/** Shared page block spacing inside KankregPageWrap */
+/** Shared page block spacing inside KankregPageWrap (inner pages). */
 export const KANKREG_PAGE_SECTION_GAP = 18;
+
+/** Web home vertical rhythm — use on `KankregHomeScreen` `KankregPageWrap`. */
+export { HOME_SPACE };

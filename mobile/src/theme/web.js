@@ -90,9 +90,19 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
         overscroll-behavior-y: none;
         -webkit-tap-highlight-color: transparent;
       }
-      img, video {
+      img {
         max-width: 100%;
         height: auto;
+      }
+      video {
+        max-width: 100%;
+      }
+      video[data-kankreg-fill="true"],
+      .kankreg-cinema-reel video,
+      .kankreg-cinema-video {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none;
       }
       ::-webkit-scrollbar {
         width: 10px;

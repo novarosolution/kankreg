@@ -113,8 +113,8 @@ export default function HomeMarketingHero({
                     </View>
                   ) : null}
                   <BrandLogo
-                    width={BRAND_LOGO_SIZE.homeHero}
                     height={BRAND_LOGO_SIZE.homeHero}
+                    glow
                     style={[styles.heroBrandLogo, styles.heroBrandLogoOnPhoto]}
                   />
                   <Text style={[styles.heroDisplayTitle, styles.heroDisplayOnPhoto]}>{slide.title}</Text>

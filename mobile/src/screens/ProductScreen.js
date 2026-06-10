@@ -1,23 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View} from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Image } from "expo-image";
+import { Platform, StyleSheet, View } from "react-native";
+import { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
 import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 
 import CustomerScreenShell from "../components/CustomerScreenShell";
 import BottomNavBar from "../components/BottomNavBar";
 import { getProductById, getProductReviews, getProducts, submitProductReview } from "../services/productService";
-import { HomeCatalogGridCard } from "../components/home/HomeCatalogProductViews";
-import CatalogGridReveal from "../components/kankreg/CatalogGridReveal";
 import useReducedMotion from "../hooks/useReducedMotion";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
@@ -25,39 +14,29 @@ import { useTheme } from "../context/ThemeContext";
 import {
   customerPanel,
   customerScrollFill,
+  WEB_PRODUCT_STICKY_BAR_HEIGHT,
 } from "../theme/screenLayout";
-import { fonts, icon as sz, layout, lineHeight, radius, semanticRadius, spacing, typography } from "../theme/tokens";
+import { fonts, layout, lineHeight, radius, semanticRadius, spacing, typography } from "../theme/tokens";
 import { platformShadow } from "../theme/shadowPlatform";
-import { formatINR } from "../utils/currency";
-import { getImageUriCandidates, PRODUCT_HERO_BLURHASH } from "../utils/image";
+import { getImageUriCandidates } from "../utils/image";
 import { matchesShelfProduct } from "../utils/shelfMatch";
 import { productToCartLine } from "../utils/productCart";
 import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../theme/customerAlchemy";
-import { PRODUCT_SCREEN, fillProductScreen } from "../content/appContent";
-import PremiumLoader from "../components/ui/PremiumLoader";
+import { PRODUCT_SCREEN } from "../content/appContent";
 import PremiumEmptyState from "../components/ui/PremiumEmptyState";
-import PremiumInput from "../components/ui/PremiumInput";
-import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
-import PremiumButton from "../components/ui/PremiumButton";
-import PremiumChip from "../components/ui/PremiumChip";
 import KankregBuyBar from "../components/kankreg/KankregBuyBar";
-import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
-import PremiumCard from "../components/ui/PremiumCard";
-import GoldHairline from "../components/ui/GoldHairline";
-import SkeletonBlock from "../components/ui/SkeletonBlock";
-import HeroParallax from "../components/motion/HeroParallax";
-import SectionReveal from "../components/motion/SectionReveal";
+import WebProductView from "../components/kankreg/WebProductView";
+import { ProductPageSkeleton } from "../components/loading";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
 import NativeProductView from "../components/native/NativeProductView";
 
 export default function ProductScreen({ route, navigation }) {
   const { productId } = route.params ?? {};
   const { colors: c, shadowPremium, isDark } = useTheme();
-  const insets = useSafeAreaInsets();
   const styles = useMemo(() => createProductStyles(c, shadowPremium, isDark), [c, shadowPremium, isDark]);
   const { addToCart, removeFromCart, getItemQuantity } = useCart();
   const { isAuthenticated, token } = useAuth();
-  const { width, useProductSplit } = useKankregLayout();
+  const { width, isXs } = useKankregLayout();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -73,9 +52,6 @@ export default function ProductScreen({ route, navigation }) {
   const [catalog, setCatalog] = useState([]);
   const reducedMotion = useReducedMotion();
   const heroFade = useSharedValue(1);
-  const shellRef = useRef(null);
-  const heroRef = useRef(null);
-  const reviewRef = useRef(null);
   const stickyShownRef = useRef(false);
 
   useEffect(() => {
@@ -186,41 +162,8 @@ export default function ProductScreen({ route, navigation }) {
   if (loading) {
     return (
       <CustomerScreenShell style={styles.screen}>
-        <LinearGradient
-          colors={
-            isDark
-              ? ["rgba(28, 25, 23, 0.95)", "rgba(15, 23, 42, 0.92)", "rgba(20, 83, 45, 0.12)"]
-              : [ALCHEMY.pearl, ALCHEMY.cream, "rgba(237, 228, 212, 0.55)"]
-          }
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.loadingGradient}
-        >
-          <View style={styles.loadingSkeletonInner}>
-            <SkeletonBlock width="100%" height={260} rounded="xl" />
-            <View style={styles.loadingThumbRow}>
-              <SkeletonBlock width={56} height={56} rounded="md" />
-              <SkeletonBlock width={56} height={56} rounded="md" />
-              <SkeletonBlock width={56} height={56} rounded="md" />
-              <SkeletonBlock width={56} height={56} rounded="md" />
-            </View>
-            <View style={styles.loadingTextStack}>
-              <SkeletonBlock width="38%" height={12} rounded="sm" />
-              <SkeletonBlock width="76%" height={26} rounded="md" />
-              <SkeletonBlock width="56%" height={20} rounded="md" />
-              <SkeletonBlock width="100%" height={14} rounded="sm" />
-              <SkeletonBlock width="92%" height={14} rounded="sm" />
-              <SkeletonBlock width="80%" height={14} rounded="sm" />
-            </View>
-            <View style={styles.loadingChipRow}>
-              <SkeletonBlock width={64} height={32} rounded="pill" />
-              <SkeletonBlock width={64} height={32} rounded="pill" />
-              <SkeletonBlock width={64} height={32} rounded="pill" />
-            </View>
-            <SkeletonBlock width="100%" height={50} rounded="pill" />
-            <PremiumLoader size="sm" caption={PRODUCT_SCREEN.loadingCaption} />
-          </View>
-        </LinearGradient>
+        <ProductPageSkeleton showBuyBar={Platform.OS !== "web"} />
+        {Platform.OS === "web" ? <BottomNavBar /> : null}
       </CustomerScreenShell>
     );
   }
@@ -264,8 +207,6 @@ export default function ProductScreen({ route, navigation }) {
 
   const quantity = getItemQuantity(product.id, cartLine?.variantLabel ?? "");
   const heroImageHeight = Math.min(380, Math.max(260, Math.round(width * 0.72)));
-  const storySubtitleOptional = String(PRODUCT_SCREEN.storySubtitle ?? "").trim() || undefined;
-  const variantSubtitleOptional = String(PRODUCT_SCREEN.variantSubtitle ?? "").trim() || undefined;
   const isOutOfStock = product.inStock === false || Number(product.stockQty || 0) <= 0;
   const displayPrice = cartLine ? cartLine.price : product.price;
   const variants = Array.isArray(product.variants) ? product.variants : [];
@@ -281,23 +222,8 @@ export default function ProductScreen({ route, navigation }) {
   const showMrp = mrp != null && mrp > displayPrice;
   const offPct =
     showMrp && mrp > 0 ? Math.max(0, Math.round((1 - Number(displayPrice) / mrp) * 100)) : null;
-  /** Hero pills already cover stock / ship; facts only add unit + eta. */
-  const compactFacts = [
-    {
-      key: "unit",
-      icon: "cube-outline",
-      label: product.unit || PRODUCT_SCREEN.unitFallback,
-      tone: "neutral"},
-    ...(product.eta
-      ? [
-          {
-            key: "note",
-            icon: "information-circle-outline",
-            label: String(product.eta),
-            tone: "neutral"},
-        ]
-      : []),
-  ];
+  const stickyBarVisible = !isOutOfStock && (isXs || showStickyCta);
+  const stickyFooterExtra = stickyBarVisible ? WEB_PRODUCT_STICKY_BAR_HEIGHT : 0;
 
   const handleSubmitReview = async () => {
     if (!isAuthenticated) {
@@ -380,6 +306,16 @@ export default function ProductScreen({ route, navigation }) {
             }
             addToCart(productToCartLine(p, ""));
           }}
+          reviews={reviews}
+          reviewRating={reviewRating}
+          onReviewRatingChange={setReviewRating}
+          reviewComment={reviewComment}
+          onReviewCommentChange={setReviewComment}
+          reviewBusy={reviewBusy}
+          reviewSuccess={reviewSuccess}
+          reviewError={error}
+          onSubmitReview={handleSubmitReview}
+          isAuthenticated={isAuthenticated}
         />
       </CustomerScreenShell>
     );
@@ -393,401 +329,68 @@ export default function ProductScreen({ route, navigation }) {
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
         onScrollJS={onProductScrollJS}
+        stickyFooterExtra={stickyFooterExtra}
       >
-        {product?.name ? (
-          <Text style={styles.breadcrumb} numberOfLines={2}>
-            Shop · {String(product.category || "Catalog").trim()} · {product.name}
-          </Text>
-        ) : null}
-        <View
-          ref={shellRef}
-          style={[
-            styles.container,
-            shelfMatch ? styles.containerShelfMatch : null,
-            useProductSplit
-              ? { flexDirection: "row", flexWrap: "wrap", gap: 28, alignItems: "flex-start" }
-              : null,
-          ]}
-        >
-        <View style={useProductSplit ? styles.pdColLeft : null}>
-        <HeroParallax
-          strength="medium"
-          maxScroll={400}
-          dim={false}
-          scale
-          style={styles.heroWrap}
-        >
-          <View ref={heroRef}>
-            <TouchableOpacity
-              style={[styles.backFab, { top: Math.max(insets.top, spacing.sm) }]}
-              onPress={() => navigation.goBack()}
-              accessibilityRole="button"
-              accessibilityLabel="Back"
-            >
-              <Ionicons name="chevron-back" size={sz.lg} color={isDark ? c.textPrimary : ALCHEMY.brown} />
-            </TouchableOpacity>
-            <View style={[styles.heroImageStage, { height: heroImageHeight }]}>
-              {selectedImageUri && !imageFailed ? (
-                <Animated.View style={[styles.heroImageAnim, heroFadeStyle]}>
-                <Image
-                  source={{ uri: selectedImageUri }}
-                  style={styles.heroImage}
-                  contentFit="contain"
-                  transition={200}
-                  cachePolicy="memory-disk"
-                  placeholder={{ blurhash: PRODUCT_HERO_BLURHASH }}
-                  onError={() => setImageCandidateIndex((index) => index + 1)}
-                />
-                </Animated.View>
-              ) : (
-                <View style={styles.imageFallback}>
-                  <Ionicons name="image-outline" size={sz.xxl} color={c.textMuted} />
-                  <Text style={styles.imageFallbackText}>{PRODUCT_SCREEN.heroImageUnavailable}</Text>
-                </View>
-              )}
-              <LinearGradient
-                colors={
-                  isDark
-                    ? ["transparent", "rgba(12, 10, 8, 0.08)", "rgba(12, 10, 8, 0.72)"]
-                    : ["transparent", "rgba(255, 253, 248, 0.2)", "rgba(255, 253, 248, 0.92)"]
-                }
-                locations={[0, 0.42, 1]}
-                style={[styles.heroVignette, { pointerEvents: "none" }]}
-              />
-            </View>
-            <View style={styles.heroTopRow}>
-              <View style={styles.heroTopSpacer} />
-              <View style={[styles.heroChip, isOutOfStock ? styles.stockChipDanger : styles.stockChipSuccess]}>
-                <Ionicons
-                  name={isOutOfStock ? "close-circle-outline" : "checkmark-circle-outline"}
-                  size={sz.tiny}
-                  color={isOutOfStock ? c.danger : c.success}
-                />
-                <Text style={[styles.heroChipText, isOutOfStock ? styles.stockTextDanger : styles.stockTextSuccess]}>
-                  {isOutOfStock ? PRODUCT_SCREEN.heroOutOfStock : PRODUCT_SCREEN.heroInStock}
-                </Text>
-              </View>
-            </View>
-            {product.badgeText ? (
-              <View style={styles.heroBadge}>
-                <Text style={styles.heroBadgeText} numberOfLines={2}>
-                  {String(product.badgeText).toUpperCase()}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-        </HeroParallax>
-        {galleryImages.length > 1 ? (
-          <SectionReveal delay={80} preset="fade-in">
-            <View style={styles.galleryStrip}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.galleryRow}
-              >
-                {galleryImages.map((img) => (
-                  <TouchableOpacity
-                    key={img}
-                    style={[
-                      styles.thumbWrap,
-                      (selectedImage || product.image) === img ? styles.thumbWrapActive : null,
-                    ]}
-                    onPress={() => {
-                      setSelectedImage(img);
-                    }}
-                  >
-                    <RetryImage sourceUri={img} style={styles.thumbImage} styles={styles} c={c} />
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          </SectionReveal>
-        ) : null}
-        </View>
-        <SectionReveal
-          delay={120}
-          preset="fade-up"
-          style={[styles.contentSheet, useProductSplit && styles.pdColRight]}
-        >
-        <View style={[styles.contentSheetAccent, { backgroundColor: isDark ? "rgba(232, 200, 90, 0.65)" : ALCHEMY.gold }]} />
-        <View style={styles.content}>
-          <View style={styles.contentMax}>
-          <View style={styles.titleBlock}>
-            <Text style={styles.categoryText}>{product.category || PRODUCT_SCREEN.categoryFallback}</Text>
-            <Text style={styles.name}>{product.name}</Text>
-          </View>
-
-          <View style={styles.heroMetaRow}>
-            <View style={[styles.heroMetaPill, styles.heroMetaRatingPill]}>
-              <Ionicons name="star" size={sz.tiny} color={ALCHEMY.gold} />
-              <Text style={styles.heroMetaPillText}>
-                {liveRatingAvg > 0
-                  ? fillProductScreen(PRODUCT_SCREEN.metaRatingSummary, {
-                      rating: liveRatingAvg.toFixed(1),
-                      count: String(reviewCountDisplay)})
-                  : PRODUCT_SCREEN.metaNoRatings}
-              </Text>
-            </View>
-            <View style={[styles.heroMetaPill, isOutOfStock ? styles.heroMetaPillDanger : styles.heroMetaPillOk]}>
-              <Ionicons
-                name={isOutOfStock ? "close-circle-outline" : "checkmark-circle-outline"}
-                size={sz.tiny}
-                color={isOutOfStock ? c.danger : c.success}
-              />
-              <Text
-                style={[
-                  styles.heroMetaPillText,
-                  isOutOfStock ? styles.heroMetaPillTextDanger : styles.heroMetaPillTextOk,
-                ]}
-              >
-                {isOutOfStock ? PRODUCT_SCREEN.metaOutOfStockShort : PRODUCT_SCREEN.metaReadyToShip}
-              </Text>
-            </View>
-          </View>
-
-          <View style={[styles.priceBand, isDark ? styles.priceBandDark : styles.priceBandLight]}>
-            <View style={styles.priceBlock}>
-              <View style={styles.priceRow}>
-                <Text style={styles.price}>{formatINR(displayPrice)}</Text>
-                {showMrp ? <Text style={styles.mrpStrike}>{formatINR(mrp)}</Text> : null}
-                <Text style={styles.unitText}>/{product.unit || PRODUCT_SCREEN.unitFallback}</Text>
-              </View>
-              {offPct != null && offPct > 0 ? (
-                <View style={[styles.saveChip, { borderColor: isDark ? c.secondary : ALCHEMY.pillInactive }]}>
-                  <Ionicons name="pricetag" size={sz.tiny} color={c.secondaryDark} />
-                  <Text style={[styles.saveChipText, { color: c.secondaryDark }]}>
-                    {fillProductScreen(PRODUCT_SCREEN.savePctChip, { pct: String(offPct) })}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-          </View>
-
-          <GoldHairline marginVertical={spacing.sm} />
-
-          <PremiumCard variant="muted" padding="md" style={styles.storyCard}>
-            <PremiumSectionHeader
-              compact
-              overline={PRODUCT_SCREEN.storyOverline}
-              title={PRODUCT_SCREEN.storyTitle}
-              subtitle={storySubtitleOptional}
-            />
-            <Text style={[styles.description, styles.descriptionBelowHeader]}>
-              {product.description || PRODUCT_SCREEN.defaultDescription}
-            </Text>
-          </PremiumCard>
-
-          {variants.length > 0 ? (
-            <View style={styles.variantBlock}>
-              <PremiumSectionHeader
-                compact
-                overline={PRODUCT_SCREEN.variantOverline}
-                title={PRODUCT_SCREEN.variantTitle}
-                subtitle={variantSubtitleOptional}
-              />
-              <View style={[styles.variantPills, styles.variantPillsBelowHeader]}>
-                {variants.map((v) => {
-                  const lab = String(v.label || "").trim();
-                  const active = lab === selectedVariantLabel;
-                  return (
-                    <PremiumChip
-                      key={lab}
-                      label={lab}
-                      tone={active ? "gold" : "neutral"}
-                      selected={active}
-                      size="lg"
-                      onPress={() => setSelectedVariantLabel(lab)}
-                    />
-                  );
-                })}
-              </View>
-            </View>
-          ) : null}
-
-          {quantity > 0 && !isOutOfStock ? (
-            <View style={styles.stepper}>
-              <TouchableOpacity style={styles.stepButton} activeOpacity={0.85} onPress={handleRemoveFromCart}>
-                <Ionicons name="remove" size={sz.md} color={c.onPrimary} />
-              </TouchableOpacity>
-              <Text style={styles.stepCount}>
-                {fillProductScreen(PRODUCT_SCREEN.inCartCount, { count: String(quantity) })}
-              </Text>
-              <TouchableOpacity style={styles.stepButton} activeOpacity={0.85} onPress={handleAddToCart}>
-                <Ionicons name="add" size={sz.md} color={c.onPrimary} />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <PremiumButton
-              label={isOutOfStock ? PRODUCT_SCREEN.outOfStock : PRODUCT_SCREEN.addToCart}
-              variant="primary"
-              size="lg"
-              fullWidth
-              iconLeft={isOutOfStock ? "close-circle-outline" : "bag-add-outline"}
-              disabled={isOutOfStock}
-              onPress={handleAddToCart}
-              accessibilityLabel={
-                isOutOfStock ? PRODUCT_SCREEN.productOutOfStockA11y : PRODUCT_SCREEN.addToCartA11y
-              }
-            />
-          )}
-
-          {compactFacts.length > 0 ? (
-            <View style={styles.quickFactsWrap}>
-              {compactFacts.map((fact) => (
-                <View key={fact.key} style={styles.quickFactPill}>
-                  <Ionicons name={fact.icon} size={sz.xs} color={c.textSecondary} />
-                  <Text style={styles.quickFactText} numberOfLines={1}>
-                    {fact.label}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-
-          {relatedProducts.length > 0 ? (
-            <SectionReveal index={1} preset="fade-up">
-              <PremiumSectionHeader compact overline="Catalog" title="You may also like" />
-              <CatalogGridReveal>
-                {relatedProducts.map((item, idx) => (
-                  <HomeCatalogGridCard
-                    key={item.id}
-                    idx={idx}
-                    item={item}
-                    compact
-                    navigation={navigation}
-                    quantity={getItemQuantity(item.id)}
-                    styles={relatedGridStyles}
-                    isOutOfStock={item.inStock === false}
-                    onAddToCart={() => addToCart(productToCartLine(item))}
-                    onRemoveFromCart={() => removeFromCart(item.id)}
-                  />
-                ))}
-              </CatalogGridReveal>
-              <GoldHairline marginVertical={spacing.md} />
-            </SectionReveal>
-          ) : null}
-
-          <GoldHairline marginVertical={spacing.md} />
-
-          <SectionReveal index={2} preset="fade-up">
-          <View ref={reviewRef} style={styles.reviewCard}>
-            <PremiumSectionHeader
-              compact
-              overline={PRODUCT_SCREEN.reviewsOverline}
-              title={PRODUCT_SCREEN.reviewsTitle}
-              subtitle={reviewCountDisplay === 0 ? PRODUCT_SCREEN.reviewsEmptySubtitle : undefined}
-              count={reviewCountDisplay > 0 ? reviewCountDisplay : undefined}
-            />
-
-            {error ? (
-              <View style={styles.reviewBannerWrap}>
-                <PremiumErrorBanner severity="error" message={error} compact />
-              </View>
-            ) : null}
-            {reviewSuccess ? (
-              <View style={styles.reviewBannerWrap}>
-                <PremiumErrorBanner severity="success" message={reviewSuccess} compact />
-              </View>
-            ) : null}
-
-            <View style={[styles.reviewComposer, isDark ? styles.reviewComposerDark : styles.reviewComposerLight]}>
-              <View style={styles.reviewStarsPickRow}>
-                {[1, 2, 3, 4, 5].map((value) => (
-                  <TouchableOpacity
-                    key={value}
-                    onPress={() => setReviewRating(value)}
-                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-                    style={[
-                      styles.reviewStarHit,
-                      reviewRating === value ? styles.reviewStarHitActive : null,
-                    ]}
-                  >
-                    <Ionicons
-                      name={value <= reviewRating ? "star" : "star-outline"}
-                      size={22}
-                      color={value <= reviewRating ? ALCHEMY.gold : c.textMuted}
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
-              <View style={styles.reviewInputWrap}>
-                <PremiumInput
-                  label={PRODUCT_SCREEN.reviewComposerNoteLabel}
-                  value={reviewComment}
-                  onChangeText={setReviewComment}
-                  placeholder={PRODUCT_SCREEN.reviewComposerPlaceholder}
-                  accessibilityLabel={PRODUCT_SCREEN.reviewComposerA11y}
-                  multiline
-                  numberOfLines={3}
-                  iconLeft="chatbubble-outline"
-                />
-              </View>
-              <PremiumButton
-                label={reviewBusy ? PRODUCT_SCREEN.reviewPosting : PRODUCT_SCREEN.reviewPost}
-                variant="primary"
-                size="sm"
-                loading={reviewBusy}
-                disabled={reviewBusy}
-                onPress={handleSubmitReview}
-                style={styles.reviewSubmitBtn}
-              />
-            </View>
-
-            {(reviews || []).length > 0 ? (
-              <>
-                {String(PRODUCT_SCREEN.reviewListLatest ?? "").trim() ? (
-                  <Text style={styles.reviewListLabel}>{PRODUCT_SCREEN.reviewListLatest}</Text>
-                ) : null}
-                <View style={styles.reviewList}>
-                  {(reviews || []).slice(0, 5).map((r, idx) => {
-                    const name = String(r.userName || "Customer").trim() || "Customer";
-                    const initial = name.charAt(0).toUpperCase();
-                    const comment = String(r.comment || "").trim();
-                    const rt = Number(r.rating || 0);
-                    return (
-                      <View key={`${r._id || idx}`} style={styles.reviewItem}>
-                        <View style={[styles.reviewAvatar, { backgroundColor: c.primarySoft, borderColor: c.primaryBorder }]}>
-                          <Text style={[styles.reviewAvatarText, { color: c.primaryDark }]}>{initial}</Text>
-                        </View>
-                        <View style={styles.reviewItemBody}>
-                          <View style={styles.reviewItemTop}>
-                            <Text style={styles.reviewUser} numberOfLines={1}>
-                              {name}
-                            </Text>
-                            <View style={styles.reviewRatingPill}>
-                              <Ionicons name="star" size={11} color={ALCHEMY.gold} />
-                              <Text style={styles.reviewRatingPillText}>{rt}</Text>
-                            </View>
-                          </View>
-                          {comment ? (
-                            <Text style={styles.reviewComment} numberOfLines={4}>
-                              {comment}
-                            </Text>
-                          ) : (
-                            <Text style={styles.reviewNoComment}>{PRODUCT_SCREEN.reviewNoWrittenNote}</Text>
-                          )}
-                        </View>
-                      </View>
-                    );
-                  })}
-                </View>
-              </>
-            ) : String(PRODUCT_SCREEN.reviewFirstHint ?? "").trim() ? (
-              <Text style={styles.reviewEmptyHint}>{PRODUCT_SCREEN.reviewFirstHint}</Text>
-            ) : null}
-          </View>
-          </SectionReveal>
-          </View>
-
-        </View>
-        </SectionReveal>
-        </View>
+        <WebProductView
+          product={product}
+          navigation={navigation}
+          heroImageUri={selectedImageUri}
+          imageFailed={imageFailed}
+          onHeroImageError={() => setImageCandidateIndex((index) => index + 1)}
+          galleryImages={galleryImages}
+          selectedImage={selectedImage}
+          onSelectImage={setSelectedImage}
+          heroFadeStyle={heroFadeStyle}
+          heroImageHeight={heroImageHeight}
+          variants={variants}
+          selectedVariantLabel={selectedVariantLabel}
+          onSelectVariant={setSelectedVariantLabel}
+          displayPrice={displayPrice}
+          showMrp={showMrp}
+          mrp={mrp}
+          offPct={offPct}
+          liveRatingAvg={liveRatingAvg}
+          reviewCountDisplay={reviewCountDisplay}
+          isOutOfStock={isOutOfStock}
+          quantity={quantity}
+          onAddToCart={handleAddToCart}
+          onRemoveFromCart={handleRemoveFromCart}
+          onBuyNow={() => {
+            handleAddToCart();
+            if (isAuthenticated) navigation.navigate("Checkout");
+            else navigation.navigate("Login");
+          }}
+          stickyBarVisible={stickyBarVisible}
+          relatedProducts={relatedProducts}
+          getItemQuantity={getItemQuantity}
+          onAddRelated={(item) => {
+            if (!isAuthenticated) {
+              navigation.navigate("Login");
+              return;
+            }
+            addToCart(productToCartLine(item));
+          }}
+          onRemoveRelated={removeFromCart}
+          reviews={reviews}
+          reviewRating={reviewRating}
+          onReviewRatingChange={setReviewRating}
+          reviewComment={reviewComment}
+          onReviewCommentChange={setReviewComment}
+          reviewBusy={reviewBusy}
+          reviewSuccess={reviewSuccess}
+          reviewError={error}
+          onSubmitReview={handleSubmitReview}
+          isAuthenticated={isAuthenticated}
+          shelfMatch={shelfMatch}
+        />
 </KankregScrollPage>
       <KankregBuyBar
-        visible={showStickyCta && !isOutOfStock}
+        visible={stickyBarVisible}
         productName={product.name}
         price={displayPrice}
+        quantity={quantity}
         onAddToCart={handleAddToCart}
+        onRemoveFromCart={handleRemoveFromCart}
         onBuyNow={() => {
           handleAddToCart();
           if (isAuthenticated) navigation.navigate("Checkout");
@@ -798,12 +401,6 @@ export default function ProductScreen({ route, navigation }) {
     </CustomerScreenShell>
   );
 }
-
-const relatedGridStyles = StyleSheet.create({
-  productGridWrap: {},
-  productGridCell: {},
-  productListRow: {},
-});
 
 function createProductStyles(c, shadowPremium, isDark) {
   const panelLift = platformShadow({
@@ -1388,26 +985,6 @@ function createProductStyles(c, shadowPremium, isDark) {
     fontFamily: fonts.medium,
     color: c.textMuted,
     textAlign: "center"},
-  loadingGradient: {
-    flex: 1,
-    width: "100%"},
-  loadingSkeletonInner: {
-    flex: 1,
-    alignSelf: "center",
-    width: "100%",
-    maxWidth: 720,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    gap: spacing.md},
-  loadingThumbRow: {
-    flexDirection: "row",
-    gap: spacing.sm},
-  loadingTextStack: {
-    gap: spacing.xs},
-  loadingChipRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginTop: spacing.xs},
   centered: {
     flex: 1,
     alignItems: "center",
@@ -1424,33 +1001,4 @@ function createProductStyles(c, shadowPremium, isDark) {
     fontFamily: fonts.semibold,
     color: c.textSecondary,
     textAlign: "center"}});
-}
-
-function RetryImage({ sourceUri, style, styles, c }) {
-  const candidates = useMemo(() => getImageUriCandidates(sourceUri), [sourceUri]);
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    setIndex(0);
-  }, [sourceUri]);
-
-  const currentUri = candidates[index] || "";
-  if (!currentUri) {
-    return (
-      <View style={[style, styles.thumbImageFallback]}>
-        <Ionicons name="image-outline" size={sz.micro} color={c.textMuted} />
-      </View>
-    );
-  }
-
-  return (
-    <Image
-      source={{ uri: currentUri }}
-      style={style}
-      contentFit="contain"
-      cachePolicy="memory-disk"
-      transition={200}
-      onError={() => setIndex((prev) => prev + 1)}
-    />
-  );
 }

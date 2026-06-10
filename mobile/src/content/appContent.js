@@ -1,3 +1,6 @@
+import { buildCommunitySectionDefaults } from "./communityHomeContent";
+import { buildCompareSectionDefaults } from "./compareHomeContent";
+
 /**
  * Central customer-facing copy for KankreG.
  *
@@ -12,24 +15,24 @@
 /** @type {string} */
 export const APP_DISPLAY_NAME = "KankreG";
 /**
- * Square `BrandLogo` sizes (width = height). Tune here — screens import via `src/constants/brand`.
+ * `BrandLogo` heights (width scales via `BRAND_LOGO_ASPECT`). Tune here — import via `src/constants/brand`.
  */
 export const BRAND_LOGO_SIZE = {
-  /** Inner screens: back + logo + title (keep ≤ ~48 so the row does not wrap). */
-  headerCompact: 44,
-  /** Web top bar + full brand mark (no back chevron). */
-  headerDefault: 56,
-  /** Home top bar wordmark (with tagline below) — only affects Home, not `WebAppHeader`. */
-  homeTopBar: 80,
-  /** Home hero block logo. */
-  homeHero: 108,
-  footerCompact: 56,
-  footerWide: 64,
-  authHero: 72,
-  startup: 96,
+  /** Logo height — width follows `BRAND_LOGO_ASPECT` (full wordmark + tagline). */
+  headerCompact: 36,
+  /** Web top bar. */
+  headerDefault: 44,
+  /** Native home header. */
+  homeTopBar: 40,
+  /** Home hero block. */
+  homeHero: 64,
+  footerCompact: 44,
+  footerWide: 50,
+  authHero: 58,
+  startup: 88,
 };
-export const APP_TAGLINE = "Premium essentials · Fair prices";
-export const APP_SPLASH_TAGLINE = "Goods, beautifully delivered";
+export const APP_TAGLINE = "The benchmark of purity";
+export const APP_SPLASH_TAGLINE = "The benchmark of purity";
 export const APP_WORDMARK_SUBLINE = "Premium essentials";
 export const APP_HERO_KICKER = `${APP_DISPLAY_NAME} · ${APP_WORDMARK_SUBLINE}`;
 export const SEARCH_PLACEHOLDER = "Search KankreG — ghee, staples…";
@@ -94,7 +97,26 @@ export const HOME_VIEW_DEFAULTS = {
     latitude: null,
     longitude: null,
   },
+  heroSlides: [],
+  aboutSection: {
+    enabled: true,
+    eyebrow: "Our story",
+    title: "Craft rooted in tradition",
+    body:
+      "KankreG crafts pure A2 Kankrej cow ghee using the ancestral Bilona method — hand-churned, wood-fired, and bottled in small batches for families who value tradition and taste.",
+    videoUrl: "",
+    videoCaption: "From grass-fed Kankrej cows to golden, grainy ghee.",
+    photos: [],
+  },
+  communitySection: buildCommunitySectionDefaults(),
+  compareSection: buildCompareSectionDefaults(),
 };
+
+/** Premium ghee story blocks after Our Story video — edit in `gheeHomeContent.js`. */
+export { GHEE_HOME_CONTENT as HOME_STORY_CONTENT } from "./gheeHomeContent";
+
+/** Community / Instagram rail after Our Story — edit in `communityHomeContent.js`. */
+export { COMMUNITY_HOME_CONTENT as HOME_COMMUNITY_CONTENT } from "./communityHomeContent";
 
 /** Hero image card (native banner kicker — API `heroTitle` / `heroSubtitle` override when loaded). */
 export const HOME_HERO_BANNER = {
@@ -127,7 +149,7 @@ export const HOME_SCREEN_UI = {
     action: "See all",
     webOverline: "Collections",
     webShopBy: "Shop by category",
-    webTitleFallback: "Browse the categories",
+    webTitleFallback: "Browse the collection",
     /** Fallback Ionicons for web category tiles (by sort order). */
     webTileIcons: ["nutrition-outline", "leaf-outline", "home-outline", "cafe-outline"],
     itemsSuffix: "items",
@@ -137,6 +159,21 @@ export const HOME_SCREEN_UI = {
     action: "See all",
     webEyebrow: "Catalog",
     webAction: "View all",
+    /** Serif display line under the home grid eyebrow. */
+    webSectionTitle: "Chosen for your table",
+  },
+  ourStory: {
+    eyebrow: "Our story",
+    /** Serif title subtitle on phone — API `aboutSection.title` stays the display headline. */
+    kicker: "Hand-churned Bilona ghee from indigenous Kankrej cows — slow, honest, and golden.",
+    readMore: "Read the full story",
+    shopStory: "Shop the story",
+    galleryEyebrow: "Behind the craft",
+    filmLabel: "Brand film",
+    pullQuote: "Nothing rushed.\nNothing added.\nOnly pure Bilona craft.",
+    videoCaptionFallback: "From our Kankrej herd to your kitchen.",
+    highlightsEyebrow: "The promise",
+    highlightsTitle: "What every jar holds",
   },
   editorial: {
     overline: "Curated essentials",
@@ -172,17 +209,26 @@ export const HOME_SCREEN_UI = {
   trust: {
     overline: "Why KankreG",
   },
-  /** Web-only home layout copy and section toggles (`KankregHomeScreen.js`). */
+  /** Web-only home layout toggles (`KankregHomeScreen.js`). Lean web = catalog + API hero only. */
+  native: {
+    heroEyebrow: "Artisanal · A2 · Bilona",
+  },
   web: {
-    welcomeTag: APP_TAGLINE,
-    heroStats: [
-      { key: "orders", value: "12.5k+", label: "Orders fulfilled" },
-      { key: "rating", value: "4.9★", label: "Avg. rating" },
-      { key: "purity", value: "100%", label: "Pure A2 ghee" },
-    ],
-    showStatsStrip: true,
-    showTestimonials: true,
-    showBrandQuote: true,
+    showWebHero: true,
+    heroEyebrow: "Artisanal · A2 · Bilona",
+    showHeroTrustChips: true,
+    /** Premium ghee story blocks (process, benefits, testimonials) on web home */
+    showGheePremiumSections: true,
+    /** Instagram-style community rail after Our Story video */
+    showCommunitySection: true,
+    welcomeTag: "",
+    heroStats: [],
+    showStatsStrip: false,
+    showTestimonials: false,
+    showBrandQuote: false,
+    showMarquee: false,
+    showTrustStrip: false,
+    showFeaturedEditorial: false,
     statsSectionIndex: 2,
     testimonialsSectionIndex: 7,
     quoteSectionIndex: 8,
@@ -194,9 +240,9 @@ export const HOME_WORDMARK_TAGLINE = APP_TAGLINE;
 
 /** Trust strip under the hero (icon = Ionicons name). */
 export const HOME_TRUST_STRIP = [
-  { key: "craft", label: "Curated quality", icon: "diamond-outline" },
-  { key: "track", label: "Live tracking", icon: "navigate-outline" },
-  { key: "secure", label: "Secure checkout", icon: "shield-checkmark-outline" },
+  { key: "pure", label: "100% Pure", icon: "shield-checkmark-outline" },
+  { key: "a2", label: "A2 Desi", icon: "leaf-outline" },
+  { key: "clean", label: "No Preservatives", icon: "sparkles-outline" },
 ];
 
 /**
@@ -385,9 +431,9 @@ export const KANKREG_WEB_NAV_ITEMS = [
 /** About page — editorial marketing copy (web-first, works on native). */
 export const ABOUT_SCREEN_UI = {
   header: {
-    eyebrow: "Our story",
-    title: "Crafted for everyday rituals",
-    subtitle: "Slow-churned essentials, fair prices, and a delivery experience that feels personal.",
+    eyebrow: "",
+    title: "About KankreG",
+    subtitle: "",
   },
   hero: {
     kicker: "Since day one",
@@ -538,6 +584,7 @@ export const KANKREG_ROLE_NAV_ITEMS = {
 
 /** kankreg.html `.foot` — newsletter + columns + legal (routes optional). */
 export const KANKREG_FOOTER_NEWSLETTER = {
+  showOnWeb: false,
   title: "Join the list",
   body: "First access to new drops, member-only offers, and 100 bonus points on signup.",
   placeholder: "your@email.com",
@@ -545,8 +592,7 @@ export const KANKREG_FOOTER_NEWSLETTER = {
   successMessage: "Thanks — you're on the list.",
 };
 
-export const KANKREG_FOOTER_TAGLINE =
-  "Design-led essentials, delivered with care. Live tracking, secure payments, rewarded every time.";
+export const KANKREG_FOOTER_TAGLINE = APP_TAGLINE;
 
 export const KANKREG_FOOTER_COLUMNS = [
   {
@@ -584,8 +630,8 @@ export const KANKREG_FOOTER_PAYMENTS_LINE = "Payments secured by Razorpay · Bui
 /** Native header: announce + topbar (no fixed announce on very small native optional). */
 export const KANKREG_ANNOUNCE_COPY = {
   delivery: "Free delivery over ₹1,499",
-  rewards: "Earn rewards on every order",
-  seasonCta: "New season edit is live →",
+  rewards: "",
+  seasonCta: "",
 };
 
 /** Shared actions / empty states across customer screens. */
@@ -625,7 +671,7 @@ export const SHOP_SCREEN_UI = {
   pageEyebrow: "Catalog",
   pageTitle: "Shop",
   pageTitleWide: "Shop everything",
-  pageSubtitle: "Curated pieces for home, kitchen & everyday rituals",
+  pageSubtitle: "",
   searchPlaceholder: "Search essentials",
   refineTitle: "Refine",
   resetFilters: "Reset",
@@ -652,9 +698,10 @@ export const SHOP_SCREEN_UI = {
   sortOptions: [
     { key: "featured", label: "Featured" },
     { key: "price-asc", label: "Price ↑" },
+    { key: "price-desc", label: "Price ↓" },
     { key: "newest", label: "Newest" },
   ],
-  trustLine: "Free delivery over ₹1,499 · Secure checkout · Live order tracking",
+  trustLine: "",
 };
 
 /** Notifications — `NotificationsScreen.js`. */
@@ -681,7 +728,7 @@ export const NOTIFICATIONS_SCREEN_UI = {
 export const REWARDS_SCREEN_UI = {
   pageTitle: "Rewards",
   pageEyebrow: "Points",
-  pageSubtitle: "Redeem coupons with your balance",
+  pageSubtitle: "",
   balanceLabel: "Your balance",
   catalogTitle: "Redeem",
   walletTitle: "My coupons",
@@ -699,7 +746,7 @@ export const REWARDS_SCREEN_UI = {
 export const EDIT_PROFILE_SCREEN_UI = {
   pageTitle: "Edit profile",
   pageEyebrow: "Account",
-  pageSubtitle: "Name, phone & photo",
+  pageSubtitle: "",
   sectionPersonal: "Personal",
   sectionContact: "Contact",
   saveCta: COMMON_UI.save,
@@ -712,7 +759,7 @@ export const EDIT_PROFILE_SCREEN_UI = {
 export const MANAGE_ADDRESS_SCREEN_UI = {
   pageTitle: "Saved addresses",
   pageEyebrow: "Delivery",
-  pageSubtitle: "Default address for checkout",
+  pageSubtitle: "",
   sectionDefault: "Default address",
   useGps: "Use current location",
   useGpsLoading: "Locating…",
@@ -736,7 +783,7 @@ export const FIND_LOCATION_UI = {
 export const SUPPORT_SCREEN = {
   pageTitle: "Help & support",
   pageEyebrow: "Support",
-  pageSubtitle: "Fast replies",
+  pageSubtitle: "",
   liveChatTitle: "Live chat",
   contactChatSub: "Usually minutes",
   contactEmailSub: SUPPORT_EMAIL_DISPLAY,
@@ -775,7 +822,7 @@ export const PROFILE_SCREEN = {
   pageEyebrow: "Account",
   eyebrow: "KankreG member",
   memberSincePrefix: "Member since",
-  pageSubtitle: "Your account",
+  pageSubtitle: "",
   fallbackName: "Welcome",
   emptyPhone: "Add phone in Edit profile",
   roleAdmin: "Admin",
@@ -804,11 +851,23 @@ export const PROFILE_SCREEN = {
 export const SETTINGS_SCREEN = {
   pageTitle: "Settings",
   pageEyebrow: "Preferences",
-  pageSubtitle: "Theme & account",
+  pageSubtitle: "",
   appearanceGroup: "Appearance",
-  appearanceGroupSub: "Theme",
+  appearanceGroupSub: "Theme & app icon",
   themeSectionTitle: "Theme",
   themeSectionSub: "Tap to cycle Light · Dark · System",
+  appIconTitle: "App icon",
+  appIconSub: "Gold K mark — light cream or dark charcoal on your home screen.",
+  appIconApplied: "App icon updated.",
+  appIconAppliedAuto: "App icon will follow your theme.",
+  appIconFailed: "Could not change the app icon. Try again.",
+  appIconNeedsBuild: "App icon switching needs a native build (not Expo Go).",
+  appIconSavedExpoGo: "Preference saved. It will apply on your home screen in a dev or store build.",
+  appIconExpoGoHint:
+    "Preview only in Expo Go. To change your home screen icon, run npm run ios (or android) once to install a dev build.",
+  appIconWebHint: "App icon choice applies on iPhone and Android installs.",
+  appIconIosHint: "iOS may show a brief confirmation when the icon changes.",
+  appIconAndroidHint: "Android updates the icon when you leave the app or return home.",
   accountGroup: "Account",
   accountGroupSub: "Profile & orders",
   accountSectionTitle: "Account options",
@@ -1138,7 +1197,10 @@ export const ADMIN_HOME_VIEW_COPY = {
   subtitle:
     "Hero copy and home layout live here. Each product’s name, price, image, stock, “Show on Home”, and which block it appears in (e.g. Prime Products) are set under Products.",
   heroSection: "Hero banner",
-  heroHint: "Shown on the large home hero (title + subtitle under the brand).",
+  heroHint: "Title + subtitle on web home. Add slides below for the hero image/video carousel.",
+  heroMediaSection: "Hero slider, story & community",
+  heroMediaHint:
+    "Hero carousel, Our Story video, Community rail, and “Ours vs ordinary ghee” compare section.",
   sectionTitles: "Home catalog headings",
   sectionTitlesHint:
     "Prime title is the default section name for products without a custom Home section, and the heading for the main list when sections are merged. Product type title is saved with this profile for layout features (same API as the storefront).",

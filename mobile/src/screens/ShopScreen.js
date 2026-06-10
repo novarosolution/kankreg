@@ -27,10 +27,11 @@ import { getProducts } from "../services/productService";
 import { KANKREG_PALETTE } from "../theme/kankregWeb";
 import { KANKREG_PAGE_SECTION_GAP } from "../theme/kankregScreenStyles";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
+import { getShopTheme } from "../theme/shopTheme";
 import KankregFilterChips from "../components/kankreg/KankregFilterChips";
 import KankregAnimatedSection from "../components/kankreg/KankregAnimatedSection";
 import CatalogGridReveal from "../components/kankreg/CatalogGridReveal";
-import CatalogGridSkeleton from "../components/kankreg/CatalogGridSkeleton";
+import { ShopCatalogSkeleton } from "../components/loading";
 import SectionReveal from "../components/motion/SectionReveal";
 import { customerPanel } from "../theme/screenLayout";
 import { fonts, spacing, typography } from "../theme/tokens";
@@ -39,14 +40,24 @@ import useReducedMotion from "../hooks/useReducedMotion";
 import NativeSearchBar from "../components/native/NativeSearchBar";
 import NativeProductCard from "../components/native/NativeProductCard";
 import { FIGMA } from "../theme/figmaApp";
-import { applyShopFilters, getProductCategoryLabels } from "../utils/shopFilters";
-import GoldHairline from "../components/ui/GoldHairline";
+import {
+  applyShopFilters,
+  countShopFilterBadge,
+  formatPriceRangeLabel,
+  getCatalogPriceBounds,
+  getProductCategoryLabels,
+  hasActiveShopFilters,
+} from "../utils/shopFilters";
+import ShopPriceFilter from "../components/shop/ShopPriceFilter";
+import ShopFilterSection from "../components/shop/ShopFilterSection";
+import ShopActiveFilters from "../components/shop/ShopActiveFilters";
 import {
   ShopCollectionPills,
+  ShopCompactToolbar,
+  ShopFilterCheck,
   ShopFilterSidebarHeader,
   ShopMobileFilterCard,
   ShopNativeMetaLine,
-  ShopResultToolbar,
   ShopTrustStrip,
   shopFilterSidebarStyle,
 } from "../components/shop/ShopPageChrome";
@@ -55,40 +66,41 @@ const RATING_OPTIONS = ["4★ & above", "3★ & above", "Any rating"];
 const SHOP_PILLS = SHOP_SCREEN_UI.collectionPills;
 const SORT_OPTIONS = SHOP_SCREEN_UI.sortOptions;
 
-function FilterCheck({ label, on, onPress, isDark }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={styles.chkRow}
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked: on }}
-    >
-      <View
-        style={[
-          styles.chkBox,
-          isDark && styles.chkBoxDark,
-          on && styles.chkBoxOn,
-          isDark && on && styles.chkBoxOnDark,
-        ]}
-      >
-        {on ? <Text style={styles.chkTick}>✓</Text> : null}
-      </View>
-      <Text style={[styles.chkLabel, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.inkSoft }]}>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
 function ratingLabelFromValue(minRating) {
   if (minRating >= 4) return "4★ & above";
   if (minRating >= 3) return "3★ & above";
   return "Any rating";
 }
 
+function buildActiveFilterChips({ pill, categories, minRating, minPrice, maxPrice, sortKey }) {
+  const chips = [];
+  if (pill !== "All") chips.push({ key: "pill", label: pill });
+  categories.forEach((cat) => chips.push({ key: `cat:${cat}`, label: cat }));
+  if (minRating >= 4) chips.push({ key: "rating", label: "4★ & above" });
+  else if (minRating >= 3) chips.push({ key: "rating", label: "3★ & above" });
+  if (minPrice != null || maxPrice != null) {
+    chips.push({ key: "price", label: formatPriceRangeLabel(minPrice, maxPrice) });
+  }
+  if (sortKey !== "featured") {
+    const sortLabel = SORT_OPTIONS.find((o) => o.key === sortKey)?.label || sortKey;
+    chips.push({ key: "sort", label: sortLabel });
+  }
+  return chips;
+}
+
 export default function ShopScreen({ navigation, route }) {
   const { colors: c, shadowPremium, isDark } = useTheme();
-  const filterPanelStyle = useMemo(() => customerPanel(c, shadowPremium, isDark), [c, shadowPremium, isDark]);
+  const shopTheme = useMemo(() => getShopTheme(isDark), [isDark]);
+  const filterPanelStyle = useMemo(
+    () => ({
+      ...customerPanel(c, shadowPremium, isDark),
+      ...(Platform.OS === "web" && shopTheme.panelGradient
+        ? { backgroundImage: shopTheme.panelGradient }
+        : null),
+      ...(Platform.OS === "web" ? { boxShadow: shopTheme.panelShadow } : null),
+    }),
+    [c, shadowPremium, isDark, shopTheme]
+  );
   const { addToCart, removeFromCart, getItemQuantity } = useCart();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -100,6 +112,8 @@ export default function ShopScreen({ navigation, route }) {
   const reducedMotion = useReducedMotion();
   const sortPulse = useSharedValue(1);
   const [minRating, setMinRating] = useState(0);
+  const [minPrice, setMinPrice] = useState(null);
+  const [maxPrice, setMaxPrice] = useState(null);
   const [pill, setPill] = useState("All");
   const [sortKey, setSortKey] = useState("featured");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -149,7 +163,14 @@ export default function ShopScreen({ navigation, route }) {
     setPill("All");
     setCategories([]);
     setMinRating(0);
+    setMinPrice(null);
+    setMaxPrice(null);
     setSortKey("featured");
+  };
+
+  const handlePriceChange = ({ min, max }) => {
+    setMinPrice(min);
+    setMaxPrice(max);
   };
 
   const handlePillSelect = (next) => {
@@ -160,9 +181,23 @@ export default function ShopScreen({ navigation, route }) {
   };
 
   const handleRatingChip = (label) => {
-    if (label === "4★ & above") setMinRating(4);
-    else if (label === "3★ & above") setMinRating(3);
+    if (label === "4★ & above") setMinRating((prev) => (prev === 4 ? 0 : 4));
+    else if (label === "3★ & above") setMinRating((prev) => (prev === 3 ? 0 : 3));
     else setMinRating(0);
+  };
+
+  const toggleRating = (value) => {
+    setMinRating((prev) => (prev === value ? 0 : value));
+  };
+
+  const handleRemoveFilterChip = (key) => {
+    if (key === "pill") setPill("All");
+    else if (key.startsWith("cat:")) toggleCategory(key.slice(4));
+    else if (key === "rating") setMinRating(0);
+    else if (key === "price") {
+      setMinPrice(null);
+      setMaxPrice(null);
+    } else if (key === "sort") setSortKey("featured");
   };
 
   const categoryOptions = useMemo(() => {
@@ -170,19 +205,25 @@ export default function ShopScreen({ navigation, route }) {
     return [...new Set(labels)].sort((a, b) => a.localeCompare(b));
   }, [products]);
 
-  const filtered = useMemo(
-    () => applyShopFilters(products, { categories, pill, minRating, sortKey }),
-    [products, categories, pill, minRating, sortKey]
+  const priceBounds = useMemo(() => getCatalogPriceBounds(products), [products]);
+
+  const filterState = useMemo(
+    () => ({ pill, categories, minRating, minPrice, maxPrice, sortKey }),
+    [pill, categories, minRating, minPrice, maxPrice, sortKey]
   );
 
-  const hasActiveFilters =
-    pill !== "All" || categories.length > 0 || minRating > 0 || sortKey !== "featured";
+  const filtered = useMemo(
+    () => applyShopFilters(products, filterState),
+    [products, filterState]
+  );
 
-  const activeCategoryLabel =
-    categories.length === 1 ? categories[0] : categories.length > 1 ? `${categories.length} categories` : "All categories";
+  const hasActiveFilters = hasActiveShopFilters(filterState);
+  const filterBadgeCount = countShopFilterBadge(filterState);
+  const activeFilterChips = useMemo(() => buildActiveFilterChips(filterState), [filterState]);
   const sortLabel = SORT_OPTIONS.find((o) => o.key === sortKey)?.label || "Featured";
   const mobileTitle = isXs ? SHOP_SCREEN_UI.pageTitle : SHOP_SCREEN_UI.pageTitleWide;
-  const headerSubtitle = showSidebar ? undefined : SHOP_SCREEN_UI.pageSubtitle;
+  const headerSubtitle =
+    Platform.OS === "web" ? undefined : showSidebar ? undefined : SHOP_SCREEN_UI.pageSubtitle;
 
   const sortAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: sortPulse.value }],
@@ -197,27 +238,92 @@ export default function ShopScreen({ navigation, route }) {
     setSortKey(next.key);
   };
 
+  const renderFilterSections = (variant = "chips", { skipCollection = false } = {}) => (
+    <>
+      {!skipCollection ? (
+        <ShopFilterSection title={SHOP_SCREEN_UI.filterCollection} icon="collection">
+          {variant === "chips" ? (
+            <KankregFilterChips
+              options={SHOP_PILLS}
+              selected={pill}
+              multi={false}
+              onToggle={handlePillSelect}
+              compact
+            />
+          ) : (
+            <ShopCollectionPills selected={pill} onSelect={handlePillSelect} compact scroll />
+          )}
+        </ShopFilterSection>
+      ) : null}
+
+      <ShopFilterSection title={SHOP_SCREEN_UI.filterCategory} icon="category">
+        {variant === "chips" ? (
+          <KankregFilterChips
+            options={categoryOptions}
+            selected={categories}
+            multi
+            onToggle={toggleCategory}
+            compact
+          />
+        ) : (
+          categoryOptions.map((label) => (
+            <ShopFilterCheck
+              key={label}
+              label={label}
+              on={categories.includes(label)}
+              onPress={() => toggleCategory(label)}
+            />
+          ))
+        )}
+      </ShopFilterSection>
+
+      <ShopFilterSection title={SHOP_SCREEN_UI.filterPrice} icon="price">
+        <ShopPriceFilter
+          minPrice={minPrice}
+          maxPrice={maxPrice}
+          onChange={handlePriceChange}
+          bounds={priceBounds}
+          variant={variant === "chips" ? "chips" : "sidebar"}
+        />
+      </ShopFilterSection>
+
+      <ShopFilterSection title={SHOP_SCREEN_UI.filterRating} icon="rating" last>
+        {variant === "chips" ? (
+          <KankregFilterChips
+            options={RATING_OPTIONS}
+            selected={ratingLabelFromValue(minRating)}
+            multi={false}
+            onToggle={handleRatingChip}
+            compact
+          />
+        ) : (
+          <>
+            <ShopFilterCheck label="4★ & above" on={minRating === 4} onPress={() => toggleRating(4)} />
+            <ShopFilterCheck label="3★ & above" on={minRating === 3} onPress={() => toggleRating(3)} />
+            <ShopFilterCheck label="Any rating" on={minRating === 0} onPress={() => setMinRating(0)} />
+          </>
+        )}
+      </ShopFilterSection>
+    </>
+  );
+
   const nativeFilterPanel = filtersOpen ? (
-    <View style={[styles.nativeFiltersCard, isDark && styles.nativeFiltersCardDark]}>
-      <KankregFilterChips
-        title={SHOP_SCREEN_UI.filterCategory}
-        options={categoryOptions}
-        selected={categories}
-        multi
-        onToggle={toggleCategory}
-        compact
-      />
-      <KankregFilterChips
-        title={SHOP_SCREEN_UI.filterRating}
-        options={RATING_OPTIONS}
-        selected={ratingLabelFromValue(minRating)}
-        multi={false}
-        onToggle={handleRatingChip}
-        compact
-      />
+    <View
+      style={[
+        styles.nativeFiltersCard,
+        {
+          backgroundColor: shopTheme.surface,
+          borderColor: shopTheme.border,
+          borderTopColor: shopTheme.borderTopAccent,
+        },
+      ]}
+    >
+      {renderFilterSections("chips", { skipCollection: true })}
       {hasActiveFilters ? (
         <Pressable onPress={clearAllFilters} style={styles.nativeClearLink}>
-          <Text style={styles.nativeClearText}>{SHOP_SCREEN_UI.clearFilters}</Text>
+          <Text style={[styles.nativeClearText, { color: shopTheme.accent }]}>
+            {SHOP_SCREEN_UI.clearFilters}
+          </Text>
         </Pressable>
       ) : null}
     </View>
@@ -230,27 +336,40 @@ export default function ShopScreen({ navigation, route }) {
           scrollVariant="page"
           showFooter={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={KANKREG_PALETTE.gold} />
+            <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={c.primary} />
           }
         >
           <KankregCustomerPageHeader
-            eyebrow={SHOP_SCREEN_UI.pageEyebrow}
             title={SHOP_SCREEN_UI.pageTitle}
             showBack={false}
             compactNative
           />
-          <GoldHairline marginVertical={spacing.xs} />
-          <ShopTrustStrip />
-          <NativeSearchBar
-            onPress={() => {}}
-            onFilterPress={() => setFiltersOpen((open) => !open)}
-            placeholder={SHOP_SCREEN_UI.searchPlaceholder}
-          />
-          <ShopCollectionPills selected={pill} onSelect={handlePillSelect} compact />
-          {nativeFilterPanel}
-          <ShopNativeMetaLine filtered={filtered.length} total={products.length} />
+          {SHOP_SCREEN_UI.trustLine ? <ShopTrustStrip compact /> : null}
+          <View style={styles.nativeToolbar}>
+            <NativeSearchBar
+              onPress={() => {}}
+              onFilterPress={() => setFiltersOpen((open) => !open)}
+              placeholder={SHOP_SCREEN_UI.searchPlaceholder}
+              filterBadgeCount={filterBadgeCount}
+            />
+            <View style={styles.nativePillsWrap}>
+              <ShopCollectionPills selected={pill} onSelect={handlePillSelect} compact scroll />
+            </View>
+            {activeFilterChips.length ? (
+              <View style={styles.nativeActiveFilters}>
+                <ShopActiveFilters
+                  chips={activeFilterChips}
+                  onRemove={handleRemoveFilterChip}
+                  onClearAll={clearAllFilters}
+                  inline
+                />
+              </View>
+            ) : null}
+            {nativeFilterPanel}
+            <ShopNativeMetaLine filtered={filtered.length} total={products.length} />
+          </View>
           {loading ? (
-            <CatalogGridSkeleton count={6} />
+            <ShopCatalogSkeleton count={6} />
           ) : filtered.length ? (
             <View style={nativeShopGrid.grid}>
               {filtered.map((item, idx) => (
@@ -280,33 +399,27 @@ export default function ShopScreen({ navigation, route }) {
     );
   }
 
-  const mobileWebFilters = !showSidebar ? (
-    <ShopMobileFilterCard onClear={clearAllFilters} hasFilters={hasActiveFilters}>
-      <KankregFilterChips
-        title={SHOP_SCREEN_UI.filterCategory}
-        options={categoryOptions}
-        selected={categories}
-        multi
-        onToggle={toggleCategory}
+  const mobileWebFilters =
+    !showSidebar && filtersOpen ? (
+      <ShopMobileFilterCard
+        onClear={clearAllFilters}
+        hasFilters={hasActiveFilters}
+        filterCount={filterBadgeCount}
         compact
+      >
+        {renderFilterSections("chips", { skipCollection: true })}
+      </ShopMobileFilterCard>
+    ) : null;
+
+  const sidebarFilters = showSidebar ? (
+    <View style={[styles.filtersInner, filterPanelStyle]}>
+      <ShopFilterSidebarHeader
+        onReset={clearAllFilters}
+        hasFilters={hasActiveFilters}
+        filterCount={filterBadgeCount}
       />
-      <KankregFilterChips
-        title={SHOP_SCREEN_UI.filterCollection}
-        options={SHOP_PILLS}
-        selected={pill}
-        multi={false}
-        onToggle={handlePillSelect}
-        compact
-      />
-      <KankregFilterChips
-        title={SHOP_SCREEN_UI.filterRating}
-        options={RATING_OPTIONS}
-        selected={ratingLabelFromValue(minRating)}
-        multi={false}
-        onToggle={handleRatingChip}
-        compact
-      />
-    </ShopMobileFilterCard>
+      {renderFilterSections("sidebar")}
+    </View>
   ) : null;
 
   return (
@@ -315,84 +428,70 @@ export default function ShopScreen({ navigation, route }) {
       <KankregScrollPage
         scrollVariant="page"
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={KANKREG_PALETTE.gold} />
+          <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={c.primary} />
         }
       >
         <KankregPageWrap gap={KANKREG_PAGE_SECTION_GAP}>
-          <KankregAnimatedSection index={0}>
+          <KankregAnimatedSection index={0} immediate>
             <KankregCustomerPageHeader
-              eyebrow={SHOP_SCREEN_UI.pageEyebrow}
               title={mobileTitle}
               subtitle={headerSubtitle}
               navigation={navigation}
               showBack={false}
               figmaOnWeb={compactShop}
             />
-            <ShopTrustStrip />
+            {SHOP_SCREEN_UI.trustLine ? <ShopTrustStrip compact /> : null}
           </KankregAnimatedSection>
 
           <View style={[styles.shopGrid, !showSidebar && styles.shopGridStack]}>
             {showSidebar ? (
               <KankregAnimatedSection index={1} style={shopFilterSidebarStyle()}>
-                <View style={[styles.filtersInner, filterPanelStyle]}>
-                  <ShopFilterSidebarHeader onReset={clearAllFilters} hasFilters={hasActiveFilters} />
-                  <View style={styles.filterGroup}>
-                    <Text style={[styles.filterH5, isDark && styles.filterH5Dark]}>{SHOP_SCREEN_UI.filterCategory}</Text>
-                    {categoryOptions.map((label) => (
-                      <FilterCheck
-                        key={label}
-                        label={label}
-                        on={categories.includes(label)}
-                        onPress={() => toggleCategory(label)}
-                        isDark={isDark}
-                      />
-                    ))}
-                  </View>
-                  <View style={styles.filterGroup}>
-                    <Text style={[styles.filterH5, isDark && styles.filterH5Dark]}>{SHOP_SCREEN_UI.filterPrice}</Text>
-                    <View style={[styles.rangeTrack, isDark && styles.rangeTrackDark]}>
-                      <View style={styles.rangeFill} />
-                    </View>
-                    <View style={styles.rangeLabels}>
-                      <Text style={[styles.rangeLabel, isDark && styles.rangeLabelDark]}>{SHOP_SCREEN_UI.priceMin}</Text>
-                      <Text style={[styles.rangeLabel, isDark && styles.rangeLabelDark]}>{SHOP_SCREEN_UI.priceMax}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.filterGroup}>
-                    <Text style={[styles.filterH5, isDark && styles.filterH5Dark]}>{SHOP_SCREEN_UI.filterRating}</Text>
-                    <FilterCheck label="4★ & above" on={minRating === 4} onPress={() => setMinRating(4)} isDark={isDark} />
-                    <FilterCheck label="3★ & above" on={minRating === 3} onPress={() => setMinRating(3)} isDark={isDark} />
-                    <FilterCheck label="Any rating" on={minRating === 0} onPress={() => setMinRating(0)} isDark={isDark} />
-                  </View>
-                </View>
+                {sidebarFilters}
               </KankregAnimatedSection>
             ) : null}
 
             <View style={styles.mainCol}>
               {!showSidebar ? (
-                <KankregAnimatedSection index={1}>{mobileWebFilters}</KankregAnimatedSection>
-              ) : null}
-
-              <KankregAnimatedSection index={showSidebar ? 2 : 2}>
-                <ShopResultToolbar
-                  filtered={filtered.length}
-                  total={products.length}
-                  categoryLabel={activeCategoryLabel}
-                  sortLabel={sortLabel}
-                  onSort={cycleSort}
-                  sortAnimStyle={sortAnimStyle}
-                  showPills={showSidebar}
-                  pill={pill}
-                  onPill={handlePillSelect}
-                  compact={compactShop}
-                  isDark={isDark}
-                />
-              </KankregAnimatedSection>
+                <KankregAnimatedSection index={1}>
+                  <ShopCompactToolbar
+                    filtered={filtered.length}
+                    total={products.length}
+                    pill={pill}
+                    onPill={handlePillSelect}
+                    sortLabel={sortLabel}
+                    onSort={cycleSort}
+                    sortAnimStyle={sortAnimStyle}
+                    filtersOpen={filtersOpen}
+                    onToggleFilters={() => setFiltersOpen((open) => !open)}
+                    filterBadgeCount={filterBadgeCount}
+                    activeChips={activeFilterChips}
+                    onRemoveChip={handleRemoveFilterChip}
+                    onClearAll={clearAllFilters}
+                  />
+                  {mobileWebFilters}
+                </KankregAnimatedSection>
+              ) : (
+                <KankregAnimatedSection index={2} immediate>
+                  <ShopCompactToolbar
+                    variant="sidebar"
+                    filtered={filtered.length}
+                    total={products.length}
+                    pill={pill}
+                    onPill={handlePillSelect}
+                    sortLabel={sortLabel}
+                    onSort={cycleSort}
+                    sortAnimStyle={sortAnimStyle}
+                    activeChips={activeFilterChips}
+                    onRemoveChip={handleRemoveFilterChip}
+                    onClearAll={clearAllFilters}
+                  />
+                </KankregAnimatedSection>
+              )}
 
               {loading ? (
-                <CatalogGridSkeleton count={6} />
+                <ShopCatalogSkeleton count={8} />
               ) : filtered.length === 0 ? (
-                <SectionReveal index={3} preset="fade-in">
+                <SectionReveal index={3} preset="fade-in" immediate>
                   <PremiumEmptyState
                     compact
                     iconName="search-outline"
@@ -403,7 +502,7 @@ export default function ShopScreen({ navigation, route }) {
                   />
                 </SectionReveal>
               ) : (
-                <CatalogGridReveal>
+                <CatalogGridReveal immediateFirst={12}>
                   {filtered.map((item, idx) => (
                     <HomeCatalogGridCard
                       key={item.id}
@@ -452,82 +551,39 @@ const nativeShopGrid = StyleSheet.create({
 const styles = StyleSheet.create({
   shopGrid: {
     flexDirection: "row",
-    gap: 28,
+    gap: 32,
     alignItems: "flex-start",
   },
   shopGridStack: { flexDirection: "column", gap: 0 },
+  nativeToolbar: {
+    gap: spacing.xs,
+  },
+  nativePillsWrap: {
+    paddingHorizontal: FIGMA.gutter,
+  },
   nativeFiltersCard: {
     marginHorizontal: FIGMA.gutter,
-    marginBottom: spacing.sm,
-    padding: spacing.md,
-    borderRadius: 16,
+    marginBottom: spacing.xs,
+    padding: spacing.sm + 4,
+    borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: KANKREG_PALETTE.line,
-    backgroundColor: KANKREG_PALETTE.card,
+    borderTopWidth: 2,
   },
-  nativeFiltersCardDark: {
-    backgroundColor: "rgba(255,255,255,0.04)",
-    borderColor: "rgba(232, 200, 90, 0.18)",
+  nativeActiveFilters: {
+    marginHorizontal: FIGMA.gutter,
+    marginBottom: 0,
   },
   nativeClearLink: {
     alignSelf: "flex-start",
-    marginTop: spacing.xs,
+    marginTop: spacing.sm,
     paddingVertical: spacing.xs,
   },
   nativeClearText: {
     fontFamily: fonts.semibold,
     fontSize: typography.caption,
-    color: KANKREG_PALETTE.goldDeep,
   },
   filtersInner: {
     width: "100%",
   },
-  filterGroup: { marginBottom: 22 },
-  filterH5: {
-    fontFamily: fonts.semibold,
-    fontSize: typography.caption,
-    letterSpacing: 0.9,
-    textTransform: "uppercase",
-    marginBottom: 10,
-    color: KANKREG_PALETTE.inkSoft,
-  },
-  filterH5Dark: { color: KANKREG_PALETTE.goldBright },
-  chkRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 9 },
-  chkBox: {
-    width: 18,
-    height: 18,
-    borderRadius: 5,
-    borderWidth: 1.5,
-    borderColor: KANKREG_PALETTE.line,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  chkBoxDark: {
-    borderColor: "rgba(232, 200, 90, 0.28)",
-  },
-  chkBoxOn: { backgroundColor: KANKREG_PALETTE.ink, borderColor: KANKREG_PALETTE.ink },
-  chkBoxOnDark: { backgroundColor: KANKREG_PALETTE.goldDeep, borderColor: KANKREG_PALETTE.goldDeep },
-  chkTick: { color: "#fff", fontSize: 11, fontWeight: "700" },
-  chkLabel: { fontSize: 14, fontFamily: fonts.medium },
-  rangeTrack: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: KANKREG_PALETTE.paper2,
-    marginBottom: 8,
-    overflow: "hidden",
-  },
-  rangeTrackDark: {
-    backgroundColor: "rgba(255,255,255,0.08)",
-  },
-  rangeFill: {
-    height: "100%",
-    width: "50%",
-    marginLeft: "18%",
-    backgroundColor: KANKREG_PALETTE.gold,
-    borderRadius: 2,
-  },
-  rangeLabels: { flexDirection: "row", justifyContent: "space-between" },
-  rangeLabel: { fontSize: 12, color: KANKREG_PALETTE.inkFaint, fontFamily: fonts.medium },
-  rangeLabelDark: { color: "rgba(245, 239, 228, 0.55)" },
   mainCol: { flex: 1, minWidth: 0 },
 });

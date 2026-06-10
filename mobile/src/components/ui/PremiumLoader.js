@@ -1,36 +1,32 @@
 import React, { memo, useMemo } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { fonts, spacing, typography } from "../../theme/tokens";
 import { ALCHEMY, FONT_DISPLAY_ITALIC } from "../../theme/customerAlchemy";
 import { useTheme } from "../../context/ThemeContext";
+import { BouncingDots, GoldRingLoader } from "../loading";
 
 const SIZE_TOKENS = {
-  sm: { spinner: "small", titleSize: typography.bodySmall, captionSize: typography.caption },
-  md: { spinner: "large", titleSize: typography.h3, captionSize: typography.bodySmall },
-  lg: { spinner: "large", titleSize: typography.h2, captionSize: typography.body },
+  sm: { useDots: true, titleSize: typography.bodySmall, captionSize: typography.caption },
+  md: { useDots: false, ring: 48, titleSize: typography.h3, captionSize: typography.bodySmall },
+  lg: { useDots: false, ring: 54, titleSize: typography.h2, captionSize: typography.body },
 };
 
 /**
- * Themed activity indicator with optional caption. Used to replace bare
- * `<ActivityIndicator>` calls so the loading state matches the rest of the
- * customer UI (display-font caption, gold-tinted spinner color).
+ * Themed loader — gold ring (full wait) or bouncing dots (inline).
  */
-function PremiumLoaderBase({
-  size = "md",
-  caption,
-  hint,
-  inline = false,
-  color,
-  style,
-}) {
+function PremiumLoaderBase({ size = "md", caption, hint, inline = false, color, style }) {
   const { colors: c, isDark } = useTheme();
   const tokens = SIZE_TOKENS[size] || SIZE_TOKENS.md;
-  const spinnerColor = color || (isDark ? ALCHEMY.goldBright : ALCHEMY.gold);
+  const accent = color || (isDark ? ALCHEMY.goldBright : ALCHEMY.gold);
   const styles = useMemo(() => createStyles(c, isDark, inline), [c, isDark, inline]);
 
   return (
     <View style={[styles.wrap, style]} accessibilityRole="progressbar" accessibilityLabel={caption || "Loading"}>
-      <ActivityIndicator size={tokens.spinner} color={spinnerColor} />
+      {tokens.useDots || inline ? (
+        <BouncingDots color={accent} />
+      ) : (
+        <GoldRingLoader size={tokens.ring} color={accent} />
+      )}
       {caption ? (
         <Text style={[styles.caption, { color: c.textPrimary, fontSize: tokens.titleSize }]} numberOfLines={2}>
           {caption}
@@ -45,13 +41,13 @@ function PremiumLoaderBase({
   );
 }
 
-function createStyles(c, isDark, inline) {
+function createStyles(_c, _isDark, inline) {
   return StyleSheet.create({
     wrap: {
       flexDirection: inline ? "row" : "column",
       alignItems: "center",
       justifyContent: "center",
-      gap: inline ? spacing.sm : spacing.xs + 2,
+      gap: inline ? spacing.sm : spacing.sm + 2,
       paddingVertical: inline ? 0 : spacing.lg,
     },
     caption: {

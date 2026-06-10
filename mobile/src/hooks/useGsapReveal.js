@@ -5,25 +5,57 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 const PRESETS = {
   "fade-up": {
-    from: { y: 28 },
-    to: { y: 0, duration: 0.58, ease: "power2.out" },
+    from: { y: 28, opacity: 0 },
+    to: { y: 0, opacity: 1, duration: 0.58, ease: "power2.out" },
   },
   "fade-in": {
-    from: { y: 8 },
-    to: { y: 0, duration: 0.5, ease: "power2.out" },
+    from: { y: 8, opacity: 0 },
+    to: { y: 0, opacity: 1, duration: 0.5, ease: "power2.out" },
   },
   "scale-in": {
-    from: { scale: 0.96, y: 18 },
-    to: { scale: 1, y: 0, duration: 0.6, ease: "power3.out" },
+    from: { scale: 0.96, y: 18, opacity: 0 },
+    to: { scale: 1, y: 0, opacity: 1, duration: 0.6, ease: "power3.out" },
   },
   "slide-right": {
-    from: { x: -24 },
-    to: { x: 0, duration: 0.5, ease: "power2.out" },
+    from: { x: -32, opacity: 0 },
+    to: { x: 0, opacity: 1, duration: 0.55, ease: "power2.out" },
   },
 };
 
 if (Platform.OS === "web") {
   gsap.registerPlugin(ScrollTrigger);
+}
+
+/** RN Web scrolls inside MotionScrollView — not the window. */
+function findScrollParent(element) {
+  if (typeof document === "undefined" || !element?.parentElement) return null;
+  let parent = element.parentElement;
+  while (parent && parent !== document.body && parent !== document.documentElement) {
+    const style = getComputedStyle(parent);
+    const overflowY = style.overflowY;
+    const overflow = style.overflow;
+    const scrollable =
+      overflowY === "auto" ||
+      overflowY === "scroll" ||
+      overflow === "auto" ||
+      overflow === "scroll";
+    if (scrollable && parent.scrollHeight > parent.clientHeight + 1) {
+      return parent;
+    }
+    parent = parent.parentElement;
+  }
+  return null;
+}
+
+function isElementInScrollView(target, scroller) {
+  if (!target?.getBoundingClientRect) return false;
+  const rect = target.getBoundingClientRect();
+  if (scroller?.getBoundingClientRect) {
+    const root = scroller.getBoundingClientRect();
+    return rect.top < root.bottom && rect.bottom > root.top;
+  }
+  const vh = globalThis.innerHeight || document.documentElement.clientHeight || 0;
+  return rect.top < vh && rect.bottom > 0;
 }
 
 /**
@@ -42,6 +74,8 @@ export default function useGsapReveal({
   delay = 0,
   disabled = false,
   reducedMotion = false,
+  /** Play on mount (above-the-fold) instead of ScrollTrigger. */
+  immediate = false,
 } = {}) {
   const ref = useRef(null);
   const setRef = useCallback((node) => {
@@ -64,31 +98,50 @@ export default function useGsapReveal({
     }
 
     const settings = PRESETS[preset] || PRESETS["fade-up"];
-    if (target.style) {
-      target.style.opacity = "1";
-      target.style.transform = "";
+    gsap.set(target, settings.from);
+
+    const revealNow = () => {
+      gsap.to(target, { ...settings.to, delay, overwrite: "auto" });
+    };
+
+    if (immediate) {
+      revealNow();
+      return undefined;
     }
+
+    const scroller = findScrollParent(target);
     const tween = gsap.fromTo(target, settings.from, {
       ...settings.to,
       delay,
       scrollTrigger: {
         trigger: target,
+        scroller: scroller || undefined,
         start,
         end,
         scrub,
         toggleActions,
+        once: true,
       },
     });
 
+    const refreshId = requestAnimationFrame(() => {
+      ScrollTrigger.refresh();
+      if (isElementInScrollView(target, scroller)) {
+        const opacity = Number(gsap.getProperty(target, "opacity"));
+        if (!Number.isFinite(opacity) || opacity < 0.2) {
+          revealNow();
+        }
+      }
+    });
+
     return () => {
-      if (tween && tween.scrollTrigger && typeof tween.scrollTrigger.kill === "function") {
+      cancelAnimationFrame(refreshId);
+      if (tween?.scrollTrigger && typeof tween.scrollTrigger.kill === "function") {
         tween.scrollTrigger.kill();
       }
-      if (typeof tween.kill === "function") {
-        tween.kill();
-      }
+      tween?.kill?.();
     };
-  }, [preset, start, end, scrub, toggleActions, delay, disabled, reducedMotion]);
+  }, [preset, start, end, scrub, toggleActions, delay, disabled, reducedMotion, immediate]);
 
   return { ref: setRef };
 }

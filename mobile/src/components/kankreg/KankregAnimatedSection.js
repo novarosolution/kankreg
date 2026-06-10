@@ -14,6 +14,7 @@ export default function KankregAnimatedSection({
   index,
   delay,
   preset = "fade-up",
+  immediate = false,
   panel = false,
   panelVariant = "default",
   hairline = false,
@@ -36,6 +37,7 @@ export default function KankregAnimatedSection({
       index={index}
       delay={delay}
       preset={preset}
+      immediate={immediate}
       style={style}
       pointerEvents={pointerEvents}
     >

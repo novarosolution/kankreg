@@ -13,12 +13,16 @@ export default function KankregAnnounceBar({ onPressSeason }) {
     <View style={styles.bar}>
       <Text style={styles.text}>
         <Text>{KANKREG_ANNOUNCE_COPY.delivery}</Text>
-        {!hideAnnounceSecondary ? <Text style={styles.sep}> · </Text> : null}
-        {!hideAnnounceSecondary ? <Text>{KANKREG_ANNOUNCE_COPY.rewards}</Text> : null}
-        {!hideAnnounceSecondary ? <Text style={styles.sep}> · </Text> : null}
-        <Pressable onPress={onPressSeason} accessibilityRole="link">
-          <Text style={styles.bold}>{KANKREG_ANNOUNCE_COPY.seasonCta}</Text>
-        </Pressable>
+        {!hideAnnounceSecondary && KANKREG_ANNOUNCE_COPY.rewards ? <Text style={styles.sep}> · </Text> : null}
+        {!hideAnnounceSecondary && KANKREG_ANNOUNCE_COPY.rewards ? (
+          <Text>{KANKREG_ANNOUNCE_COPY.rewards}</Text>
+        ) : null}
+        {!hideAnnounceSecondary && KANKREG_ANNOUNCE_COPY.seasonCta ? <Text style={styles.sep}> · </Text> : null}
+        {KANKREG_ANNOUNCE_COPY.seasonCta ? (
+          <Pressable onPress={onPressSeason} accessibilityRole="link">
+            <Text style={styles.bold}>{KANKREG_ANNOUNCE_COPY.seasonCta}</Text>
+          </Pressable>
+        ) : null}
       </Text>
     </View>
   );

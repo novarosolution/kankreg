@@ -1,5 +1,5 @@
 import React from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -7,83 +7,226 @@ import { SHOP_SCREEN_UI } from "../../content/appContent";
 import { useTheme } from "../../context/ThemeContext";
 import { FONT_DISPLAY } from "../../theme/customerAlchemy";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { getShopTheme } from "../../theme/shopTheme";
 import { getKankregChromeTop } from "../kankreg/KankregSiteHeader";
+import { FIGMA } from "../../theme/figmaApp";
 import { fonts, radius, spacing, typography } from "../../theme/tokens";
-import { platformShadow } from "../../theme/shadowPlatform";
-import GoldHairline from "../ui/GoldHairline";
+import ShopActiveFilters from "./ShopActiveFilters";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const cardShadow = platformShadow({
-  web: { boxShadow: "0 12px 32px -16px rgba(61, 42, 18, 0.14)" },
-  ios: {
-    shadowColor: "#3D2A12",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-  },
-  android: { elevation: 3 },
-});
-
-export function ShopCollectionPills({ selected, onSelect, pills = SHOP_SCREEN_UI.collectionPills, compact = false }) {
+export function ShopCollectionPills({
+  selected,
+  onSelect,
+  pills = SHOP_SCREEN_UI.collectionPills,
+  compact = false,
+  scroll = false,
+}) {
   const { isDark } = useTheme();
+  const t = getShopTheme(isDark);
+
+  const nodes = pills.map((p) => {
+    const on = selected === p;
+    return (
+      <Pressable
+        key={p}
+        onPress={() => onSelect(p)}
+        style={({ pressed }) => [
+          styles.pill,
+          compact && styles.pillCompact,
+          {
+            backgroundColor: on ? t.chipOnBg : t.surfaceChip,
+            borderColor: on ? t.chipOnBorder : t.border,
+          },
+          pressed && styles.pillPressed,
+        ]}
+        accessibilityRole="button"
+        accessibilityState={{ selected: on }}
+      >
+        {on ? (
+          <Ionicons name="checkmark" size={10} color={t.chipOnText} style={styles.pillIcon} />
+        ) : null}
+        <Text style={[styles.pillText, compact && styles.pillTextCompact, { color: on ? t.chipOnText : t.textMuted }]}>
+          {p}
+        </Text>
+      </Pressable>
+    );
+  });
+
+  if (scroll) {
+    return (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={[styles.pillRow, styles.pillRowScroll, compact && styles.pillRowCompact]}
+        keyboardShouldPersistTaps="handled"
+      >
+        {nodes}
+      </ScrollView>
+    );
+  }
+
+  return <View style={[styles.pillRow, compact && styles.pillRowCompact]}>{nodes}</View>;
+}
+
+export function ShopFilterCheck({ label, on, onPress }) {
+  const { isDark } = useTheme();
+  const t = getShopTheme(isDark);
+
   return (
-    <View style={[styles.pillRow, compact && styles.pillRowCompact]}>
-      {pills.map((p) => {
-        const on = selected === p;
-        return (
-          <Pressable
-            key={p}
-            onPress={() => onSelect(p)}
-            style={({ pressed }) => [
-              styles.pill,
-              {
-                backgroundColor: isDark ? "rgba(255,255,255,0.06)" : KANKREG_PALETTE.paper2,
-                borderColor: isDark ? "rgba(232, 200, 90, 0.2)" : KANKREG_PALETTE.line,
-              },
-              on && styles.pillOn,
-              on && isDark && styles.pillOnDark,
-              pressed && styles.pillPressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityState={{ selected: on }}
-          >
-            <Text
-              style={[
-                styles.pillText,
-                { color: on ? KANKREG_PALETTE.paper : isDark ? "rgba(245, 239, 228, 0.78)" : KANKREG_PALETTE.inkSoft },
-              ]}
-            >
-              {p}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.chkRow,
+        on && { backgroundColor: t.accentSoft },
+        pressed && styles.chkPressed,
+      ]}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: on }}
+    >
+      <View
+        style={[
+          styles.chkBox,
+          { borderColor: on ? t.chipOnBorder : t.checkBorder },
+          on && { backgroundColor: t.checkOn, borderColor: t.checkOn },
+        ]}
+      >
+        {on ? <Ionicons name="checkmark" size={11} color="#fff" /> : null}
+      </View>
+      <Text style={[styles.chkLabel, { color: on ? t.text : t.textMuted }]}>{label}</Text>
+    </Pressable>
   );
 }
 
 export function ShopNativeMetaLine({ filtered, total }) {
   const { isDark } = useTheme();
+  const t = getShopTheme(isDark);
+
   return (
-    <Text style={[styles.nativeMeta, { color: isDark ? "rgba(245, 239, 228, 0.65)" : KANKREG_PALETTE.inkFaint }]}>
-      {SHOP_SCREEN_UI.showingPrefix}{" "}
-      <Text style={[styles.nativeMetaBold, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
-        {filtered}
-      </Text>{" "}
-      {SHOP_SCREEN_UI.showingOf} {total} {SHOP_SCREEN_UI.showingSuffix}
-    </Text>
+    <View style={[styles.nativeMetaWrap, { backgroundColor: t.surfaceMuted, borderColor: t.border }]}>
+      <Text style={[styles.nativeMeta, { color: t.textFaint }]}>
+        {SHOP_SCREEN_UI.showingPrefix}{" "}
+        <Text style={[styles.nativeMetaBold, { color: t.text }]}>{filtered}</Text>{" "}
+        {SHOP_SCREEN_UI.showingOf}{" "}
+        <Text style={[styles.nativeMetaBold, { color: t.text }]}>{total}</Text>{" "}
+        {SHOP_SCREEN_UI.showingSuffix}
+      </Text>
+    </View>
   );
 }
 
-export function ShopTrustStrip() {
+export function ShopTrustStrip({ compact = false }) {
   const { isDark } = useTheme();
+  const t = getShopTheme(isDark);
+
   return (
-    <View style={[styles.trustStrip, isDark && styles.trustStripDark]}>
-      <Ionicons name="sparkles-outline" size={14} color={KANKREG_PALETTE.goldDeep} />
-      <Text style={[styles.trustText, { color: isDark ? "#c8bdaf" : KANKREG_PALETTE.inkSoft }]}>
+    <View
+      style={[
+        styles.trustStrip,
+        compact && styles.trustStripCompact,
+        { backgroundColor: t.surfaceMuted, borderColor: t.border },
+      ]}
+    >
+      <Ionicons name="shield-checkmark-outline" size={compact ? 12 : 14} color={t.accent} />
+      <Text style={[styles.trustText, compact && styles.trustTextCompact, { color: t.textMuted }]}>
         {SHOP_SCREEN_UI.trustLine}
       </Text>
+    </View>
+  );
+}
+
+/** Compact shop controls — pills, count, filter toggle, sort (saves vertical space). */
+export function ShopCompactToolbar({
+  filtered,
+  total,
+  pill,
+  onPill,
+  sortLabel,
+  onSort,
+  sortAnimStyle,
+  filtersOpen,
+  onToggleFilters,
+  filterBadgeCount = 0,
+  activeChips,
+  onRemoveChip,
+  onClearAll,
+  variant = "stack",
+}) {
+  const { isDark } = useTheme();
+  const t = getShopTheme(isDark);
+  const showPills = variant === "stack";
+  const showFilterToggle = variant === "stack" && typeof onToggleFilters === "function";
+
+  return (
+    <View style={styles.compactToolbar}>
+      {showPills ? <ShopCollectionPills selected={pill} onSelect={onPill} compact scroll /> : null}
+
+      <View style={[styles.compactBar, { backgroundColor: t.surface, borderColor: t.border }, t.cardShadow]}>
+        <View style={styles.compactMeta}>
+          <Text style={[styles.compactCount, { color: t.text }]}>
+            <Text style={styles.compactCountBold}>{filtered}</Text>
+            <Text style={[styles.compactCountMuted, { color: t.textFaint }]}> / {total}</Text>
+          </Text>
+          <Text style={[styles.compactSuffix, { color: t.textFaint }]}>{SHOP_SCREEN_UI.showingSuffix}</Text>
+        </View>
+
+        <View style={styles.compactActions}>
+          {showFilterToggle ? (
+            <Pressable
+              onPress={onToggleFilters}
+              style={({ pressed }) => [
+                styles.filterToggle,
+                {
+                  backgroundColor: filtersOpen ? t.chipOnBg : t.surfaceChip,
+                  borderColor: filtersOpen ? t.chipOnBorder : t.border,
+                },
+                pressed && styles.pillPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={filtersOpen ? SHOP_SCREEN_UI.filtersClose : SHOP_SCREEN_UI.filtersOpen}
+            >
+              <Ionicons
+                name="options-outline"
+                size={14}
+                color={filtersOpen ? t.chipOnText : t.accent}
+              />
+              <Text
+                style={[
+                  styles.filterToggleText,
+                  { color: filtersOpen ? t.chipOnText : t.text },
+                ]}
+              >
+                {filtersOpen ? SHOP_SCREEN_UI.filtersClose : SHOP_SCREEN_UI.filtersOpen}
+              </Text>
+              {filterBadgeCount > 0 && !filtersOpen ? (
+                <View style={[styles.filterCountBadge, styles.filterCountBadgeSm, { backgroundColor: t.chipOnBg }]}>
+                  <Text style={styles.filterCountText}>{filterBadgeCount > 9 ? "9+" : filterBadgeCount}</Text>
+                </View>
+              ) : null}
+            </Pressable>
+          ) : null}
+
+          <AnimatedPressable
+            onPress={onSort}
+            style={[
+              styles.sortBtnCompact,
+              { backgroundColor: t.surfaceChip, borderColor: t.border },
+              sortAnimStyle,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={`${SHOP_SCREEN_UI.sortA11y}: ${sortLabel}`}
+          >
+            <Ionicons name="swap-vertical" size={13} color={t.accent} />
+            <Text style={[styles.sortLabelCompact, { color: t.text }]} numberOfLines={1}>
+              {sortLabel}
+            </Text>
+          </AnimatedPressable>
+        </View>
+      </View>
+
+      {activeChips?.length ? (
+        <ShopActiveFilters chips={activeChips} onRemove={onRemoveChip} onClearAll={onClearAll} inline />
+      ) : null}
     </View>
   );
 }
@@ -92,6 +235,7 @@ export function ShopResultToolbar({
   filtered,
   total,
   categoryLabel,
+  priceLabel,
   sortLabel,
   onSort,
   sortAnimStyle,
@@ -99,34 +243,50 @@ export function ShopResultToolbar({
   pill,
   onPill,
   compact,
-  isDark,
+  activeChips,
+  onRemoveChip,
+  onClearAll,
 }) {
+  const { isDark } = useTheme();
+  const t = getShopTheme(isDark);
+
   return (
-    <View style={[styles.resultCard, isDark && styles.resultCardDark, cardShadow]}>
+    <View style={[styles.resultCard, { backgroundColor: t.surface, borderColor: t.border }, t.cardShadow]}>
       <LinearGradient
         colors={
           isDark
-            ? ["rgba(232, 200, 90, 0.45)", "rgba(201, 162, 39, 0.12)", "transparent"]
-            : ["rgba(201, 162, 39, 0.55)", "rgba(116, 79, 28, 0.08)", "transparent"]
+            ? ["rgba(232, 200, 90, 0.5)", "rgba(201, 162, 39, 0.15)", "transparent"]
+            : ["rgba(201, 162, 39, 0.65)", "rgba(116, 79, 28, 0.1)", "transparent"]
         }
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
         style={styles.resultAccent}
       />
-      <View style={styles.resultRow}>
+
+      <View style={styles.resultTop}>
         <View style={styles.resultCopy}>
-          <Text style={[styles.resultCount, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
+          <Text style={[styles.resultEyebrow, { color: t.accent }]}>{SHOP_SCREEN_UI.pageEyebrow}</Text>
+          <Text style={[styles.resultCount, { color: t.text }]}>
             <Text style={styles.resultCountBold}>{filtered}</Text>
-            <Text style={styles.resultCountMuted}> / {total}</Text>
+            <Text style={[styles.resultCountMuted, { color: t.textFaint }]}> / {total}</Text>
           </Text>
-          <Text style={[styles.resultLabel, { color: isDark ? "#c8bdaf" : KANKREG_PALETTE.inkSoft }]}>
-            {SHOP_SCREEN_UI.showingSuffix}
-          </Text>
+          <Text style={[styles.resultLabel, { color: t.textMuted }]}>{SHOP_SCREEN_UI.showingSuffix}</Text>
         </View>
-        <Text style={[styles.resultCategory, { color: isDark ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.goldDeep }]} numberOfLines={1}>
-          {categoryLabel}
-        </Text>
+        <View style={styles.resultMeta}>
+          <Text style={[styles.resultCategory, { color: t.accent }]} numberOfLines={1}>
+            {categoryLabel}
+          </Text>
+          {priceLabel ? (
+            <Text style={[styles.resultPrice, { color: t.textFaint }]} numberOfLines={1}>
+              {priceLabel}
+            </Text>
+          ) : null}
+        </View>
       </View>
+
+      {activeChips?.length ? (
+        <ShopActiveFilters chips={activeChips} onRemove={onRemoveChip} onClearAll={onClearAll} />
+      ) : null}
 
       <View style={[styles.toolbar, compact && styles.toolbarStack]}>
         {showPills ? <ShopCollectionPills selected={pill} onSelect={onPill} compact /> : null}
@@ -134,59 +294,86 @@ export function ShopResultToolbar({
           onPress={onSort}
           style={[
             styles.sortBtn,
-            isDark && styles.sortBtnDark,
+            {
+              backgroundColor: t.surfaceChip,
+              borderColor: t.border,
+            },
             compact && styles.sortBtnFull,
             sortAnimStyle,
           ]}
           accessibilityRole="button"
           accessibilityLabel={`${SHOP_SCREEN_UI.sortA11y}: ${sortLabel}`}
         >
-          <Ionicons name="swap-vertical" size={16} color={KANKREG_PALETTE.goldDeep} />
-          <Text style={[styles.sortLabel, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
-            {sortLabel}
-          </Text>
+          <View style={[styles.sortIconWrap, { backgroundColor: t.accentSoft }]}>
+            <Ionicons name="swap-vertical" size={14} color={t.accent} />
+          </View>
+          <Text style={[styles.sortLabel, { color: t.text }]}>{sortLabel}</Text>
+          <Ionicons name="chevron-down" size={14} color={t.textFaint} />
         </AnimatedPressable>
       </View>
     </View>
   );
 }
 
-export function ShopFilterSidebarHeader({ onReset, hasFilters }) {
+export function ShopFilterSidebarHeader({ onReset, hasFilters, filterCount = 0 }) {
   const { isDark } = useTheme();
+  const t = getShopTheme(isDark);
+
   return (
-    <View
-      style={[
-        styles.sidebarHead,
-        { borderBottomColor: isDark ? "rgba(232, 200, 90, 0.18)" : KANKREG_PALETTE.line },
-      ]}
-    >
-      <Text style={[styles.sidebarTitle, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
-        {SHOP_SCREEN_UI.refineTitle}
-      </Text>
+    <View style={[styles.sidebarHead, { borderBottomColor: t.border }]}>
+      <View style={styles.sidebarTitleRow}>
+        <Text style={[styles.sidebarTitle, { color: t.text }]}>{SHOP_SCREEN_UI.refineTitle}</Text>
+        {filterCount > 0 ? (
+          <View style={[styles.filterCountBadge, { backgroundColor: t.chipOnBg }]}>
+            <Text style={styles.filterCountText}>{filterCount > 9 ? "9+" : filterCount}</Text>
+          </View>
+        ) : null}
+      </View>
       {hasFilters ? (
-        <Pressable onPress={onReset} hitSlop={8} accessibilityRole="button">
-          <Text style={styles.sidebarReset}>{SHOP_SCREEN_UI.resetFilters}</Text>
+        <Pressable onPress={onReset} hitSlop={8} accessibilityRole="button" style={styles.resetBtn}>
+          <Ionicons name="refresh-outline" size={13} color={t.accent} />
+          <Text style={[styles.sidebarReset, { color: t.accent }]}>{SHOP_SCREEN_UI.resetFilters}</Text>
         </Pressable>
       ) : null}
     </View>
   );
 }
 
-export function ShopMobileFilterCard({ children, onClear, hasFilters }) {
+export function ShopMobileFilterCard({ children, onClear, hasFilters, filterCount = 0, compact = true }) {
   const { isDark } = useTheme();
+  const t = getShopTheme(isDark);
+
   return (
-    <View style={[styles.mobileFilterCard, isDark && styles.mobileFilterCardDark, cardShadow]}>
+    <View
+      style={[
+        styles.mobileFilterCard,
+        compact && styles.mobileFilterCardCompact,
+        {
+          backgroundColor: t.surface,
+          borderColor: t.border,
+          borderTopColor: t.borderTopAccent,
+        },
+        t.cardShadow,
+        Platform.OS === "web" && t.panelGradient ? { backgroundImage: t.panelGradient } : null,
+      ]}
+    >
       <View style={styles.mobileFilterHead}>
-        <Text style={[styles.mobileFilterTitle, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
-          {SHOP_SCREEN_UI.refineTitle}
-        </Text>
+        <View style={styles.sidebarTitleRow}>
+          <Text style={[styles.mobileFilterTitle, compact && styles.mobileFilterTitleCompact, { color: t.text }]}>
+            {SHOP_SCREEN_UI.refineTitle}
+          </Text>
+          {filterCount > 0 ? (
+            <View style={[styles.filterCountBadge, { backgroundColor: t.chipOnBg }]}>
+              <Text style={styles.filterCountText}>{filterCount}</Text>
+            </View>
+          ) : null}
+        </View>
         {hasFilters ? (
-          <Pressable onPress={onClear} hitSlop={8}>
-            <Text style={styles.sidebarReset}>{SHOP_SCREEN_UI.resetFilters}</Text>
+          <Pressable onPress={onClear} hitSlop={8} style={styles.resetBtn}>
+            <Text style={[styles.sidebarReset, { color: t.accent }]}>{SHOP_SCREEN_UI.resetFilters}</Text>
           </Pressable>
         ) : null}
       </View>
-      <GoldHairline marginVertical={spacing.sm} />
       {children}
     </View>
   );
@@ -194,10 +381,10 @@ export function ShopMobileFilterCard({ children, onClear, hasFilters }) {
 
 export function shopFilterSidebarStyle() {
   return {
-    width: 248,
+    width: 272,
     flexShrink: 0,
     ...Platform.select({
-      web: { position: "sticky", top: getKankregChromeTop() + 12 },
+      web: { position: "sticky", top: getKankregChromeTop() + 14, alignSelf: "flex-start" },
       default: {},
     }),
   };
@@ -207,41 +394,152 @@ const styles = StyleSheet.create({
   pillRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: 7,
     flex: 1,
   },
-  pillRowCompact: {
-    gap: 7,
+  pillRowScroll: {
+    flexWrap: "nowrap",
+    paddingRight: spacing.sm,
   },
+  pillRowCompact: { gap: 6 },
   pill: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 8,
-    paddingHorizontal: 14,
+    paddingHorizontal: 13,
     borderRadius: radius.pill,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  pillOn: {
-    backgroundColor: KANKREG_PALETTE.ink,
-    borderColor: KANKREG_PALETTE.ink,
+  pillCompact: {
+    paddingVertical: 6,
+    paddingHorizontal: 11,
   },
-  pillOnDark: {
-    backgroundColor: KANKREG_PALETTE.goldDeep,
-    borderColor: KANKREG_PALETTE.goldDeep,
-  },
+  pillIcon: { marginRight: 2 },
   pillPressed: { opacity: 0.88 },
   pillText: {
     fontSize: typography.caption,
     fontFamily: fonts.semibold,
   },
-  nativeMeta: {
+  pillTextCompact: {
     fontSize: typography.caption - 1,
-    fontFamily: fonts.regular,
-    paddingHorizontal: spacing.md + 2,
-    marginTop: spacing.sm + 2,
+  },
+  compactToolbar: {
+    gap: spacing.sm,
     marginBottom: spacing.sm,
   },
-  nativeMetaBold: {
-    fontFamily: fonts.semibold,
+  compactBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 8,
+    paddingHorizontal: spacing.sm + 2,
   },
+  compactMeta: {
+    minWidth: 0,
+    flexShrink: 1,
+  },
+  compactCount: {
+    fontFamily: FONT_DISPLAY,
+    fontSize: typography.body + 1,
+    letterSpacing: -0.3,
+  },
+  compactCountBold: { fontFamily: FONT_DISPLAY },
+  compactCountMuted: {
+    fontFamily: fonts.medium,
+    fontSize: typography.caption,
+  },
+  compactSuffix: {
+    fontFamily: fonts.medium,
+    fontSize: 10,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginTop: 1,
+  },
+  compactActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flexShrink: 0,
+  },
+  filterToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    position: "relative",
+  },
+  filterToggleText: {
+    fontFamily: fonts.semibold,
+    fontSize: typography.caption - 1,
+  },
+  sortBtnCompact: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    maxWidth: 120,
+  },
+  sortLabelCompact: {
+    fontFamily: fonts.semibold,
+    fontSize: typography.caption - 1,
+    flexShrink: 1,
+  },
+  filterCountBadgeSm: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+  },
+  chkRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    marginHorizontal: -8,
+  },
+  chkPressed: { opacity: 0.9 },
+  chkBox: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chkLabel: {
+    fontSize: 14,
+    fontFamily: fonts.medium,
+    flex: 1,
+  },
+  nativeMetaWrap: {
+    marginHorizontal: FIGMA.gutter,
+    marginTop: 0,
+    marginBottom: spacing.xs,
+    paddingVertical: spacing.xs + 2,
+    paddingHorizontal: spacing.sm + 2,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  nativeMeta: {
+    fontSize: typography.caption,
+    fontFamily: fonts.regular,
+    textAlign: "center",
+  },
+  nativeMetaBold: { fontFamily: fonts.semibold },
   trustStrip: {
     flexDirection: "row",
     alignItems: "center",
@@ -249,14 +547,15 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm + 2,
     paddingHorizontal: spacing.md,
     borderRadius: radius.lg,
-    backgroundColor: KANKREG_PALETTE.paper2,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: KANKREG_PALETTE.line,
     marginBottom: spacing.md,
   },
-  trustStripDark: {
-    backgroundColor: "rgba(255,255,255,0.04)",
-    borderColor: "rgba(232, 200, 90, 0.16)",
+  trustStripCompact: {
+    paddingVertical: spacing.xs + 2,
+    paddingHorizontal: spacing.sm + 2,
+    borderRadius: radius.md,
+    marginBottom: spacing.sm,
+    gap: 6,
   },
   trustText: {
     flex: 1,
@@ -264,47 +563,51 @@ const styles = StyleSheet.create({
     fontSize: typography.caption,
     lineHeight: 18,
   },
+  trustTextCompact: {
+    fontSize: 11,
+    lineHeight: 15,
+  },
   resultCard: {
-    backgroundColor: KANKREG_PALETTE.card,
-    borderRadius: radius.lg + 2,
+    borderRadius: radius.lg + 4,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: KANKREG_PALETTE.line,
-    paddingHorizontal: spacing.md + 2,
-    paddingTop: spacing.md + 4,
-    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.md + 4,
+    paddingTop: spacing.md + 6,
+    paddingBottom: spacing.md + 2,
     marginBottom: spacing.md,
     overflow: "hidden",
-  },
-  resultCardDark: {
-    backgroundColor: "rgba(255,255,255,0.04)",
-    borderColor: "rgba(232, 200, 90, 0.18)",
   },
   resultAccent: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    height: 2.5,
+    height: 3,
   },
-  resultRow: {
+  resultTop: {
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "space-between",
-    marginBottom: spacing.sm + 2,
+    marginBottom: spacing.sm,
     gap: spacing.sm,
     flexWrap: "wrap",
   },
   resultCopy: { minWidth: 0 },
+  resultEyebrow: {
+    fontFamily: fonts.semibold,
+    fontSize: 10,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
   resultCount: {
     fontFamily: FONT_DISPLAY,
-    fontSize: typography.h3 - 2,
-    letterSpacing: -0.3,
+    fontSize: typography.h3,
+    letterSpacing: -0.4,
   },
   resultCountBold: { fontFamily: FONT_DISPLAY },
   resultCountMuted: {
     fontFamily: fonts.medium,
     fontSize: typography.bodySmall,
-    opacity: 0.72,
   },
   resultLabel: {
     marginTop: 2,
@@ -313,12 +616,21 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.8,
   },
+  resultMeta: {
+    alignItems: "flex-end",
+    maxWidth: "46%",
+    gap: 2,
+  },
   resultCategory: {
     fontFamily: fonts.semibold,
     fontSize: typography.caption,
     letterSpacing: 0.6,
     textTransform: "uppercase",
-    maxWidth: "46%",
+    textAlign: "right",
+  },
+  resultPrice: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
     textAlign: "right",
   },
   toolbar: {
@@ -327,6 +639,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     flexWrap: "wrap",
     gap: spacing.sm,
+    marginTop: spacing.xs,
   },
   toolbarStack: {
     flexDirection: "column",
@@ -339,53 +652,76 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: radius.md,
+    borderRadius: radius.md + 2,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: KANKREG_PALETTE.line,
-    backgroundColor: KANKREG_PALETTE.paper,
   },
-  sortBtnDark: {
-    backgroundColor: "rgba(255,255,255,0.05)",
-    borderColor: "rgba(232, 200, 90, 0.22)",
+  sortBtnFull: { alignSelf: "stretch" },
+  sortIconWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  sortBtnFull: {
-    alignSelf: "stretch",
-  },
-  sortBtnPressed: { opacity: 0.9 },
   sortLabel: {
+    flex: 1,
     fontSize: typography.bodySmall,
     fontFamily: fonts.semibold,
+    textAlign: "left",
   },
   sidebarHead: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
+    paddingBottom: spacing.sm + 2,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: KANKREG_PALETTE.line,
+  },
+  sidebarTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   sidebarTitle: {
     fontFamily: FONT_DISPLAY,
-    fontSize: typography.body + 1,
-    letterSpacing: -0.2,
+    fontSize: typography.body + 2,
+    letterSpacing: -0.3,
+  },
+  filterCountBadge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 5,
+  },
+  filterCountText: {
+    fontSize: 10,
+    fontFamily: fonts.semibold,
+    color: KANKREG_PALETTE.paper,
+  },
+  resetBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   sidebarReset: {
     fontFamily: fonts.semibold,
     fontSize: typography.caption,
-    color: KANKREG_PALETTE.goldDeep,
   },
   mobileFilterCard: {
-    backgroundColor: KANKREG_PALETTE.card,
-    borderRadius: radius.lg + 2,
+    borderRadius: radius.lg + 4,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: KANKREG_PALETTE.line,
-    padding: spacing.md,
+    borderTopWidth: 3,
+    padding: spacing.md + 2,
     marginBottom: spacing.md,
   },
-  mobileFilterCardDark: {
-    backgroundColor: "rgba(255,255,255,0.04)",
-    borderColor: "rgba(232, 200, 90, 0.18)",
+  mobileFilterCardCompact: {
+    borderRadius: radius.lg,
+    borderTopWidth: 2,
+    padding: spacing.sm + 4,
+    marginBottom: spacing.sm,
+    gap: 2,
   },
   mobileFilterHead: {
     flexDirection: "row",
@@ -394,6 +730,13 @@ const styles = StyleSheet.create({
   },
   mobileFilterTitle: {
     fontFamily: FONT_DISPLAY,
-    fontSize: typography.body,
+    fontSize: typography.body + 1,
+    letterSpacing: -0.2,
+  },
+  mobileFilterTitleCompact: {
+    fontSize: typography.bodySmall,
+    fontFamily: fonts.semibold,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
   },
 });

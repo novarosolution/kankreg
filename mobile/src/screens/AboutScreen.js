@@ -1,43 +1,42 @@
-import React, { useCallback, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Platform, StyleSheet } from "react-native";
 import CustomerScreenShell from "../components/CustomerScreenShell";
 import BottomNavBar from "../components/BottomNavBar";
 import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 import { KankregPageWrap } from "../components/kankreg/KankregPageChrome";
 import KankregCustomerPageHeader from "../components/kankreg/KankregCustomerPageHeader";
-import KankregTrustStrip from "../components/kankreg/KankregTrustStrip";
-import HomeTestimonials from "../components/home/HomeTestimonials";
 import SectionReveal from "../components/motion/SectionReveal";
 import {
   AboutCraftTimeline,
   AboutCtaBand,
-  AboutEditorialHero,
   AboutMissionBlock,
   AboutPillarsGrid,
 } from "../components/about/AboutPageSections";
 import { ABOUT_SCREEN_UI } from "../content/appContent";
-import { useTheme } from "../context/ThemeContext";
+import AboutKankregMedia from "../components/home/AboutKankregMedia";
+import { getHomeViewConfig } from "../services/productService";
+import { hasAboutMedia } from "../utils/homeViewMedia";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
 import { KANKREG_PAGE_SECTION_GAP } from "../theme/kankregScreenStyles";
 import { customerScrollFill } from "../theme/screenLayout";
 
 export default function AboutScreen({ navigation }) {
-  const { colors: c, isDark } = useTheme();
   const { isMd, showMobileWebTabBar } = useKankregLayout();
   const craftRef = useRef(null);
   const copy = ABOUT_SCREEN_UI.header;
-  const showWebHero = Platform.OS === "web" && isMd;
-  const showTestimonials = Platform.OS === "web" && isMd;
+  const isWeb = Platform.OS === "web";
+  const [aboutSection, setAboutSection] = useState(null);
 
-  const scrollToCraft = useCallback(() => {
-    if (Platform.OS === "web" && typeof globalThis?.document !== "undefined") {
-      const el = globalThis.document.getElementById("about-craft");
-      el?.scrollIntoView?.({ behavior: "smooth", block: "start" });
-      return;
-    }
-    craftRef.current?.measure?.((_x, _y, _w, _h, _px, py) => {
-      // native fallback — parent scroll handles via nativeID where supported
-    });
+  useEffect(() => {
+    let cancelled = false;
+    getHomeViewConfig()
+      .then((config) => {
+        if (!cancelled) setAboutSection(config?.aboutSection || null);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -51,40 +50,35 @@ export default function AboutScreen({ navigation }) {
             navigation={navigation}
             showBack={Platform.OS !== "web" || !isMd}
             index={1}
-            showHairline={showWebHero}
+            showHairline={false}
           />
 
-          {showWebHero ? (
-            <SectionReveal preset="fade-up" delay={0}>
-              <AboutEditorialHero navigation={navigation} onScrollToCraft={scrollToCraft} />
+          {isWeb && aboutSection && hasAboutMedia(aboutSection) ? (
+            <SectionReveal preset="fade-up" delay={60}>
+              <AboutKankregMedia aboutSection={aboutSection} navigation={navigation} showCta={false} compact />
             </SectionReveal>
           ) : null}
 
-          <SectionReveal preset="fade-up" delay={80}>
-            <AboutMissionBlock />
-          </SectionReveal>
-
-          <SectionReveal preset="fade-up" delay={120}>
-            <AboutPillarsGrid />
-          </SectionReveal>
-
-          <SectionReveal preset="fade-up" delay={160}>
-            <KankregTrustStrip />
-          </SectionReveal>
+          {!isWeb ? (
+            <>
+              <SectionReveal preset="fade-up" delay={80}>
+                <AboutMissionBlock />
+              </SectionReveal>
+              <SectionReveal preset="fade-up" delay={120}>
+                <AboutPillarsGrid />
+              </SectionReveal>
+            </>
+          ) : null}
 
           <SectionReveal preset="fade-up" delay={200}>
             <AboutCraftTimeline sectionRef={craftRef} />
           </SectionReveal>
 
-          {showTestimonials ? (
-            <SectionReveal preset="fade-up" delay={240}>
-              <HomeTestimonials c={c} isDark={isDark} />
+          {Platform.OS !== "web" ? (
+            <SectionReveal preset="fade-up" delay={280}>
+              <AboutCtaBand navigation={navigation} />
             </SectionReveal>
           ) : null}
-
-          <SectionReveal preset="fade-up" delay={280}>
-            <AboutCtaBand navigation={navigation} />
-          </SectionReveal>
         </KankregPageWrap>
       </KankregScrollPage>
       {(Platform.OS !== "web" || showMobileWebTabBar) && <BottomNavBar />}

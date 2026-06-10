@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     default: {},
   }),
   webContain: Platform.select({
-    web: { overscrollBehaviorY: "contain" },
+    web: { overscrollBehaviorY: "contain", overflow: "visible" },
     default: {},
   }),
   fill: {

@@ -5,6 +5,7 @@ import KankregPageTitle from "./KankregPageTitle";
 import GoldHairline from "../ui/GoldHairline";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { spacing } from "../../theme/tokens";
+import { webEyebrow, webSubtitle } from "../../theme/webLean";
 
 /**
  * Shared customer page header — native Figma title, wide web editorial head,
@@ -32,12 +33,12 @@ export default function KankregCustomerPageHeader({
   const header = isNative ? (
     <KankregPageTitle eyebrow={eyebrow} title={title} right={right} compact={compactNative} />
   ) : figmaOnWeb || !isMd ? (
-    <KankregPageTitle eyebrow={eyebrow} title={title} right={right} />
+    <KankregPageTitle eyebrow={webEyebrow(eyebrow)} title={title} right={right} />
   ) : (
     <KankregUnifiedPageHeader
-      eyebrow={eyebrow}
+      eyebrow={webEyebrow(eyebrow)}
       title={title}
-      subtitle={subtitle}
+      subtitle={webSubtitle(subtitle)}
       navigation={navigation}
       showBack={showBack}
       onBack={onBack}

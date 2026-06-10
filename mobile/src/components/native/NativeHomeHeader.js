@@ -7,6 +7,8 @@ import { useTheme } from "../../context/ThemeContext";
 import { FIGMA, figmaEyebrow, figmaIconCircle, figmaIconMuted, figmaIconSoft } from "../../theme/figmaApp";
 import { fonts, spacing } from "../../theme/tokens";
 import { formatSavedAddressLabel } from "../../utils/deliveryLocationLabel";
+import BrandLogo from "../BrandLogo";
+import { APP_DISPLAY_NAME, BRAND_LOGO_SIZE } from "../../constants/brand";
 
 /** figmaforkankreg.html Home — DELIVER TO + search + notifications */
 export default function NativeHomeHeader({
@@ -36,6 +38,14 @@ export default function NativeHomeHeader({
         },
       ]}
     >
+      <Pressable
+        style={styles.brandRow}
+        onPress={() => navigation.navigate("Home")}
+        accessibilityRole="button"
+        accessibilityLabel={`${APP_DISPLAY_NAME} home`}
+      >
+        <BrandLogo height={BRAND_LOGO_SIZE.homeTopBar} />
+      </Pressable>
       <View style={styles.row}>
         <Pressable
           style={styles.locationCol}
@@ -85,6 +95,13 @@ const styles = StyleSheet.create({
     zIndex: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
     paddingBottom: spacing.sm + 2,
+  },
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: FIGMA.gutter,
+    marginBottom: spacing.sm,
   },
   row: {
     flexDirection: "row",

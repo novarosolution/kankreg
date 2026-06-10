@@ -29,9 +29,9 @@ import { ApiHealthProvider } from "./src/context/ApiHealthContext";
 import { ToastProvider } from "./src/context/ToastContext";
 import BackendOfflineBanner from "./src/components/BackendOfflineBanner";
 import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
+import useAppIconSync from "./src/hooks/useAppIconSync";
 import AppStartupScreen from "./src/components/AppStartupScreen";
 import AppNavigator from "./src/navigation/AppNavigator";
-import { darkColors, lightColors } from "./src/theme/tokens";
 import { applyWebPremiumChrome, webRootStyle } from "./src/theme/web";
 
 const STARTUP_WELCOME_KEY = "@kankreg_startup_welcome_shown";
@@ -117,11 +117,17 @@ function ThemedStatusBar() {
   return <StatusBar style={isDark ? "light" : "dark"} />;
 }
 
+function AppIconSync() {
+  useAppIconSync();
+  return null;
+}
+
 function AppNavigationShell() {
   const [navReady, setNavReady] = useState(false);
 
   return (
     <>
+      <AppIconSync />
       <WebBodySync />
       <ThemedStatusBar />
       <NavigationContainer
@@ -146,9 +152,7 @@ export default function App() {
     Fraunces_700Bold,
     Fraunces_400Regular_Italic,
   });
-  const [bootFootnote, setBootFootnote] = useState("Loading…");
-
-  const bootstrapColors = Appearance.getColorScheme() === "dark" ? darkColors : lightColors;
+  const [bootFootnote, setBootFootnote] = useState("Preparing your boutique…");
 
   useEffect(() => {
     let cancelled = false;
@@ -157,7 +161,7 @@ export default function App() {
         const seen = await AsyncStorage.getItem(STARTUP_WELCOME_KEY);
         if (cancelled) return;
         if (seen === "1") {
-          setBootFootnote("Opening…");
+          setBootFootnote("Preparing your boutique…");
         } else {
           setBootFootnote("Welcome — preparing your shop…");
           await AsyncStorage.setItem(STARTUP_WELCOME_KEY, "1");
@@ -183,7 +187,6 @@ export default function App() {
         <View style={webRootStyle}>
           <StatusBar style={Appearance.getColorScheme() === "dark" ? "light" : "dark"} />
           <AppStartupScreen
-            colors={bootstrapColors}
             isDark={Appearance.getColorScheme() === "dark"}
             useAppFonts={false}
             footnote={bootFootnote}

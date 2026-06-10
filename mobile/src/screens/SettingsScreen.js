@@ -25,6 +25,7 @@ import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
 import PremiumSwitch from "../components/ui/PremiumSwitch";
 import CollapsibleSection from "../components/ui/CollapsibleSection";
 import { SETTINGS_SCREEN } from "../content/appContent";
+import AppIconPicker from "../components/settings/AppIconPicker";
 import NativeMenuList from "../components/native/NativeMenuList";
 import NativeCard from "../components/native/NativeCard";
 import { FIGMA } from "../theme/figmaApp";
@@ -64,6 +65,8 @@ export default function SettingsScreen({ navigation }) {
   const isCompactWeb = Platform.OS === "web" && (isXs || isSm);
   const { isAuthenticated, token, user, logout } = useAuth();
   const [permissionMsg, setPermissionMsg] = useState("");
+  const [iconMsg, setIconMsg] = useState("");
+  const [iconMsgSeverity, setIconMsgSeverity] = useState("success");
   const [error, setError] = useState("");
   const { colors: c, shadowPremium, mode, setMode, isDark } = useTheme();
   const styles = useMemo(
@@ -78,6 +81,12 @@ export default function SettingsScreen({ navigation }) {
 
   const cycleTheme = () => {
     setMode(mode === "light" ? "dark" : mode === "dark" ? "system" : "light");
+  };
+
+  const handleAppIconStatus = (message, severity = "success") => {
+    setIconMsg(message);
+    setIconMsgSeverity(severity);
+    setError("");
   };
 
   const handleEnableNotifications = async () => {
@@ -143,15 +152,23 @@ export default function SettingsScreen({ navigation }) {
             ) : null}
             <NativeCard style={styles.nativeCard}>
               <Pressable style={styles.nativeRow} onPress={cycleTheme}>
-                <Ionicons name="contrast-outline" size={17} color={FIGMA.gold} />
+                <Ionicons name="contrast-outline" size={17} color={isDark ? c.primaryBright : FIGMA.gold} />
                 <Text style={styles.nativeRowLabel}>Theme</Text>
                 <Text style={styles.nativeRowMeta}>{themeSubtitle}</Text>
               </Pressable>
               <Pressable style={styles.nativeRow} onPress={handleEnableNotifications}>
-                <Ionicons name="notifications-outline" size={17} color={FIGMA.gold} />
+                <Ionicons name="notifications-outline" size={17} color={isDark ? c.primaryBright : FIGMA.gold} />
                 <Text style={styles.nativeRowLabel}>Push notifications</Text>
                 <Text style={styles.nativeRowChevron}>›</Text>
               </Pressable>
+            </NativeCard>
+            {iconMsg ? (
+              <View style={styles.bannerWrap}>
+                <PremiumErrorBanner severity={iconMsgSeverity} message={iconMsg} compact />
+              </View>
+            ) : null}
+            <NativeCard style={styles.nativeIconCard}>
+              <AppIconPicker onStatus={handleAppIconStatus} />
             </NativeCard>
             <NativeMenuList
               navigation={navigation}
@@ -210,6 +227,12 @@ export default function SettingsScreen({ navigation }) {
                 styles={styles}
                 c={c}
               />
+              {iconMsg ? (
+                <View style={styles.bannerWrap}>
+                  <PremiumErrorBanner severity={iconMsgSeverity} message={iconMsg} compact />
+                </View>
+              ) : null}
+              <AppIconPicker onStatus={handleAppIconStatus} />
             </CollapsibleSection>
           </SectionReveal>
 
@@ -423,6 +446,11 @@ function createSettingsStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     nativeCard: {
       marginBottom: 14,
       paddingVertical: 4,
+    },
+    nativeIconCard: {
+      marginBottom: 14,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.sm,
     },
     nativeRow: {
       flexDirection: "row",

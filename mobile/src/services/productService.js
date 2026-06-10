@@ -1,5 +1,11 @@
 import { apiGet, apiPost } from "./apiClient";
 import { normalizeHeroSubtitle, normalizeHeroTitle } from "../utils/homeMarketingCopy";
+import {
+  normalizeAboutSection,
+  normalizeCommunitySection,
+  normalizeCompareSection,
+  normalizeHeroSlides,
+} from "../utils/homeViewMedia";
 
 const publicApi = { auth: false };
 
@@ -162,9 +168,22 @@ export async function submitProductReview(_token, productId, payload) {
   };
 }
 
-/** Customer home config from MongoDB. Returns `null` when API is unavailable (no client fallbacks). */
-export async function getHomeViewConfig() {
-  const data = await apiGet("/home-view", publicApi);
+export const DEFAULT_HOME_VIEW_CONFIG = {
+  heroTitle: "",
+  heroSubtitle: "",
+  primeSectionTitle: "",
+  productTypeTitle: "",
+  showPrimeSection: true,
+  showHomeSections: true,
+  showProductTypeSections: true,
+  productCardStyle: "compact",
+  heroSlides: [],
+  aboutSection: normalizeAboutSection(null),
+  communitySection: normalizeCommunitySection(null),
+  compareSection: normalizeCompareSection(null),
+};
+
+function normalizeHomeViewConfig(data) {
   const heroTitle = normalizeHeroTitle(String(data?.heroTitle ?? "").trim());
   const heroSubtitle = normalizeHeroSubtitle(String(data?.heroSubtitle ?? "").trim());
   return {
@@ -176,5 +195,19 @@ export async function getHomeViewConfig() {
     showHomeSections: data?.showHomeSections !== false,
     showProductTypeSections: data?.showProductTypeSections !== false,
     productCardStyle: data?.productCardStyle === "comfortable" ? "comfortable" : "compact",
+    heroSlides: normalizeHeroSlides(data?.heroSlides),
+    aboutSection: normalizeAboutSection(data?.aboutSection),
+    communitySection: normalizeCommunitySection(data?.communitySection),
+    compareSection: normalizeCompareSection(data?.compareSection),
   };
+}
+
+/** Customer home config from MongoDB — always returns usable defaults when API is unavailable. */
+export async function getHomeViewConfig() {
+  try {
+    const data = await apiGet("/home-view", publicApi);
+    return normalizeHomeViewConfig(data);
+  } catch {
+    return { ...DEFAULT_HOME_VIEW_CONFIG };
+  }
 }

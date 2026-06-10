@@ -35,6 +35,8 @@ export default function SectionReveal({
   style,
   pointerEvents,
   as,
+  /** Web: animate on mount (hero / above-the-fold) instead of on scroll. */
+  immediate = false,
 }) {
   const pointerStyle = pointerEvents ? { pointerEvents } : null;
 
@@ -50,6 +52,7 @@ export default function SectionReveal({
     start,
     delay: computedDelay / 1000,
     reducedMotion,
+    immediate,
   });
 
   const setRef = useCallback(
@@ -64,7 +67,7 @@ export default function SectionReveal({
   if (Platform.OS === "web") {
     const Container = as || View;
     return (
-      <Container ref={setRef} style={[style, pointerStyle, { opacity: 1 }]}>
+      <Container ref={setRef} style={[style, pointerStyle]}>
         {children}
       </Container>
     );

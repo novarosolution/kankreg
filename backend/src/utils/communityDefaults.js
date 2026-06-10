@@ -1,0 +1,82 @@
+/** Default community / Instagram rail — seeded when admin has not configured posts. */
+const COMMUNITY_DEFAULT_POSTS = [
+  {
+    id: "reel-golden-pour",
+    order: 0,
+    enabled: true,
+    type: "reel",
+    tag: "Reel",
+    imageUrl: "",
+    views: "12.3k",
+    likes: "1.2k",
+    quote: "",
+    author: { name: "kankreg_ghee", subtitle: "The golden pour", avatar: "K", brand: true },
+  },
+  {
+    id: "customer-ramesh",
+    order: 1,
+    enabled: true,
+    type: "customer",
+    tag: "Customer",
+    imageUrl: "",
+    views: "",
+    likes: "340",
+    quote: "Tastes just like my grandmother's homemade ghee.",
+    author: { name: "Ramesh Patel", subtitle: "Ahmedabad", avatar: "R", brand: false },
+  },
+  {
+    id: "reel-herd",
+    order: 2,
+    enabled: true,
+    type: "reel",
+    tag: "Reel",
+    imageUrl: "",
+    views: "8.1k",
+    likes: "980",
+    quote: "",
+    author: { name: "kankreg_ghee", subtitle: "Meet our herd", avatar: "K", brand: true },
+  },
+  {
+    id: "reel-recipe",
+    order: 3,
+    enabled: true,
+    type: "reel",
+    tag: "Recipe",
+    imageUrl: "",
+    views: "5.6k",
+    likes: "742",
+    quote: "",
+    author: { name: "kankreg_ghee", subtitle: "Ghee dal tadka", avatar: "K", brand: true },
+  },
+  {
+    id: "customer-priya",
+    order: 4,
+    enabled: true,
+    type: "customer",
+    tag: "Customer",
+    imageUrl: "",
+    views: "",
+    likes: "512",
+    quote: "Pure aroma, real Bilona ghee. We've switched for good.",
+    author: { name: "Priya Shah", subtitle: "Surat", avatar: "P", brand: false },
+  },
+];
+
+const COMMUNITY_SECTION_DEFAULTS = {
+  enabled: true,
+  eyebrow: "Our Community",
+  title: "Loved by families, shared every day",
+  instagram: {
+    handle: "kankreg_ghee",
+    displayHandle: "@kankreg_ghee",
+    followersLabel: "18.4k followers",
+    followLabel: "Follow",
+    url: "https://instagram.com/kankreg_ghee",
+  },
+  posts: COMMUNITY_DEFAULT_POSTS,
+};
+
+module.exports = {
+  COMMUNITY_DEFAULT_POSTS,
+  COMMUNITY_SECTION_DEFAULTS,
+};

@@ -152,6 +152,12 @@ export function mobileWebTabBarScrollPadding(insets = {}) {
 /** Approximate height of figma sticky pay / buy bars above the tab bar. */
 export const FIGMA_STICKY_FOOTER_HEIGHT = 140;
 
+/** Native product sticky buy bar (single-row layout, no tab bar). */
+export const NATIVE_PRODUCT_STICKY_BAR_HEIGHT = 118;
+
+/** Web/mobile-web product sticky buy bar height. */
+export const WEB_PRODUCT_STICKY_BAR_HEIGHT = 88;
+
 /**
  * Bottom padding for scroll content: clears floating bottom nav + home indicator + breathing room.
  * @param {{ bottom?: number }} [insets] from `useSafeAreaInsets()` (native only)
@@ -214,6 +220,18 @@ export function customerScrollPaddingTop(insets, opts = {}) {
 /** Bottom scroll inset when a sticky pay/buy bar floats above the tab bar. */
 export function customerScrollPaddingBottomWithSticky(insets = {}, footerHeight = FIGMA_STICKY_FOOTER_HEIGHT) {
   return customerScrollPaddingBottom(insets) + Math.max(0, footerHeight);
+}
+
+/**
+ * Product detail scroll padding — no floating tab bar; only sticky buy bar + safe area.
+ * @param {{ bottom?: number }} [insets]
+ */
+export function customerProductScrollPaddingBottom(
+  insets = {},
+  footerHeight = NATIVE_PRODUCT_STICKY_BAR_HEIGHT
+) {
+  const safeBottom = Math.max(insets?.bottom ?? 0, 8);
+  return safeBottom + Math.max(0, footerHeight) + spacing.lg;
 }
 
 /** Shared sticky-top offset for panels pinned below the fixed web header. */

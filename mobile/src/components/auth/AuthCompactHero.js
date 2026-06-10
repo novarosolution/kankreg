@@ -18,11 +18,11 @@ export default function AuthCompactHero({ compact = false }) {
         style={StyleSheet.absoluteFillObject}
       />
       <BrandLogo
-        width={compact ? BRAND_LOGO_SIZE.authHero - 16 : BRAND_LOGO_SIZE.authHero}
-        height={compact ? BRAND_LOGO_SIZE.authHero - 16 : BRAND_LOGO_SIZE.authHero}
+        height={compact ? BRAND_LOGO_SIZE.authHero - 12 : BRAND_LOGO_SIZE.authHero}
+        glow
         style={styles.logo}
       />
-      <Text style={styles.eyebrow}>Welcome to kankreg</Text>
+      <Text style={styles.eyebrow}>Welcome back</Text>
       {!compact ? (
         <Text style={styles.title}>Goods worth coming back for.</Text>
       ) : (

@@ -23,6 +23,7 @@ module.exports = {
     },
     ios: {
       ...expo.ios,
+      bundleIdentifier: "com.novarosolution.kankreg",
       usesAppleSignIn: true,
       infoPlist: {
         ...expo.ios?.infoPlist,
@@ -34,6 +35,51 @@ module.exports = {
       ...expo.android,
       package: "com.novarosolution.kankreg",
     },
-    plugins: [...(expo.plugins || []), "expo-web-browser"],
+    splash: {
+      image: "./assets/splash-icon.png",
+      resizeMode: "contain",
+      backgroundColor: "#F7F2E8",
+      dark: {
+        image: "./assets/splash-icon.png",
+        backgroundColor: "#1A1714",
+      },
+    },
+    icon: "./assets/app-icon-light.png",
+    plugins: [
+      ...(expo.plugins || []),
+      "expo-dev-client",
+      "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          image: "./assets/splash-icon.png",
+          resizeMode: "contain",
+          backgroundColor: "#F7F2E8",
+          dark: {
+            image: "./assets/splash-icon.png",
+            backgroundColor: "#1A1714",
+          },
+        },
+      ],
+      [
+        "@howincodes/expo-dynamic-app-icon",
+        {
+          light: {
+            ios: "./assets/app-icon-light.png",
+            android: {
+              foregroundImage: "./assets/app-icon-light.png",
+              backgroundColor: "#F5EFE4",
+            },
+          },
+          dark: {
+            ios: "./assets/app-icon-dark.png",
+            android: {
+              foregroundImage: "./assets/app-icon-dark.png",
+              backgroundColor: "#1A1714",
+            },
+          },
+        },
+      ],
+    ],
   },
 };

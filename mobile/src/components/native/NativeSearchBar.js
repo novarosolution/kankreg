@@ -6,7 +6,12 @@ import { useTheme } from "../../context/ThemeContext";
 import { SEARCH_PLACEHOLDER } from "../../content/appContent";
 import { spacing } from "../../theme/tokens";
 
-export default function NativeSearchBar({ onPress, onFilterPress, placeholder = "Search essentials" }) {
+export default function NativeSearchBar({
+  onPress,
+  onFilterPress,
+  placeholder = "Search essentials",
+  filterBadgeCount = 0,
+}) {
   const { colors: c, isDark } = useTheme();
   const styles = useMemo(() => createStyles(isDark, c), [isDark, c]);
   if (Platform.OS === "web") return null;
@@ -22,6 +27,11 @@ export default function NativeSearchBar({ onPress, onFilterPress, placeholder = 
       {onFilterPress ? (
         <Pressable style={styles.filterBtn} onPress={onFilterPress} accessibilityLabel="Filters">
           <Ionicons name="options-outline" size={16} color={styles.iconColorActive} />
+          {filterBadgeCount > 0 ? (
+            <View style={styles.filterBadge}>
+              <Text style={styles.filterBadgeText}>{filterBadgeCount > 9 ? "9+" : filterBadgeCount}</Text>
+            </View>
+          ) : null}
         </Pressable>
       ) : null}
     </View>
@@ -69,6 +79,24 @@ function createStyles(isDark, c) {
         justifyContent: "center",
         backgroundColor: bg,
         borderColor: border,
+        position: "relative",
+      },
+      filterBadge: {
+        position: "absolute",
+        top: 4,
+        right: 4,
+        minWidth: 14,
+        height: 14,
+        borderRadius: 7,
+        backgroundColor: FIGMA.goldDeep,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 3,
+      },
+      filterBadgeText: {
+        fontSize: 8,
+        fontWeight: "800",
+        color: "#fff",
       },
     }),
     iconColor,

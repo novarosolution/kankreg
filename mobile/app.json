@@ -10,8 +10,8 @@
       "android",
       "web"
     ],
-    "userInterfaceStyle": "light",
-    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/app-icon-light.png",
     "web": {
       "favicon": "./assets/favicon.png"
     },
@@ -23,8 +23,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFCF8"
+        "foregroundImage": "./assets/app-icon-light.png",
+        "backgroundColor": "#F5EFE4"
       },
       "softwareKeyboardLayoutMode": "resize",
       "permissions": [

@@ -215,7 +215,7 @@ export default function CartScreen({ navigation, route }) {
             figmaOnWeb
           />
           <View style={styles.loginCard}>
-            <BrandLogo width={BRAND_LOGO_SIZE.footerCompact} height={BRAND_LOGO_SIZE.footerCompact} style={styles.loginBrandLogo} />
+            <BrandLogo height={BRAND_LOGO_SIZE.footerCompact} style={styles.loginBrandLogo} />
             <PremiumEmptyState
               iconName="bag-handle-outline"
               title="Sign in to continue"
@@ -474,7 +474,7 @@ export default function CartScreen({ navigation, route }) {
         {(!kankregWebSplit || !isCheckoutFlow) && cartItems.length === 0 ? (
           <SectionReveal index={0} preset="scale-in">
           <View style={styles.emptyCard}>
-            <BrandLogo width={BRAND_LOGO_SIZE.footerCompact} height={BRAND_LOGO_SIZE.footerCompact} style={styles.emptyBrandLogo} />
+            <BrandLogo height={BRAND_LOGO_SIZE.footerCompact} style={styles.emptyBrandLogo} />
             <PremiumEmptyState
               iconName="cart-outline"
               title={CART_UI.emptyTitle}
@@ -1028,7 +1028,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#FFFCF8",
+    backgroundColor: c.onPrimary,
     alignItems: "center",
     justifyContent: "center",
     ...Platform.select({
@@ -1042,7 +1042,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
   checkoutGradientMuted: {
     backgroundColor: c.textMuted},
   checkoutGradientText: {
-    color: "#FFFCF8",
+    color: c.onPrimary,
     fontFamily: fonts.extrabold,
     fontSize: typography.bodySmall + 1,
     letterSpacing: 1.35},

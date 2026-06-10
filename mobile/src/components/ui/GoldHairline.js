@@ -5,29 +5,48 @@ import { spacing } from "../../theme/tokens";
 import { ALCHEMY } from "../../theme/customerAlchemy";
 import { useTheme } from "../../context/ThemeContext";
 
+const GRADIENT = {
+  default: {
+    dark: ["rgba(232, 200, 90, 0)", "rgba(232, 200, 90, 0.5)", "rgba(232, 200, 90, 0)"],
+    light: ["rgba(201, 162, 39, 0)", "rgba(201, 162, 39, 0.5)", "rgba(201, 162, 39, 0)"],
+  },
+  /** Thin editorial rule — low-opacity gold, no dot. @see theme/homeEditorial.js */
+  subtle: {
+    dark: ["rgba(232, 200, 90, 0)", "rgba(232, 200, 90, 0.28)", "rgba(232, 200, 90, 0)"],
+    light: ["rgba(201, 162, 39, 0)", "rgba(201, 162, 39, 0.32)", "rgba(201, 162, 39, 0)"],
+  },
+};
+
 /**
- * Gradient hairline divider (gold -> transparent + small anchor dot). Used
+ * Gradient hairline divider (gold -> transparent + optional anchor dot). Used
  * between cart sections, profile groups, settings groups, etc.
+ *
+ * `variant="subtle"` — thin low-opacity rule for editorial section eyebrows.
  */
-function GoldHairlineBase({ marginVertical = spacing.md, withDot = true, style }) {
+function GoldHairlineBase({
+  marginVertical = spacing.md,
+  withDot = true,
+  variant = "default",
+  style,
+}) {
   const { isDark } = useTheme();
+  const isSubtle = variant === "subtle";
   const mv =
     Platform.OS !== "web" && marginVertical >= spacing.sm
       ? Math.max(spacing.xs, marginVertical - spacing.sm)
       : marginVertical;
+  const palette = GRADIENT[isSubtle ? "subtle" : "default"];
+  const showDot = withDot && !isSubtle;
+
   return (
     <View style={[styles.wrap, { marginVertical: mv }, style, styles.peNone]}>
       <LinearGradient
-        colors={
-          isDark
-            ? ["rgba(232, 200, 90, 0)", "rgba(232, 200, 90, 0.5)", "rgba(232, 200, 90, 0)"]
-            : ["rgba(201, 162, 39, 0)", "rgba(201, 162, 39, 0.5)", "rgba(201, 162, 39, 0)"]
-        }
+        colors={isDark ? palette.dark : palette.light}
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
-        style={styles.line}
+        style={[styles.line, isSubtle && styles.lineSubtle]}
       />
-      {withDot ? (
+      {showDot ? (
         <View
           style={[
             styles.dot,
@@ -51,6 +70,11 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 1,
     borderRadius: 1,
+  },
+  lineSubtle: {
+    height: StyleSheet.hairlineWidth,
+    maxWidth: "100%",
+    opacity: 0.9,
   },
   dot: {
     width: 4,

@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { FIGMA, figmaCardShell, figmaTextPrimary } from "../../theme/figmaApp";
 import { useTheme } from "../../context/ThemeContext";
+import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { fonts, spacing } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
 
@@ -62,18 +63,47 @@ const stripShadow = platformShadow({
   android: { elevation: 1 },
 });
 
-export default function NativeCategoryRow({ categories = DEFAULT_CATS, onPress }) {
-  const { isDark } = useTheme();
-  if (Platform.OS === "web") return null;
+export default function NativeCategoryRow({ categories, products, onPress }) {
+  const { isDark, colors: c } = useTheme();
+  const { isMobileWeb } = useKankregLayout();
+  const safeProducts = Array.isArray(products) ? products : [];
+  const tiles = useMemo(() => {
+    if (Array.isArray(categories) && categories.length) return categories;
+    const labels = [
+      ...new Set(
+        safeProducts
+          .map((p) => String(p.category || p.productType || "").trim())
+          .filter(Boolean)
+      ),
+    ].slice(0, 6);
+    if (!labels.length) return DEFAULT_CATS;
+    return labels.map((label, i) => {
+      const seed = DEFAULT_CATS[i % DEFAULT_CATS.length];
+      return {
+        ...seed,
+        key: `${seed.key}-${label}`,
+        label,
+      };
+    });
+  }, [categories, safeProducts]);
+
+  if (Platform.OS === "web" && !isMobileWeb) return null;
 
   return (
-    <View style={[styles.strip, figmaCardShell(isDark), stripShadow]}>
+    <View
+      style={[
+        styles.strip,
+        isMobileWeb && styles.stripMobileWeb,
+        figmaCardShell(isDark),
+        stripShadow,
+      ]}
+    >
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        {categories.map((cat) => {
+        {tiles.map((cat) => {
           const tileColors = isDark && cat.colorsDark ? cat.colorsDark : cat.colors;
           return (
             <Pressable
@@ -81,7 +111,13 @@ export default function NativeCategoryRow({ categories = DEFAULT_CATS, onPress }
               style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
               onPress={() => onPress?.(cat.label)}
             >
-              <View style={[styles.tile, tileShadow, isDark && styles.tileDark]}>
+              <View
+                style={[
+                  styles.tile,
+                  tileShadow,
+                  isDark && { borderColor: c.primaryBorder, backgroundColor: c.surface },
+                ]}
+              >
                 <LinearGradient
                   colors={tileColors}
                   start={{ x: 0.32, y: 0.18 }}
@@ -119,6 +155,10 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     paddingVertical: 14,
     marginBottom: spacing.xs,
+  },
+  stripMobileWeb: {
+    marginHorizontal: 0,
+    width: "100%",
   },
   content: {
     paddingHorizontal: 14,

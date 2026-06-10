@@ -29,7 +29,7 @@ export default function BrandHeaderMark({ navigation, navigationRef, compact = f
       accessibilityLabel={`${APP_DISPLAY_NAME} — Home`}
       hitSlop={10}
     >
-      <BrandLogo width={size} height={size} style={styles.logoMark} />
+      <BrandLogo height={size} style={styles.logoMark} />
     </Pressable>
   );
 }

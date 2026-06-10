@@ -7,6 +7,7 @@ export { default as PremiumErrorBanner } from "./PremiumErrorBanner";
 export { default as PremiumChip } from "./PremiumChip";
 export { default as PriceTag } from "./PriceTag";
 export { default as GoldHairline } from "./GoldHairline";
+export { GOLD_HAIRLINE_EDITORIAL, HOME_SPACE, HOME_TYPE } from "../../theme/homeEditorial";
 export { default as PremiumLoader } from "./PremiumLoader";
 export { default as SkeletonBlock } from "./SkeletonBlock";
 export { default as PremiumStatCard } from "./PremiumStatCard";

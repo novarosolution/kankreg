@@ -272,6 +272,38 @@ async function uploadProductImage(req, res, next) {
   }
 }
 
+async function uploadMarketingVideo(req, res, next) {
+  try {
+    const { videoBase64, mimeType } = req.body || {};
+
+    if (!videoBase64 || typeof videoBase64 !== "string") {
+      return res.status(400).json({ message: "videoBase64 is required." });
+    }
+
+    const hasDataPrefix = videoBase64.startsWith("data:video/");
+    const safeMime =
+      typeof mimeType === "string" && mimeType.startsWith("video/") ? mimeType : "video/mp4";
+    const uploadSource = hasDataPrefix ? videoBase64 : `data:${safeMime};base64,${videoBase64}`;
+
+    const uploaded = await cloudinary.uploader.upload(uploadSource, {
+      folder: "kankreg/marketing",
+      resource_type: "video",
+    });
+
+    res.status(201).json({
+      url: uploaded.secure_url,
+      publicId: uploaded.public_id,
+    });
+  } catch (error) {
+    if (error?.http_code === 413 || String(error?.message || "").toLowerCase().includes("file size")) {
+      return res.status(413).json({
+        message: "Video is too large. Please choose a shorter clip or smaller file.",
+      });
+    }
+    next(error);
+  }
+}
+
 async function getProductReviews(req, res, next) {
   try {
     const { id } = req.params;
@@ -348,6 +380,7 @@ module.exports = {
   updateProduct,
   deleteProduct,
   uploadProductImage,
+  uploadMarketingVideo,
   getProductReviews,
   createOrUpdateProductReview,
 };

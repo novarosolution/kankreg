@@ -30,6 +30,13 @@ import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumChip from "../../components/ui/PremiumChip";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
+import AdminHomeMediaEditor from "../../components/admin/AdminHomeMediaEditor";
+import {
+  normalizeAboutSection,
+  normalizeCommunitySection,
+  normalizeCompareSection,
+  normalizeHeroSlides,
+} from "../../utils/homeViewMedia";
 
 function Section({ label, hint, children, styles, revealIndex = 0 }) {
   return (
@@ -86,6 +93,10 @@ export default function AdminHomeViewScreen({ navigation, route }) {
   const [shopPostalCode, setShopPostalCode] = useState("");
   const [shopLatitude, setShopLatitude] = useState("");
   const [shopLongitude, setShopLongitude] = useState("");
+  const [heroSlides, setHeroSlides] = useState([]);
+  const [aboutSection, setAboutSection] = useState(HOME_VIEW_DEFAULTS.aboutSection);
+  const [communitySection, setCommunitySection] = useState(HOME_VIEW_DEFAULTS.communitySection);
+  const [compareSection, setCompareSection] = useState(HOME_VIEW_DEFAULTS.compareSection);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -115,6 +126,10 @@ export default function AdminHomeViewScreen({ navigation, route }) {
       setShopLongitude(
         Number.isFinite(Number(shop.longitude)) ? String(shop.longitude) : ""
       );
+      setHeroSlides(normalizeHeroSlides(data.heroSlides));
+      setAboutSection(normalizeAboutSection(data.aboutSection));
+      setCommunitySection(normalizeCommunitySection(data.communitySection));
+      setCompareSection(normalizeCompareSection(data.compareSection));
     } catch (err) {
       setError(err.message || "Unable to load home view settings.");
     }
@@ -166,6 +181,10 @@ export default function AdminHomeViewScreen({ navigation, route }) {
           latitude: shopLatitude.trim() ? Number(shopLatitude) : null,
           longitude: shopLongitude.trim() ? Number(shopLongitude) : null,
         },
+        heroSlides,
+        aboutSection,
+        communitySection,
+        compareSection,
       });
       setSuccess("Storefront settings saved.");
     } catch (err) {
@@ -228,7 +247,22 @@ export default function AdminHomeViewScreen({ navigation, route }) {
             </View>
           </Section>
 
-          <Section label={copy.sectionTitles} hint={copy.sectionTitlesHint} styles={styles} revealIndex={1}>
+          <Section label={copy.heroMediaSection} hint={copy.heroMediaHint} styles={styles} revealIndex={1}>
+            <AdminHomeMediaEditor
+              token={token}
+              heroSlides={heroSlides}
+              onHeroSlidesChange={setHeroSlides}
+              aboutSection={aboutSection}
+              onAboutSectionChange={setAboutSection}
+              communitySection={communitySection}
+              onCommunitySectionChange={setCommunitySection}
+              compareSection={compareSection}
+              onCompareSectionChange={setCompareSection}
+              onError={setError}
+            />
+          </Section>
+
+          <Section label={copy.sectionTitles} hint={copy.sectionTitlesHint} styles={styles} revealIndex={2}>
             <View style={styles.fieldGap}>
               <PremiumInput
                 label="Prime section title"
@@ -270,7 +304,7 @@ export default function AdminHomeViewScreen({ navigation, route }) {
           />
           </AdminPanel>
 
-          <Section label={copy.shopLocationSection} hint={copy.shopLocationHint} styles={styles} revealIndex={3}>
+          <Section label={copy.shopLocationSection} hint={copy.shopLocationHint} styles={styles} revealIndex={4}>
             <View style={styles.fieldGap}>
               <PremiumInput
                 label={copy.shopNameLabel}
@@ -332,7 +366,7 @@ export default function AdminHomeViewScreen({ navigation, route }) {
             />
           </Section>
 
-          <Section label={copy.cardLayoutSection} hint={copy.cardLayoutHint} styles={styles} revealIndex={4}>
+          <Section label={copy.cardLayoutSection} hint={copy.cardLayoutHint} styles={styles} revealIndex={5}>
             <View style={styles.row}>
               <PremiumChip
                 label="Compact"
@@ -353,7 +387,7 @@ export default function AdminHomeViewScreen({ navigation, route }) {
             </View>
           </Section>
 
-          <Section label={copy.quickLinks} hint={null} styles={styles} revealIndex={5}>
+          <Section label={copy.quickLinks} hint={null} styles={styles} revealIndex={6}>
             <View style={[styles.linkStack, { borderColor: c.border }]}>
               <QuickLinkRow
                 title={copy.linkProductsTitle}

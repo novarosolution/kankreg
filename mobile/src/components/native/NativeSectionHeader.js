@@ -2,6 +2,7 @@ import React from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { FIGMA, figmaDisplayTitle, figmaEyebrow } from "../../theme/figmaApp";
 import { useTheme } from "../../context/ThemeContext";
+import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { HOME_SCREEN_UI } from "../../content/appContent";
 import { fonts, spacing } from "../../theme/tokens";
 
@@ -13,10 +14,11 @@ export default function NativeSectionHeader({
   tight = false,
 }) {
   const { isDark } = useTheme();
-  if (Platform.OS === "web") return null;
+  const { isMobileWeb } = useKankregLayout();
+  if (Platform.OS === "web" && !isMobileWeb) return null;
 
   return (
-    <View style={[styles.row, tight && styles.rowTight]}>
+    <View style={[styles.row, tight && styles.rowTight, isMobileWeb && styles.rowMobileWeb]}>
       <View style={styles.titleCol}>
         {eyebrow ? <Text style={figmaEyebrow(isDark)}>{eyebrow}</Text> : null}
         <Text style={figmaDisplayTitle(16, isDark)}>{title}</Text>
@@ -44,6 +46,9 @@ const styles = StyleSheet.create({
   },
   rowTight: {
     marginTop: spacing.sm,
+  },
+  rowMobileWeb: {
+    marginHorizontal: 0,
   },
   titleCol: {
     flex: 1,

@@ -39,7 +39,7 @@ export default function HomePageFooter({ colors: c }) {
     <View style={styles.shell}>
       <View style={styles.topRow}>
         <View style={styles.brandBlock}>
-          <BrandLogo width={BRAND_LOGO_SIZE.footerWide} height={BRAND_LOGO_SIZE.footerWide} style={styles.brandLogoMark} />
+          <BrandLogo height={BRAND_LOGO_SIZE.footerWide} style={styles.brandLogoMark} />
         </View>
         <View style={styles.socialRow}>
           <Pressable style={({ hovered }) => [styles.socialBtn, hovered && Platform.OS === "web" ? styles.socialBtnHover : null]} onPress={() => Linking.openURL("https://instagram.com")}>

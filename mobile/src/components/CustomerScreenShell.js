@@ -298,6 +298,10 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     minHeight: Platform.OS === "web" ? "100dvh" : undefined,
+    ...Platform.select({
+      web: { overflow: "visible" },
+      default: {},
+    }),
   },
   webSheet: {
     ...StyleSheet.absoluteFillObject,

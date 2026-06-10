@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { Image } from "expo-image";
@@ -16,22 +17,67 @@ import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { useTheme } from "../../context/ThemeContext";
 import { formatINR } from "../../utils/currency";
 import { PRODUCT_HERO_BLURHASH } from "../../utils/image";
-import { customerScrollPaddingBottomWithSticky, FIGMA_STICKY_FOOTER_HEIGHT } from "../../theme/screenLayout";
-import { fonts, icon, spacing } from "../../theme/tokens";
+import {
+  customerProductScrollPaddingBottom,
+  NATIVE_PRODUCT_STICKY_BAR_HEIGHT,
+} from "../../theme/screenLayout";
+import { fonts, radius, spacing } from "../../theme/tokens";
 import { PRODUCT_SCREEN, fillProductScreen } from "../../content/appContent";
 import NativeStickyBuyBar from "./NativeStickyBuyBar";
 import NativeProductCard from "./NativeProductCard";
 import GoldHairline from "../ui/GoldHairline";
 
-function StarRow({ rating, muted }) {
+function StarRow({ rating, size = 11 }) {
   const filled = Math.min(5, Math.max(0, Math.round(Number(rating) || 0)));
   return (
-    <Text style={[styles.stars, muted && styles.starsMuted]}>
+    <Text style={[styles.stars, { fontSize: size }]}>
       {"★".repeat(filled)}
       {"☆".repeat(5 - filled)}
     </Text>
   );
 }
+
+function SectionHeader({ eyebrow, title, isDark, c }) {
+  return (
+    <View style={styles.sectionHead}>
+      <Text style={styles.sectionEyebrow}>{eyebrow}</Text>
+      <Text style={[styles.sectionTitle, { color: isDark ? c.textPrimary : KANKREG_PALETTE.ink }]}>
+        {title}
+      </Text>
+      <View style={styles.sectionRule} />
+    </View>
+  );
+}
+
+function FeatureCard({ icon, title, subtitle, isDark, c }) {
+  return (
+    <View
+      style={[
+        styles.featureCard,
+        {
+          backgroundColor: isDark ? c.surfaceMuted : KANKREG_PALETTE.card,
+          borderColor: isDark ? c.border : KANKREG_PALETTE.line,
+        },
+      ]}
+    >
+      <View style={styles.featureIcon}>
+        <Ionicons name={icon} size={17} color={KANKREG_PALETTE.goldDeep} />
+      </View>
+      <View style={styles.featureCopy}>
+        <Text style={[styles.featureTitle, { color: isDark ? c.textPrimary : KANKREG_PALETTE.ink }]}>
+          {title}
+        </Text>
+        <Text style={styles.featureSub}>{subtitle}</Text>
+      </View>
+    </View>
+  );
+}
+
+const DEFAULT_TRUST_FEATURES = [
+  { icon: "flash-outline", title: "Fast delivery", subtitle: "Live-tracked shipping" },
+  { icon: "gift-outline", title: "Earn rewards", subtitle: "Points on every order" },
+  { icon: "refresh-outline", title: "Easy returns", subtitle: "7-day policy" },
+];
 
 /** kankreg design board screen 08 — premium product detail */
 export default function NativeProductView({
@@ -59,9 +105,32 @@ export default function NativeProductView({
   relatedProducts,
   onRelatedPress,
   onAddRelated,
+  reviews = [],
+  reviewRating = 0,
+  onReviewRatingChange,
+  reviewComment = "",
+  onReviewCommentChange,
+  reviewBusy = false,
+  reviewSuccess = "",
+  reviewError = "",
+  onSubmitReview,
+  isAuthenticated = false,
 }) {
   const insets = useSafeAreaInsets();
   const { colors: c, isDark } = useTheme();
+
+  const trustFeatures = useMemo(() => {
+    const etaFeature = product?.eta
+      ? { icon: "time-outline", title: "Delivery", subtitle: String(product.eta) }
+      : DEFAULT_TRUST_FEATURES[0];
+    const rewardsPts = Math.max(10, Math.round((displayPrice || 0) / 10));
+    return [
+      etaFeature,
+      { icon: "gift-outline", title: "Earn rewards", subtitle: `~${rewardsPts} pts on purchase` },
+      DEFAULT_TRUST_FEATURES[2],
+    ];
+  }, [product?.eta, displayPrice]);
+
   if (Platform.OS === "web") return null;
 
   const pageBg = isDark ? c.background : KANKREG_PALETTE.paper;
@@ -73,17 +142,28 @@ export default function NativeProductView({
     product?.category ||
     "Essentials";
   const unit = product?.unit || PRODUCT_SCREEN.unitFallback;
+  const description = product?.description || PRODUCT_SCREEN.defaultDescription;
   const usps = Array.isArray(product?.usps) ? product.usps.filter(Boolean).slice(0, 4) : [];
+  const stockQty = Number(product?.stockQty);
+  const showStock = Number.isFinite(stockQty) && stockQty > 0 && !isOutOfStock;
+
+  const ratingSummary =
+    liveRatingAvg > 0
+      ? fillProductScreen(PRODUCT_SCREEN.metaRatingSummary, {
+          rating: liveRatingAvg.toFixed(1),
+          count: String(reviewCountDisplay),
+        })
+      : PRODUCT_SCREEN.metaNoRatings;
 
   return (
     <View style={[styles.root, { backgroundColor: pageBg }]}>
       <LinearGradient
         colors={
           isDark
-            ? ["rgba(201,162,39,0.12)", "rgba(28,25,23,0.4)", c.background]
-            : ["#f3e7cc", "#ece3d2", KANKREG_PALETTE.paper]
+            ? ["rgba(201,162,39,0.14)", "rgba(28,25,23,0.35)", c.background]
+            : ["#f5ead0", "#ebe2d0", KANKREG_PALETTE.paper]
         }
-        locations={[0, 0.55, 1]}
+        locations={[0, 0.5, 1]}
         style={styles.heroBg}
       />
 
@@ -115,58 +195,101 @@ export default function NativeProductView({
           </View>
         )}
         <View style={styles.heroShadow} />
+        <LinearGradient
+          colors={["transparent", isDark ? "rgba(28,25,23,0.5)" : "rgba(255,253,248,0.85)"]}
+          style={styles.heroVignette}
+          pointerEvents="none"
+        />
       </View>
+
+      {galleryImages.length > 1 ? (
+        <View style={[styles.galleryDock, { backgroundColor: isDark ? "rgba(28,25,23,0.72)" : "rgba(255,253,248,0.9)" }]}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryRow}>
+            {galleryImages.map((uri) => (
+              <Pressable
+                key={uri}
+                onPress={() => onSelectImage(uri)}
+                style={[
+                  styles.thumb,
+                  { backgroundColor: isDark ? c.surfaceMuted : KANKREG_PALETTE.paper2 },
+                  selectedImage === uri && styles.thumbOn,
+                ]}
+              >
+                <Image source={{ uri }} style={styles.thumbImage} contentFit="cover" />
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
 
       <ScrollView
         style={styles.sheetScroll}
         contentContainerStyle={[
           styles.sheetContent,
-          { paddingBottom: customerScrollPaddingBottomWithSticky(insets, FIGMA_STICKY_FOOTER_HEIGHT + 8) },
+          { paddingBottom: customerProductScrollPaddingBottom(insets, NATIVE_PRODUCT_STICKY_BAR_HEIGHT) },
         ]}
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.sheet, { backgroundColor: sheetBg }]}>
           <View style={[styles.sheetAccent, { backgroundColor: isDark ? ALCHEMY.goldBright : ALCHEMY.gold }]} />
+          <View style={styles.sheetHandleWrap}>
+            <View
+              style={[styles.sheetHandle, { backgroundColor: isDark ? "rgba(255,255,255,0.2)" : "rgba(25,20,15,0.14)" }]}
+            />
+          </View>
 
-          <View style={styles.titleRow}>
-            <View style={styles.titleCol}>
-              <View style={styles.tagRow}>
-                <View style={styles.tagGold}>
-                  <Text style={styles.tagGoldText}>{String(categoryLabel).toUpperCase()}</Text>
-                </View>
-                {isOutOfStock ? (
-                  <View style={styles.tagMuted}>
-                    <Text style={styles.tagMutedText}>{PRODUCT_SCREEN.heroOutOfStock}</Text>
-                  </View>
-                ) : (
-                  <View style={styles.tagOk}>
-                    <Ionicons name="checkmark-circle" size={11} color={KANKREG_PALETTE.green} />
-                    <Text style={styles.tagOkText}>{PRODUCT_SCREEN.metaReadyToShip}</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={[styles.title, { color: isDark ? c.textPrimary : KANKREG_PALETTE.ink }]}>
-                {product?.name}
-              </Text>
+          <Text style={styles.breadcrumb} numberOfLines={1}>
+            Shop · {String(product?.category || PRODUCT_SCREEN.categoryFallback).trim()} · {product?.name}
+          </Text>
+
+          <View style={styles.tagRow}>
+            <View style={styles.tagGold}>
+              <Text style={styles.tagGoldText}>{String(categoryLabel).toUpperCase()}</Text>
             </View>
-            {liveRatingAvg > 0 ? (
-              <View style={styles.ratingCol}>
-                <StarRow rating={liveRatingAvg} />
-                <Text style={styles.ratingMeta}>
-                  {liveRatingAvg.toFixed(1)} · {reviewCountDisplay}
+            {isOutOfStock ? (
+              <View style={styles.tagMuted}>
+                <Text style={styles.tagMutedText}>{PRODUCT_SCREEN.heroOutOfStock}</Text>
+              </View>
+            ) : (
+              <View style={styles.tagOk}>
+                <Ionicons name="checkmark-circle" size={11} color={KANKREG_PALETTE.green} />
+                <Text style={styles.tagOkText}>{PRODUCT_SCREEN.metaReadyToShip}</Text>
+              </View>
+            )}
+            {showStock ? (
+              <View style={styles.tagStock}>
+                <Text style={styles.tagStockText}>
+                  {fillProductScreen(PRODUCT_SCREEN.stockCountLabel, { count: String(stockQty) })}
                 </Text>
               </View>
             ) : null}
           </View>
 
-          <View style={styles.priceBand}>
-            <Text style={[styles.price, { color: isDark ? c.textPrimary : KANKREG_PALETTE.ink }]}>
-              {formatINR(displayPrice)}
-            </Text>
-            {showMrp && mrp ? (
-              <Text style={styles.mrp}>{formatINR(mrp)}</Text>
-            ) : null}
-            <Text style={styles.unit}>/{unit}</Text>
+          <Text style={[styles.title, { color: isDark ? c.textPrimary : KANKREG_PALETTE.ink }]}>
+            {product?.name}
+          </Text>
+
+          <View style={styles.ratingRow}>
+            <StarRow rating={liveRatingAvg} size={12} />
+            <Text style={styles.ratingMeta}>{ratingSummary}</Text>
+          </View>
+
+          <View
+            style={[
+              styles.pricePanel,
+              {
+                backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(169,119,46,0.06)",
+                borderColor: isDark ? c.border : "rgba(169,119,46,0.18)",
+              },
+            ]}
+          >
+            <View style={styles.priceBand}>
+              <Text style={[styles.price, { color: isDark ? c.textPrimary : KANKREG_PALETTE.ink }]}>
+                {formatINR(displayPrice)}
+              </Text>
+              {showMrp && mrp ? <Text style={styles.mrp}>{formatINR(mrp)}</Text> : null}
+              <Text style={styles.unit}>/{unit}</Text>
+            </View>
             {offPct != null && offPct > 0 ? (
               <View style={styles.saveChip}>
                 <Ionicons name="pricetag" size={11} color={KANKREG_PALETTE.green} />
@@ -177,34 +300,12 @@ export default function NativeProductView({
             ) : null}
           </View>
 
-          {(product?.eta || unit) && (
-            <View style={styles.trustRow}>
-              {unit ? (
-                <View style={styles.trustPill}>
-                  <Ionicons name="cube-outline" size={12} color={KANKREG_PALETTE.goldDeep} />
-                  <Text style={styles.trustText}>{unit}</Text>
-                </View>
-              ) : null}
-              {product?.eta ? (
-                <View style={styles.trustPill}>
-                  <Ionicons name="time-outline" size={12} color={KANKREG_PALETTE.goldDeep} />
-                  <Text style={styles.trustText}>{product.eta}</Text>
-                </View>
-              ) : null}
-            </View>
-          )}
-
-          {product?.description ? (
-            <Text style={[styles.desc, { color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft }]}>
-              {product.description}
-            </Text>
-          ) : null}
-
-          <GoldHairline marginVertical={spacing.sm} />
-
           {variants.length > 0 ? (
-            <View style={styles.variantBlock}>
-              <Text style={styles.variantLabel}>{PRODUCT_SCREEN.variantOverline}</Text>
+            <View style={styles.block}>
+              <Text style={styles.blockLabel}>{PRODUCT_SCREEN.variantOverline}</Text>
+              <Text style={[styles.blockTitle, { color: isDark ? c.textPrimary : KANKREG_PALETTE.ink }]}>
+                {PRODUCT_SCREEN.variantTitle}
+              </Text>
               <View style={styles.variantRow}>
                 {variants.map((v) => {
                   const label = String(v.label || v.name || "");
@@ -215,11 +316,32 @@ export default function NativeProductView({
                       onPress={() => onSelectVariant(label)}
                       style={[
                         styles.variantPill,
-                        active ? styles.variantPillOn : styles.variantPillOff,
-                        isDark && !active && { borderColor: c.border },
+                        active
+                          ? {
+                              backgroundColor: isDark ? c.primaryDark : KANKREG_PALETTE.ink,
+                              borderColor: isDark ? c.primary : KANKREG_PALETTE.ink,
+                            }
+                          : {
+                              backgroundColor: isDark ? c.surfaceMuted : KANKREG_PALETTE.card,
+                              borderColor: isDark ? c.border : KANKREG_PALETTE.line,
+                            },
                       ]}
                     >
-                      <Text style={[styles.variantText, active && styles.variantTextOn]}>{label}</Text>
+                      <Text
+                        style={[
+                          styles.variantText,
+                          {
+                            color: active
+                              ? c.onPrimary
+                              : isDark
+                                ? c.textSecondary
+                                : KANKREG_PALETTE.inkSoft,
+                          },
+                          active && styles.variantTextOn,
+                        ]}
+                      >
+                        {label}
+                      </Text>
                     </Pressable>
                   );
                 })}
@@ -227,25 +349,31 @@ export default function NativeProductView({
             </View>
           ) : null}
 
-          {galleryImages.length > 1 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.thumbRow}>
-              {galleryImages.map((uri) => (
-                <Pressable
-                  key={uri}
-                  onPress={() => onSelectImage(uri)}
-                  style={[styles.thumb, selectedImage === uri && styles.thumbOn]}
-                >
-                  <Image source={{ uri }} style={styles.thumbImage} contentFit="cover" />
-                </Pressable>
-              ))}
-            </ScrollView>
-          ) : null}
+          <View style={styles.featureGrid}>
+            {trustFeatures.map((feat) => (
+              <FeatureCard key={feat.title} {...feat} isDark={isDark} c={c} />
+            ))}
+          </View>
+
+          <GoldHairline marginVertical={spacing.md} />
+
+          <SectionHeader
+            eyebrow={PRODUCT_SCREEN.storyOverline}
+            title={PRODUCT_SCREEN.storyTitle}
+            isDark={isDark}
+            c={c}
+          />
+          <Text style={[styles.desc, { color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft }]}>
+            {description}
+          </Text>
 
           {usps.length > 0 ? (
             <View style={styles.uspsWrap}>
               {usps.map((line) => (
                 <View key={line} style={styles.uspRow}>
-                  <Ionicons name="sparkles-outline" size={13} color={KANKREG_PALETTE.gold} />
+                  <View style={styles.uspDot}>
+                    <Ionicons name="sparkles" size={11} color={isDark ? c.primary : KANKREG_PALETTE.goldDeep} />
+                  </View>
                   <Text style={[styles.uspText, { color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft }]}>
                     {line}
                   </Text>
@@ -253,31 +381,134 @@ export default function NativeProductView({
               ))}
             </View>
           ) : null}
+        </View>
 
-          {quantity > 0 && !isOutOfStock ? (
-            <View style={styles.stepper}>
-              <Pressable style={styles.stepBtn} onPress={onRemoveFromCart}>
-                <Ionicons name="remove" size={icon.md} color="#fff" />
-              </Pressable>
-              <Text style={styles.stepCount}>
-                {fillProductScreen(PRODUCT_SCREEN.inCartCount, { count: String(quantity) })}
-              </Text>
-              <Pressable style={styles.stepBtn} onPress={onAddToCart}>
-                <Ionicons name="add" size={icon.md} color="#fff" />
-              </Pressable>
-            </View>
+        <View style={[styles.reviewsBlock, { backgroundColor: isDark ? c.surface : KANKREG_PALETTE.paper2 }]}>
+          <SectionHeader
+            eyebrow={PRODUCT_SCREEN.reviewsOverline}
+            title={
+              reviewCountDisplay > 0
+                ? `${PRODUCT_SCREEN.reviewsTitle} · ${liveRatingAvg.toFixed(1)}`
+                : PRODUCT_SCREEN.reviewsTitle
+            }
+            isDark={isDark}
+            c={c}
+          />
+          {reviewCountDisplay === 0 ? (
+            <Text style={[styles.reviewsEmpty, { color: isDark ? c.textMuted : KANKREG_PALETTE.inkFaint }]}>
+              {PRODUCT_SCREEN.reviewsEmptySubtitle}
+            </Text>
           ) : null}
+
+          {(reviews || []).slice(0, 3).map((r, idx) => {
+            const name = String(r.userName || "Customer").trim() || "Customer";
+            const initial = name.charAt(0).toUpperCase();
+            const comment = String(r.comment || "").trim();
+            const rt = Number(r.rating || 0);
+            return (
+              <View
+                key={`${r._id || idx}`}
+                style={[
+                  styles.reviewItem,
+                  { borderColor: isDark ? c.border : KANKREG_PALETTE.line, backgroundColor: sheetBg },
+                ]}
+              >
+                <View style={[styles.reviewAvatar, { backgroundColor: "rgba(169,119,46,0.12)" }]}>
+                  <Text style={styles.reviewAvatarText}>{initial}</Text>
+                </View>
+                <View style={styles.reviewBody}>
+                  <View style={styles.reviewTop}>
+                    <Text style={[styles.reviewName, { color: isDark ? c.textPrimary : KANKREG_PALETTE.ink }]}>
+                      {name}
+                    </Text>
+                    <View style={styles.reviewPill}>
+                      <Ionicons name="star" size={10} color={KANKREG_PALETTE.goldBright} />
+                      <Text style={styles.reviewPillText}>{rt}</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.reviewComment, { color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft }]}>
+                    {comment || PRODUCT_SCREEN.reviewNoWrittenNote}
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
+
+          <View
+            style={[
+              styles.reviewComposer,
+              {
+                backgroundColor: sheetBg,
+                borderColor: isDark ? c.border : KANKREG_PALETTE.line,
+              },
+            ]}
+          >
+            <View style={styles.reviewStarsPick}>
+              {[1, 2, 3, 4, 5].map((value) => (
+                <Pressable key={value} onPress={() => onReviewRatingChange?.(value)} hitSlop={8}>
+                  <Ionicons
+                    name={value <= reviewRating ? "star" : "star-outline"}
+                    size={22}
+                    color={value <= reviewRating ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.inkFaint}
+                  />
+                </Pressable>
+              ))}
+            </View>
+            <TextInput
+              value={reviewComment}
+              onChangeText={onReviewCommentChange}
+              placeholder={PRODUCT_SCREEN.reviewComposerPlaceholder}
+              placeholderTextColor={KANKREG_PALETTE.inkFaint}
+              multiline
+              numberOfLines={3}
+              style={[
+                styles.reviewInput,
+                {
+                  color: isDark ? c.textPrimary : KANKREG_PALETTE.ink,
+                  borderColor: isDark ? c.border : KANKREG_PALETTE.line,
+                },
+              ]}
+            />
+            {reviewError ? <Text style={styles.reviewError}>{reviewError}</Text> : null}
+            {reviewSuccess ? <Text style={styles.reviewSuccess}>{reviewSuccess}</Text> : null}
+            <Pressable
+              onPress={() => {
+                if (!isAuthenticated) {
+                  navigation.navigate("Login");
+                  return;
+                }
+                onSubmitReview?.();
+              }}
+              disabled={reviewBusy}
+              style={({ pressed }) => [
+                styles.reviewSubmit,
+                (pressed || reviewBusy) && { opacity: 0.88 },
+              ]}
+            >
+              <LinearGradient
+                colors={reviewBusy ? ["#9a9a9a", "#7a7a7a"] : ["#cba24e", "#9c6b27"]}
+                start={{ x: 0, y: 0.5 }}
+                end={{ x: 1, y: 0.5 }}
+                style={styles.reviewSubmitGrad}
+              >
+                <Text style={styles.reviewSubmitText}>
+                  {reviewBusy ? PRODUCT_SCREEN.reviewPosting : PRODUCT_SCREEN.reviewPost}
+                </Text>
+              </LinearGradient>
+            </Pressable>
+          </View>
         </View>
 
         {relatedProducts.length > 0 ? (
           <View style={styles.related}>
-            <Text style={styles.relatedEyebrow}>Catalog</Text>
-            <Text style={[styles.relatedTitle, { color: isDark ? c.textPrimary : KANKREG_PALETTE.ink }]}>
-              You may also like
-            </Text>
-            <View style={styles.relatedGrid}>
+            <SectionHeader eyebrow="Catalog" title="You may also like" isDark={isDark} c={c} />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.relatedRail}
+            >
               {relatedProducts.map((p, idx) => (
-                <View key={p.id} style={styles.relatedCell}>
+                <View key={p.id} style={styles.relatedCard}>
                   <NativeProductCard
                     product={p}
                     index={idx + 1}
@@ -286,18 +517,21 @@ export default function NativeProductView({
                   />
                 </View>
               ))}
-            </View>
+            </ScrollView>
           </View>
         ) : null}
       </ScrollView>
 
       <NativeStickyBuyBar
         visible
+        productName={product?.name}
         price={displayPrice}
         quantity={quantity}
         onAddToCart={onAddToCart}
+        onRemoveFromCart={onRemoveFromCart}
         onBuyNow={onBuyNow}
         disabled={isOutOfStock}
+        dockedAboveTabBar={false}
         ctaLabel={isOutOfStock ? PRODUCT_SCREEN.outOfStock : PRODUCT_SCREEN.addToCart}
       />
     </View>
@@ -311,7 +545,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: "48%",
+    height: "44%",
   },
   topBar: {
     flexDirection: "row",
@@ -320,10 +554,10 @@ const styles = StyleSheet.create({
     zIndex: 8,
   },
   circleBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.9)",
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "rgba(255,255,255,0.92)",
     alignItems: "center",
     justifyContent: "center",
     ...Platform.select({
@@ -338,15 +572,16 @@ const styles = StyleSheet.create({
     }),
   },
   circleBtnDark: {
-    backgroundColor: "rgba(40,36,32,0.72)",
+    backgroundColor: "rgba(40,36,32,0.78)",
   },
   heroStage: {
-    height: "30%",
+    height: "34%",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: "20%",
+    paddingHorizontal: "14%",
     zIndex: 3,
-    marginTop: 4,
+    marginTop: 8,
+    position: "relative",
   },
   heroImage: {
     width: "100%",
@@ -358,35 +593,77 @@ const styles = StyleSheet.create({
   },
   heroShadow: {
     position: "absolute",
-    left: "18%",
-    right: "18%",
-    bottom: 4,
-    height: 12,
+    left: "20%",
+    right: "20%",
+    bottom: 8,
+    height: 14,
     borderRadius: 999,
-    backgroundColor: "rgba(25,20,15,0.14)",
-    transform: [{ scaleX: 1.1 }],
+    backgroundColor: "rgba(25,20,15,0.12)",
+    transform: [{ scaleX: 1.15 }],
+  },
+  heroVignette: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 48,
+  },
+  galleryDock: {
+    marginHorizontal: 16,
+    marginTop: -10,
+    marginBottom: 4,
+    borderRadius: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    zIndex: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(169,119,46,0.15)",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#3D2A12",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 10,
+      },
+      android: { elevation: 3 },
+      default: {},
+    }),
+  },
+  galleryRow: {
+    gap: 10,
+    paddingHorizontal: 4,
   },
   sheetScroll: {
     flex: 1,
-    marginTop: -18,
+    marginTop: -12,
     zIndex: 5,
   },
   sheetContent: {},
+  sheetHandleWrap: {
+    alignItems: "center",
+    marginTop: -4,
+    marginBottom: 12,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 999,
+  },
   sheet: {
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 12,
     paddingBottom: spacing.lg,
     overflow: "hidden",
     ...Platform.select({
       ios: {
         shadowColor: "#3D2A12",
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.06,
-        shadowRadius: 12,
+        shadowOffset: { width: 0, height: -6 },
+        shadowOpacity: 0.07,
+        shadowRadius: 16,
       },
-      android: { elevation: 4 },
+      android: { elevation: 5 },
       default: {},
     }),
   },
@@ -397,13 +674,12 @@ const styles = StyleSheet.create({
     right: 0,
     height: 2,
   },
-  titleRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 12,
+  breadcrumb: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: KANKREG_PALETTE.inkFaint,
+    marginBottom: 10,
   },
-  titleCol: { flex: 1, minWidth: 0 },
   tagRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -447,43 +723,67 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: KANKREG_PALETTE.danger,
   },
+  tagStock: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: "rgba(25,20,15,0.05)",
+  },
+  tagStockText: {
+    fontFamily: fonts.medium,
+    fontSize: 9,
+    color: KANKREG_PALETTE.inkSoft,
+  },
   title: {
     fontFamily: FONT_DISPLAY,
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "500",
-    lineHeight: 28,
-    marginTop: 10,
-    letterSpacing: -0.3,
+    lineHeight: 30,
+    marginTop: 12,
+    letterSpacing: -0.4,
   },
-  ratingCol: { alignItems: "flex-end", paddingTop: 2 },
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 8,
+  },
   stars: {
     color: KANKREG_PALETTE.goldBright,
-    fontSize: 11,
     letterSpacing: 1.2,
   },
-  starsMuted: { opacity: 0.85 },
   ratingMeta: {
     fontFamily: fonts.regular,
-    fontSize: 10,
+    fontSize: 12,
     color: KANKREG_PALETTE.inkFaint,
-    marginTop: 3,
+  },
+  pricePanel: {
+    marginTop: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: 8,
   },
   priceBand: {
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "baseline",
     gap: 8,
-    marginTop: 14,
   },
   price: {
     fontFamily: FONT_DISPLAY,
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: "600",
-    letterSpacing: -0.4,
+    letterSpacing: -0.5,
   },
   mrp: {
     fontFamily: fonts.regular,
-    fontSize: 13,
+    fontSize: 14,
     color: KANKREG_PALETTE.inkFaint,
     textDecorationLine: "line-through",
   },
@@ -496,53 +796,32 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 999,
-    backgroundColor: "rgba(60,98,72,0.1)",
-    marginLeft: 2,
+    backgroundColor: "rgba(60,98,72,0.12)",
   },
   saveChipText: {
     fontFamily: fonts.semibold,
-    fontSize: 10,
+    fontSize: 11,
     color: KANKREG_PALETTE.green,
   },
-  trustRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 12,
+  block: {
+    marginTop: spacing.md,
   },
-  trustPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: "rgba(169,119,46,0.08)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: KANKREG_PALETTE.line,
-  },
-  trustText: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
-    color: KANKREG_PALETTE.inkSoft,
-  },
-  desc: {
-    marginTop: 14,
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 21,
-  },
-  variantBlock: { marginTop: spacing.sm },
-  variantLabel: {
+  blockLabel: {
     fontFamily: fonts.bold,
     fontSize: 9,
     letterSpacing: 1.2,
     textTransform: "uppercase",
     color: KANKREG_PALETTE.inkFaint,
-    marginBottom: 8,
+    marginBottom: 4,
+  },
+  blockTitle: {
+    fontFamily: FONT_DISPLAY,
+    fontSize: 16,
+    fontWeight: "500",
+    marginBottom: 10,
   },
   variantRow: {
     flexDirection: "row",
@@ -551,8 +830,8 @@ const styles = StyleSheet.create({
   },
   variantPill: {
     paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 10,
+    paddingVertical: 10,
+    borderRadius: 12,
     borderWidth: 1,
   },
   variantPillOn: {
@@ -572,64 +851,41 @@ const styles = StyleSheet.create({
     color: KANKREG_PALETTE.paper,
     fontFamily: fonts.semibold,
   },
-  thumbRow: { marginTop: spacing.md, marginBottom: 4 },
-  thumb: {
-    width: 56,
-    height: 56,
-    borderRadius: 12,
-    marginRight: 10,
-    borderWidth: 2,
-    borderColor: "transparent",
-    overflow: "hidden",
-    backgroundColor: KANKREG_PALETTE.paper2,
-  },
-  thumbOn: { borderColor: KANKREG_PALETTE.gold },
-  thumbImage: { width: "100%", height: "100%" },
-  uspsWrap: {
+  featureGrid: {
+    gap: 8,
     marginTop: spacing.md,
-    gap: 8,
   },
-  uspRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-  },
-  uspText: {
-    flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  stepper: {
+  featureCard: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.md,
-    marginTop: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: 999,
-    backgroundColor: "rgba(25,20,15,0.04)",
+    gap: 12,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  stepBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: KANKREG_PALETTE.ink,
+  featureIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "rgba(169,119,46,0.1)",
     alignItems: "center",
     justifyContent: "center",
   },
-  stepCount: {
+  featureCopy: { flex: 1, minWidth: 0 },
+  featureTitle: {
     fontFamily: fonts.semibold,
-    fontSize: 14,
-    color: KANKREG_PALETTE.ink,
-    minWidth: 88,
-    textAlign: "center",
+    fontSize: 13,
   },
-  related: {
-    paddingHorizontal: 18,
-    marginTop: spacing.lg,
+  featureSub: {
+    fontFamily: fonts.regular,
+    fontSize: 10,
+    color: KANKREG_PALETTE.inkFaint,
+    lineHeight: 14,
   },
-  relatedEyebrow: {
+  sectionHead: {
+    marginBottom: spacing.sm,
+  },
+  sectionEyebrow: {
     fontFamily: fonts.bold,
     fontSize: 9,
     letterSpacing: 1.4,
@@ -637,16 +893,183 @@ const styles = StyleSheet.create({
     color: KANKREG_PALETTE.gold,
     marginBottom: 4,
   },
-  relatedTitle: {
+  sectionTitle: {
     fontFamily: FONT_DISPLAY,
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "500",
-    marginBottom: spacing.md,
+    letterSpacing: -0.2,
   },
-  relatedGrid: {
+  sectionRule: {
+    width: 32,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: KANKREG_PALETTE.gold,
+    marginTop: 8,
+    opacity: 0.7,
+  },
+  desc: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 22,
+    marginTop: 4,
+  },
+  uspsWrap: {
+    marginTop: spacing.md,
+    gap: 10,
+  },
+  uspRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 11,
+    alignItems: "flex-start",
+    gap: 10,
   },
-  relatedCell: { width: "47%" },
+  uspDot: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "rgba(169,119,46,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 1,
+  },
+  uspText: {
+    flex: 1,
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  thumb: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "transparent",
+    overflow: "hidden",
+    backgroundColor: KANKREG_PALETTE.paper2,
+  },
+  thumbOn: { borderColor: KANKREG_PALETTE.gold },
+  thumbImage: { width: "100%", height: "100%" },
+  reviewsBlock: {
+    marginTop: spacing.md,
+    paddingHorizontal: 18,
+    paddingVertical: spacing.md,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  reviewsEmpty: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: KANKREG_PALETTE.inkFaint,
+    marginBottom: spacing.sm,
+  },
+  reviewItem: {
+    flexDirection: "row",
+    gap: 10,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: 10,
+  },
+  reviewAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  reviewAvatarText: {
+    fontFamily: fonts.bold,
+    fontSize: 14,
+    color: KANKREG_PALETTE.goldDeep,
+  },
+  reviewBody: { flex: 1, minWidth: 0 },
+  reviewTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  reviewName: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    flex: 1,
+  },
+  reviewPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(169,119,46,0.1)",
+  },
+  reviewPillText: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    color: KANKREG_PALETTE.goldDeep,
+  },
+  reviewComment: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  reviewComposer: {
+    marginTop: spacing.sm,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 10,
+  },
+  reviewStarsPick: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  reviewInput: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    minHeight: 72,
+    textAlignVertical: "top",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  reviewError: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: KANKREG_PALETTE.danger,
+  },
+  reviewSuccess: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: KANKREG_PALETTE.green,
+  },
+  reviewSubmit: {
+    borderRadius: 999,
+    overflow: "hidden",
+    alignSelf: "flex-start",
+  },
+  reviewSubmitGrad: {
+    paddingHorizontal: 20,
+    paddingVertical: 11,
+    borderRadius: 999,
+  },
+  reviewSubmitText: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: "#fff",
+  },
+  related: {
+    paddingHorizontal: 18,
+    marginTop: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
+  relatedRail: {
+    gap: 12,
+    paddingRight: 18,
+  },
+  relatedCard: {
+    width: 172,
+  },
 });

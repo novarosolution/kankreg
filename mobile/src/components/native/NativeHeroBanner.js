@@ -154,14 +154,22 @@ export default function NativeHeroBanner({
           <LinearGradient
             colors={
               loading
-                ? ["#9a9a9a", "#7a7a7a"]
+                ? isDark
+                  ? ["rgba(255,255,255,0.12)", "rgba(232,200,90,0.18)"]
+                  : ["#ece3d2", "#e0d4bc"]
                 : isDark
                   ? ["#d6ad5b", "#a9772e"]
                   : ["#fff", "#fffdf8"]
             }
             style={[styles.cta, !subtitle && styles.ctaSpaced]}
           >
-            <Text style={[styles.ctaText, isDark && styles.ctaTextDark]}>
+            <Text
+              style={[
+                styles.ctaText,
+                isDark && styles.ctaTextDark,
+                loading && (isDark ? styles.ctaTextLoadingDark : styles.ctaTextLoading),
+              ]}
+            >
               {loading ? HOME_SCREEN_UI.hero.loadingCta : HOME_SCREEN_UI.hero.cta}
             </Text>
             {!loading ? (
@@ -332,5 +340,11 @@ const styles = StyleSheet.create({
   },
   ctaTextDark: {
     color: "#1a1612",
+  },
+  ctaTextLoading: {
+    color: FIGMA.inkSoft,
+  },
+  ctaTextLoadingDark: {
+    color: "rgba(245,239,228,0.72)",
   },
 });

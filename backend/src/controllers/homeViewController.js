@@ -1,5 +1,11 @@
 const HomeViewConfig = require("../models/HomeViewConfig");
 const { normalizeShopLocation } = require("../utils/shopLocation");
+const {
+  normalizeAboutSection,
+  normalizeCommunitySection,
+  normalizeCompareSection,
+  normalizeHeroSlides,
+} = require("../utils/homeViewMedia");
 
 /** In-memory defaults when the config document cannot be created (e.g. DB name case mismatch). */
 function buildDefaultHomeViewConfig() {
@@ -55,10 +61,21 @@ async function getOrCreateConfigDocument() {
   return HomeViewConfig.create({});
 }
 
+function serializeHomeViewConfig(config) {
+  const obj = config?.toObject ? config.toObject() : { ...config };
+  return {
+    ...obj,
+    heroSlides: normalizeHeroSlides(obj.heroSlides),
+    aboutSection: normalizeAboutSection(obj.aboutSection),
+    communitySection: normalizeCommunitySection(obj.communitySection),
+    compareSection: normalizeCompareSection(obj.compareSection),
+  };
+}
+
 async function getPublicHomeViewConfig(req, res, next) {
   try {
     const config = await getPublicHomeViewPayload();
-    res.json(config);
+    res.json(serializeHomeViewConfig(config));
   } catch (error) {
     next(error);
   }
@@ -67,7 +84,7 @@ async function getPublicHomeViewConfig(req, res, next) {
 async function getAdminHomeViewConfig(req, res, next) {
   try {
     const config = await getOrCreateConfigDocument();
-    res.json(config);
+    res.json(serializeHomeViewConfig(config));
   } catch (error) {
     logHomeViewDbError(error);
     next(error);
@@ -87,6 +104,10 @@ async function updateAdminHomeViewConfig(req, res, next) {
       showProductTypeSections,
       productCardStyle,
       shopLocation,
+      heroSlides,
+      aboutSection,
+      communitySection,
+      compareSection,
     } = req.body || {};
 
     if (heroTitle !== undefined) config.heroTitle = heroTitle;
@@ -115,8 +136,28 @@ async function updateAdminHomeViewConfig(req, res, next) {
       config.markModified("shopLocation");
     }
 
+    if (heroSlides !== undefined) {
+      config.heroSlides = normalizeHeroSlides(heroSlides);
+      config.markModified("heroSlides");
+    }
+
+    if (aboutSection !== undefined && aboutSection && typeof aboutSection === "object") {
+      config.aboutSection = normalizeAboutSection(aboutSection);
+      config.markModified("aboutSection");
+    }
+
+    if (communitySection !== undefined && communitySection && typeof communitySection === "object") {
+      config.communitySection = normalizeCommunitySection(communitySection);
+      config.markModified("communitySection");
+    }
+
+    if (compareSection !== undefined && compareSection && typeof compareSection === "object") {
+      config.compareSection = normalizeCompareSection(compareSection);
+      config.markModified("compareSection");
+    }
+
     await config.save();
-    res.json(config);
+    res.json(serializeHomeViewConfig(config));
   } catch (error) {
     next(error);
   }

@@ -40,9 +40,12 @@ export default function KankregSiteFooter() {
     setEmail("");
   };
 
+  const showNewsletter = Platform.OS !== "web" || KANKREG_FOOTER_NEWSLETTER.showOnWeb === true;
+
   return (
     <View style={styles.shell}>
       <View style={[styles.inner, { paddingHorizontal: pageGutterClamp }]}>
+        {showNewsletter ? (
         <View style={[styles.news, stackFooterNewsletter && styles.newsStack]}>
           <View style={styles.newsCopy}>
             <Text style={styles.newsTitle}>{KANKREG_FOOTER_NEWSLETTER.title}</Text>
@@ -72,6 +75,7 @@ export default function KankregSiteFooter() {
             </View>
           ) : null}
         </View>
+        ) : null}
 
         <View
           style={[

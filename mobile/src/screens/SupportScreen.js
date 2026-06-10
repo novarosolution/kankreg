@@ -49,15 +49,7 @@ function buildSupportContactLinks() {
       accent: "navy",
       actionType: "link",
       url: `mailto:${SUPPORT_EMAIL_DISPLAY}`},
-    {
-      key: "whatsapp",
-      icon: "logo-whatsapp",
-      title: "WhatsApp",
-      description: SUPPORT_SCREEN.contactWhatsAppSub,
-      accent: "green",
-      actionType: "link",
-      url: "https://wa.me/919999999999"},
-  ];
+  ].filter(Boolean);
 }
 
 export default function SupportScreen({ navigation }) {
@@ -330,7 +322,9 @@ export default function SupportScreen({ navigation }) {
         <SectionReveal preset="fade-up" delay={100}>
           <View style={styles.faqWrap}>
             <View style={styles.faqHeader}>
-              <Text style={styles.faqEyebrow}>{SUPPORT_SCREEN.pageEyebrow}</Text>
+              {Platform.OS !== "web" ? (
+                <Text style={styles.faqEyebrow}>{SUPPORT_SCREEN.pageEyebrow}</Text>
+              ) : null}
               <Text style={styles.faqHeading}>{SUPPORT_SCREEN.faqTitle}</Text>
             </View>
             {SUPPORT_SCREEN.faqs.map((item, idx) => {

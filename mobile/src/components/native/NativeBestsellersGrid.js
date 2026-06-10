@@ -30,7 +30,8 @@ const gridShadowDark = platformShadow({
 /** Premium 2-up product grid for home bestsellers */
 export default function NativeBestsellersGrid({ products, onProductPress, onAddToCart }) {
   const { isDark } = useTheme();
-  if (Platform.OS === "web") return null;
+  const items = Array.isArray(products) ? products : [];
+  if (Platform.OS === "web" || !items.length) return null;
 
   return (
     <View
@@ -61,7 +62,7 @@ export default function NativeBestsellersGrid({ products, onProductPress, onAddT
         />
       )}
       <View style={styles.grid}>
-        {products.map((item, idx) => (
+        {items.map((item, idx) => (
           <View key={item.id} style={styles.cell}>
             <NativeProductCard
               product={item}

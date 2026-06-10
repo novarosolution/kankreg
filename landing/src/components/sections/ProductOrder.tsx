@@ -1,0 +1,70 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { site } from "@/content/site";
+import SectionShell from "@/components/ui/SectionShell";
+import FadeIn from "@/components/ui/FadeIn";
+
+export default function ProductOrder() {
+  const { products, brand } = site;
+  const waBase = `https://wa.me/${brand.whatsapp}?text=`;
+
+  return (
+    <SectionShell
+      id={products.id}
+      eyebrow={products.eyebrow}
+      title={products.title}
+      subtitle={products.subtitle}
+      centered
+    >
+      <div className="grid gap-6 md:grid-cols-3">
+        {products.items.map((product, i) => (
+          <FadeIn key={product.id} delay={i * 0.05}>
+            <article className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-charcoal/8 bg-cream shadow-card">
+              {product.badge ? (
+                <span className="absolute right-4 top-4 z-10 rounded-full bg-earth-green px-3 py-1 text-xs font-semibold text-cream">
+                  {product.badge}
+                </span>
+              ) : null}
+              <div className="relative aspect-square bg-gradient-to-br from-amber-50 to-amber-100">
+                <Image
+                  src={product.image}
+                  alt={`KankreG ghee ${product.size}`}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                />
+              </div>
+              <div className="flex flex-1 flex-col p-6">
+                <h3 className="font-display text-xl font-semibold text-charcoal">{product.size}</h3>
+                <p className="mt-1 font-display text-2xl font-semibold text-ghee-gold">{product.price}</p>
+                {product.priceNote ? (
+                  <p className="text-sm text-charcoal/55">{product.priceNote}</p>
+                ) : null}
+                <div className="mt-auto flex flex-col gap-2 pt-6">
+                  <Link
+                    href={`${waBase}${encodeURIComponent(`Hi, I'd like to order KankreG ghee ${product.size}.`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-full border border-earth-green/30 px-4 py-2.5 text-center text-sm font-semibold text-earth-green transition hover:bg-earth-green/5"
+                  >
+                    {products.whatsappCta}
+                  </Link>
+                  <Link
+                    href={`${waBase}${encodeURIComponent(`Order ${product.size} - ${product.price}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-full bg-ghee-gold px-4 py-2.5 text-center text-sm font-semibold text-cream shadow-soft transition hover:bg-deep-amber"
+                  >
+                    {products.buyCta}
+                  </Link>
+                </div>
+              </div>
+            </article>
+          </FadeIn>
+        ))}
+      </div>
+    </SectionShell>
+  );
+}

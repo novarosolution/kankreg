@@ -52,9 +52,9 @@ export function useKankregLayout() {
       isXl: width >= KANKREG_BP.xl,
       /** HTML: nav hidden below 1080 */
       showDesktopNav: width >= KANKREG_BP.lg,
-      /** Narrow web — app-like tab bar + aligned figma gutters (kankreg.html ≤1080) */
+      /** Narrow web — aligned figma gutters (kankreg.html ≤1080); no bottom tab bar on web */
       isMobileWeb: Platform.OS === "web" && width < KANKREG_BP.lg,
-      showMobileWebTabBar: Platform.OS === "web" && width < KANKREG_BP.lg,
+      showMobileWebTabBar: false,
       /** HTML: compact topbar below 560 */
       compactHeader: width < KANKREG_BP.sm,
       /** HTML: `.announce .hide-sm` */

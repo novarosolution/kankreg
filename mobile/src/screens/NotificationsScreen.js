@@ -24,11 +24,10 @@ import {
   customerScrollFill} from "../theme/screenLayout";
 import { ALCHEMY } from "../theme/customerAlchemy";
 import { fonts, radius, spacing, typography } from "../theme/tokens";
-import PremiumLoader from "../components/ui/PremiumLoader";
+import { ListCardsSkeleton } from "../components/loading";
 import PremiumEmptyState from "../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
 import PremiumChip from "../components/ui/PremiumChip";
-import SkeletonBlock from "../components/ui/SkeletonBlock";
 import PremiumButton from "../components/ui/PremiumButton";
 import PremiumCard from "../components/ui/PremiumCard";
 import NativeNotificationRow from "../components/native/NativeNotificationRow";
@@ -250,16 +249,7 @@ export default function NotificationsScreen({ navigation }) {
         </SectionReveal>
 
         {loading ? (
-          <View style={styles.loaderWrap}>
-            <View style={styles.loadingChipRow}>
-              <SkeletonBlock width={72} height={32} rounded="pill" />
-              <SkeletonBlock width={92} height={32} rounded="pill" />
-            </View>
-            <SkeletonBlock width="100%" height={86} rounded="lg" />
-            <SkeletonBlock width="100%" height={86} rounded="lg" />
-            <SkeletonBlock width="100%" height={86} rounded="lg" />
-            <PremiumLoader size="sm" caption={NOTIFICATIONS_SCREEN_UI.loadingCaption} />
-          </View>
+          <ListCardsSkeleton cardCount={4} chipWidths={[72, 92]} style={styles.loaderWrap} />
         ) : notifications.length === 0 ? (
           <View style={styles.panel}>
             <PremiumEmptyState
