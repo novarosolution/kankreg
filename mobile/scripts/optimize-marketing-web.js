@@ -26,10 +26,33 @@ const COMMITTED_WEB_ASSET_MARKERS = [
   "hero-slide-kankreg-product-wide-web-1200.webp",
   "home-hero-video-web.mp4",
   "timeline-brand-film-web.mp4",
+  "home-hero-video-preview.mp4",
+  "timeline-brand-film-preview.mp4",
+  "home-hero-video-poster.webp",
+  "timeline-brand-film-poster.webp",
 ];
 
 function hasCommittedWebAssets() {
   return COMMITTED_WEB_ASSET_MARKERS.every((name) => fs.existsSync(path.join(marketingDir, name)));
+}
+
+let ffmpegAvailable;
+function hasFfmpeg() {
+  if (ffmpegAvailable !== undefined) return ffmpegAvailable;
+  try {
+    execSync("ffmpeg -version", { stdio: "ignore" });
+    ffmpegAvailable = true;
+  } catch {
+    ffmpegAvailable = false;
+  }
+  return ffmpegAvailable;
+}
+
+/** Git/CI checkouts often reset mtimes — trust committed outputs on Vercel/CI. */
+function isOutputFresh(inputPath, outputPath) {
+  if (!fs.existsSync(outputPath)) return false;
+  if (process.env.VERCEL || process.env.CI) return true;
+  return fs.statSync(outputPath).mtimeMs - fs.statSync(inputPath).mtimeMs >= 0;
 }
 
 const PHONE_HERO_PNGS = [
@@ -89,12 +112,17 @@ function compressVideo(inputName, outputName, scale = "720:-2", crf = 30) {
     console.warn(`[skip] missing ${inputName}`);
     return;
   }
-  if (fs.existsSync(output)) {
-    const age = fs.statSync(output).mtimeMs - fs.statSync(input).mtimeMs;
-    if (age >= 0) {
-      console.log(`[video] ${outputName} up to date`);
+  if (isOutputFresh(input, output)) {
+    console.log(`[video] ${outputName} up to date`);
+    return;
+  }
+  if (!hasFfmpeg()) {
+    if (fs.existsSync(output)) {
+      console.warn(`[video] ${outputName} present — ffmpeg unavailable, skipping re-encode`);
       return;
     }
+    console.warn(`[video] ffmpeg unavailable — cannot create ${outputName} (run optimize:web locally)`);
+    return;
   }
   console.log(`[video] compressing ${inputName} → ${outputName}…`);
   execSync(
@@ -127,6 +155,18 @@ async function extractVideoPoster(inputName, outputName) {
   const output = path.join(marketingDir, outputName);
   if (!fs.existsSync(input)) {
     console.warn(`[skip] missing ${inputName}`);
+    return;
+  }
+  if (fs.existsSync(output)) {
+    console.log(`[poster] ${outputName} up to date`);
+    return;
+  }
+  if (!hasFfmpeg()) {
+    console.warn(`[poster] ffmpeg unavailable — skipping ${outputName}`);
+    return;
+  }
+  if (!sharp) {
+    console.warn(`[poster] sharp unavailable — skipping ${outputName}`);
     return;
   }
   execSync(
@@ -206,6 +246,13 @@ async function main() {
   compressVideoPreview("home-hero-video.mp4", "home-hero-video-preview.mp4");
   await extractVideoPoster("timeline-brand-film.mp4", "timeline-brand-film-poster.webp");
   await extractVideoPoster("home-hero-video.mp4", "home-hero-video-poster.webp");
+
+  if (!hasFfmpeg() && !hasCommittedWebAssets()) {
+    console.error(
+      "[optimize:web] ffmpeg unavailable and committed video assets missing. Run `npm run optimize:web` locally."
+    );
+    process.exit(1);
+  }
 
   console.log("\nDone. Web bundles should use *-web-*.webp / *-web.mp4 via .web.js constants.");
 }
