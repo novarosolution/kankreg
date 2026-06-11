@@ -19,29 +19,57 @@ import { useTheme } from "../../context/ThemeContext";
 import { fonts, radius } from "../../theme/tokens";
 import { PRODUCT_HERO_BLURHASH } from "../../utils/image";
 import { resolveImageSource } from "../../utils/mediaSource";
+import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 
-/** Portrait photo frame — matches step assets (~3:4). */
 const PROCESS_IMAGE_ASPECT = 3 / 4;
-const PROCESS_RAIL_CARD_WIDTH = 248;
+const PROCESS_RAIL_CARD_WIDTH = 256;
+const PROCESS_CARD_CLASS = "kankreg-process-step-card";
+
+if (Platform.OS === "web") {
+  injectWebCssOnce(
+    "kankreg-process-journey-premium",
+    `.${PROCESS_CARD_CLASS} {
+  transition: transform 0.28s cubic-bezier(0.2, 0.7, 0.3, 1), box-shadow 0.28s ease;
+}
+.${PROCESS_CARD_CLASS}:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 8px rgba(60, 45, 20, 0.06), 0 22px 48px -16px rgba(80, 60, 25, 0.22) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .${PROCESS_CARD_CLASS}:hover { transform: none !important; }
+}`
+  );
+}
 
 function formatStepNum(step) {
   return String(step).padStart(2, "0");
 }
 
-function ProcessStepCard({ step, isDark, ink, muted, compact = false }) {
+function ProcessStepCard({ step, isDark, ink, muted, compact = false, totalSteps = 6 }) {
   const imageSource = resolveImageSource(step.image);
   const imageFit = step.imageFit === "contain" ? "contain" : "cover";
   const imagePosition = step.imagePosition || "top center";
 
   return (
     <View
+      className={Platform.OS === "web" ? PROCESS_CARD_CLASS : undefined}
       style={[
         styles.card,
         compact && styles.cardCompact,
         isDark && styles.cardDark,
-        Platform.OS === "web" ? styles.cardWeb : null,
       ]}
     >
+      <LinearGradient
+        colors={
+          isDark
+            ? ["rgba(214, 173, 91, 0.14)", "transparent"]
+            : ["rgba(214, 173, 91, 0.22)", "transparent"]
+        }
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.cardTopAccent}
+        pointerEvents="none"
+      />
       <View style={[styles.imageFrame, isDark && styles.imageFrameDark]}>
         {imageSource ? (
           <Image
@@ -49,29 +77,42 @@ function ProcessStepCard({ step, isDark, ink, muted, compact = false }) {
             style={styles.image}
             contentFit={imageFit}
             contentPosition={imagePosition}
-            transition={280}
+            transition={320}
             placeholder={{ blurhash: PRODUCT_HERO_BLURHASH }}
+            cachePolicy="memory-disk"
+            recyclingKey={`process-${step.step}`}
           />
         ) : (
           <View style={[styles.image, styles.imageFallback]} />
         )}
         <LinearGradient
-          colors={["transparent", "rgba(8, 6, 4, 0.42)"]}
-          locations={[0.55, 1]}
+          colors={["rgba(8, 6, 4, 0.08)", "transparent", "rgba(8, 6, 4, 0.55)"]}
+          locations={[0, 0.42, 1]}
           style={styles.imageScrim}
           pointerEvents="none"
         />
         <View style={styles.stepBadge}>
+          <Text style={styles.stepBadgeEyebrow}>Step</Text>
           <Text style={styles.stepBadgeText}>{formatStepNum(step.step)}</Text>
         </View>
+        <View style={styles.imageGoldRule} pointerEvents="none" />
       </View>
       <View style={[styles.cardBody, isDark && styles.cardBodyDark]}>
-        <Text style={[styles.cardTitle, { color: ink }]} numberOfLines={2}>
-          {step.title}
-        </Text>
+        <View style={styles.cardTitleRow}>
+          <View style={[styles.titleDot, isDark && styles.titleDotDark]} />
+          <Text style={[styles.cardTitle, { color: ink }]} numberOfLines={2}>
+            {step.title}
+          </Text>
+        </View>
         <Text style={[styles.cardDesc, { color: muted }]} numberOfLines={3}>
           {step.description}
         </Text>
+        <View style={styles.cardFooter}>
+          <Text style={[styles.cardFooterText, { color: muted }]}>
+            {formatStepNum(step.step)} / {formatStepNum(totalSteps)}
+          </Text>
+          <View style={[styles.cardFooterLine, isDark && styles.cardFooterLineDark]} />
+        </View>
       </View>
     </View>
   );
@@ -82,10 +123,11 @@ function ProcessStepCard({ step, isDark, ink, muted, compact = false }) {
  */
 export default function HomeProcessJourney() {
   const { isDark } = useTheme();
-  const { width, isMd } = useKankregLayout();
+  const { width, isMd, isLg } = useKankregLayout();
   const ink = homeEditorialInk(isDark);
   const muted = homeEditorialMuted(isDark);
   const { process } = HOME_STORY_CONTENT;
+  const totalSteps = process.steps.length;
 
   const layout = useMemo(() => {
     if (width >= 1080) return { cols: 3, rail: false };
@@ -96,41 +138,67 @@ export default function HomeProcessJourney() {
 
   const cellStyle = useMemo(() => {
     if (layout.cols === 3) {
-      return { width: "31.8%", maxWidth: "31.8%", minWidth: 0 };
+      return { width: "31.6%", maxWidth: "31.6%", minWidth: 0 };
     }
     if (layout.cols === 2) {
-      return { width: "48.2%", maxWidth: "48.2%", minWidth: 0 };
+      return { width: "48.4%", maxWidth: "48.4%", minWidth: 0 };
     }
     return { width: "100%", maxWidth: "100%" };
   }, [layout.cols]);
 
   return (
-    <ScrollFadeUp index={3}>
       <View
         nativeID="home-process"
         style={[styles.section, isDark && styles.sectionDark]}
       >
-        <View style={styles.headerWrap}>
-          <SectionHeader
-            eyebrow={process.eyebrow}
-            title={process.title}
-            kicker={process.subtitle}
-            align={isMd ? "left" : "center"}
-          />
-          <GoldHairline
-            {...GOLD_HAIRLINE_EDITORIAL.subtle}
-            marginVertical={HOME_SPACE.xs}
-            style={{ alignSelf: isMd ? "flex-start" : "center", width: isMd ? 120 : 96 }}
-          />
-          <Text
-            style={[
-              styles.journeyLabel,
-              { color: muted, alignSelf: isMd ? "flex-start" : "center" },
-            ]}
-          >
-            {process.journeyLabel}
-          </Text>
+        <View style={styles.sectionFrameTop} pointerEvents="none" />
+        <View style={[styles.sectionFrameInset, isDark && styles.sectionFrameInsetDark]} pointerEvents="none" />
+        <LinearGradient
+          colors={
+            isDark
+              ? ["rgba(214, 173, 91, 0.06)", "transparent", "rgba(60, 98, 72, 0.04)"]
+              : ["rgba(214, 173, 91, 0.1)", "transparent", "rgba(60, 98, 72, 0.05)"]
+          }
+          locations={[0, 0.55, 1]}
+          style={styles.sectionWash}
+          pointerEvents="none"
+        />
+
+        <View style={[styles.headerWrap, isLg && styles.headerWrapDesktop]}>
+          <View style={styles.headerCopy}>
+            <SectionHeader
+              eyebrow={process.eyebrow}
+              title={process.title}
+              kicker={process.subtitle}
+              align={isMd ? "left" : "center"}
+              flush
+            />
+          </View>
+          {isLg ? (
+            <View style={[styles.journeyChip, isDark && styles.journeyChipDark]}>
+              <Text style={[styles.journeyChipEyebrow, { color: KANKREG_PALETTE.gold }]}>
+                {process.journeyLabel}
+              </Text>
+              <Text style={[styles.journeyChipMeta, { color: muted }]}>
+                {totalSteps} handcrafted stages
+              </Text>
+            </View>
+          ) : null}
         </View>
+
+        <GoldHairline
+          {...GOLD_HAIRLINE_EDITORIAL.subtle}
+          marginVertical={HOME_SPACE.sm}
+          style={styles.headerHairline}
+        />
+
+        {!isLg ? (
+          <View style={[styles.journeyChipInline, isDark && styles.journeyChipDark]}>
+            <Text style={[styles.journeyChipEyebrow, { color: KANKREG_PALETTE.gold }]}>
+              {process.journeyLabel}
+            </Text>
+          </View>
+        ) : null}
 
         {layout.rail ? (
           <ScrollView
@@ -155,6 +223,7 @@ export default function HomeProcessJourney() {
                     ink={ink}
                     muted={muted}
                     compact
+                    totalSteps={totalSteps}
                   />
                 </ScrollFadeUp>
               </View>
@@ -165,64 +234,165 @@ export default function HomeProcessJourney() {
             {process.steps.map((step, idx) => (
               <View key={step.step} style={[styles.gridCell, cellStyle]}>
                 <ScrollFadeUp index={idx} delay={idx * 70} preset="fade-up" style={styles.gridReveal}>
-                  <ProcessStepCard step={step} isDark={isDark} ink={ink} muted={muted} />
+                  <ProcessStepCard
+                    step={step}
+                    isDark={isDark}
+                    ink={ink}
+                    muted={muted}
+                    totalSteps={totalSteps}
+                  />
                 </ScrollFadeUp>
               </View>
             ))}
           </View>
         )}
       </View>
-    </ScrollFadeUp>
   );
 }
 
 const cardShadow = Platform.select({
   web: {
     boxShadow:
-      "0 1px 2px rgba(60, 45, 20, 0.05), 0 10px 28px -14px rgba(80, 60, 25, 0.14)",
+      "0 2px 4px rgba(60, 45, 20, 0.04), 0 14px 36px -18px rgba(80, 60, 25, 0.16)",
   },
+  ios: {
+    shadowColor: "#19140f",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 22,
+  },
+  android: { elevation: 4 },
   default: {},
 });
 
 const styles = StyleSheet.create({
   section: {
     width: "100%",
-    paddingVertical: HOME_SPACE.xl,
-    paddingHorizontal: HOME_SPACE.lg,
-    borderRadius: radius.xl,
+    paddingVertical: HOME_SPACE.xl + 12,
+    paddingHorizontal: HOME_SPACE.lg + 6,
+    borderRadius: radius.xl + 8,
     backgroundColor: KANKREG_CHROME.cream,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(169, 119, 46, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(169, 119, 46, 0.2)",
+    borderTopWidth: 3,
+    borderTopColor: "rgba(201, 162, 39, 0.78)",
+    overflow: "hidden",
+    position: "relative",
     ...Platform.select({
       web: {
-        boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.85)",
+        boxShadow:
+          "inset 0 1px 0 rgba(255, 255, 255, 0.94), 0 2px 4px rgba(60, 45, 20, 0.04), 0 28px 64px -36px rgba(80, 60, 25, 0.18)",
       },
+      ios: {
+        shadowColor: "#3D2A12",
+        shadowOffset: { width: 0, height: 14 },
+        shadowOpacity: 0.1,
+        shadowRadius: 28,
+      },
+      android: { elevation: 5 },
       default: {},
     }),
   },
   sectionDark: {
-    backgroundColor: "rgba(24, 21, 19, 0.55)",
-    borderColor: "#3f3933",
+    backgroundColor: "rgba(24, 21, 19, 0.72)",
+    borderColor: "rgba(214, 173, 91, 0.16)",
+    borderTopColor: "rgba(214, 173, 91, 0.55)",
+  },
+  sectionFrameTop: {
+    position: "absolute",
+    top: 3,
+    left: HOME_SPACE.lg,
+    right: HOME_SPACE.lg,
+    height: 1,
+    backgroundColor: "rgba(255, 253, 248, 0.55)",
+    zIndex: 2,
+  },
+  sectionFrameInset: {
+    position: "absolute",
+    top: 14,
+    left: 14,
+    right: 14,
+    bottom: 14,
+    borderRadius: radius.xl + 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(169, 119, 46, 0.14)",
+    zIndex: 1,
+    pointerEvents: "none",
+  },
+  sectionFrameInsetDark: {
+    borderColor: "rgba(214, 173, 91, 0.1)",
+  },
+  headerHairline: {
+    width: "100%",
+    opacity: 0.65,
+  },
+  sectionWash: {
+    ...StyleSheet.absoluteFillObject,
   },
   headerWrap: {
     width: "100%",
-    gap: HOME_SPACE.xs,
-    marginBottom: HOME_SPACE.lg + 4,
+    gap: HOME_SPACE.sm,
+    marginBottom: HOME_SPACE.xs,
+    zIndex: 1,
   },
-  journeyLabel: {
+  headerWrapDesktop: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: HOME_SPACE.lg,
+  },
+  headerCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  journeyChip: {
+    alignItems: "flex-end",
+    gap: 4,
+    paddingVertical: HOME_SPACE.sm,
+    paddingHorizontal: HOME_SPACE.md,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(169, 119, 46, 0.28)",
+    backgroundColor: "rgba(255, 253, 248, 0.72)",
+    ...Platform.select({
+      web: { backdropFilter: "blur(8px)" },
+      default: {},
+    }),
+  },
+  journeyChipInline: {
+    alignSelf: "center",
+    marginBottom: HOME_SPACE.md,
+    paddingVertical: HOME_SPACE.xs + 2,
+    paddingHorizontal: HOME_SPACE.md,
+    borderRadius: radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(169, 119, 46, 0.28)",
+    backgroundColor: "rgba(255, 253, 248, 0.8)",
+  },
+  journeyChipDark: {
+    backgroundColor: "rgba(24, 21, 19, 0.55)",
+    borderColor: "rgba(214, 173, 91, 0.22)",
+  },
+  journeyChipEyebrow: {
     fontFamily: fonts.semibold,
     fontSize: HOME_TYPE.eyebrow,
-    letterSpacing: 2.4,
+    letterSpacing: 2.2,
     textTransform: "uppercase",
-    marginTop: HOME_SPACE.xs,
+  },
+  journeyChipMeta: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    letterSpacing: 0.2,
   },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    rowGap: HOME_SPACE.md + 4,
+    rowGap: HOME_SPACE.lg,
     columnGap: HOME_SPACE.md,
     width: "100%",
+    marginTop: HOME_SPACE.md,
+    zIndex: 1,
   },
   gridCell: {
     flexGrow: 0,
@@ -234,29 +404,31 @@ const styles = StyleSheet.create({
   },
   rail: {
     width: "100%",
-    marginHorizontal: -HOME_SPACE.lg,
-    paddingHorizontal: HOME_SPACE.lg,
+    marginHorizontal: -(HOME_SPACE.lg + 4),
+    paddingHorizontal: HOME_SPACE.lg + 4,
+    marginTop: HOME_SPACE.md,
+    zIndex: 1,
   },
   railContent: {
     paddingRight: HOME_SPACE.lg,
-    paddingBottom: HOME_SPACE.xs,
+    paddingBottom: HOME_SPACE.sm,
   },
   card: {
     flex: 1,
-    borderRadius: radius.lg,
+    borderRadius: radius.lg + 8,
     overflow: "hidden",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: KANKREG_PALETTE.lineSoft,
+    borderWidth: 1,
+    borderColor: "rgba(169, 119, 46, 0.22)",
     backgroundColor: KANKREG_PALETTE.card,
     ...cardShadow,
+    ...Platform.select({
+      web: {
+        boxShadow:
+          "inset 0 1px 0 rgba(255, 253, 248, 0.9), 0 2px 4px rgba(60, 45, 20, 0.04), 0 16px 40px -20px rgba(80, 60, 25, 0.14)",
+      },
+      default: {},
+    }),
   },
-  cardWeb: Platform.select({
-    web: {
-      cursor: "default",
-      transition: "transform 0.22s ease, box-shadow 0.22s ease",
-    },
-    default: {},
-  }),
   cardCompact: {
     width: PROCESS_RAIL_CARD_WIDTH,
   },
@@ -264,18 +436,23 @@ const styles = StyleSheet.create({
     backgroundColor: "#181513",
     borderColor: "#3f3933",
   },
+  cardTopAccent: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    zIndex: 3,
+  },
   imageFrame: {
     width: "100%",
     aspectRatio: PROCESS_IMAGE_ASPECT,
     position: "relative",
     overflow: "hidden",
     backgroundColor: KANKREG_PALETTE.paper2,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: KANKREG_PALETTE.lineSoft,
   },
   imageFrameDark: {
     backgroundColor: "#1a1714",
-    borderBottomColor: "#3f3933",
   },
   image: {
     ...StyleSheet.absoluteFillObject,
@@ -283,52 +460,108 @@ const styles = StyleSheet.create({
   imageScrim: {
     ...StyleSheet.absoluteFillObject,
   },
+  imageGoldRule: {
+    position: "absolute",
+    left: HOME_SPACE.md,
+    right: HOME_SPACE.md,
+    bottom: 0,
+    height: 1,
+    backgroundColor: "rgba(214, 173, 91, 0.45)",
+  },
   imageFallback: {
     backgroundColor: KANKREG_PALETTE.paper2,
   },
   stepBadge: {
     position: "absolute",
-    left: HOME_SPACE.sm + 2,
-    bottom: HOME_SPACE.sm + 2,
-    minWidth: 36,
-    height: 36,
-    paddingHorizontal: 8,
-    borderRadius: 18,
+    left: HOME_SPACE.md,
+    top: HOME_SPACE.md,
+    minWidth: 48,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: radius.md,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(27, 48, 34, 0.88)",
+    backgroundColor: "rgba(27, 48, 34, 0.9)",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(214, 173, 91, 0.35)",
+    borderColor: "rgba(214, 173, 91, 0.42)",
+    gap: 1,
     ...Platform.select({
-      web: { backdropFilter: "blur(8px)" },
+      web: { backdropFilter: "blur(10px)" },
       default: {},
     }),
   },
+  stepBadgeEyebrow: {
+    fontFamily: fonts.semibold,
+    fontSize: 8,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+    color: "rgba(245, 239, 228, 0.72)",
+  },
   stepBadgeText: {
     fontFamily: FONT_DISPLAY,
-    fontSize: 15,
+    fontSize: 20,
+    lineHeight: 22,
     color: KANKREG_PALETTE.goldBright,
-    letterSpacing: 0.4,
+    letterSpacing: 0.3,
   },
   cardBody: {
-    paddingHorizontal: HOME_SPACE.md,
-    paddingTop: HOME_SPACE.sm + 2,
-    paddingBottom: HOME_SPACE.sm + 4,
-    gap: 5,
-    minHeight: 96,
+    paddingHorizontal: HOME_SPACE.md + 2,
+    paddingTop: HOME_SPACE.md,
+    paddingBottom: HOME_SPACE.md + 2,
+    gap: HOME_SPACE.xs,
     backgroundColor: KANKREG_PALETTE.card,
   },
   cardBodyDark: {
     backgroundColor: "#181513",
   },
+  cardTitleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: HOME_SPACE.sm,
+  },
+  titleDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginTop: 8,
+    backgroundColor: KANKREG_PALETTE.gold,
+    flexShrink: 0,
+  },
+  titleDotDark: {
+    backgroundColor: KANKREG_PALETTE.goldBright,
+  },
   cardTitle: {
-    fontFamily: fonts.semibold,
-    fontSize: HOME_TYPE.kicker,
-    lineHeight: HOME_TYPE.body.lineHeight,
+    flex: 1,
+    fontFamily: FONT_DISPLAY,
+    fontSize: HOME_TYPE.kicker + 1,
+    lineHeight: HOME_TYPE.body.lineHeight + 4,
+    letterSpacing: -0.2,
   },
   cardDesc: {
     fontFamily: fonts.regular,
     fontSize: 13,
-    lineHeight: 19,
+    lineHeight: 20,
+    paddingLeft: HOME_SPACE.sm + 6,
+  },
+  cardFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: HOME_SPACE.sm,
+    marginTop: HOME_SPACE.xs,
+    paddingLeft: HOME_SPACE.sm + 6,
+  },
+  cardFooterText: {
+    fontFamily: fonts.semibold,
+    fontSize: 10,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+  },
+  cardFooterLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "rgba(169, 119, 46, 0.22)",
+  },
+  cardFooterLineDark: {
+    backgroundColor: "rgba(214, 173, 91, 0.18)",
   },
 });

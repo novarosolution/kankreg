@@ -4,7 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { fonts, icon, layout, radius, spacing, typography } from "../../theme/tokens";
-import { HOME_BRAND_PROMO_VIDEO } from "../../constants/marketingAssets";
+import { HOME_TIMELINE_VIDEO } from "../../constants/marketingAssets";
 import useInViewport from "../../hooks/useInViewport";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -34,7 +34,7 @@ export default function HomePromoVideo({ disabled, isScreenFocused, silenceFromS
   const videoRef = useRef(null);
   const volumeRafRef = useRef(null);
 
-  const player = useVideoPlayer(HOME_BRAND_PROMO_VIDEO, (instance) => {
+  const player = useVideoPlayer(HOME_TIMELINE_VIDEO, (instance) => {
     instance.loop = true;
     instance.muted = true;
     instance.play();

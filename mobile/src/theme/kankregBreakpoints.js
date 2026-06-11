@@ -65,8 +65,8 @@ export function useKankregLayout() {
       showShopSidebar: width >= KANKREG_BP.md,
       /** `.split` cart/checkout */
       useSplitLayout: width >= KANKREG_BP.md,
-      /** `.pd` two-column product */
-      useProductSplit: width >= KANKREG_BP.md,
+      /** `.pdp` two-column product (HTML stacks below 980px) */
+      useProductSplit: width >= 980,
       /** `.prof-grid` / `.admin` */
       useSidebarLayout: width >= KANKREG_BP.md,
       /** `.deliv-grid` */

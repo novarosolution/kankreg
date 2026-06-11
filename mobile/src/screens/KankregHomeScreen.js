@@ -11,8 +11,11 @@ import {
 } from "../components/home/HomeKankregSections";
 import WebPremiumHero from "../components/home/WebPremiumHero";
 import AboutKankregMedia from "../components/home/AboutKankregMedia";
+import HomeTimelineVideoSection from "../components/home/HomeTimelineVideoSection";
+import HomeProcessJourney from "../components/home/HomeProcessJourney";
 import HomeCommunitySection from "../components/home/HomeCommunitySection";
 import HomeGheePremiumWeb from "../components/home/HomeGheePremiumWeb";
+import LazyWhenVisible from "../components/ui/LazyWhenVisible";
 import {
   normalizeAboutSection,
   normalizeCommunitySection,
@@ -91,6 +94,13 @@ const nativeHomeStyles = StyleSheet.create({
     marginHorizontal: FIGMA.gutter,
     marginTop: spacing.xs,
     marginBottom: spacing.xs,
+  },
+  filmWrap: {
+    marginTop: spacing.sm,
+  },
+  processWrap: {
+    paddingHorizontal: FIGMA.gutter,
+    marginTop: spacing.sm,
   },
 });
 
@@ -304,6 +314,18 @@ export default function KankregHomeScreen({ navigation }) {
             </>
           ) : null}
 
+          {ready ? (
+            <View style={nativeHomeStyles.filmWrap}>
+              <HomeTimelineVideoSection />
+            </View>
+          ) : null}
+
+          {ready ? (
+            <View style={nativeHomeStyles.processWrap}>
+              <HomeProcessJourney />
+            </View>
+          ) : null}
+
         </KankregScrollPage>
         <BottomNavBar />
       </CustomerScreenShell>
@@ -445,46 +467,66 @@ export default function KankregHomeScreen({ navigation }) {
               </ScrollFadeUp>
             ) : null}
 
-            {showAboutStory ? (
+            {ready ? (
               <ScrollFadeUp index={2}>
-                <AboutKankregMedia
-                  aboutSection={aboutSection}
-                  navigation={navigation}
-                  variant="editorial"
-                />
+                <HomeTimelineVideoSection />
               </ScrollFadeUp>
             ) : null}
 
+            {ready ? (
+              <LazyWhenVisible minHeight={560} rootMargin="240px">
+                <ScrollFadeUp index={3}>
+                  <HomeProcessJourney />
+                </ScrollFadeUp>
+              </LazyWhenVisible>
+            ) : null}
+
+            {showAboutStory ? (
+              <LazyWhenVisible minHeight={480} rootMargin="400px">
+                <ScrollFadeUp index={4}>
+                  <AboutKankregMedia
+                    aboutSection={aboutSection}
+                    navigation={navigation}
+                    variant="editorial"
+                  />
+                </ScrollFadeUp>
+              </LazyWhenVisible>
+            ) : null}
+
             {showCommunitySection ? (
-              <HomeCommunitySection communitySection={communitySection} />
+              <LazyWhenVisible minHeight={520} rootMargin="360px">
+                <HomeCommunitySection communitySection={communitySection} />
+              </LazyWhenVisible>
             ) : null}
 
             {showGheePremium && ready ? (
-              <HomeGheePremiumWeb compareSection={compareSection} />
+              <LazyWhenVisible minHeight={640} rootMargin="360px">
+                <HomeGheePremiumWeb compareSection={compareSection} />
+              </LazyWhenVisible>
             ) : null}
 
             {showHomeExtras && HOME_SCREEN_UI.web?.showStatsStrip && !isMobileWeb && ready ? (
-              <ScrollFadeUp index={3}>
+              <ScrollFadeUp index={5}>
                 <HomeStatsStrip c={c} isDark={isDark} />
               </ScrollFadeUp>
             ) : null}
             {showHomeExtras && HOME_SCREEN_UI.web?.showMarquee && !isMobileWeb && ready ? (
-              <ScrollFadeUp index={4}>
+              <ScrollFadeUp index={6}>
                 <HomeMarqueeTicker />
               </ScrollFadeUp>
             ) : null}
             {showHomeExtras && HOME_SCREEN_UI.web?.showFeaturedEditorial && featuredProduct && ready ? (
-              <ScrollFadeUp index={5}>
+              <ScrollFadeUp index={7}>
                 <HomeFeaturedEditorial product={featuredProduct} navigation={navigation} />
               </ScrollFadeUp>
             ) : null}
             {showHomeExtras && HOME_SCREEN_UI.web?.showTestimonials && !isMobileWeb && ready ? (
-              <ScrollFadeUp index={6}>
+              <ScrollFadeUp index={8}>
                 <HomeTestimonials c={c} isDark={isDark} />
               </ScrollFadeUp>
             ) : null}
             {showHomeExtras && HOME_SCREEN_UI.web?.showBrandQuote && !isMobileWeb && ready ? (
-              <ScrollFadeUp index={7} preset="fade-in">
+              <ScrollFadeUp index={9} preset="fade-in">
                 <HomeQuote isDark={isDark} />
               </ScrollFadeUp>
             ) : null}

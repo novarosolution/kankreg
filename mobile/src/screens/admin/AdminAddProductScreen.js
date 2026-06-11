@@ -102,10 +102,50 @@ export default function AdminAddProductScreen({ navigation, route }) {
   );
   const [highlightQuote, setHighlightQuote] = useState(editingProduct?.highlightQuote || "");
   const [richProductPage, setRichProductPage] = useState(editingProduct?.richProductPage === true);
+  const [pageEyebrow, setPageEyebrow] = useState(editingProduct?.pageEyebrow || "");
+  const [deliveryTitle, setDeliveryTitle] = useState(editingProduct?.deliveryTitle || "");
+  const [deliveryBody, setDeliveryBody] = useState(editingProduct?.deliveryBody || "");
+  const [highlightsText, setHighlightsText] = useState(
+    Array.isArray(editingProduct?.highlights) ? editingProduct.highlights.join("\n") : ""
+  );
+  const [storyKick, setStoryKick] = useState(editingProduct?.storyKick || "");
+  const [storyTitle, setStoryTitle] = useState(editingProduct?.storyTitle || "");
+  const [storyLegend, setStoryLegend] = useState(editingProduct?.storyLegend || "");
+  const [reviewsKick, setReviewsKick] = useState(editingProduct?.reviewsKick || "");
+  const [reviewsTitle, setReviewsTitle] = useState(editingProduct?.reviewsTitle || "");
+  const [nutritionKick, setNutritionKick] = useState(editingProduct?.nutrition?.kick || "");
+  const [nutritionTitle, setNutritionTitle] = useState(editingProduct?.nutrition?.title || "");
+  const [nutritionTableHead, setNutritionTableHead] = useState(editingProduct?.nutrition?.tableHead || "");
+  const [nutritionTableSub, setNutritionTableSub] = useState(editingProduct?.nutrition?.tableSub || "");
+  const [nutritionRowsText, setNutritionRowsText] = useState(() => {
+    const rows = editingProduct?.nutrition?.rows;
+    if (!Array.isArray(rows) || !rows.length) return "";
+    return rows.map((r) => `${String(r.label || "").trim()}|${String(r.value || "").trim()}`).join("\n");
+  });
+  const [nutritionCardTitle, setNutritionCardTitle] = useState(editingProduct?.nutrition?.cardTitle || "");
+  const [nutritionCardBody, setNutritionCardBody] = useState(editingProduct?.nutrition?.cardBody || "");
+  const [nutritionCardTagsText, setNutritionCardTagsText] = useState(
+    Array.isArray(editingProduct?.nutrition?.cardTags) ? editingProduct.nutrition.cardTags.join(", ") : ""
+  );
+  const [nutritionCardFooter, setNutritionCardFooter] = useState(editingProduct?.nutrition?.cardFooter || "");
   const [variantRows, setVariantRows] = useState(() => {
     const v = editingProduct?.variants;
     if (Array.isArray(v) && v.length) {
-      return v.map((row) => ({ label: String(row.label ?? ""), price: String(row.price ?? "") }));
+      return v.map((row) => ({
+        label: String(row.label ?? ""),
+        price: String(row.price ?? ""),
+        tag: String(row.tag ?? ""),
+      }));
+    }
+    return [];
+  });
+  const [trustRows, setTrustRows] = useState(() => {
+    const t = editingProduct?.trustChips;
+    if (Array.isArray(t) && t.length) {
+      return t.map((row) => ({
+        icon: String(row.icon ?? "shield-checkmark-outline"),
+        label: String(row.label ?? ""),
+      }));
     }
     return [];
   });
@@ -254,8 +294,35 @@ export default function AdminAddProductScreen({ navigation, route }) {
       const variantsPayload = variantRows
         .map((r) => ({
           label: String(r.label || "").trim(),
-          price: Number(r.price)}))
+          price: Number(r.price),
+          tag: String(r.tag || "").trim(),
+        }))
         .filter((r) => r.label && Number.isFinite(r.price) && r.price >= 0);
+
+      const trustPayload = trustRows
+        .map((r) => ({
+          icon: String(r.icon || "shield-checkmark-outline").trim() || "shield-checkmark-outline",
+          label: String(r.label || "").trim(),
+        }))
+        .filter((r) => r.label);
+
+      const highlightsPayload = highlightsText
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const nutritionRowsPayload = nutritionRowsText
+        .split("\n")
+        .map((line) => {
+          const [label, value] = line.split("|").map((s) => s.trim());
+          return { label: label || "", value: value || "" };
+        })
+        .filter((r) => r.label && r.value);
+
+      const nutritionCardTagsPayload = nutritionCardTagsText
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
 
       const uspsPayload = uspRows
         .map((r) => ({
@@ -284,6 +351,27 @@ export default function AdminAddProductScreen({ navigation, route }) {
       payload.variants = variantsPayload;
       payload.usps = uspsPayload;
       payload.usageRituals = usagePayload;
+      payload.pageEyebrow = pageEyebrow.trim();
+      payload.trustChips = trustPayload;
+      payload.highlights = highlightsPayload;
+      payload.deliveryTitle = deliveryTitle.trim();
+      payload.deliveryBody = deliveryBody.trim();
+      payload.storyKick = storyKick.trim();
+      payload.storyTitle = storyTitle.trim();
+      payload.storyLegend = storyLegend.trim();
+      payload.reviewsKick = reviewsKick.trim();
+      payload.reviewsTitle = reviewsTitle.trim();
+      payload.nutrition = {
+        kick: nutritionKick.trim(),
+        title: nutritionTitle.trim(),
+        tableHead: nutritionTableHead.trim(),
+        tableSub: nutritionTableSub.trim(),
+        rows: nutritionRowsPayload,
+        cardTitle: nutritionCardTitle.trim(),
+        cardBody: nutritionCardBody.trim(),
+        cardTags: nutritionCardTagsPayload,
+        cardFooter: nutritionCardFooter.trim(),
+      };
 
       if (editingProduct) {
         await updateAdminProduct(token, editingProduct._id, payload);
@@ -558,17 +646,109 @@ export default function AdminAddProductScreen({ navigation, route }) {
         />
 
         <PremiumSectionHeader
-          title="Rich product page (optional)"
-          subtitle="Hero badge, ratings, size variants, USPs, lifestyle image, process story, and usage cards — shown on the product screen when filled."
+          title="Product page content"
+          subtitle="All sections below appear on the customer product page when filled. Turn on rich layout to show story, process, and usage blocks."
           compact
         />
         <PremiumChip
-          label={richProductPage ? "Use rich layout: ON" : "Use rich layout: OFF"}
+          label={richProductPage ? "Rich layout: ON" : "Rich layout: OFF"}
           tone="gold"
           size="sm"
           selected={richProductPage}
           onPress={() => setRichProductPage((current) => !current)}
           style={styles.toggleChipFull}
+        />
+
+        <PremiumSectionHeader title="Hero & purchase" compact />
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="Page eyebrow"
+            value={pageEyebrow}
+            onChangeText={setPageEyebrow}
+            placeholder="e.g. The Benchmark of Purity"
+            helperText="Small label above the product title"
+          />
+        </View>
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="Lead description"
+            value={description}
+            onChangeText={setDescription}
+            multiline
+            numberOfLines={4}
+            placeholder="Short paragraph under the price on the product page"
+            iconLeft="document-text-outline"
+          />
+        </View>
+        <View style={styles.row}>
+          <View style={[styles.fieldGap, styles.halfInput]}>
+            <PremiumInput
+              label="Delivery title"
+              value={deliveryTitle}
+              onChangeText={setDeliveryTitle}
+              placeholder="e.g. Free delivery"
+            />
+          </View>
+          <View style={[styles.fieldGap, styles.halfInput]}>
+            <PremiumInput
+              label="Delivery note"
+              value={deliveryBody}
+              onChangeText={setDeliveryBody}
+              placeholder="COD, returns, freshness…"
+            />
+          </View>
+        </View>
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="Highlights"
+            value={highlightsText}
+            onChangeText={setHighlightsText}
+            placeholder="One checkmark bullet per line"
+            multiline
+            numberOfLines={4}
+          />
+        </View>
+
+        <PremiumSectionHeader title="Trust chips" subtitle="Pill badges under the buy buttons" compact />
+        {trustRows.map((row, idx) => (
+          <View key={`trust-${idx}`} style={styles.blockCard}>
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label="Ionicons name"
+                value={row.icon}
+                onChangeText={(t) =>
+                  setTrustRows((rows) => rows.map((r, i) => (i === idx ? { ...r, icon: t } : r)))
+                }
+                placeholder="e.g. shield-checkmark-outline"
+                autoCapitalize="none"
+              />
+            </View>
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label="Label"
+                value={row.label}
+                onChangeText={(t) =>
+                  setTrustRows((rows) => rows.map((r, i) => (i === idx ? { ...r, label: t } : r)))
+                }
+                placeholder="e.g. 100% Pure"
+              />
+            </View>
+            <PremiumButton
+              label="Remove"
+              variant="danger"
+              size="sm"
+              onPress={() => setTrustRows((rows) => rows.filter((_, i) => i !== idx))}
+              style={styles.removeRowBtn}
+            />
+          </View>
+        ))}
+        <PremiumButton
+          label="Add trust chip"
+          iconLeft="add-outline"
+          variant="ghost"
+          size="sm"
+          onPress={() => setTrustRows((rows) => [...rows, { icon: "shield-checkmark-outline", label: "" }])}
+          style={styles.addRowBtn}
         />
         <View style={styles.row}>
           <View style={[styles.fieldGap, styles.halfInput]}>
@@ -603,7 +783,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
 
         <PremiumSectionHeader
           title="Size / price variants"
-          subtitle="Leave empty to sell a single price. Each row: label (e.g. 500ml) + price."
+          subtitle="Leave empty for a single price. Optional tag shows on the selected size card (e.g. Best Value)."
           compact
         />
         {variantRows.map((row, idx) => (
@@ -630,6 +810,16 @@ export default function AdminAddProductScreen({ navigation, route }) {
                 />
               </View>
             </View>
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label="Tag (optional)"
+                value={row.tag}
+                onChangeText={(t) =>
+                  setVariantRows((rows) => rows.map((r, i) => (i === idx ? { ...r, tag: t } : r)))
+                }
+                placeholder="e.g. Best Value"
+              />
+            </View>
             <PremiumButton
               label="Remove variant"
               variant="danger"
@@ -644,11 +834,29 @@ export default function AdminAddProductScreen({ navigation, route }) {
           iconLeft="add-outline"
           variant="ghost"
           size="sm"
-          onPress={() => setVariantRows((rows) => [...rows, { label: "", price: "" }])}
+          onPress={() => setVariantRows((rows) => [...rows, { label: "", price: "", tag: "" }])}
           style={styles.addRowBtn}
         />
 
-        <PremiumSectionHeader title="Selling points (USPs)" compact />
+        <PremiumSectionHeader title="Story section" subtitle="Full-width block below the hero purchase area" compact />
+        <View style={styles.fieldGap}>
+          <PremiumInput label="Section kick" value={storyKick} onChangeText={setStoryKick} placeholder="e.g. Our Legacy of Purity" />
+        </View>
+        <View style={styles.fieldGap}>
+          <PremiumInput label="Section title" value={storyTitle} onChangeText={setStoryTitle} placeholder="e.g. Crafted the ancient way…" />
+        </View>
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="Story body"
+            value={storyLegend}
+            onChangeText={setStoryLegend}
+            multiline
+            numberOfLines={5}
+            placeholder="Longer brand story paragraph"
+          />
+        </View>
+
+        <PremiumSectionHeader title="Feature cards (USPs)" compact />
         {uspRows.map((row, idx) => (
           <View key={`usp-${idx}`} style={styles.blockCard}>
             <View style={styles.fieldGap}>
@@ -729,6 +937,75 @@ export default function AdminAddProductScreen({ navigation, route }) {
           />
         </View>
 
+        <PremiumSectionHeader title="Nutrition & packaging" compact />
+        <View style={styles.row}>
+          <View style={[styles.fieldGap, styles.halfInput]}>
+            <PremiumInput label="Nutrition kick" value={nutritionKick} onChangeText={setNutritionKick} placeholder="Nutrition" />
+          </View>
+          <View style={[styles.fieldGap, styles.halfInput]}>
+            <PremiumInput label="Nutrition title" value={nutritionTitle} onChangeText={setNutritionTitle} placeholder="Nutritional Facts" />
+          </View>
+        </View>
+        <View style={styles.row}>
+          <View style={[styles.fieldGap, styles.halfInput]}>
+            <PremiumInput label="Table header" value={nutritionTableHead} onChangeText={setNutritionTableHead} placeholder="Per 100 g" />
+          </View>
+          <View style={[styles.fieldGap, styles.halfInput]}>
+            <PremiumInput label="Table subhead" value={nutritionTableSub} onChangeText={setNutritionTableSub} placeholder="Approximate values" />
+          </View>
+        </View>
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="Nutrition rows"
+            value={nutritionRowsText}
+            onChangeText={setNutritionRowsText}
+            placeholder="Energy|896.22 kcal — one row per line, label|value"
+            multiline
+            numberOfLines={6}
+          />
+        </View>
+        <View style={styles.fieldGap}>
+          <PremiumInput label="Info card title" value={nutritionCardTitle} onChangeText={setNutritionCardTitle} placeholder="From our farm to your table" />
+        </View>
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="Info card body"
+            value={nutritionCardBody}
+            onChangeText={setNutritionCardBody}
+            multiline
+            numberOfLines={3}
+            placeholder="Net quantity, storage, best before…"
+          />
+        </View>
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="Info card tags"
+            value={nutritionCardTagsText}
+            onChangeText={setNutritionCardTagsText}
+            placeholder="Comma-separated, e.g. Bilona Process, Ethically Sourced"
+          />
+        </View>
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="Info card footer"
+            value={nutritionCardFooter}
+            onChangeText={setNutritionCardFooter}
+            placeholder="FSSAI licence, packed by…"
+            multiline
+            numberOfLines={2}
+          />
+        </View>
+
+        <PremiumSectionHeader title="Reviews section headings" compact />
+        <View style={styles.row}>
+          <View style={[styles.fieldGap, styles.halfInput]}>
+            <PremiumInput label="Reviews kick" value={reviewsKick} onChangeText={setReviewsKick} placeholder="Customer Reviews" />
+          </View>
+          <View style={[styles.fieldGap, styles.halfInput]}>
+            <PremiumInput label="Reviews title" value={reviewsTitle} onChangeText={setReviewsTitle} placeholder="What families are saying" />
+          </View>
+        </View>
+
         <PremiumSectionHeader title="Usage & rituals" compact />
         {usageRows.map((row, idx) => (
           <View key={`use-${idx}`} style={styles.blockCard}>
@@ -779,17 +1056,6 @@ export default function AdminAddProductScreen({ navigation, route }) {
           onPress={() => setUsageRows((rows) => [...rows, { icon: "cafe-outline", title: "", description: "" }])}
           style={styles.addRowBtn}
         />
-
-        <View style={styles.fieldGap}>
-          <PremiumInput
-            label="Description"
-            value={description}
-            onChangeText={setDescription}
-            multiline
-            numberOfLines={5}
-            iconLeft="document-text-outline"
-          />
-        </View>
 
         <PremiumButton
           label={isSaving ? "Saving…" : "Save product"}

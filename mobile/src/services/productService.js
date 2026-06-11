@@ -37,8 +37,35 @@ function normalizeProduct(raw) {
         .map((v) => ({
           label: String(v?.label ?? "").trim(),
           price: Math.max(0, Number(v?.price) || 0),
+          tag: String(v?.tag ?? "").trim(),
         }))
         .filter((v) => v.label && Number.isFinite(v.price))
+    : [];
+
+  const trustChips = Array.isArray(raw.trustChips)
+    ? raw.trustChips
+        .map((b) => ({
+          icon: String(b?.icon ?? "checkmark-circle-outline").trim() || "checkmark-circle-outline",
+          label: String(b?.label ?? "").trim(),
+        }))
+        .filter((b) => b.label)
+    : [];
+
+  const highlights = Array.isArray(raw.highlights)
+    ? raw.highlights.map((s) => String(s ?? "").trim()).filter(Boolean)
+    : [];
+
+  const nutritionRaw = raw.nutrition && typeof raw.nutrition === "object" ? raw.nutrition : {};
+  const nutritionRows = Array.isArray(nutritionRaw.rows)
+    ? nutritionRaw.rows
+        .map((r) => ({
+          label: String(r?.label ?? "").trim(),
+          value: String(r?.value ?? "").trim(),
+        }))
+        .filter((r) => r.label && r.value)
+    : [];
+  const nutritionCardTags = Array.isArray(nutritionRaw.cardTags)
+    ? nutritionRaw.cardTags.map((t) => String(t ?? "").trim()).filter(Boolean)
     : [];
 
   const usps = Array.isArray(raw.usps)
@@ -105,6 +132,27 @@ function normalizeProduct(raw) {
     highlightQuote: String(raw.highlightQuote ?? "").trim(),
     usageRituals,
     richProductPage: raw.richProductPage === true,
+    pageEyebrow: String(raw.pageEyebrow ?? "").trim(),
+    trustChips,
+    highlights,
+    deliveryTitle: String(raw.deliveryTitle ?? "").trim(),
+    deliveryBody: String(raw.deliveryBody ?? "").trim(),
+    storyKick: String(raw.storyKick ?? "").trim(),
+    storyTitle: String(raw.storyTitle ?? "").trim(),
+    storyLegend: String(raw.storyLegend ?? "").trim(),
+    reviewsKick: String(raw.reviewsKick ?? "").trim(),
+    reviewsTitle: String(raw.reviewsTitle ?? "").trim(),
+    nutrition: {
+      kick: String(nutritionRaw.kick ?? "").trim(),
+      title: String(nutritionRaw.title ?? "").trim(),
+      tableHead: String(nutritionRaw.tableHead ?? "").trim(),
+      tableSub: String(nutritionRaw.tableSub ?? "").trim(),
+      rows: nutritionRows,
+      cardTitle: String(nutritionRaw.cardTitle ?? "").trim(),
+      cardBody: String(nutritionRaw.cardBody ?? "").trim(),
+      cardTags: nutritionCardTags,
+      cardFooter: String(nutritionRaw.cardFooter ?? "").trim(),
+    },
   };
 }
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { gsap } from "gsap";
@@ -28,7 +29,7 @@ export default function KankregBuyBar({
   onBuyNow,
 }) {
   const { isDark } = useTheme();
-  const { isXs, showMobileWebTabBar } = useKankregLayout();
+  const { useProductSplit, showMobileWebTabBar } = useKankregLayout();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
   const barRef = useRef(null);
@@ -69,10 +70,35 @@ export default function KankregBuyBar({
 
   const lineTotal = price * Math.max(quantity, 1);
 
+  if (!useProductSplit) {
+    return (
+      <View
+        ref={barRef}
+        style={[
+          styles.mbarOuter,
+          {
+            bottom: bottomOffset,
+            backgroundColor: isDark ? "rgba(15,12,10,0.96)" : "rgba(255,254,250,0.97)",
+            borderTopColor: isDark ? "rgba(255,255,255,0.08)" : KANKREG_PALETTE.line,
+          },
+        ]}
+      >
+        <Text style={[styles.mbarPrice, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
+          {formatINR(lineTotal)}
+        </Text>
+        <Pressable style={styles.mbarBtn} onPress={quantity > 0 ? onBuyNow : onAddToCart} accessibilityRole="button">
+          <LinearGradient colors={["#C9971F", "#A0741A"]} style={styles.mbarBtnGrad}>
+            <Text style={styles.mbarBtnText}>{quantity > 0 ? "Buy Now" : PRODUCT_SCREEN.addToCart}</Text>
+          </LinearGradient>
+        </Pressable>
+      </View>
+    );
+  }
+
   return (
     <View ref={barRef} style={[styles.barOuter, { bottom: bottomOffset }]}>
-    <PremiumStickyBar variant="glass" align={isXs ? "column" : "row"}>
-      <View style={[styles.inner, isXs && styles.innerStack]}>
+    <PremiumStickyBar variant="glass" align="row">
+      <View style={styles.inner}>
         <View style={styles.meta}>
           <Text style={styles.metaLabel}>{PRODUCT_SCREEN.stickyPriceLabel || "Total"}</Text>
           <Text style={[styles.price, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
@@ -99,20 +125,14 @@ export default function KankregBuyBar({
             </Pressable>
           </View>
         ) : null}
-        <View style={[styles.actions, isXs && styles.actionsStack]}>
-          <PremiumButton
-            label="Buy now"
-            variant="outline"
-            size="sm"
-            onPress={onBuyNow}
-            style={isXs ? styles.actionFull : styles.actionBuy}
-          />
+        <View style={styles.actions}>
+          <PremiumButton label="Buy now" variant="outline" size="sm" onPress={onBuyNow} style={styles.actionBuy} />
           <PremiumButton
             label="Add to cart"
             variant="primary"
             size="sm"
             onPress={onAddToCart}
-            style={isXs ? styles.actionFull : styles.actionCart}
+            style={styles.actionCart}
           />
         </View>
       </View>
@@ -122,6 +142,48 @@ export default function KankregBuyBar({
 }
 
 const styles = StyleSheet.create({
+  mbarOuter: {
+    position: Platform.OS === "web" ? "fixed" : "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 90,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    ...Platform.select({
+      web: {
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
+        boxShadow: "0 -8px 24px rgba(60, 40, 15, 0.08)",
+      },
+      default: {},
+    }),
+  },
+  mbarPrice: {
+    fontFamily: FONT_DISPLAY,
+    fontWeight: "700",
+    fontSize: 20,
+    flexShrink: 0,
+  },
+  mbarBtn: {
+    flex: 1,
+    borderRadius: 13,
+    overflow: "hidden",
+  },
+  mbarBtnGrad: {
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mbarBtnText: {
+    fontFamily: fonts.bold,
+    fontSize: 15,
+    color: "#FFF9EC",
+  },
   barOuter: {
     position: Platform.OS === "web" ? "fixed" : "absolute",
     left: 0,

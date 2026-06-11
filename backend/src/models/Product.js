@@ -4,6 +4,39 @@ const variantSchema = new mongoose.Schema(
   {
     label: { type: String, required: true, trim: true },
     price: { type: Number, required: true, min: 0 },
+    /** Optional pill on size card, e.g. Best Value */
+    tag: { type: String, default: "", trim: true },
+  },
+  { _id: false }
+);
+
+const trustChipSchema = new mongoose.Schema(
+  {
+    icon: { type: String, default: "checkmark-circle-outline", trim: true },
+    label: { type: String, default: "", trim: true },
+  },
+  { _id: false }
+);
+
+const nutritionRowSchema = new mongoose.Schema(
+  {
+    label: { type: String, default: "", trim: true },
+    value: { type: String, default: "", trim: true },
+  },
+  { _id: false }
+);
+
+const productNutritionSchema = new mongoose.Schema(
+  {
+    kick: { type: String, default: "", trim: true },
+    title: { type: String, default: "", trim: true },
+    tableHead: { type: String, default: "", trim: true },
+    tableSub: { type: String, default: "", trim: true },
+    rows: { type: [nutritionRowSchema], default: [] },
+    cardTitle: { type: String, default: "", trim: true },
+    cardBody: { type: String, default: "", trim: true },
+    cardTags: { type: [String], default: [] },
+    cardFooter: { type: String, default: "", trim: true },
   },
   { _id: false }
 );
@@ -191,6 +224,62 @@ const productSchema = new mongoose.Schema(
     richProductPage: {
       type: Boolean,
       default: false,
+    },
+    /** Hero overline above product title on PDP */
+    pageEyebrow: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    /** Trust pill row under buy block */
+    trustChips: {
+      type: [trustChipSchema],
+      default: [],
+    },
+    /** Checkmark bullet highlights under delivery note */
+    highlights: {
+      type: [String],
+      default: [],
+    },
+    deliveryTitle: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    deliveryBody: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    /** Story section below hero (kick / title / legend) */
+    storyKick: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    storyTitle: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    storyLegend: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    reviewsKick: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    reviewsTitle: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    nutrition: {
+      type: productNutritionSchema,
+      default: () => ({}),
     },
   },
   { timestamps: true }

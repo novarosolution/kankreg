@@ -2,7 +2,6 @@ import React from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { HOME_STORY_CONTENT } from "../../content/appContent";
 import HomeGheeCompare from "./HomeGheeCompare";
-import HomeProcessJourney from "./HomeProcessJourney";
 import { SectionHeader, ScrollFadeUp } from "./editorial";
 import GoldHairline from "../ui/GoldHairline";
 import {
@@ -133,8 +132,6 @@ export default function HomeGheePremiumWeb({ compareSection }) {
   return (
     <View style={styles.storyStack} nativeID="home-story-continuum">
       <GoldHairline {...GOLD_HAIRLINE_EDITORIAL.section} marginVertical={HOME_SPACE.lg} />
-      <HomeProcessJourney />
-      <StoryDivider />
       <HomeGheeCompare compareSection={compareSection} />
       <StoryDivider />
       <WhyKankrejSection />

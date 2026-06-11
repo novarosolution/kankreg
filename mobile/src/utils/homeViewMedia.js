@@ -194,6 +194,7 @@ export function normalizeCommunitySection(section) {
     enabled: section.enabled !== false,
     eyebrow: asTrimmedString(section.eyebrow, defaults.eyebrow),
     title: asTrimmedString(section.title, defaults.title),
+    subtitle: asTrimmedString(section.subtitle, defaults.subtitle),
     instagram: {
       handle,
       displayHandle,
@@ -225,6 +226,7 @@ export function resolveCommunityDisplay(section) {
   return {
     eyebrow: normalized.eyebrow,
     title: normalized.title,
+    subtitle: normalized.subtitle,
     instagram: normalized.instagram,
     posts,
   };

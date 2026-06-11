@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image as RNImage, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import WebHtmlVideo from "./WebHtmlVideo";
 import { HOME_HERO_BANNER } from "../../content/appContent";
 import { FONT_DISPLAY } from "../../theme/customerAlchemy";
@@ -266,6 +266,9 @@ function HeroSlideCard({
           contentPosition={contentPosition}
           transition={320}
           placeholder={{ blurhash: PRODUCT_HERO_BLURHASH }}
+          priority={active ? "high" : "normal"}
+          cachePolicy="memory-disk"
+          recyclingKey={slide.id || slide.key}
         />
       ) : null}
 
@@ -407,11 +410,20 @@ export default function HeroMediaSlider({
 
   const activeSlide = slides[index] || slides[0];
 
+  /** Stable height across slides — avoids blank bands when auto-rotating between aspect ratios. */
+  const bannerHeightRatio = useMemo(() => {
+    if (!slides.length) {
+      return resolveHeroSlideHeightRatio(activeSlide, { isNative, isMobileWeb });
+    }
+    return Math.max(
+      ...slides.map((slide) => resolveHeroSlideHeightRatio(slide, { isNative, isMobileWeb }))
+    );
+  }, [activeSlide, isMobileWeb, isNative, slides]);
+
   const bannerHeight = useMemo(() => {
     const w = slideWidth;
     if (!w) return undefined;
-    const ratio = resolveHeroSlideHeightRatio(activeSlide, { isNative, isMobileWeb });
-    const natural = Math.round(w * ratio);
+    const natural = Math.round(w * bannerHeightRatio);
     const viewportCap = Math.round((layoutHeight || 800) * (isMobileWeb ? 0.68 : 0.78));
 
     if (isNative) {
@@ -424,7 +436,7 @@ export default function HeroMediaSlider({
     }
     return undefined;
   }, [
-    activeSlide,
+    bannerHeightRatio,
     isMobileWeb,
     isNative,
     isTop,
@@ -432,6 +444,22 @@ export default function HeroMediaSlider({
     layoutHeight,
     slideWidth,
   ]);
+
+  useEffect(() => {
+    if (Platform.OS !== "web" || !slides.length) return undefined;
+    slides.forEach((slide) => {
+      if (slide.mediaType === "video") return;
+      const resolved = resolveImageSource(slide.url);
+      const uri =
+        resolved && typeof resolved === "object" && resolved.uri
+          ? resolved.uri
+          : typeof slide.url === "number"
+            ? RNImage.resolveAssetSource(slide.url)?.uri
+            : "";
+      if (uri) Image.prefetch(uri).catch(() => {});
+    });
+    return undefined;
+  }, [slides]);
 
   const goTo = useCallback(
     (next) => {
@@ -633,6 +661,7 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: "100%",
     alignSelf: "stretch",
+    backgroundColor: "#1a1410",
   },
   shellCard: {
     width: "100%",
@@ -722,6 +751,7 @@ const styles = StyleSheet.create({
   },
   slideInnerBanner: {
     minHeight: "100%",
+    backgroundColor: "#1a1410",
   },
   slideInnerProduct: {
     backgroundColor: "#1a1410",

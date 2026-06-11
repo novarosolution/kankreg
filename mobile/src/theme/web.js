@@ -57,7 +57,7 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
   } else {
     const g = `radial-gradient(1100px 560px at 88% -8%, rgba(214, 173, 91, 0.12), transparent 60%), radial-gradient(900px 500px at -8% 108%, rgba(60, 98, 72, 0.06), transparent 55%), ${KANKREG_CHROME.cream}`;
     body.style.background = g;
-    body.style.backgroundAttachment = "fixed";
+    body.style.backgroundAttachment = "scroll";
     html.style.background = g;
     html.style.colorScheme = "light";
   }

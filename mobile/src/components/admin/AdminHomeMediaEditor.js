@@ -499,6 +499,11 @@ export default function AdminHomeMediaEditor({
         value={communitySection.title || ""}
         onChangeText={(title) => updateCommunity({ title })}
       />
+      <PremiumInput
+        label="Subtitle"
+        value={communitySection.subtitle || ""}
+        onChangeText={(subtitle) => updateCommunity({ subtitle })}
+      />
 
       <Text style={[styles.cardLabel, { color: c.textPrimary, marginTop: spacing.xs }]}>Instagram</Text>
       <PremiumInput

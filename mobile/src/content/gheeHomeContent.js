@@ -60,7 +60,7 @@ export const GHEE_HOME_CONTENT = {
         step: 6,
         title: "Golden ghee, glass-bottled",
         description: "Grainy, aromatic A2 ghee — sealed in glass for freshness and purity.",
-        image: require("../../assets/marketing/hero-slide-05-wa.jpeg"),
+        image: require("../../assets/marketing/ghee-process-step-06-bottled.png"),
         imageFit: "cover",
         imagePosition: "top center",
       },

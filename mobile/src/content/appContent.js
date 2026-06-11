@@ -162,6 +162,12 @@ export const HOME_SCREEN_UI = {
     /** Serif display line under the home grid eyebrow. */
     webSectionTitle: "Chosen for your table",
   },
+  timelineVideo: {
+    eyebrow: "Behind the craft",
+    title: "From pasture to jar",
+    kicker: "Watch the KankreG journey — Bilona ghee, made the ancestral way.",
+    filmLabel: "Brand timeline",
+  },
   ourStory: {
     eyebrow: "Our story",
     /** Serif title subtitle on phone — API `aboutSection.title` stays the display headline. */

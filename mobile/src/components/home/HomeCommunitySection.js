@@ -11,26 +11,45 @@ import {
   Text,
   View,
 } from "react-native";
-import { ScrollFadeUp } from "./editorial";
+import { SectionHeader, ScrollFadeUp } from "./editorial";
+import GoldHairline from "../ui/GoldHairline";
 import { resolveCommunityDisplay } from "../../utils/homeViewMedia";
 import { FONT_DISPLAY } from "../../theme/customerAlchemy";
 import {
+  GOLD_HAIRLINE_EDITORIAL,
   HOME_SPACE,
+  HOME_TYPE,
   homeEditorialInk,
   homeEditorialMuted,
 } from "../../theme/homeEditorial";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon, radius } from "../../theme/tokens";
 import { PRODUCT_HERO_BLURHASH } from "../../utils/image";
 import { resolveImageSource } from "../../utils/mediaSource";
+import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 
-const POST_CARD_WIDTH = 264;
-const POST_MEDIA_HEIGHT = 330;
-const POST_GAP = 20;
-const CUSTOMER_TAG_BG = "rgba(35, 90, 64, 0.55)";
-const CUSTOMER_DOT = "#9ee0b8";
+const POST_CARD_WIDTH = 252;
+const POST_MEDIA_ASPECT = 4 / 5;
+const POST_GAP = 18;
+const COMMUNITY_CARD_CLASS = "kankreg-community-post-card";
+
+if (Platform.OS === "web") {
+  injectWebCssOnce(
+    "kankreg-community-premium",
+    `.${COMMUNITY_CARD_CLASS} {
+  transition: transform 0.28s cubic-bezier(0.2, 0.7, 0.3, 1), box-shadow 0.28s ease;
+}
+.${COMMUNITY_CARD_CLASS}:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(60, 45, 20, 0.07), 0 26px 52px -14px rgba(80, 60, 25, 0.22) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .${COMMUNITY_CARD_CLASS}:hover { transform: none !important; }
+}`
+  );
+}
 
 function CommunityTag({ label, variant, isDark }) {
   const isCustomer = variant === "customer";
@@ -48,7 +67,7 @@ function CommunityTag({ label, variant, isDark }) {
   );
 }
 
-function CommunityPostCard({ post, isDark }) {
+function CommunityPostCard({ post, isDark, index }) {
   const ink = homeEditorialInk(isDark);
   const muted = homeEditorialMuted(isDark);
   const isReel = post.type === "reel" || post.type === "recipe";
@@ -56,94 +75,115 @@ function CommunityPostCard({ post, isDark }) {
   const imageSource = resolveImageSource(post.image);
 
   return (
-    <View style={[styles.post, isDark && styles.postDark]}>
-      <View style={styles.media}>
-        {imageSource ? (
-          <Image
-            source={imageSource}
-            style={styles.mediaImage}
-            contentFit="cover"
-            contentPosition="center"
-            transition={260}
-            placeholder={{ blurhash: PRODUCT_HERO_BLURHASH }}
-          />
-        ) : null}
-        <LinearGradient
-          colors={[
-            "rgba(25, 15, 5, 0.18)",
-            "transparent",
-            "transparent",
-            "rgba(25, 15, 5, 0.5)",
-          ]}
-          locations={[0, 0.38, 0.6, 1]}
-          style={styles.mediaScrim}
-          pointerEvents="none"
-        />
-        <CommunityTag label={post.tag} variant={post.type} isDark={isDark} />
-        {isReel ? (
-          <>
-            <View style={styles.playBtn} pointerEvents="none">
-              <Ionicons name="play" size={19} color={KANKREG_PALETTE.ink} style={styles.playIcon} />
-            </View>
-            {post.views ? (
-              <View style={styles.views} pointerEvents="none">
-                <Ionicons name="eye-outline" size={13} color="#F8EFDC" />
-                <Text style={styles.viewsText}>{post.views}</Text>
-              </View>
-            ) : null}
-          </>
-        ) : null}
-        {isCustomer && post.quote ? (
-          <Text style={styles.quote} numberOfLines={4}>
-            “{post.quote}”
-          </Text>
-        ) : null}
-      </View>
-      <View style={styles.pfoot}>
+    <ScrollFadeUp index={index} delay={index * 60} preset="fade-up">
+      <View
+        className={Platform.OS === "web" ? COMMUNITY_CARD_CLASS : undefined}
+        style={[styles.post, isDark && styles.postDark]}
+      >
         <LinearGradient
           colors={
-            post.author.brand ? ["#D8B36A", "#A0741A"] : ["#7FB89A", "#235A40"]
+            isDark
+              ? ["rgba(214, 173, 91, 0.16)", "transparent"]
+              : ["rgba(214, 173, 91, 0.24)", "transparent"]
           }
-          start={{ x: 0.2, y: 0 }}
-          end={{ x: 0.9, y: 1 }}
-          style={styles.avatar}
-        >
-          <Text style={styles.avatarText}>{post.author.avatar}</Text>
-        </LinearGradient>
-        <View style={styles.pfootCopy}>
-          <Text style={[styles.pfootName, { color: ink }]} numberOfLines={1}>
-            {post.author.name}
-          </Text>
-          <Text style={[styles.pfootSub, { color: muted }]} numberOfLines={1}>
-            {post.author.subtitle}
-          </Text>
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.postTopAccent}
+          pointerEvents="none"
+        />
+        <View style={[styles.media, isDark && styles.mediaDark]}>
+          {imageSource ? (
+            <Image
+              source={imageSource}
+              style={styles.mediaImage}
+              contentFit="cover"
+              contentPosition="top center"
+              transition={300}
+              placeholder={{ blurhash: PRODUCT_HERO_BLURHASH }}
+              cachePolicy="memory-disk"
+              recyclingKey={post.id || post.key}
+            />
+          ) : (
+            <View style={[styles.mediaImage, styles.mediaFallback]} />
+          )}
+          <LinearGradient
+            colors={[
+              "rgba(8, 6, 4, 0.12)",
+              "transparent",
+              "transparent",
+              "rgba(8, 6, 4, 0.62)",
+            ]}
+            locations={[0, 0.35, 0.58, 1]}
+            style={styles.mediaScrim}
+            pointerEvents="none"
+          />
+          <CommunityTag label={post.tag} variant={post.type} isDark={isDark} />
+          {isReel ? (
+            <>
+              <View style={styles.playBtn} pointerEvents="none">
+                <Ionicons name="play" size={18} color={KANKREG_PALETTE.ink} style={styles.playIcon} />
+              </View>
+              {post.views ? (
+                <View style={styles.views} pointerEvents="none">
+                  <Ionicons name="eye-outline" size={12} color="#F8EFDC" />
+                  <Text style={styles.viewsText}>{post.views}</Text>
+                </View>
+              ) : null}
+            </>
+          ) : null}
+          {isCustomer && post.quote ? (
+            <View style={styles.quoteWrap} pointerEvents="none">
+              <Text style={styles.quoteMark}>"</Text>
+              <Text style={styles.quote} numberOfLines={4}>
+                {post.quote}
+              </Text>
+            </View>
+          ) : null}
+          <View style={styles.mediaGoldRule} pointerEvents="none" />
         </View>
-        {post.likes ? (
-          <View style={styles.likeRow}>
-            <Ionicons name="heart-outline" size={14} color={KANKREG_PALETTE.inkSoft} />
-            <Text style={[styles.likeText, { color: KANKREG_PALETTE.inkSoft }]}>{post.likes}</Text>
+        <View style={[styles.pfoot, isDark && styles.pfootDark]}>
+          <LinearGradient
+            colors={
+              post.author.brand ? ["#D8B36A", "#8A5F22"] : ["#7FB89A", "#235A40"]
+            }
+            start={{ x: 0.2, y: 0 }}
+            end={{ x: 0.9, y: 1 }}
+            style={styles.avatar}
+          >
+            <Text style={styles.avatarText}>{post.author.avatar}</Text>
+          </LinearGradient>
+          <View style={styles.pfootCopy}>
+            <Text style={[styles.pfootName, { color: ink }]} numberOfLines={1}>
+              {post.author.name}
+            </Text>
+            <Text style={[styles.pfootSub, { color: muted }]} numberOfLines={1}>
+              {post.author.subtitle}
+            </Text>
           </View>
-        ) : null}
+          {post.likes ? (
+            <View style={styles.likeRow}>
+              <Ionicons name="heart" size={13} color={KANKREG_PALETTE.gold} />
+              <Text style={[styles.likeText, { color: muted }]}>{post.likes}</Text>
+            </View>
+          ) : null}
+        </View>
       </View>
-    </View>
+    </ScrollFadeUp>
   );
 }
 
 /**
  * Instagram-style community rail — reels + customer stories.
- * Copy and posts in `communityHomeContent.js`.
+ * Copy and posts in `communityHomeContent.js` (admin: Home View → Community).
  */
 export default function HomeCommunitySection({ communitySection }) {
   const { isDark } = useTheme();
-  const { width, isMobileWeb } = useKankregLayout();
-  const ink = homeEditorialInk(isDark);
-  const muted = homeEditorialMuted(isDark);
+  const { isLg, isMobileWeb } = useKankregLayout();
   const content = resolveCommunityDisplay(communitySection);
-  const stackHeader = width < 900;
 
   if (Platform.OS !== "web" || !content) return null;
 
-  const { eyebrow, title, instagram, posts } = content;
+  const { eyebrow, title, subtitle, instagram, posts } = content;
 
   const openInstagram = () => {
     const url = instagram.url || `https://instagram.com/${instagram.handle}`;
@@ -152,16 +192,39 @@ export default function HomeCommunitySection({ communitySection }) {
 
   return (
     <ScrollFadeUp index={2}>
-      <View nativeID="home-community" style={styles.section}>
-        <View style={[styles.head, stackHeader && styles.headStack]}>
-          <View style={[styles.headCopy, stackHeader && styles.headCopyStack]}>
-            <Text style={[styles.eyebrow, { color: muted }]}>{eyebrow}</Text>
-            <Text style={[styles.title, { color: ink }, stackHeader && styles.titleStack]}>{title}</Text>
+      <View nativeID="home-community" style={[styles.section, isDark && styles.sectionDark]}>
+        <LinearGradient
+          colors={
+            isDark
+              ? ["rgba(214, 173, 91, 0.05)", "transparent", "rgba(60, 98, 72, 0.04)"]
+              : ["rgba(214, 173, 91, 0.09)", "transparent", "rgba(60, 98, 72, 0.04)"]
+          }
+          locations={[0, 0.5, 1]}
+          style={styles.sectionWash}
+          pointerEvents="none"
+        />
+
+        <View style={[styles.head, isLg && styles.headDesktop]}>
+          <View style={styles.headCopy}>
+            <SectionHeader
+              eyebrow={eyebrow}
+              title={title}
+              kicker={subtitle}
+              align={isLg ? "left" : "center"}
+              flush
+            />
           </View>
-          <View style={[styles.handle, stackHeader && styles.handleStack]}>
-            <View style={styles.handleCopy}>
-              <Text style={[styles.handleName, { color: ink }]}>{instagram.displayHandle}</Text>
-              <Text style={[styles.handleFollowers, { color: muted }]}>{instagram.followersLabel}</Text>
+          <View style={[styles.instagramCard, isDark && styles.instagramCardDark]}>
+            <View style={styles.instagramIconWrap}>
+              <Ionicons name="logo-instagram" size={icon.md} color={KANKREG_PALETTE.gold} />
+            </View>
+            <View style={styles.instagramCopy}>
+              <Text style={[styles.handleName, { color: homeEditorialInk(isDark) }]}>
+                {instagram.displayHandle}
+              </Text>
+              <Text style={[styles.handleFollowers, { color: homeEditorialMuted(isDark) }]}>
+                {instagram.followersLabel}
+              </Text>
             </View>
             <Pressable
               onPress={openInstagram}
@@ -173,16 +236,25 @@ export default function HomeCommunitySection({ communitySection }) {
                 pressed && styles.followBtnPressed,
               ]}
             >
-              <LinearGradient
-                colors={["#C9971F", "#A0741A"]}
-                start={{ x: 0.5, y: 0 }}
-                end={{ x: 0.5, y: 1 }}
-                style={styles.followGradient}
-              >
-                <Text style={styles.followLabel}>{instagram.followLabel}</Text>
-              </LinearGradient>
+              <Text style={styles.followLabel}>{instagram.followLabel}</Text>
             </Pressable>
           </View>
+        </View>
+
+        <View style={styles.railMeta}>
+          <GoldHairline
+            {...GOLD_HAIRLINE_EDITORIAL.subtle}
+            marginVertical={0}
+            style={{ flex: 1, opacity: 0.5 }}
+          />
+          <Text style={[styles.railMetaText, { color: homeEditorialMuted(isDark) }]}>
+            {posts.length} {posts.length === 1 ? "story" : "stories"}
+          </Text>
+          <GoldHairline
+            {...GOLD_HAIRLINE_EDITORIAL.subtle}
+            marginVertical={0}
+            style={{ flex: 1, opacity: 0.5 }}
+          />
         </View>
 
         <ScrollView
@@ -206,7 +278,7 @@ export default function HomeCommunitySection({ communitySection }) {
                 idx === posts.length - 1 && styles.postWrapLast,
               ]}
             >
-              <CommunityPostCard post={post} isDark={isDark} />
+              <CommunityPostCard post={post} isDark={isDark} index={idx} />
             </View>
           ))}
         </ScrollView>
@@ -218,140 +290,173 @@ export default function HomeCommunitySection({ communitySection }) {
 const postShadow = Platform.select({
   web: {
     boxShadow:
-      "0 1px 2px rgba(60, 40, 15, 0.05), 0 22px 48px rgba(70, 48, 18, 0.1)",
+      "0 2px 4px rgba(60, 45, 20, 0.04), 0 16px 40px -16px rgba(80, 60, 25, 0.14)",
   },
-  default: {},
-});
-
-const followShadow = Platform.select({
-  web: { boxShadow: "0 8px 18px rgba(160, 116, 22, 0.3)" },
+  ios: {
+    shadowColor: "#19140f",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+  },
+  android: { elevation: 4 },
   default: {},
 });
 
 const styles = StyleSheet.create({
   section: {
     width: "100%",
-    paddingVertical: HOME_SPACE.lg,
+    paddingVertical: HOME_SPACE.xl + 4,
+    paddingHorizontal: HOME_SPACE.lg + 4,
+    borderRadius: radius.xl + 4,
+    backgroundColor: KANKREG_CHROME.cream,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(169, 119, 46, 0.14)",
+    overflow: "hidden",
+    position: "relative",
+    ...Platform.select({
+      web: {
+        boxShadow:
+          "inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 24px 60px -40px rgba(25, 20, 15, 0.1)",
+      },
+      default: {},
+    }),
+  },
+  sectionDark: {
+    backgroundColor: "rgba(24, 21, 19, 0.58)",
+    borderColor: "#3f3933",
+  },
+  sectionWash: {
+    ...StyleSheet.absoluteFillObject,
   },
   head: {
+    gap: HOME_SPACE.lg,
+    marginBottom: HOME_SPACE.md,
+    zIndex: 1,
+  },
+  headDesktop: {
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "space-between",
-    gap: HOME_SPACE.lg,
-    flexWrap: "wrap",
-    marginBottom: HOME_SPACE.lg + 4,
-  },
-  headStack: {
-    flexDirection: "column",
-    alignItems: "flex-start",
-    gap: HOME_SPACE.md,
   },
   headCopy: {
     flex: 1,
     minWidth: 0,
-    gap: HOME_SPACE.sm,
   },
-  headCopyStack: {
-    flex: undefined,
-    width: "100%",
-  },
-  eyebrow: {
-    fontFamily: fonts.bold,
-    fontSize: 13,
-    letterSpacing: 3,
-    textTransform: "uppercase",
-  },
-  title: {
-    fontFamily: FONT_DISPLAY,
-    fontSize: 48,
-    lineHeight: 50,
-    letterSpacing: -1,
-    fontWeight: "600",
-    maxWidth: 560,
-  },
-  titleStack: {
-    fontSize: 34,
-    lineHeight: 36,
-    maxWidth: "100%",
-  },
-  handle: {
+  instagramCard: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    gap: HOME_SPACE.sm + 2,
+    paddingVertical: HOME_SPACE.sm + 2,
+    paddingHorizontal: HOME_SPACE.md,
+    borderRadius: radius.lg + 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(169, 119, 46, 0.24)",
+    backgroundColor: "rgba(255, 253, 248, 0.78)",
     flexShrink: 0,
+    ...Platform.select({
+      web: { backdropFilter: "blur(8px)" },
+      default: {},
+    }),
   },
-  handleStack: {
-    width: "100%",
-    justifyContent: "space-between",
+  instagramCardDark: {
+    backgroundColor: "rgba(24, 21, 19, 0.55)",
+    borderColor: "rgba(214, 173, 91, 0.2)",
   },
-  handleCopy: {
+  instagramIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(169, 119, 46, 0.1)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(169, 119, 46, 0.2)",
+  },
+  instagramCopy: {
     gap: 2,
+    minWidth: 0,
+    flex: 1,
   },
   handleName: {
     fontFamily: FONT_DISPLAY,
-    fontSize: 18,
-    fontWeight: "600",
-    lineHeight: 22,
+    fontSize: HOME_TYPE.kicker,
+    lineHeight: HOME_TYPE.body.lineHeight,
+    letterSpacing: -0.15,
   },
   handleFollowers: {
     fontFamily: fonts.medium,
-    fontSize: 12.5,
+    fontSize: 12,
     lineHeight: 16,
   },
   followBtn: {
-    borderRadius: 13,
-    overflow: "hidden",
-    ...followShadow,
+    borderRadius: radius.pill,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    backgroundColor: KANKREG_CHROME.buttonAccent,
     ...Platform.select({
-      web: { cursor: "pointer", transition: "transform 0.18s ease" },
+      web: {
+        cursor: "pointer",
+        transition: "transform 0.2s ease, opacity 0.2s ease",
+        boxShadow: "0 8px 20px -10px rgba(166, 124, 55, 0.55)",
+      },
       default: {},
     }),
   },
   followBtnHover: {
     ...Platform.select({
-      web: { transform: [{ scale: 1.02 }] },
+      web: { transform: [{ translateY: -1 }] },
       default: {},
     }),
   },
   followBtnPressed: {
-    opacity: 0.92,
-  },
-  followGradient: {
-    paddingVertical: 13,
-    paddingHorizontal: 24,
-    alignItems: "center",
-    justifyContent: "center",
+    opacity: 0.9,
   },
   followLabel: {
-    fontFamily: fonts.bold,
-    fontSize: 14,
-    color: "#FFF9EC",
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: KANKREG_CHROME.onAccent,
+    letterSpacing: 0.2,
+  },
+  railMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: HOME_SPACE.md,
+    marginBottom: HOME_SPACE.md + 2,
+    zIndex: 1,
+  },
+  railMetaText: {
+    fontFamily: fonts.semibold,
+    fontSize: 10,
+    letterSpacing: 1.8,
+    textTransform: "uppercase",
+    flexShrink: 0,
   },
   row: {
     width: "100%",
-    marginHorizontal: -HOME_SPACE.xs,
+    marginHorizontal: -(HOME_SPACE.lg + 4),
+    zIndex: 1,
   },
   rowContent: {
-    paddingHorizontal: HOME_SPACE.xs,
-    paddingBottom: HOME_SPACE.md,
-    paddingTop: 6,
+    paddingHorizontal: HOME_SPACE.lg + 4,
+    paddingBottom: HOME_SPACE.sm,
+    paddingTop: HOME_SPACE.xs,
   },
   rowContentMobile: {
-    paddingBottom: HOME_SPACE.md + 2,
+    paddingBottom: HOME_SPACE.md,
   },
   postWrap: {
     width: POST_CARD_WIDTH,
     marginRight: POST_GAP,
   },
   postWrapLast: {
-    marginRight: HOME_SPACE.lg,
+    marginRight: HOME_SPACE.xl,
   },
   post: {
     width: POST_CARD_WIDTH,
-    borderRadius: 22,
+    borderRadius: radius.lg + 4,
     overflow: "hidden",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: KANKREG_PALETTE.lineSoft,
+    borderColor: "rgba(169, 119, 46, 0.16)",
     backgroundColor: KANKREG_PALETTE.card,
     ...postShadow,
   },
@@ -359,136 +464,174 @@ const styles = StyleSheet.create({
     backgroundColor: "#181513",
     borderColor: "#3f3933",
   },
+  postTopAccent: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    zIndex: 4,
+  },
   media: {
-    height: POST_MEDIA_HEIGHT,
+    width: "100%",
+    aspectRatio: POST_MEDIA_ASPECT,
     position: "relative",
     overflow: "hidden",
-    backgroundColor: "#3F2C15",
+    backgroundColor: "#1a1410",
+  },
+  mediaDark: {
+    backgroundColor: "#0e0c0a",
   },
   mediaImage: {
     ...StyleSheet.absoluteFillObject,
-    width: "100%",
-    height: "100%",
+  },
+  mediaFallback: {
+    backgroundColor: KANKREG_PALETTE.paper2,
   },
   mediaScrim: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 1,
   },
+  mediaGoldRule: {
+    position: "absolute",
+    left: HOME_SPACE.md,
+    right: HOME_SPACE.md,
+    bottom: 0,
+    height: 1,
+    backgroundColor: "rgba(214, 173, 91, 0.4)",
+    zIndex: 2,
+  },
   tag: {
     position: "absolute",
-    top: 12,
-    left: 12,
+    top: HOME_SPACE.sm + 2,
+    left: HOME_SPACE.sm + 2,
     zIndex: 3,
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 11,
+    gap: 5,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
     borderRadius: radius.pill,
-    backgroundColor: "rgba(28, 18, 8, 0.5)",
+    backgroundColor: "rgba(27, 48, 34, 0.82)",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255, 255, 255, 0.12)",
+    borderColor: "rgba(214, 173, 91, 0.28)",
     ...Platform.select({
-      web: { backdropFilter: "blur(6px)" },
+      web: { backdropFilter: "blur(8px)" },
       default: {},
     }),
   },
   tagCustomer: {
-    backgroundColor: CUSTOMER_TAG_BG,
+    backgroundColor: "rgba(35, 90, 64, 0.72)",
   },
   tagDark: {
-    backgroundColor: "rgba(18, 12, 6, 0.62)",
+    backgroundColor: "rgba(18, 12, 6, 0.7)",
   },
   tagDot: {
     width: 5,
     height: 5,
     borderRadius: 3,
-    backgroundColor: KANKREG_PALETTE.gold,
+    backgroundColor: KANKREG_PALETTE.goldBright,
   },
   tagDotCustomer: {
-    backgroundColor: CUSTOMER_DOT,
+    backgroundColor: "#9ee0b8",
   },
   tagText: {
-    fontFamily: fonts.bold,
-    fontSize: 10.5,
-    letterSpacing: 1,
+    fontFamily: fonts.semibold,
+    fontSize: 9.5,
+    letterSpacing: 1.1,
     textTransform: "uppercase",
-    color: "#F3E7CE",
+    color: "rgba(255, 249, 236, 0.92)",
   },
   playBtn: {
     position: "absolute",
     top: "50%",
     left: "50%",
     zIndex: 3,
-    width: 52,
-    height: 52,
-    marginTop: -26,
-    marginLeft: -26,
-    borderRadius: 26,
+    width: 48,
+    height: 48,
+    marginTop: -24,
+    marginLeft: -24,
+    borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255, 250, 240, 0.92)",
+    backgroundColor: "rgba(255, 253, 248, 0.94)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(169, 119, 46, 0.2)",
     ...Platform.select({
-      web: { boxShadow: "0 8px 24px rgba(0, 0, 0, 0.3)" },
+      web: { boxShadow: "0 10px 28px rgba(0, 0, 0, 0.28)" },
       default: {},
     }),
   },
   playIcon: {
-    marginLeft: 3,
+    marginLeft: 2,
   },
   views: {
     position: "absolute",
-    right: 12,
-    bottom: 12,
+    right: HOME_SPACE.sm + 2,
+    bottom: HOME_SPACE.sm + 2,
     zIndex: 3,
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(8, 6, 4, 0.45)",
   },
   viewsText: {
-    fontFamily: fonts.bold,
-    fontSize: 12,
+    fontFamily: fonts.semibold,
+    fontSize: 11,
     color: "#F8EFDC",
-    ...Platform.select({
-      web: { textShadow: "0 1px 6px rgba(0, 0, 0, 0.5)" },
-      default: {},
-    }),
+  },
+  quoteWrap: {
+    position: "absolute",
+    left: HOME_SPACE.md,
+    right: HOME_SPACE.md,
+    bottom: HOME_SPACE.md,
+    zIndex: 3,
+    gap: 2,
+  },
+  quoteMark: {
+    fontFamily: FONT_DISPLAY,
+    fontSize: 28,
+    lineHeight: 24,
+    color: "rgba(214, 173, 91, 0.75)",
   },
   quote: {
-    position: "absolute",
-    left: 14,
-    right: 14,
-    bottom: 14,
-    zIndex: 3,
     fontFamily: FONT_DISPLAY,
-    fontWeight: "500",
-    fontSize: 15,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 19,
     fontStyle: "italic",
     color: "#FBF4E4",
     ...Platform.select({
-      web: { textShadow: "0 2px 12px rgba(0, 0, 0, 0.5)" },
+      web: { textShadow: "0 2px 10px rgba(0, 0, 0, 0.45)" },
       default: {},
     }),
   },
   pfoot: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 9,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    gap: HOME_SPACE.sm,
+    paddingVertical: HOME_SPACE.sm + 4,
+    paddingHorizontal: HOME_SPACE.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: KANKREG_PALETTE.lineSoft,
+    backgroundColor: KANKREG_PALETTE.card,
+  },
+  pfootDark: {
+    backgroundColor: "#181513",
+    borderTopColor: "#3f3933",
   },
   avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
   avatarText: {
     fontFamily: FONT_DISPLAY,
-    fontWeight: "700",
     fontSize: 12,
     color: "#FFF9EC",
   },
@@ -498,24 +641,23 @@ const styles = StyleSheet.create({
     gap: 1,
   },
   pfootName: {
-    fontFamily: fonts.bold,
+    fontFamily: fonts.semibold,
     fontSize: 12.5,
-    lineHeight: 14,
+    lineHeight: 15,
   },
   pfootSub: {
-    fontFamily: fonts.medium,
+    fontFamily: fonts.regular,
     fontSize: 10.5,
     lineHeight: 13,
   },
   likeRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-    marginLeft: "auto",
+    gap: 4,
     flexShrink: 0,
   },
   likeText: {
     fontFamily: fonts.semibold,
-    fontSize: 12,
+    fontSize: 11,
   },
 });

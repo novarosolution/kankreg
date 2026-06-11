@@ -7,8 +7,57 @@ function sanitizeVariants(raw) {
     .map((v) => ({
       label: String(v?.label ?? "").trim(),
       price: Math.max(0, Number(v?.price) || 0),
+      tag: String(v?.tag ?? "").trim(),
     }))
     .filter((v) => v.label && Number.isFinite(v.price));
+}
+
+function sanitizeTrustChips(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((b) => ({
+      icon: String(b?.icon ?? "checkmark-circle-outline").trim() || "checkmark-circle-outline",
+      label: String(b?.label ?? "").trim(),
+    }))
+    .filter((b) => b.label);
+}
+
+function sanitizeNutrition(raw) {
+  if (!raw || typeof raw !== "object") {
+    return {
+      kick: "",
+      title: "",
+      tableHead: "",
+      tableSub: "",
+      rows: [],
+      cardTitle: "",
+      cardBody: "",
+      cardTags: [],
+      cardFooter: "",
+    };
+  }
+  const rows = Array.isArray(raw.rows)
+    ? raw.rows
+        .map((r) => ({
+          label: String(r?.label ?? "").trim(),
+          value: String(r?.value ?? "").trim(),
+        }))
+        .filter((r) => r.label && r.value)
+    : [];
+  const cardTags = Array.isArray(raw.cardTags)
+    ? raw.cardTags.map((t) => String(t ?? "").trim()).filter(Boolean)
+    : [];
+  return {
+    kick: String(raw.kick ?? "").trim(),
+    title: String(raw.title ?? "").trim(),
+    tableHead: String(raw.tableHead ?? "").trim(),
+    tableSub: String(raw.tableSub ?? "").trim(),
+    rows,
+    cardTitle: String(raw.cardTitle ?? "").trim(),
+    cardBody: String(raw.cardBody ?? "").trim(),
+    cardTags,
+    cardFooter: String(raw.cardFooter ?? "").trim(),
+  };
 }
 
 function sanitizeLabeledBlocks(raw) {
@@ -84,6 +133,17 @@ async function createProduct(req, res, next) {
       highlightQuote,
       usageRituals,
       richProductPage,
+      pageEyebrow,
+      trustChips,
+      highlights,
+      deliveryTitle,
+      deliveryBody,
+      storyKick,
+      storyTitle,
+      storyLegend,
+      reviewsKick,
+      reviewsTitle,
+      nutrition,
     } = req.body;
 
     if (!name || price === undefined) {
@@ -129,6 +189,17 @@ async function createProduct(req, res, next) {
       highlightQuote: String(highlightQuote || "").trim(),
       usageRituals: sanitizeLabeledBlocks(usageRituals),
       richProductPage: toBoolean(richProductPage, false),
+      pageEyebrow: String(pageEyebrow || "").trim(),
+      trustChips: sanitizeTrustChips(trustChips),
+      highlights: sanitizeStringArray(highlights),
+      deliveryTitle: String(deliveryTitle || "").trim(),
+      deliveryBody: String(deliveryBody || "").trim(),
+      storyKick: String(storyKick || "").trim(),
+      storyTitle: String(storyTitle || "").trim(),
+      storyLegend: String(storyLegend || "").trim(),
+      reviewsKick: String(reviewsKick || "").trim(),
+      reviewsTitle: String(reviewsTitle || "").trim(),
+      nutrition: sanitizeNutrition(nutrition),
     });
 
     res.status(201).json(product);
@@ -176,6 +247,17 @@ async function updateProduct(req, res, next) {
       highlightQuote,
       usageRituals,
       richProductPage,
+      pageEyebrow,
+      trustChips,
+      highlights,
+      deliveryTitle,
+      deliveryBody,
+      storyKick,
+      storyTitle,
+      storyLegend,
+      reviewsKick,
+      reviewsTitle,
+      nutrition,
     } = req.body;
     if (name !== undefined) product.name = name;
     if (price !== undefined) product.price = toNumber(price, product.price);
@@ -213,6 +295,17 @@ async function updateProduct(req, res, next) {
     if (highlightQuote !== undefined) product.highlightQuote = String(highlightQuote || "").trim();
     if (usageRituals !== undefined) product.usageRituals = sanitizeLabeledBlocks(usageRituals);
     if (richProductPage !== undefined) product.richProductPage = toBoolean(richProductPage, product.richProductPage);
+    if (pageEyebrow !== undefined) product.pageEyebrow = String(pageEyebrow || "").trim();
+    if (trustChips !== undefined) product.trustChips = sanitizeTrustChips(trustChips);
+    if (highlights !== undefined) product.highlights = sanitizeStringArray(highlights);
+    if (deliveryTitle !== undefined) product.deliveryTitle = String(deliveryTitle || "").trim();
+    if (deliveryBody !== undefined) product.deliveryBody = String(deliveryBody || "").trim();
+    if (storyKick !== undefined) product.storyKick = String(storyKick || "").trim();
+    if (storyTitle !== undefined) product.storyTitle = String(storyTitle || "").trim();
+    if (storyLegend !== undefined) product.storyLegend = String(storyLegend || "").trim();
+    if (reviewsKick !== undefined) product.reviewsKick = String(reviewsKick || "").trim();
+    if (reviewsTitle !== undefined) product.reviewsTitle = String(reviewsTitle || "").trim();
+    if (nutrition !== undefined) product.nutrition = sanitizeNutrition(nutrition);
 
     await product.save();
     res.json(product);

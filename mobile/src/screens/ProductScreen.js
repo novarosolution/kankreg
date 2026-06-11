@@ -1,7 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
-import { LinearGradient } from "expo-linear-gradient";
 import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 
 import CustomerScreenShell from "../components/CustomerScreenShell";
@@ -36,14 +35,13 @@ export default function ProductScreen({ route, navigation }) {
   const styles = useMemo(() => createProductStyles(c, shadowPremium, isDark), [c, shadowPremium, isDark]);
   const { addToCart, removeFromCart, getItemQuantity } = useCart();
   const { isAuthenticated, token } = useAuth();
-  const { width, isXs } = useKankregLayout();
+  const { width, useProductSplit } = useKankregLayout();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedImage, setSelectedImage] = useState("");
   const [imageCandidateIndex, setImageCandidateIndex] = useState(0);
   const [selectedVariantLabel, setSelectedVariantLabel] = useState("");
-  const [showStickyCta, setShowStickyCta] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
@@ -52,7 +50,6 @@ export default function ProductScreen({ route, navigation }) {
   const [catalog, setCatalog] = useState([]);
   const reducedMotion = useReducedMotion();
   const heroFade = useSharedValue(1);
-  const stickyShownRef = useRef(false);
 
   useEffect(() => {
     async function loadProduct() {
@@ -158,6 +155,14 @@ export default function ProductScreen({ route, navigation }) {
     [product, selectedVariantLabel]
   );
 
+  const heroImageHeight = useMemo(() => {
+    if (Platform.OS === "web") {
+      if (width >= 1080) return Math.min(560, Math.round(width * 0.44));
+      if (width >= 768) return Math.min(480, Math.round(width * 0.52));
+      return Math.min(400, Math.max(280, Math.round(width * 0.68)));
+    }
+    return Math.min(380, Math.max(260, Math.round(width * 0.72)));
+  }, [width]);
 
   if (loading) {
     return (
@@ -206,7 +211,6 @@ export default function ProductScreen({ route, navigation }) {
   };
 
   const quantity = getItemQuantity(product.id, cartLine?.variantLabel ?? "");
-  const heroImageHeight = Math.min(380, Math.max(260, Math.round(width * 0.72)));
   const isOutOfStock = product.inStock === false || Number(product.stockQty || 0) <= 0;
   const displayPrice = cartLine ? cartLine.price : product.price;
   const variants = Array.isArray(product.variants) ? product.variants : [];
@@ -222,7 +226,8 @@ export default function ProductScreen({ route, navigation }) {
   const showMrp = mrp != null && mrp > displayPrice;
   const offPct =
     showMrp && mrp > 0 ? Math.max(0, Math.round((1 - Number(displayPrice) / mrp) * 100)) : null;
-  const stickyBarVisible = !isOutOfStock && (isXs || showStickyCta);
+  /** Stacked product layout — matches HTML `.mbar` (always visible below 980px). */
+  const stickyBarVisible = !isOutOfStock && !useProductSplit;
   const stickyFooterExtra = stickyBarVisible ? WEB_PRODUCT_STICKY_BAR_HEIGHT : 0;
 
   const handleSubmitReview = async () => {
@@ -259,13 +264,6 @@ export default function ProductScreen({ route, navigation }) {
     } finally {
       setReviewBusy(false);
     }
-  };
-
-  const onProductScrollJS = (y) => {
-    const shouldShow = stickyShownRef.current ? y > 200 : y > 240;
-    if (shouldShow === stickyShownRef.current) return;
-    stickyShownRef.current = shouldShow;
-    setShowStickyCta(shouldShow);
   };
 
   if (Platform.OS !== "web") {
@@ -316,6 +314,7 @@ export default function ProductScreen({ route, navigation }) {
           reviewError={error}
           onSubmitReview={handleSubmitReview}
           isAuthenticated={isAuthenticated}
+          shelfMatch={shelfMatch}
         />
       </CustomerScreenShell>
     );
@@ -328,7 +327,6 @@ export default function ProductScreen({ route, navigation }) {
         style={customerScrollFill}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
-        onScrollJS={onProductScrollJS}
         stickyFooterExtra={stickyFooterExtra}
       >
         <WebProductView

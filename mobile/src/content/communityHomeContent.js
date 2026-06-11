@@ -6,6 +6,7 @@
 export const COMMUNITY_HOME_CONTENT = {
   eyebrow: "Our Community",
   title: "Loved by families, shared every day",
+  subtitle: "Reels, recipes, and words from families who cook with KankreG every day.",
   instagram: {
     handle: "kankreg_ghee",
     displayHandle: "@kankreg_ghee",
@@ -104,6 +105,7 @@ export function buildCommunitySectionDefaults() {
     enabled: true,
     eyebrow: COMMUNITY_HOME_CONTENT.eyebrow,
     title: COMMUNITY_HOME_CONTENT.title,
+    subtitle: COMMUNITY_HOME_CONTENT.subtitle,
     instagram: { ...COMMUNITY_HOME_CONTENT.instagram },
     posts: COMMUNITY_HOME_CONTENT.posts.map((post, order) => ({
       id: post.id,

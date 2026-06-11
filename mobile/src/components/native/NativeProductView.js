@@ -23,6 +23,7 @@ import {
 } from "../../theme/screenLayout";
 import { fonts, radius, spacing } from "../../theme/tokens";
 import { PRODUCT_SCREEN, fillProductScreen } from "../../content/appContent";
+import { resolveProductPageContent } from "../../utils/resolveProductPageContent";
 import NativeStickyBuyBar from "./NativeStickyBuyBar";
 import NativeProductCard from "./NativeProductCard";
 import GoldHairline from "../ui/GoldHairline";
@@ -73,12 +74,6 @@ function FeatureCard({ icon, title, subtitle, isDark, c }) {
   );
 }
 
-const DEFAULT_TRUST_FEATURES = [
-  { icon: "flash-outline", title: "Fast delivery", subtitle: "Live-tracked shipping" },
-  { icon: "gift-outline", title: "Earn rewards", subtitle: "Points on every order" },
-  { icon: "refresh-outline", title: "Easy returns", subtitle: "7-day policy" },
-];
-
 /** kankreg design board screen 08 — premium product detail */
 export default function NativeProductView({
   product,
@@ -115,37 +110,27 @@ export default function NativeProductView({
   reviewError = "",
   onSubmitReview,
   isAuthenticated = false,
+  shelfMatch = false,
 }) {
   const insets = useSafeAreaInsets();
   const { colors: c, isDark } = useTheme();
 
-  const trustFeatures = useMemo(() => {
-    const etaFeature = product?.eta
-      ? { icon: "time-outline", title: "Delivery", subtitle: String(product.eta) }
-      : DEFAULT_TRUST_FEATURES[0];
-    const rewardsPts = Math.max(10, Math.round((displayPrice || 0) / 10));
-    return [
-      etaFeature,
-      { icon: "gift-outline", title: "Earn rewards", subtitle: `~${rewardsPts} pts on purchase` },
-      DEFAULT_TRUST_FEATURES[2],
-    ];
-  }, [product?.eta, displayPrice]);
+  const pageContent = useMemo(
+    () => resolveProductPageContent(product, { shelfMatch }),
+    [product, shelfMatch]
+  );
 
   if (Platform.OS === "web") return null;
 
   const pageBg = isDark ? c.background : KANKREG_PALETTE.paper;
   const sheetBg = isDark ? c.surface : KANKREG_PALETTE.card;
   const iconColor = isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft;
-  const categoryLabel =
-    product?.badgeText ||
-    product?.homeSection ||
-    product?.category ||
-    "Essentials";
   const unit = product?.unit || PRODUCT_SCREEN.unitFallback;
-  const description = product?.description || PRODUCT_SCREEN.defaultDescription;
-  const usps = Array.isArray(product?.usps) ? product.usps.filter(Boolean).slice(0, 4) : [];
-  const stockQty = Number(product?.stockQty);
-  const showStock = Number.isFinite(stockQty) && stockQty > 0 && !isOutOfStock;
+  const leadText = pageContent.lead || PRODUCT_SCREEN.defaultDescription;
+  const featureCards = pageContent.featureCards;
+  const highlights = pageContent.highlights;
+  const deliveryNote = pageContent.delivery;
+  const { story, showStoryLegend, trustChips } = pageContent;
 
   const ratingSummary =
     liveRatingAvg > 0
@@ -170,7 +155,13 @@ export default function NativeProductView({
       <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 10) }]}>
         <Pressable
           style={[styles.circleBtn, isDark && styles.circleBtnDark]}
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            if (typeof navigation?.canGoBack === "function" && navigation.canGoBack()) {
+              navigation.goBack();
+              return;
+            }
+            navigation.navigate("Shop");
+          }}
           accessibilityLabel="Back"
         >
           <Ionicons name="chevron-back" size={18} color={iconColor} />
@@ -180,7 +171,9 @@ export default function NativeProductView({
         </Pressable>
       </View>
 
-      <View style={styles.heroStage}>
+      <View style={[styles.heroStage, isDark && styles.heroStageDark]}>
+        <View style={styles.heroGoldLineTop} pointerEvents="none" />
+        <View style={styles.heroGoldLineBottom} pointerEvents="none" />
         {heroImageUri && !imageFailed ? (
           <Image
             source={{ uri: heroImageUri }}
@@ -188,6 +181,7 @@ export default function NativeProductView({
             contentFit="contain"
             transition={220}
             placeholder={{ blurhash: PRODUCT_HERO_BLURHASH }}
+            cachePolicy="memory-disk"
           />
         ) : (
           <View style={styles.heroFallback}>
@@ -242,28 +236,9 @@ export default function NativeProductView({
             Shop · {String(product?.category || PRODUCT_SCREEN.categoryFallback).trim()} · {product?.name}
           </Text>
 
-          <View style={styles.tagRow}>
-            <View style={styles.tagGold}>
-              <Text style={styles.tagGoldText}>{String(categoryLabel).toUpperCase()}</Text>
-            </View>
-            {isOutOfStock ? (
-              <View style={styles.tagMuted}>
-                <Text style={styles.tagMutedText}>{PRODUCT_SCREEN.heroOutOfStock}</Text>
-              </View>
-            ) : (
-              <View style={styles.tagOk}>
-                <Ionicons name="checkmark-circle" size={11} color={KANKREG_PALETTE.green} />
-                <Text style={styles.tagOkText}>{PRODUCT_SCREEN.metaReadyToShip}</Text>
-              </View>
-            )}
-            {showStock ? (
-              <View style={styles.tagStock}>
-                <Text style={styles.tagStockText}>
-                  {fillProductScreen(PRODUCT_SCREEN.stockCountLabel, { count: String(stockQty) })}
-                </Text>
-              </View>
-            ) : null}
-          </View>
+          {pageContent.eyebrow ? (
+            <Text style={styles.pageEyebrow}>{pageContent.eyebrow}</Text>
+          ) : null}
 
           <Text style={[styles.title, { color: isDark ? c.textPrimary : KANKREG_PALETTE.ink }]}>
             {product?.name}
@@ -299,6 +274,12 @@ export default function NativeProductView({
               </View>
             ) : null}
           </View>
+
+          {leadText ? (
+            <Text style={[styles.lead, { color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft }]}>
+              {leadText}
+            </Text>
+          ) : null}
 
           {variants.length > 0 ? (
             <View style={styles.block}>
@@ -342,6 +323,7 @@ export default function NativeProductView({
                       >
                         {label}
                       </Text>
+                      {v.tag ? <Text style={styles.variantTag}>{String(v.tag)}</Text> : null}
                     </Pressable>
                   );
                 })}
@@ -349,35 +331,86 @@ export default function NativeProductView({
             </View>
           ) : null}
 
-          <View style={styles.featureGrid}>
-            {trustFeatures.map((feat) => (
-              <FeatureCard key={feat.title} {...feat} isDark={isDark} c={c} />
-            ))}
-          </View>
+          {deliveryNote ? (
+            <View style={[styles.delivBox, isDark && styles.delivBoxDark]}>
+              <Ionicons name="car-outline" size={16} color={KANKREG_PALETTE.green} />
+              <Text style={[styles.delivText, { color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft }]}>
+                {deliveryNote.title ? `${deliveryNote.title} ` : ""}
+                {deliveryNote.body}
+              </Text>
+            </View>
+          ) : null}
+
+          {highlights.length > 0 ? (
+            <View style={styles.hlList}>
+              {highlights.map((line) => (
+                <View key={line} style={styles.hlRow}>
+                  <Ionicons name="checkmark" size={14} color={KANKREG_PALETTE.green} />
+                  <Text style={[styles.hlText, { color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft }]}>
+                    {line}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+
+          {trustChips.length > 0 ? (
+            <View style={styles.trustChipRow}>
+              {trustChips.map((chip) => (
+                <View key={chip.label} style={[styles.trustChip, isDark && styles.trustChipDark]}>
+                  <Ionicons name={chip.icon} size={13} color={KANKREG_PALETTE.green} />
+                  <Text style={[styles.trustChipText, { color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft }]}>
+                    {chip.label}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
 
           <GoldHairline marginVertical={spacing.md} />
 
           <SectionHeader
-            eyebrow={PRODUCT_SCREEN.storyOverline}
-            title={PRODUCT_SCREEN.storyTitle}
+            eyebrow={story.kick || PRODUCT_SCREEN.storyOverline}
+            title={story.title || PRODUCT_SCREEN.storyTitle}
             isDark={isDark}
             c={c}
           />
-          <Text style={[styles.desc, { color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft }]}>
-            {description}
-          </Text>
+          {showStoryLegend ? (
+            <Text style={[styles.desc, { color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft }]}>
+              {story.legend}
+            </Text>
+          ) : null}
 
-          {usps.length > 0 ? (
-            <View style={styles.uspsWrap}>
-              {usps.map((line) => (
-                <View key={line} style={styles.uspRow}>
-                  <View style={styles.uspDot}>
-                    <Ionicons name="sparkles" size={11} color={isDark ? c.primary : KANKREG_PALETTE.goldDeep} />
+          {product?.highlightQuote ? (
+            <View style={[styles.pullQuote, isDark && styles.pullQuoteDark]}>
+              <Text style={[styles.pullQuoteText, { color: isDark ? c.textPrimary : KANKREG_PALETTE.ink }]}>
+                "{product.highlightQuote}"
+              </Text>
+            </View>
+          ) : null}
+
+          {product?.richProductPage && product?.processSteps?.length ? (
+            <View style={styles.processWrap}>
+              {product.processTitle ? (
+                <Text style={styles.processEyebrow}>{product.processTitle}</Text>
+              ) : null}
+              {product.processSteps.map((step, idx) => (
+                <View key={`${step}-${idx}`} style={[styles.processRow, isDark && styles.processRowDark]}>
+                  <View style={styles.processNum}>
+                    <Text style={styles.processNumText}>{String(idx + 1).padStart(2, "0")}</Text>
                   </View>
-                  <Text style={[styles.uspText, { color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft }]}>
-                    {line}
+                  <Text style={[styles.processText, { color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft }]}>
+                    {String(step)}
                   </Text>
                 </View>
+              ))}
+            </View>
+          ) : null}
+
+          {featureCards.length > 0 ? (
+            <View style={styles.uspsWrap}>
+              {featureCards.map((feat, idx) => (
+                <FeatureCard key={`${feat.title}-${idx}`} {...feat} isDark={isDark} c={c} />
               ))}
             </View>
           ) : null}
@@ -385,11 +418,11 @@ export default function NativeProductView({
 
         <View style={[styles.reviewsBlock, { backgroundColor: isDark ? c.surface : KANKREG_PALETTE.paper2 }]}>
           <SectionHeader
-            eyebrow={PRODUCT_SCREEN.reviewsOverline}
+            eyebrow={pageContent.reviewsSection.kick}
             title={
               reviewCountDisplay > 0
-                ? `${PRODUCT_SCREEN.reviewsTitle} · ${liveRatingAvg.toFixed(1)}`
-                : PRODUCT_SCREEN.reviewsTitle
+                ? `${pageContent.reviewsSection.title} · ${liveRatingAvg.toFixed(1)}`
+                : pageContent.reviewsSection.title
             }
             isDark={isDark}
             c={c}
@@ -575,13 +608,41 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(40,36,32,0.78)",
   },
   heroStage: {
-    height: "34%",
+    height: "36%",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: "14%",
+    paddingHorizontal: "12%",
     zIndex: 3,
     marginTop: 8,
     position: "relative",
+    backgroundColor: "#f3ead8",
+    borderRadius: radius.xl,
+    marginHorizontal: spacing.md,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(214, 173, 91, 0.22)",
+  },
+  heroStageDark: {
+    backgroundColor: "#1a1410",
+    borderColor: "rgba(214, 173, 91, 0.12)",
+  },
+  heroGoldLineTop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    zIndex: 4,
+    backgroundColor: "rgba(214, 173, 91, 0.55)",
+  },
+  heroGoldLineBottom: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    zIndex: 4,
+    backgroundColor: "rgba(214, 173, 91, 0.55)",
   },
   heroImage: {
     width: "100%",
@@ -679,6 +740,89 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: KANKREG_PALETTE.inkFaint,
     marginBottom: 10,
+  },
+  pageEyebrow: {
+    fontFamily: fonts.bold,
+    fontSize: 12,
+    letterSpacing: 2.5,
+    textTransform: "uppercase",
+    color: KANKREG_PALETTE.green,
+    marginBottom: 8,
+  },
+  lead: {
+    fontSize: 15,
+    lineHeight: 24,
+    fontFamily: fonts.regular,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  trustChipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 14,
+  },
+  trustChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 99,
+    borderWidth: 1,
+    borderColor: KANKREG_PALETTE.line,
+    backgroundColor: "#FFFEFA",
+  },
+  trustChipDark: {
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  trustChipText: {
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+  },
+  delivBox: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: KANKREG_PALETTE.line,
+    borderRadius: 12,
+    backgroundColor: "#F3EBD8",
+    alignItems: "flex-start",
+  },
+  delivBoxDark: {
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+  delivText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: fonts.regular,
+  },
+  hlList: {
+    marginTop: 12,
+    gap: 8,
+  },
+  hlRow: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "flex-start",
+  },
+  hlText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 19,
+    fontFamily: fonts.regular,
+  },
+  variantTag: {
+    fontFamily: fonts.bold,
+    fontSize: 9,
+    color: KANKREG_PALETTE.goldDeep,
+    marginTop: 2,
   },
   tagRow: {
     flexDirection: "row",
@@ -913,14 +1057,81 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginTop: 4,
   },
+  pullQuote: {
+    marginTop: spacing.md,
+    paddingLeft: spacing.md,
+    borderLeftWidth: 2,
+    borderLeftColor: KANKREG_PALETTE.gold,
+  },
+  pullQuoteDark: {
+    borderLeftColor: ALCHEMY.goldBright,
+  },
+  pullQuoteText: {
+    fontFamily: FONT_DISPLAY,
+    fontSize: 18,
+    lineHeight: 26,
+    fontStyle: "italic",
+  },
+  processWrap: {
+    marginTop: spacing.md,
+    gap: 8,
+  },
+  processEyebrow: {
+    fontFamily: fonts.bold,
+    fontSize: 10,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: KANKREG_PALETTE.inkFaint,
+    marginBottom: 4,
+  },
+  processRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    padding: 12,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: KANKREG_PALETTE.line,
+    backgroundColor: KANKREG_PALETTE.card,
+  },
+  processRowDark: {
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  processNum: {
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(214, 173, 91, 0.14)",
+  },
+  processNumText: {
+    fontFamily: fonts.bold,
+    fontSize: 10,
+    color: KANKREG_PALETTE.goldDeep,
+  },
+  processText: {
+    flex: 1,
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 21,
+  },
   uspsWrap: {
     marginTop: spacing.md,
     gap: 10,
   },
-  uspRow: {
+  uspCard: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 10,
+    padding: 12,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: KANKREG_PALETTE.line,
+    backgroundColor: KANKREG_PALETTE.paper2,
+  },
+  uspCardDark: {
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderColor: "rgba(255,255,255,0.1)",
   },
   uspDot: {
     width: 22,
