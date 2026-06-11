@@ -31,6 +31,13 @@ function isSecureWebContext() {
  * Fix common .env mistakes: ":5001", "5001", "localhost" without scheme, etc.
  * Remote hosts default to https (required when the web app is served over HTTPS).
  */
+function isInvalidApiHost(hostname) {
+  const h = String(hostname || "").toLowerCase();
+  // Render internal IDs (e.g. srv-d8gn6l6rnols73er9ec0) are not public DNS — common Vercel misconfig.
+  if (/^srv-[a-z0-9]+$/i.test(h)) return true;
+  return false;
+}
+
 function sanitizeConfiguredBase(raw) {
   if (raw == null) return null;
   let s = String(raw).trim();
@@ -48,12 +55,20 @@ function sanitizeConfiguredBase(raw) {
   if (!/^https?:\/\//i.test(s)) {
     if (/^[\w.-]+(:\d+)?(\/.*)?$/.test(s)) {
       const host = s.split("/")[0].split(":")[0];
+      if (isInvalidApiHost(host)) return null;
       const scheme = isLocalHostname(host) ? "http" : "https";
       s = `${scheme}://${s}`;
     }
   }
   s = s.replace(/\/+$/, "");
-  return upgradeInsecureRemoteUrl(s);
+  const upgraded = upgradeInsecureRemoteUrl(s);
+  try {
+    const { hostname } = new URL(upgraded);
+    if (isInvalidApiHost(hostname)) return null;
+  } catch {
+    return null;
+  }
+  return upgraded;
 }
 
 function upgradeInsecureRemoteUrl(url) {
