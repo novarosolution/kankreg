@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import WebHtmlVideo from "./WebHtmlVideo";
 import { HOME_HERO_BANNER } from "../../content/appContent";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import {
   HOME_EYEBROW_LETTER_SPACING,
   HOME_SPACE,
@@ -18,8 +18,7 @@ import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { platformShadow } from "../../theme/shadowPlatform";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
-import { resolveImageSource } from "../../utils/mediaSource";
-import { prefetchDisplayImages, resolveBundledModuleSrc, resolveImageUri } from "../../utils/image";
+import { prefetchDisplayImages, getHeroSlideDisplayWidth, getHeroSlideImageUri } from "../../utils/image";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import { KANKREG_BP, useKankregLayout } from "../../theme/kankregBreakpoints";
 import {
@@ -30,6 +29,8 @@ import {
   HOME_HERO_WEB_LANDSCAPE_HEIGHT_PER_WIDTH,
 } from "../../constants/marketingAssets";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
+import ProgressiveImage from "../ui/ProgressiveImage";
+import { hasLcpShell, setLcpShellVisible } from "../../utils/lcpShell";
 
 const SLIDE_INTERVAL_MS = 7000;
 const KEN_BURNS_CLASS = "kankreg-hero-kenburns";
@@ -163,18 +164,73 @@ function HeroProductScrim() {
   );
 }
 
-function resolveHeroSlideUri(url) {
-  if (url == null || url === "") return "";
-  if (typeof url === "number") return resolveBundledModuleSrc(url);
-  if (typeof url === "string") return resolveImageUri(url) || url;
-  const resolved = resolveImageSource(url);
-  return resolved?.uri || "";
-}
-
-function HeroSlideImage({ slide, imageFit, contentPosition, kenClass, active }) {
-  const uri = useMemo(() => resolveHeroSlideUri(slide?.url), [slide?.url]);
+function HeroSlideImage({
+  slide,
+  imageFit,
+  contentPosition,
+  kenClass,
+  active,
+  useNativeLcp = false,
+  slideLayoutWidth = 960,
+  isMobileWeb = false,
+}) {
+  const deliveryWidth = useMemo(
+    () => getHeroSlideDisplayWidth(slideLayoutWidth, { isMobileWeb }),
+    [isMobileWeb, slideLayoutWidth]
+  );
+  const uri = useMemo(
+    () => getHeroSlideImageUri(slide?.url, { layoutWidth: slideLayoutWidth, isMobileWeb }),
+    [isMobileWeb, slideLayoutWidth, slide?.url]
+  );
+  const label =
+    slide?.accessibilityLabel ||
+    slide?.title ||
+    slide?.headline ||
+    slide?.caption ||
+    "Hero slide";
 
   if (!uri) return null;
+
+  // Exported HTML shell already painted the LCP hero — skip duplicate img until slide changes.
+  if (useNativeLcp && Platform.OS === "web" && hasLcpShell()) {
+    return <View style={styles.heroSlideImage} accessibilityLabel={label} />;
+  }
+
+  if (useNativeLcp && Platform.OS === "web") {
+    return (
+      <ProgressiveImage
+        uri={uri}
+        alt={label}
+        style={styles.heroSlideImage}
+        contentFit={imageFit}
+        contentPosition={contentPosition || "center"}
+        priority="high"
+        width={deliveryWidth}
+        quality="auto:good"
+        showSkeleton={false}
+        recyclingKey={String(slide.id || slide.key || uri)}
+      />
+    );
+  }
+
+  if (Platform.OS === "web") {
+    return (
+      <ProgressiveImage
+        uri={uri}
+        alt={label}
+        className={kenClass}
+        imageClassName={kenClass}
+        style={styles.heroSlideImage}
+        contentFit={imageFit}
+        contentPosition={contentPosition || "center"}
+        priority={active ? "high" : "normal"}
+        width={deliveryWidth}
+        quality="auto:good"
+        showSkeleton={false}
+        recyclingKey={String(slide.id || slide.key || uri)}
+      />
+    );
+  }
 
   return (
     <Image
@@ -187,11 +243,62 @@ function HeroSlideImage({ slide, imageFit, contentPosition, kenClass, active }) 
       priority={active ? "high" : "normal"}
       cachePolicy="memory-disk"
       recyclingKey={String(slide.id || slide.key || uri)}
+      accessibilityLabel={label}
     />
   );
 }
 
-function HeroBottomScrim({ editorial, isBanner, isNative, isProduct }) {
+function HeroPhoneScrim({ zone = "bottom", ctaOnly = false }) {
+  if (zone === "top") {
+    return (
+      <>
+        <LinearGradient
+          colors={["rgba(8,6,4,0.72)", "rgba(8,6,4,0.38)", "transparent", "transparent"]}
+          locations={[0, 0.22, 0.48, 1]}
+          style={[StyleSheet.absoluteFillObject, styles.scrimLayer]}
+          pointerEvents="none"
+        />
+        <LinearGradient
+          colors={["transparent", "transparent", "rgba(8,6,4,0.12)", "rgba(8,6,4,0.42)"]}
+          locations={[0, 0.55, 0.82, 1]}
+          style={[StyleSheet.absoluteFillObject, styles.scrimLayer]}
+          pointerEvents="none"
+        />
+      </>
+    );
+  }
+  if (ctaOnly) {
+    return (
+      <LinearGradient
+        colors={["transparent", "transparent", "rgba(8,6,4,0.28)", "rgba(8,6,4,0.58)"]}
+        locations={[0, 0.55, 0.78, 1]}
+        style={[StyleSheet.absoluteFillObject, styles.scrimLayer]}
+        pointerEvents="none"
+      />
+    );
+  }
+  return (
+    <>
+      <LinearGradient
+        colors={["rgba(8,6,4,0.14)", "transparent", "transparent"]}
+        locations={[0, 0.28, 1]}
+        style={[StyleSheet.absoluteFillObject, styles.scrimLayer]}
+        pointerEvents="none"
+      />
+      <LinearGradient
+        colors={["transparent", "rgba(8,6,4,0.18)", "rgba(8,6,4,0.62)", "rgba(8,6,4,0.82)"]}
+        locations={[0.38, 0.62, 0.82, 1]}
+        style={[StyleSheet.absoluteFillObject, styles.scrimLayer]}
+        pointerEvents="none"
+      />
+    </>
+  );
+}
+
+function HeroBottomScrim({ editorial, isBanner, isNative, isProduct, phoneZone, phoneCtaOnly }) {
+  if (isNative && phoneZone) {
+    return <HeroPhoneScrim zone={phoneZone} ctaOnly={phoneCtaOnly} />;
+  }
   if (isProduct) {
     return <HeroProductScrim />;
   }
@@ -246,6 +353,7 @@ function HeroBottomScrim({ editorial, isBanner, isNative, isProduct }) {
 function HeroSlideCard({
   slide,
   active,
+  shouldLoadImage = true,
   isDark,
   isBanner,
   isTop,
@@ -256,9 +364,17 @@ function HeroSlideCard({
   layoutWidth,
   isNative = false,
   isMobileWebTop = false,
+  slideLayoutWidth = 960,
 }) {
   const hasImage = Boolean(slide?.url) && slide.mediaType !== "video";
   const isProduct = slide.variant === "product";
+  const isPhoneBand = isNative || isMobileWebTop;
+  const captionMode =
+    slide.captionMode ||
+    (slide.title || slide.subtitle ? "overlay" : slide.cta ? "cta-only" : "overlay");
+  const captionZone = isPhoneBand ? slide.captionZone || "bottom" : "bottom";
+  const showTextOverlay = captionMode === "overlay" && Boolean(slide.title || slide.subtitle);
+  const phoneCtaOnly = isPhoneBand && captionMode === "baked";
   const scrimMuted = homeHeroScrimMuted();
   const heroTitleSize = isMobileWebTop
     ? Math.min(28, homeHeroTitleSize(layoutWidth))
@@ -294,6 +410,8 @@ function HeroSlideCard({
           <WebHtmlVideo
             source={slide.url}
             active
+            layoutWidth={layoutWidth}
+            isMobileWeb={isMobileWebTop}
             muted
             loop
             fit={isTop && layoutWidth >= 1080 ? "contain" : "cover"}
@@ -302,14 +420,19 @@ function HeroSlideCard({
         ) : (
           <View style={[styles.mediaFill, styles.videoPoster]} />
         )
-      ) : hasImage ? (
+      ) : hasImage && shouldLoadImage ? (
         <HeroSlideImage
           slide={slide}
           imageFit={imageFit}
           contentPosition={contentPosition}
           kenClass={kenClass}
           active={active}
+          useNativeLcp={isMobileWebTop && active}
+          slideLayoutWidth={slideLayoutWidth}
+          isMobileWeb={isMobileWebTop}
         />
+      ) : hasImage ? (
+        <View style={[styles.mediaFill, styles.videoPoster]} />
       ) : null}
 
       {isProduct && slide.badge ? (
@@ -324,79 +447,151 @@ function HeroSlideCard({
         isBanner={isBanner}
         isNative={isNative || isMobileWebTop}
         isProduct={isProduct || (isTop && !isMobileWebTop && slide.layout === "landscape")}
+        phoneZone={isPhoneBand ? captionZone : undefined}
+        phoneCtaOnly={phoneCtaOnly}
       />
 
-      {slide.title || slide.subtitle || (showCta && slide.cta) ? (
+      {showTextOverlay || (showCta && slide.cta) ? (
         <View
           style={[
             styles.slideCaption,
             isBanner && !isTop && !isNative && styles.slideCaptionBanner,
-            isNative && styles.slideCaptionNative,
+            isPhoneBand && styles.slideCaptionPhone,
+            isPhoneBand && captionZone === "top" && styles.slideCaptionPhoneTop,
+            isPhoneBand && captionZone === "bottom" && styles.slideCaptionPhoneBottom,
+            isPhoneBand && phoneCtaOnly && styles.slideCaptionPhoneCtaOnly,
+            isNative && !isMobileWebTop && styles.slideCaptionNative,
             isMobileWebTop && styles.slideCaptionMobileWeb,
             isTop && !isMobileWebTop && styles.slideCaptionTop,
             captionLeft && styles.slideCaptionTopLeft,
           ]}
           pointerEvents="box-none"
         >
-          {(isTop || isNative) && eyebrowLabel && !isMobileWebTop ? (
-            <Text
-              style={[
-                isNative ? styles.heroEyebrowNative : styles.heroEyebrow,
-                captionLeft && styles.heroEyebrowLeft,
-                { color: scrimMuted },
-              ]}
-              numberOfLines={1}
-            >
-              {String(eyebrowLabel).toUpperCase()}
-            </Text>
-          ) : null}
-          {isMobileWebTop && eyebrowLabel ? (
-            <Text style={[styles.heroEyebrowMobileWeb, { color: scrimMuted }]} numberOfLines={1}>
-              {String(eyebrowLabel).toUpperCase()}
-            </Text>
-          ) : null}
-          {!isTop && isBanner && !isNative && eyebrowLabel ? (
-            <Text style={[createKankregEyebrowStyle(isDark), styles.captionEyebrowCenter]}>
-              {eyebrowLabel}
-            </Text>
-          ) : null}
-          {slide.title ? (
-            <Text
-              style={[
-                styles.slideTitle,
-                isTop &&
-                  !isMobileWebTop && {
-                    fontSize: heroTitleSize,
-                    lineHeight: Math.round(heroTitleSize * HOME_TYPE.hero.lineHeightRatio),
-                  },
-                isMobileWebTop && styles.slideTitleMobileWeb,
-                isProduct && isTop && styles.slideTitleProduct,
-                isBanner && !isTop && !isNative && styles.slideTitleBanner,
-                isNative && styles.slideTitleNative,
-                (isBanner || isTop) && !captionLeft && styles.captionTextCenter,
-                captionLeft && styles.captionTextLeft,
-              ]}
-              numberOfLines={isMobileWebTop ? 2 : isTop ? 3 : 2}
-            >
-              {slide.title}
-            </Text>
-          ) : null}
-          {slide.subtitle ? (
-            <Text
-              style={[
-                styles.slideSubtitle,
-                isTop && !isMobileWebTop && styles.slideSubtitleTop,
-                isBanner && !isTop && !isNative && styles.slideSubtitleBanner,
-                isNative && styles.slideSubtitleNative,
-                isMobileWebTop && styles.slideSubtitleMobileWeb,
-                (isBanner || isTop) && !captionLeft && styles.captionTextCenter,
-                captionLeft && styles.captionTextLeft,
-              ]}
-              numberOfLines={isMobileWebTop ? 2 : isTop ? 2 : isBanner ? 3 : 2}
-            >
-              {slide.subtitle}
-            </Text>
-          ) : null}
+          {showTextOverlay && isPhoneBand ? (
+            <View style={styles.phoneCaptionStack} pointerEvents="box-none">
+              {(isTop || isNative) && eyebrowLabel && !isMobileWebTop ? (
+                <Text
+                  style={[
+                    isNative ? styles.heroEyebrowNative : styles.heroEyebrow,
+                    captionLeft && styles.heroEyebrowLeft,
+                    { color: scrimMuted },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {String(eyebrowLabel).toUpperCase()}
+                </Text>
+              ) : null}
+              {isMobileWebTop && eyebrowLabel ? (
+                <Text style={[styles.heroEyebrowMobileWeb, { color: scrimMuted }]} numberOfLines={1}>
+                  {String(eyebrowLabel).toUpperCase()}
+                </Text>
+              ) : null}
+              {!isTop && isBanner && !isNative && eyebrowLabel ? (
+                <Text style={[createKankregEyebrowStyle(isDark), styles.captionEyebrowCenter]}>
+                  {eyebrowLabel}
+                </Text>
+              ) : null}
+              {slide.title ? (
+                <Text
+                  style={[
+                    styles.slideTitle,
+                    isTop &&
+                      !isMobileWebTop && {
+                        fontSize: heroTitleSize,
+                        lineHeight: Math.round(heroTitleSize * HOME_TYPE.hero.lineHeightRatio),
+                      },
+                    isMobileWebTop && styles.slideTitleMobileWeb,
+                    isProduct && isTop && styles.slideTitleProduct,
+                    isBanner && !isTop && !isNative && styles.slideTitleBanner,
+                    isPhoneBand && styles.slideTitlePhone,
+                    (isBanner || isTop) && !captionLeft && styles.captionTextCenter,
+                    captionLeft && styles.captionTextLeft,
+                  ]}
+                  numberOfLines={isPhoneBand ? 2 : isMobileWebTop ? 2 : isTop ? 3 : 2}
+                >
+                  {slide.title}
+                </Text>
+              ) : null}
+              {slide.subtitle ? (
+                <Text
+                  style={[
+                    styles.slideSubtitle,
+                    isTop && !isMobileWebTop && styles.slideSubtitleTop,
+                    isBanner && !isTop && !isNative && styles.slideSubtitleBanner,
+                    isPhoneBand && styles.slideSubtitlePhone,
+                    isMobileWebTop && styles.slideSubtitleMobileWeb,
+                    (isBanner || isTop) && !captionLeft && styles.captionTextCenter,
+                    captionLeft && styles.captionTextLeft,
+                  ]}
+                  numberOfLines={isPhoneBand ? 3 : isMobileWebTop ? 2 : isTop ? 2 : isBanner ? 3 : 2}
+                >
+                  {slide.subtitle}
+                </Text>
+              ) : null}
+            </View>
+          ) : (
+            <>
+              {(isTop || isNative) && eyebrowLabel && !isMobileWebTop ? (
+                <Text
+                  style={[
+                    isNative ? styles.heroEyebrowNative : styles.heroEyebrow,
+                    captionLeft && styles.heroEyebrowLeft,
+                    { color: scrimMuted },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {String(eyebrowLabel).toUpperCase()}
+                </Text>
+              ) : null}
+              {isMobileWebTop && eyebrowLabel ? (
+                <Text style={[styles.heroEyebrowMobileWeb, { color: scrimMuted }]} numberOfLines={1}>
+                  {String(eyebrowLabel).toUpperCase()}
+                </Text>
+              ) : null}
+              {!isTop && isBanner && !isNative && eyebrowLabel ? (
+                <Text style={[createKankregEyebrowStyle(isDark), styles.captionEyebrowCenter]}>
+                  {eyebrowLabel}
+                </Text>
+              ) : null}
+              {slide.title ? (
+                <Text
+                  style={[
+                    styles.slideTitle,
+                    isTop &&
+                      !isMobileWebTop && {
+                        fontSize: heroTitleSize,
+                        lineHeight: Math.round(heroTitleSize * HOME_TYPE.hero.lineHeightRatio),
+                      },
+                    isMobileWebTop && styles.slideTitleMobileWeb,
+                    isProduct && isTop && styles.slideTitleProduct,
+                    isBanner && !isTop && !isNative && styles.slideTitleBanner,
+                    isNative && styles.slideTitleNative,
+                    (isBanner || isTop) && !captionLeft && styles.captionTextCenter,
+                    captionLeft && styles.captionTextLeft,
+                  ]}
+                  numberOfLines={isMobileWebTop ? 2 : isTop ? 3 : 2}
+                >
+                  {slide.title}
+                </Text>
+              ) : null}
+              {slide.subtitle ? (
+                <Text
+                  style={[
+                    styles.slideSubtitle,
+                    isTop && !isMobileWebTop && styles.slideSubtitleTop,
+                    isBanner && !isTop && !isNative && styles.slideSubtitleBanner,
+                    isNative && styles.slideSubtitleNative,
+                    isMobileWebTop && styles.slideSubtitleMobileWeb,
+                    (isBanner || isTop) && !captionLeft && styles.captionTextCenter,
+                    captionLeft && styles.captionTextLeft,
+                  ]}
+                  numberOfLines={isMobileWebTop ? 2 : isTop ? 2 : isBanner ? 3 : 2}
+                >
+                  {slide.subtitle}
+                </Text>
+              ) : null}
+            </>
+          )}
           {showCta && slide.cta ? (
             <Pressable
               onPress={onCta}
@@ -407,6 +602,8 @@ function HeroSlideCard({
                 isNative && styles.ctaPillNative,
                 useGoldCta && !captionLeft && styles.ctaPillGoldCenter,
                 useGoldCta && captionLeft && styles.ctaPillGoldStart,
+                isPhoneBand && styles.ctaPillPhone,
+                phoneCtaOnly && styles.ctaPillPhoneFloating,
                 pressed && Platform.OS !== "web" ? styles.ctaPillPressed : null,
                 hovered && Platform.OS === "web" ? (useGoldCta ? styles.ctaPillGoldHover : styles.ctaPillHover) : null,
                 focused && Platform.OS === "web" ? styles.ctaFocus : null,
@@ -447,6 +644,10 @@ export default function HeroMediaSlider({
 
   indexRef.current = index;
   const slideWidth = pageWidth > 0 ? pageWidth : Math.floor(layoutWidth);
+  const heroImageWidth = useMemo(
+    () => getHeroSlideDisplayWidth(slideWidth || layoutWidth, { isMobileWeb: isMobileWebTop || isMobileWeb }),
+    [isMobileWeb, isMobileWebTop, layoutWidth, slideWidth]
+  );
 
   const activeSlide = slides[index] || slides[0];
 
@@ -496,18 +697,32 @@ export default function HeroMediaSlider({
     if (!slides.length) return undefined;
     const imageSlides = slides.filter((slide) => slide.mediaType !== "video" && slide.url);
     if (Platform.OS === "web") {
+      const eagerCount = isMobileWeb ? 1 : Math.min(2, imageSlides.length);
       prefetchDisplayImages(
-        imageSlides.map((slide) => slide.url),
-        { eagerCount: Math.min(2, imageSlides.length), width: 1400, quality: "auto:good" }
+        imageSlides.map((slide) =>
+          getHeroSlideImageUri(slide.url, {
+            layoutWidth: slideWidth || layoutWidth,
+            isMobileWeb: isMobileWebTop || isMobileWeb,
+          })
+        ),
+        {
+          eagerCount,
+          width: heroImageWidth,
+          quality: "auto:good",
+          warmupAll: !isMobileWeb,
+        }
       );
       return undefined;
     }
     imageSlides.forEach((slide) => {
-      const uri = resolveHeroSlideUri(slide.url);
+      const uri = getHeroSlideImageUri(slide.url, {
+        layoutWidth: slideWidth || layoutWidth,
+        isMobileWeb: isMobileWebTop || isMobileWeb,
+      });
       if (uri) Image.prefetch(uri).catch(() => {});
     });
     return undefined;
-  }, [slides]);
+  }, [heroImageWidth, isMobileWeb, isMobileWebTop, layoutWidth, slideWidth, slides]);
 
   const goTo = useCallback(
     (next) => {
@@ -525,6 +740,12 @@ export default function HeroMediaSlider({
   }, [pageWidth]);
 
   useEffect(() => {
+    if (!isMobileWebTop || Platform.OS !== "web") return undefined;
+    setLcpShellVisible(index === 0);
+    return undefined;
+  }, [index, isMobileWebTop]);
+
+  useEffect(() => {
     if (reducedMotion || count <= 1 || slideWidth <= 0) return undefined;
     const timer = setInterval(() => goTo(indexRef.current + 1), SLIDE_INTERVAL_MS);
     return () => clearInterval(timer);
@@ -540,6 +761,8 @@ export default function HeroMediaSlider({
 
   return (
     <View
+      accessibilityRole={Platform.OS === "web" ? "region" : undefined}
+      accessibilityLabel={Platform.OS === "web" ? "Hero carousel" : undefined}
       onLayout={(e) => {
         const w = Math.floor(e.nativeEvent.layout.width);
         if (w > 0 && w !== pageWidth) setPageWidth(w);
@@ -594,6 +817,9 @@ export default function HeroMediaSlider({
                 <HeroSlideCard
                   slide={slide}
                   active={slideIndex === index}
+                  shouldLoadImage={
+                    !isMobileWebTop || slideIndex === index || Math.abs(slideIndex - index) === 1
+                  }
                   isDark={isDark}
                   isBanner={isBanner}
                   isTop={isTop}
@@ -604,6 +830,7 @@ export default function HeroMediaSlider({
                   reducedMotion={reducedMotion}
                   editorialEyebrow={editorialEyebrow}
                   layoutWidth={layoutWidth}
+                  slideLayoutWidth={slideWidth || layoutWidth}
                 />
               </PageWrap>
             </View>
@@ -669,6 +896,9 @@ export default function HeroMediaSlider({
                   isTop && !isMobileWebTop && styles.counterTop,
                   (isNative || isMobileWebTop) && styles.counterNative,
                 ]}
+                {...(Platform.OS === "web"
+                  ? { accessibilityLiveRegion: "polite", accessibilityLabel: `Slide ${index + 1} of ${count}` }
+                  : null)}
               >
                 {String(index + 1).padStart(2, "0")}
                 <Text style={styles.counterSep}> / </Text>
@@ -679,18 +909,24 @@ export default function HeroMediaSlider({
                   <Pressable
                     key={slide.id}
                     onPress={() => goTo(dotIndex)}
-                    style={[
-                      isNative || isMobileWebTop ? styles.dotNative : isTop ? styles.dotTop : styles.dot,
-                      dotIndex === index &&
-                        (isNative || isMobileWebTop
-                          ? styles.dotNativeActive
-                          : isTop
-                            ? styles.dotTopActive
-                            : styles.dotActive),
-                    ]}
+                    hitSlop={12}
+                    style={styles.dotHit}
                     accessibilityRole="button"
                     accessibilityLabel={`Go to slide ${dotIndex + 1}`}
-                  />
+                    accessibilityState={{ selected: dotIndex === index }}
+                  >
+                    <View
+                      style={[
+                        isNative || isMobileWebTop ? styles.dotNative : isTop ? styles.dotTop : styles.dot,
+                        dotIndex === index &&
+                          (isNative || isMobileWebTop
+                            ? styles.dotNativeActive
+                            : isTop
+                              ? styles.dotTopActive
+                              : styles.dotActive),
+                      ]}
+                    />
+                  </Pressable>
                 ))}
               </View>
               <Text style={styles.counterSpacer} accessibilityElementsHidden>
@@ -884,12 +1120,41 @@ const styles = StyleSheet.create({
   slideCaptionNative: {
     left: 0,
     right: 0,
-    bottom: 82,
     paddingHorizontal: spacing.lg + 4,
     alignItems: "center",
     alignSelf: "center",
     width: "100%",
     gap: spacing.xs,
+  },
+  slideCaptionPhone: {
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    alignItems: "center",
+    alignSelf: "center",
+    width: "100%",
+    maxWidth: 380,
+    gap: 8,
+  },
+  slideCaptionPhoneTop: {
+    top: 18,
+    bottom: undefined,
+    paddingTop: 4,
+  },
+  slideCaptionPhoneBottom: {
+    top: undefined,
+    bottom: 102,
+  },
+  slideCaptionPhoneCtaOnly: {
+    top: undefined,
+    bottom: 88,
+    gap: 0,
+  },
+  phoneCaptionStack: {
+    width: "100%",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 2,
   },
   slideCaptionTop: {
     left: 0,
@@ -922,13 +1187,12 @@ const styles = StyleSheet.create({
   slideCaptionMobileWeb: {
     left: 0,
     right: 0,
-    bottom: 68,
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
     alignItems: "center",
     alignSelf: "center",
     width: "100%",
-    gap: 6,
-    maxWidth: 360,
+    gap: 8,
+    maxWidth: 380,
   },
   heroEyebrowMobileWeb: {
     fontFamily: fonts.semibold,
@@ -968,10 +1232,11 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     fontSize: 10,
     lineHeight: 14,
-    letterSpacing: 1.4,
+    letterSpacing: 1.5,
     textAlign: "center",
     textTransform: "uppercase",
-    opacity: 0.92,
+    opacity: 0.94,
+    color: "rgba(245,239,228,0.82)",
   },
   captionEyebrowCenter: {
     textAlign: "center",
@@ -984,7 +1249,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   slideTitle: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 22,
     lineHeight: 26,
     letterSpacing: -0.5,
@@ -1008,6 +1273,28 @@ const styles = StyleSheet.create({
     lineHeight: 34,
     letterSpacing: -0.65,
     marginTop: 2,
+  },
+  slideTitlePhone: {
+    fontSize: 28,
+    lineHeight: 32,
+    letterSpacing: -0.55,
+    marginTop: 0,
+    maxWidth: 320,
+    ...Platform.select({
+      ios: {
+        textShadowColor: "rgba(0,0,0,0.42)",
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 10,
+      },
+      android: {
+        textShadowColor: "rgba(0,0,0,0.5)",
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 6,
+      },
+      default: {
+        textShadow: "0 2px 16px rgba(0,0,0,0.45)",
+      },
+    }),
   },
   slideSubtitle: {
     marginTop: 8,
@@ -1035,6 +1322,28 @@ const styles = StyleSheet.create({
     marginTop: 6,
     maxWidth: 300,
     color: "rgba(245,239,228,0.9)",
+  },
+  slideSubtitlePhone: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 2,
+    maxWidth: 310,
+    color: "rgba(245,239,228,0.92)",
+    ...Platform.select({
+      ios: {
+        textShadowColor: "rgba(0,0,0,0.38)",
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 8,
+      },
+      android: {
+        textShadowColor: "rgba(0,0,0,0.45)",
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 4,
+      },
+      default: {
+        textShadow: "0 1px 10px rgba(0,0,0,0.4)",
+      },
+    }),
   },
   ctaPill: {
     marginTop: spacing.md,
@@ -1095,6 +1404,20 @@ const styles = StyleSheet.create({
       android: { elevation: 4 },
       default: {},
     }),
+  },
+  ctaPillPhone: {
+    marginTop: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 26,
+    minWidth: 148,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ctaPillPhoneFloating: {
+    marginTop: 0,
+    paddingVertical: 13,
+    paddingHorizontal: 28,
+    minWidth: 160,
   },
   ctaPillPressed: {
     opacity: 0.88,
@@ -1276,8 +1599,8 @@ const styles = StyleSheet.create({
   },
   counterTop: {
     left: HOME_SPACE.lg,
-    fontSize: 10,
-    color: "rgba(255,255,255,0.62)",
+    fontSize: 11,
+    color: "rgba(255,255,255,0.78)",
     letterSpacing: 1.2,
   },
   counterSpacer: {
@@ -1295,6 +1618,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
+  },
+  dotHit: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
   dot: {
     width: 6,

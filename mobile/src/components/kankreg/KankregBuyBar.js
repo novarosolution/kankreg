@@ -3,7 +3,7 @@ import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { gsap } from "gsap";
+import { getGsap } from "../../utils/loadGsap";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import PremiumButton from "../ui/PremiumButton";
 import PremiumStickyBar from "../ui/PremiumStickyBar";
@@ -13,7 +13,7 @@ import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { useTheme } from "../../context/ThemeContext";
 import { figmaTextPrimary } from "../../theme/figmaApp";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_BODY_SEMIBOLD, FONT_PRICE } from "../../theme/typographyRoles";
 import { fonts, icon } from "../../theme/tokens";
 import { PRODUCT_SCREEN, fillProductScreen } from "../../content/appContent";
 import NativeStickyBuyBar from "../native/NativeStickyBuyBar";
@@ -44,12 +44,19 @@ export default function KankregBuyBar({
     if (Platform.OS !== "web" || !visible || reducedMotion) return undefined;
     const node = barRef.current;
     if (!node || typeof Element === "undefined" || !(node instanceof Element)) return undefined;
-    gsap.fromTo(
-      node,
-      { y: 72, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.48, ease: "power3.out" }
-    );
-    return undefined;
+    let cancelled = false;
+    (async () => {
+      const gsap = await getGsap();
+      if (cancelled || !gsap) return;
+      gsap.fromTo(
+        node,
+        { y: 72, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.48, ease: "power3.out" }
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [reducedMotion, visible]);
 
   if (!visible) return null;
@@ -58,6 +65,7 @@ export default function KankregBuyBar({
     return (
       <NativeStickyBuyBar
         visible={visible}
+        productName={productName}
         price={price}
         quantity={quantity}
         onAddToCart={onAddToCart}
@@ -68,7 +76,9 @@ export default function KankregBuyBar({
     );
   }
 
-  const lineTotal = price * Math.max(quantity, 1);
+  const inCart = quantity > 0;
+  const lineTotal = inCart ? price * quantity : price;
+  const priceLabel = inCart ? PRODUCT_SCREEN.stickyPriceLabel || "Total" : "Price";
 
   if (!useProductSplit) {
     return (
@@ -100,7 +110,7 @@ export default function KankregBuyBar({
     <PremiumStickyBar variant="glass" align="row">
       <View style={styles.inner}>
         <View style={styles.meta}>
-          <Text style={styles.metaLabel}>{PRODUCT_SCREEN.stickyPriceLabel || "Total"}</Text>
+          <Text style={styles.metaLabel}>{priceLabel}</Text>
           <Text style={[styles.price, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
             {formatINR(lineTotal)}
           </Text>
@@ -127,13 +137,15 @@ export default function KankregBuyBar({
         ) : null}
         <View style={styles.actions}>
           <PremiumButton label="Buy now" variant="outline" size="sm" onPress={onBuyNow} style={styles.actionBuy} />
-          <PremiumButton
-            label="Add to cart"
-            variant="primary"
-            size="sm"
-            onPress={onAddToCart}
-            style={styles.actionCart}
-          />
+          {!inCart ? (
+            <PremiumButton
+              label="Add to cart"
+              variant="primary"
+              size="sm"
+              onPress={onAddToCart}
+              style={styles.actionCart}
+            />
+          ) : null}
         </View>
       </View>
     </PremiumStickyBar>
@@ -164,7 +176,7 @@ const styles = StyleSheet.create({
     }),
   },
   mbarPrice: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_PRICE,
     fontWeight: "700",
     fontSize: 20,
     flexShrink: 0,
@@ -242,12 +254,12 @@ const styles = StyleSheet.create({
     color: KANKREG_PALETTE.inkFaint,
   },
   name: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_BODY_SEMIBOLD,
     fontSize: 14,
     marginTop: 2,
   },
   price: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_PRICE,
     fontSize: 22,
     fontWeight: "600",
     letterSpacing: -0.3,

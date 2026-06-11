@@ -1,15 +1,36 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/tokens";
 
-const TONES = {
-  paid: { bg: "rgba(60,98,72,0.13)", color: KANKREG_PALETTE.green },
-  ok: { bg: "rgba(60,98,72,0.13)", color: KANKREG_PALETTE.green },
-  pend: { bg: "rgba(169,119,46,0.15)", color: KANKREG_PALETTE.goldDeep },
-  cancel: { bg: "rgba(168,68,47,0.12)", color: KANKREG_PALETTE.danger },
-  low: { bg: "rgba(168,68,47,0.12)", color: KANKREG_PALETTE.danger },
-};
+function buildTones(c, isDark) {
+  return {
+    paid: {
+      bg: isDark ? "rgba(74, 222, 128, 0.14)" : "rgba(60,98,72,0.13)",
+      color: c.success,
+    },
+    ok: {
+      bg: isDark ? "rgba(74, 222, 128, 0.14)" : "rgba(60,98,72,0.13)",
+      color: c.success,
+    },
+    pend: {
+      bg: isDark ? "rgba(232, 200, 90, 0.16)" : "rgba(169,119,46,0.15)",
+      color: c.primaryDark,
+    },
+    soon: {
+      bg: isDark ? "rgba(232, 200, 90, 0.2)" : "rgba(231, 200, 90, 0.22)",
+      color: c.primaryBright,
+    },
+    cancel: {
+      bg: isDark ? "rgba(248, 113, 113, 0.14)" : "rgba(168,68,47,0.12)",
+      color: c.danger,
+    },
+    low: {
+      bg: isDark ? "rgba(248, 113, 113, 0.14)" : "rgba(168,68,47,0.12)",
+      color: c.danger,
+    },
+  };
+}
 
 export function orderStatusTone(status) {
   const s = String(status || "").toLowerCase();
@@ -19,7 +40,9 @@ export function orderStatusTone(status) {
 }
 
 export default function AdminStatusPill({ label, tone = "pend", style }) {
-  const palette = TONES[tone] || TONES.pend;
+  const { colors: c, isDark } = useTheme();
+  const palette = useMemo(() => buildTones(c, isDark)[tone] || buildTones(c, isDark).pend, [c, isDark, tone]);
+
   return (
     <View style={[styles.pill, { backgroundColor: palette.bg }, style]}>
       <Text style={[styles.text, { color: palette.color }]} numberOfLines={1}>

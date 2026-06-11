@@ -20,8 +20,8 @@ const DEFAULT_STEPS = [
     title: "Grass-fed Kankrej cows graze freely",
     description: "Indigenous desi cows roam open pastures — never force-fed, never rushed.",
     imageUrl: "",
-    imageFit: "cover",
-    imagePosition: "top center",
+    imageFit: "contain",
+    imagePosition: "center",
   },
   {
     id: "process-02",
@@ -30,8 +30,8 @@ const DEFAULT_STEPS = [
     title: "Fresh A2 milk collected daily",
     description: "Morning milk from healthy Kankrej cows, rich in A2 beta-casein protein.",
     imageUrl: "",
-    imageFit: "cover",
-    imagePosition: "top center",
+    imageFit: "contain",
+    imagePosition: "center",
   },
   {
     id: "process-03",
@@ -40,8 +40,8 @@ const DEFAULT_STEPS = [
     title: "Curd set overnight with natural culture",
     description: "Traditional culture at room temperature — the foundation of true Bilona ghee.",
     imageUrl: "",
-    imageFit: "cover",
-    imagePosition: "top center",
+    imageFit: "contain",
+    imagePosition: "center",
   },
   {
     id: "process-04",
@@ -50,8 +50,8 @@ const DEFAULT_STEPS = [
     title: "Hand-churned Bilona into white butter",
     description: "Makhan separated by hand from curd — not industrial cream.",
     imageUrl: "",
-    imageFit: "cover",
-    imagePosition: "top center",
+    imageFit: "contain",
+    imagePosition: "center",
   },
   {
     id: "process-05",
@@ -60,8 +60,8 @@ const DEFAULT_STEPS = [
     title: "Slow-cooked on a wood fire",
     description: "Patient wood-fired simmer until water evaporates and aroma deepens.",
     imageUrl: "",
-    imageFit: "cover",
-    imagePosition: "top center",
+    imageFit: "contain",
+    imagePosition: "center",
   },
   {
     id: "process-06",
@@ -70,8 +70,8 @@ const DEFAULT_STEPS = [
     title: "Golden ghee, glass-bottled",
     description: "Grainy, aromatic A2 ghee — sealed in glass for freshness and purity.",
     imageUrl: "",
-    imageFit: "cover",
-    imagePosition: "top center",
+    imageFit: "contain",
+    imagePosition: "center",
   },
 ];
 

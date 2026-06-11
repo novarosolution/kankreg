@@ -12,12 +12,13 @@ import AdminRevenueBars from "../../components/admin/AdminRevenueBars";
 import AdminStatusPill, { orderStatusTone } from "../../components/admin/AdminStatusPill";
 import { useAuth } from "../../context/AuthContext";
 import { fetchAdminAnalytics, fetchAdminOrders } from "../../services/adminService";
+import { useTheme } from "../../context/ThemeContext";
 import { adminTwoColAside, adminTwoColMain, adminTwoColStyle, useAdminCompactLayout } from "../../theme/adminLayout";
 import { formatOrderPublicRef } from "../../content/appContent";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { layout, spacing } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
+import { getOrderItemQty } from "../../utils/adminOrderHelpers";
 import { getOrderStatusLabel } from "../../utils/orderStatus";
 import PremiumLoader from "../../components/ui/PremiumLoader";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
@@ -52,6 +53,7 @@ function shortTrendLabel(label) {
 export default function AdminDashboardScreen({ navigation, route }) {
   const compact = useAdminCompactLayout();
   const { user, token } = useAuth();
+  const { colors: c } = useTheme();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -139,9 +141,9 @@ export default function AdminDashboardScreen({ navigation, route }) {
       { key: "customer", label: "Customer", flex: 1.2, render: (row) => row.userName || row.shippingAddress?.name || "Guest" },
       {
         key: "items",
-        label: "Items",
+        label: "Qty",
         width: 56,
-        render: (row) => String((row.items || []).length || row.itemCount || 0),
+        render: (row) => String(getOrderItemQty(row)),
       },
       {
         key: "total",
@@ -225,10 +227,10 @@ export default function AdminDashboardScreen({ navigation, route }) {
             <>
               <SectionReveal preset="fade-up">
                 <AdminKpiGrid compact={compact}>
-                  <AdminKpiCard label="Revenue" value={kpis.revenue} delta="18.2% vs last mo" deltaUp />
-                  <AdminKpiCard label="Orders" value={kpis.orders} delta="9.1%" deltaUp />
-                  <AdminKpiCard label="Avg. order" value={kpis.aov} delta="4.4%" deltaUp />
-                  <AdminKpiCard label="Refund rate" value={kpis.refund} delta="0.6%" deltaUp={false} />
+                  <AdminKpiCard label="Revenue (30d)" value={kpis.revenue} />
+                  <AdminKpiCard label="Orders (30d)" value={kpis.orders} />
+                  <AdminKpiCard label="Avg. order" value={kpis.aov} />
+                  <AdminKpiCard label="Refund rate" value={kpis.refund} />
                 </AdminKpiGrid>
               </SectionReveal>
 
@@ -248,7 +250,7 @@ export default function AdminDashboardScreen({ navigation, route }) {
                           <AdminCategoryBar key={`${cat.name}-${idx}`} name={cat.name} percent={cat.percent} />
                         ))
                       ) : (
-                        <Text style={styles.muted}>No category data yet</Text>
+                        <Text style={[styles.muted, { color: c.textMuted }]}>No category data yet</Text>
                       )}
                     </AdminPanel>
                   </SectionReveal>
@@ -268,8 +270,8 @@ export default function AdminDashboardScreen({ navigation, route }) {
                     rows={recentOrders}
                     compact={compact}
                     onRowPress={(row) =>
-                      navigation.navigate("AdminOrders", {
-                        query: String(row._id || row.id || ""),
+                      navigation.navigate("AdminOrderDetail", {
+                        orderId: String(row._id || row.id || ""),
                       })
                     }
                   />
@@ -300,7 +302,6 @@ const styles = StyleSheet.create({
   ordersPanel: { marginTop: spacing.md, paddingHorizontal: 0, paddingBottom: 6 },
   muted: {
     fontSize: 13,
-    color: KANKREG_PALETTE.inkFaint,
     paddingVertical: spacing.sm,
   },
 });

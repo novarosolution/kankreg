@@ -11,7 +11,8 @@ import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { fonts, icon, layout, lineHeight, radius, spacing, typography } from "../../theme/tokens";
-import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { ALCHEMY } from "../../theme/customerAlchemy";
+import { FONT_HEADING, FONT_BODY_SEMIBOLD } from "../../theme/typographyRoles";
 import { HOME_TESTIMONIALS } from "../../content/appContent";
 import { platformShadow } from "../../theme/shadowPlatform";
 import useReducedMotion from "../../hooks/useReducedMotion";
@@ -233,7 +234,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: Platform.OS === "web" ? typography.h2 + 2 : typography.h2,
     lineHeight: Platform.OS === "web" ? 36 : 32,
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     letterSpacing: -0.4,
     textAlign: "center",
     marginBottom: spacing.lg,
@@ -311,7 +312,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   avatarInitial: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_BODY_SEMIBOLD,
     fontSize: 18,
   },
   dots: {

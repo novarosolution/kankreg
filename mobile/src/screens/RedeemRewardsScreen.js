@@ -128,8 +128,11 @@ export default function RedeemRewardsScreen({ navigation }) {
 
   const isNativeApp = Platform.OS !== "web";
 
-  if (isAuthLoading || !isAuthenticated) {
-    return <AuthGateShell />;
+  if (isAuthLoading) {
+    return <AuthGateShell navigation={navigation} />;
+  }
+  if (!isAuthenticated) {
+    return <AuthGateShell signedOut navigation={navigation} />;
   }
 
   return (

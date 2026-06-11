@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   Platform,
   Pressable,
@@ -7,12 +8,6 @@ import {
   Text,
   View,
 } from "react-native";
-import {
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withSpring,
-} from "react-native-reanimated";
 import CustomerScreenShell from "../components/CustomerScreenShell";
 import BottomNavBar from "../components/BottomNavBar";
 import { HomeCatalogGridCard } from "../components/home/HomeCatalogProductViews";
@@ -23,11 +18,12 @@ import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 import PremiumEmptyState from "../components/ui/PremiumEmptyState";
 import { useCart } from "../context/CartContext";
 import { useTheme } from "../context/ThemeContext";
-import { getProducts } from "../services/productService";
+import { getProducts, invalidateProductsCache } from "../services/productService";
 import { KANKREG_PALETTE } from "../theme/kankregWeb";
 import { KANKREG_PAGE_SECTION_GAP } from "../theme/kankregScreenStyles";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
 import { getShopTheme } from "../theme/shopTheme";
+import { getProductCardFlags } from "../utils/productAvailability";
 import KankregFilterChips from "../components/kankreg/KankregFilterChips";
 import KankregAnimatedSection from "../components/kankreg/KankregAnimatedSection";
 import CatalogGridReveal from "../components/kankreg/CatalogGridReveal";
@@ -36,7 +32,6 @@ import SectionReveal from "../components/motion/SectionReveal";
 import { customerPanel } from "../theme/screenLayout";
 import { fonts, spacing, typography } from "../theme/tokens";
 import { productToCartLine } from "../utils/productCart";
-import useReducedMotion from "../hooks/useReducedMotion";
 import NativeSearchBar from "../components/native/NativeSearchBar";
 import NativeProductCard from "../components/native/NativeProductCard";
 import { FIGMA } from "../theme/figmaApp";
@@ -51,8 +46,13 @@ import {
 import ShopPriceFilter from "../components/shop/ShopPriceFilter";
 import ShopFilterSection from "../components/shop/ShopFilterSection";
 import ShopActiveFilters from "../components/shop/ShopActiveFilters";
+import ShopCatalogHero from "../components/shop/ShopCatalogHero";
+import ShopCategoryRail from "../components/shop/ShopCategoryRail";
+import ShopSortBar from "../components/shop/ShopSortBar";
+import { buildShopCatalogSummary, getShopCategoryCounts } from "../utils/shopCatalogHelpers";
 import {
   ShopCollectionPills,
+  ShopCatalogSearch,
   ShopCompactToolbar,
   ShopFilterCheck,
   ShopFilterSidebarHeader,
@@ -72,8 +72,10 @@ function ratingLabelFromValue(minRating) {
   return "Any rating";
 }
 
-function buildActiveFilterChips({ pill, categories, minRating, minPrice, maxPrice, sortKey }) {
+function buildActiveFilterChips({ pill, categories, minRating, minPrice, maxPrice, sortKey, searchQuery }) {
   const chips = [];
+  const trimmed = String(searchQuery || "").trim();
+  if (trimmed) chips.push({ key: "search", label: `"${trimmed}"` });
   if (pill !== "All") chips.push({ key: "pill", label: pill });
   categories.forEach((cat) => chips.push({ key: `cat:${cat}`, label: cat }));
   if (minRating >= 4) chips.push({ key: "rating", label: "4★ & above" });
@@ -109,14 +111,14 @@ export default function ShopScreen({ navigation, route }) {
     const seed = route.params?.category;
     return seed ? [String(seed)] : [];
   });
-  const reducedMotion = useReducedMotion();
-  const sortPulse = useSharedValue(1);
   const [minRating, setMinRating] = useState(0);
   const [minPrice, setMinPrice] = useState(null);
   const [maxPrice, setMaxPrice] = useState(null);
   const [pill, setPill] = useState("All");
   const [sortKey, setSortKey] = useState("featured");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(() => String(route.params?.q || "").trim());
+  const searchInputRef = useRef(null);
 
   const { showShopSidebar, isXs, isMobileWeb, catalogCardCompact } = useKankregLayout();
   const showSidebar = showShopSidebar;
@@ -140,6 +142,21 @@ export default function ShopScreen({ navigation, route }) {
     load();
   }, [load]);
 
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      invalidateProductsCache();
+      getProducts()
+        .then((list) => {
+          if (!cancelled) setProducts(Array.isArray(list) ? list : []);
+        })
+        .catch(() => {});
+      return () => {
+        cancelled = true;
+      };
+    }, [])
+  );
+
   useEffect(() => {
     if (route.params?.category) {
       setCategories([String(route.params.category)]);
@@ -152,6 +169,21 @@ export default function ShopScreen({ navigation, route }) {
       setPill(pillParam);
     }
   }, [route.params?.pill]);
+
+  useEffect(() => {
+    if (route.params?.q != null) {
+      setSearchQuery(String(route.params.q || "").trim());
+    }
+  }, [route.params?.q]);
+
+  useEffect(() => {
+    if (!route.params?.focusSearch) return undefined;
+    const timer = setTimeout(() => {
+      searchInputRef.current?.focus?.();
+      navigation.setParams({ focusSearch: undefined });
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [route.params?.focusSearch, navigation]);
 
   const toggleCategory = (label) => {
     setCategories((prev) =>
@@ -166,6 +198,7 @@ export default function ShopScreen({ navigation, route }) {
     setMinPrice(null);
     setMaxPrice(null);
     setSortKey("featured");
+    setSearchQuery("");
   };
 
   const handlePriceChange = ({ min, max }) => {
@@ -198,6 +231,7 @@ export default function ShopScreen({ navigation, route }) {
       setMinPrice(null);
       setMaxPrice(null);
     } else if (key === "sort") setSortKey("featured");
+    else if (key === "search") setSearchQuery("");
   };
 
   const categoryOptions = useMemo(() => {
@@ -205,11 +239,14 @@ export default function ShopScreen({ navigation, route }) {
     return [...new Set(labels)].sort((a, b) => a.localeCompare(b));
   }, [products]);
 
+  const catalogSummary = useMemo(() => buildShopCatalogSummary(products), [products]);
+  const categoryRail = useMemo(() => getShopCategoryCounts(products), [products]);
+
   const priceBounds = useMemo(() => getCatalogPriceBounds(products), [products]);
 
   const filterState = useMemo(
-    () => ({ pill, categories, minRating, minPrice, maxPrice, sortKey }),
-    [pill, categories, minRating, minPrice, maxPrice, sortKey]
+    () => ({ pill, categories, minRating, minPrice, maxPrice, sortKey, searchQuery }),
+    [pill, categories, minRating, minPrice, maxPrice, sortKey, searchQuery]
   );
 
   const filtered = useMemo(
@@ -220,23 +257,8 @@ export default function ShopScreen({ navigation, route }) {
   const hasActiveFilters = hasActiveShopFilters(filterState);
   const filterBadgeCount = countShopFilterBadge(filterState);
   const activeFilterChips = useMemo(() => buildActiveFilterChips(filterState), [filterState]);
-  const sortLabel = SORT_OPTIONS.find((o) => o.key === sortKey)?.label || "Featured";
   const mobileTitle = isXs ? SHOP_SCREEN_UI.pageTitle : SHOP_SCREEN_UI.pageTitleWide;
-  const headerSubtitle =
-    Platform.OS === "web" ? undefined : showSidebar ? undefined : SHOP_SCREEN_UI.pageSubtitle;
-
-  const sortAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: sortPulse.value }],
-  }));
-
-  const cycleSort = () => {
-    if (!reducedMotion) {
-      sortPulse.value = withSequence(withSpring(0.9, { damping: 12 }), withSpring(1, { damping: 10 }));
-    }
-    const idx = SORT_OPTIONS.findIndex((o) => o.key === sortKey);
-    const next = SORT_OPTIONS[(idx + 1) % SORT_OPTIONS.length];
-    setSortKey(next.key);
-  };
+  const headerSubtitle = SHOP_SCREEN_UI.pageSubtitle || undefined;
 
   const renderFilterSections = (variant = "chips", { skipCollection = false } = {}) => (
     <>
@@ -287,7 +309,7 @@ export default function ShopScreen({ navigation, route }) {
         />
       </ShopFilterSection>
 
-      <ShopFilterSection title={SHOP_SCREEN_UI.filterRating} icon="rating" last>
+      <ShopFilterSection title={SHOP_SCREEN_UI.filterRating} icon="rating">
         {variant === "chips" ? (
           <KankregFilterChips
             options={RATING_OPTIONS}
@@ -303,6 +325,10 @@ export default function ShopScreen({ navigation, route }) {
             <ShopFilterCheck label="Any rating" on={minRating === 0} onPress={() => setMinRating(0)} />
           </>
         )}
+      </ShopFilterSection>
+
+      <ShopFilterSection title={SHOP_SCREEN_UI.filterSort} icon="sort" last>
+        <ShopSortBar value={sortKey} onChange={setSortKey} compact={variant === "chips"} vertical={variant !== "chips"} />
       </ShopFilterSection>
     </>
   );
@@ -344,10 +370,17 @@ export default function ShopScreen({ navigation, route }) {
             showBack={false}
             compactNative
           />
+          <View style={styles.nativeHeroWrap}>
+            <ShopCatalogHero summary={catalogSummary} compact />
+          </View>
           {SHOP_SCREEN_UI.trustLine ? <ShopTrustStrip compact /> : null}
           <View style={styles.nativeToolbar}>
             <NativeSearchBar
-              onPress={() => {}}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              inputRef={searchInputRef}
+              autoFocus={Boolean(route.params?.focusSearch)}
+              onClear={() => setSearchQuery("")}
               onFilterPress={() => setFiltersOpen((open) => !open)}
               placeholder={SHOP_SCREEN_UI.searchPlaceholder}
               filterBadgeCount={filterBadgeCount}
@@ -355,6 +388,16 @@ export default function ShopScreen({ navigation, route }) {
             <View style={styles.nativePillsWrap}>
               <ShopCollectionPills selected={pill} onSelect={handlePillSelect} compact scroll />
             </View>
+            {categoryRail.length ? (
+              <View style={styles.nativeCategoryRail}>
+                <ShopCategoryRail
+                  categories={categoryRail}
+                  selected={categories}
+                  onToggle={toggleCategory}
+                  compact
+                />
+              </View>
+            ) : null}
             {activeFilterChips.length ? (
               <View style={styles.nativeActiveFilters}>
                 <ShopActiveFilters
@@ -366,23 +409,30 @@ export default function ShopScreen({ navigation, route }) {
               </View>
             ) : null}
             {nativeFilterPanel}
+            <View style={styles.nativeSortWrap}>
+              <ShopSortBar value={sortKey} onChange={setSortKey} compact />
+            </View>
             <ShopNativeMetaLine filtered={filtered.length} total={products.length} />
           </View>
           {loading ? (
             <ShopCatalogSkeleton count={6} />
           ) : filtered.length ? (
             <View style={nativeShopGrid.grid}>
-              {filtered.map((item, idx) => (
+              {filtered.map((item, idx) => {
+                const flags = getProductCardFlags(item, SHOP_SCREEN_UI.card.comingSoonNoteFallback);
+                return (
                 <View key={item.id} style={nativeShopGrid.cell}>
                   <NativeProductCard
                     product={item}
                     index={idx}
-                    isOutOfStock={item.inStock === false}
+                    isOutOfStock={flags.isOutOfStock}
+                    isComingSoon={flags.isComingSoon}
+                    comingSoonNote={flags.comingSoonNote}
                     onPress={() => navigation.navigate("Product", { productId: item.id })}
                     onAddToCart={() => addToCart(productToCartLine(item))}
                   />
                 </View>
-              ))}
+              );})}
             </View>
           ) : (
             <PremiumEmptyState
@@ -434,6 +484,7 @@ export default function ShopScreen({ navigation, route }) {
         <KankregPageWrap gap={KANKREG_PAGE_SECTION_GAP}>
           <KankregAnimatedSection index={0} immediate>
             <KankregCustomerPageHeader
+              eyebrow={SHOP_SCREEN_UI.pageEyebrow}
               title={mobileTitle}
               subtitle={headerSubtitle}
               navigation={navigation}
@@ -441,6 +492,9 @@ export default function ShopScreen({ navigation, route }) {
               figmaOnWeb={compactShop}
             />
             {SHOP_SCREEN_UI.trustLine ? <ShopTrustStrip compact /> : null}
+            {!compactShop ? (
+              <ShopCatalogHero summary={catalogSummary} />
+            ) : null}
           </KankregAnimatedSection>
 
           <View style={[styles.shopGrid, !showSidebar && styles.shopGridStack]}>
@@ -451,16 +505,39 @@ export default function ShopScreen({ navigation, route }) {
             ) : null}
 
             <View style={styles.mainCol}>
-              {!showSidebar ? (
+              {compactShop ? (
                 <KankregAnimatedSection index={1}>
+                  <ShopCatalogHero summary={catalogSummary} compact />
+                </KankregAnimatedSection>
+              ) : null}
+              <KankregAnimatedSection index={compactShop ? 2 : 1}>
+                <ShopCatalogSearch
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  inputRef={searchInputRef}
+                  placeholder={SHOP_SCREEN_UI.searchPlaceholder}
+                  onClear={() => setSearchQuery("")}
+                />
+              </KankregAnimatedSection>
+              {categoryRail.length ? (
+                <KankregAnimatedSection index={compactShop ? 2 : 1}>
+                  <ShopCategoryRail
+                    categories={categoryRail}
+                    selected={categories}
+                    onToggle={toggleCategory}
+                    compact={compactShop}
+                  />
+                </KankregAnimatedSection>
+              ) : null}
+              {!showSidebar ? (
+                <KankregAnimatedSection index={3}>
                   <ShopCompactToolbar
                     filtered={filtered.length}
                     total={products.length}
                     pill={pill}
                     onPill={handlePillSelect}
-                    sortLabel={sortLabel}
-                    onSort={cycleSort}
-                    sortAnimStyle={sortAnimStyle}
+                    sortKey={sortKey}
+                    onSortChange={setSortKey}
                     filtersOpen={filtersOpen}
                     onToggleFilters={() => setFiltersOpen((open) => !open)}
                     filterBadgeCount={filterBadgeCount}
@@ -471,19 +548,19 @@ export default function ShopScreen({ navigation, route }) {
                   {mobileWebFilters}
                 </KankregAnimatedSection>
               ) : (
-                <KankregAnimatedSection index={2} immediate>
+                <KankregAnimatedSection index={3} immediate>
                   <ShopCompactToolbar
                     variant="sidebar"
                     filtered={filtered.length}
                     total={products.length}
                     pill={pill}
                     onPill={handlePillSelect}
-                    sortLabel={sortLabel}
-                    onSort={cycleSort}
-                    sortAnimStyle={sortAnimStyle}
+                    sortKey={sortKey}
+                    onSortChange={setSortKey}
                     activeChips={activeFilterChips}
                     onRemoveChip={handleRemoveFilterChip}
                     onClearAll={clearAllFilters}
+                    useSortBar={false}
                   />
                 </KankregAnimatedSection>
               )}
@@ -503,7 +580,9 @@ export default function ShopScreen({ navigation, route }) {
                 </SectionReveal>
               ) : (
                 <CatalogGridReveal immediateFirst={12}>
-                  {filtered.map((item, idx) => (
+                  {filtered.map((item, idx) => {
+                    const flags = getProductCardFlags(item, SHOP_SCREEN_UI.card.comingSoonNoteFallback);
+                    return (
                     <HomeCatalogGridCard
                       key={item.id}
                       idx={idx}
@@ -512,11 +591,13 @@ export default function ShopScreen({ navigation, route }) {
                       navigation={navigation}
                       quantity={getItemQuantity(item.id)}
                       styles={gridStyles}
-                      isOutOfStock={item.inStock === false}
+                      isOutOfStock={flags.isOutOfStock}
+                      isComingSoon={flags.isComingSoon}
+                      comingSoonNote={flags.comingSoonNote}
                       onAddToCart={() => addToCart(productToCartLine(item))}
                       onRemoveFromCart={() => removeFromCart(item.id)}
                     />
-                  ))}
+                  );})}
                 </CatalogGridReveal>
               )}
             </View>
@@ -558,7 +639,17 @@ const styles = StyleSheet.create({
   nativeToolbar: {
     gap: spacing.xs,
   },
+  nativeHeroWrap: {
+    paddingHorizontal: FIGMA.gutter,
+    marginBottom: spacing.xs,
+  },
   nativePillsWrap: {
+    paddingHorizontal: FIGMA.gutter,
+  },
+  nativeCategoryRail: {
+    paddingHorizontal: FIGMA.gutter,
+  },
+  nativeSortWrap: {
     paddingHorizontal: FIGMA.gutter,
   },
   nativeFiltersCard: {

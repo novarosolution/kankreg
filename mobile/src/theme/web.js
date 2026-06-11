@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import { ALCHEMY } from "./customerAlchemy";
 import { KANKREG_CHROME } from "./kankregWeb";
+import { WEB_DISPLAY_FONT, WEB_DISPLAY_FONT_CDN } from "./webFonts";
 
 /** Fixed top bar height on web (kankreg.html `.topbar` ≈ 76px). */
 export const WEB_HEADER_HEIGHT = 76;
@@ -35,6 +36,57 @@ export const webRootStyle = Platform.select({
 });
 
 let premiumChromeInjected = false;
+let displayFontInjected = false;
+
+/** Load CIENUR display face for web headings (dev + static export). */
+export function injectWebDisplayFont() {
+  if (Platform.OS !== "web" || typeof document === "undefined" || displayFontInjected) return;
+  displayFontInjected = true;
+
+  const head = document.head;
+  if (!head) return;
+
+  if (!document.querySelector('link[data-kankreg="cienur-font"]')) {
+    const preconnect = document.createElement("link");
+    preconnect.rel = "preconnect";
+    preconnect.href = "https://fonts.cdnfonts.com";
+    preconnect.crossOrigin = "anonymous";
+    head.appendChild(preconnect);
+
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = WEB_DISPLAY_FONT_CDN;
+    link.setAttribute("data-kankreg", "cienur-font");
+    head.appendChild(link);
+  }
+}
+
+/** Web-only: description, theme-color, lang, and CIENUR display font. */
+export function injectWebDocumentMeta() {
+  if (Platform.OS !== "web" || typeof document === "undefined") return;
+
+  injectWebDisplayFont();
+
+  const html = document.documentElement;
+  if (!html.getAttribute("lang")) {
+    html.setAttribute("lang", "en");
+  }
+
+  const ensureMeta = (name, content) => {
+    if (!content || document.querySelector(`meta[name="${name}"]`)) return;
+    const meta = document.createElement("meta");
+    meta.name = name;
+    meta.content = content;
+    document.head.appendChild(meta);
+  };
+
+  ensureMeta(
+    "description",
+    "KankreG — premium A2 ghee and artisan pantry goods, delivered fresh to your door."
+  );
+  ensureMeta("theme-color", KANKREG_CHROME.cream);
+  ensureMeta("color-scheme", "light dark");
+}
 
 /**
  * Web-only: fixed gradient page backdrop, font smoothing, selection & focus rings.
@@ -160,6 +212,21 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
         h1, h2, [role="heading"] {
           overflow-wrap: anywhere;
         }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+      @font-face {
+        font-display: swap;
+      }
+      [data-kankreg-display="true"],
+      h1, h2, h3 {
+        font-family: '${WEB_DISPLAY_FONT}', Georgia, 'Times New Roman', serif;
       }
     `;
     document.head.appendChild(style);

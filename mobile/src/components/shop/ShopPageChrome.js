@@ -5,15 +5,23 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { SHOP_SCREEN_UI } from "../../content/appContent";
 import { useTheme } from "../../context/ThemeContext";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { getShopTheme } from "../../theme/shopTheme";
 import { getKankregChromeTop } from "../kankreg/KankregSiteHeader";
 import { FIGMA } from "../../theme/figmaApp";
 import { fonts, radius, spacing, typography } from "../../theme/tokens";
 import ShopActiveFilters from "./ShopActiveFilters";
+import ShopSortBar from "./ShopSortBar";
+import QCommerceSearchField from "../qcommerce/QCommerceSearchField";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+/** Readable product count — sans-serif digits (never display font). */
+export function formatShopProductCount(filtered, total) {
+  const shown = Math.max(0, Number(filtered) || 0);
+  const catalog = Math.max(0, Number(total) || 0);
+  return `${SHOP_SCREEN_UI.showingPrefix} ${shown} ${SHOP_SCREEN_UI.showingOf} ${catalog} ${SHOP_SCREEN_UI.showingSuffix}`;
+}
 
 export function ShopCollectionPills({
   selected,
@@ -105,11 +113,7 @@ export function ShopNativeMetaLine({ filtered, total }) {
   return (
     <View style={[styles.nativeMetaWrap, { backgroundColor: t.surfaceMuted, borderColor: t.border }]}>
       <Text style={[styles.nativeMeta, { color: t.textFaint }]}>
-        {SHOP_SCREEN_UI.showingPrefix}{" "}
-        <Text style={[styles.nativeMetaBold, { color: t.text }]}>{filtered}</Text>{" "}
-        {SHOP_SCREEN_UI.showingOf}{" "}
-        <Text style={[styles.nativeMetaBold, { color: t.text }]}>{total}</Text>{" "}
-        {SHOP_SCREEN_UI.showingSuffix}
+        {formatShopProductCount(filtered, total)}
       </Text>
     </View>
   );
@@ -135,12 +139,31 @@ export function ShopTrustStrip({ compact = false }) {
   );
 }
 
-/** Compact shop controls — pills, count, filter toggle, sort (saves vertical space). */
+/** Web / mobile-web catalog search — sits above filters and product grid. */
+export function ShopCatalogSearch({ value, onChangeText, inputRef, placeholder, onClear }) {
+  if (Platform.OS !== "web") return null;
+
+  return (
+    <View style={styles.catalogSearchWrap}>
+      <QCommerceSearchField
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        onClear={onClear}
+        ref={inputRef}
+      />
+    </View>
+  );
+}
+
+/** Compact shop controls — pills, count, filter toggle, sort bar. */
 export function ShopCompactToolbar({
   filtered,
   total,
   pill,
   onPill,
+  sortKey,
+  onSortChange,
   sortLabel,
   onSort,
   sortAnimStyle,
@@ -151,11 +174,13 @@ export function ShopCompactToolbar({
   onRemoveChip,
   onClearAll,
   variant = "stack",
+  useSortBar = true,
 }) {
   const { isDark } = useTheme();
   const t = getShopTheme(isDark);
   const showPills = variant === "stack";
   const showFilterToggle = variant === "stack" && typeof onToggleFilters === "function";
+  const showLegacySort = !useSortBar && typeof onSort === "function";
 
   return (
     <View style={styles.compactToolbar}>
@@ -163,11 +188,9 @@ export function ShopCompactToolbar({
 
       <View style={[styles.compactBar, { backgroundColor: t.surface, borderColor: t.border }, t.cardShadow]}>
         <View style={styles.compactMeta}>
-          <Text style={[styles.compactCount, { color: t.text }]}>
-            <Text style={styles.compactCountBold}>{filtered}</Text>
-            <Text style={[styles.compactCountMuted, { color: t.textFaint }]}> / {total}</Text>
+          <Text style={[styles.compactCount, { color: t.textMuted }]} numberOfLines={1}>
+            {formatShopProductCount(filtered, total)}
           </Text>
-          <Text style={[styles.compactSuffix, { color: t.textFaint }]}>{SHOP_SCREEN_UI.showingSuffix}</Text>
         </View>
 
         <View style={styles.compactActions}>
@@ -206,23 +229,29 @@ export function ShopCompactToolbar({
             </Pressable>
           ) : null}
 
-          <AnimatedPressable
-            onPress={onSort}
-            style={[
-              styles.sortBtnCompact,
-              { backgroundColor: t.surfaceChip, borderColor: t.border },
-              sortAnimStyle,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={`${SHOP_SCREEN_UI.sortA11y}: ${sortLabel}`}
-          >
-            <Ionicons name="swap-vertical" size={13} color={t.accent} />
-            <Text style={[styles.sortLabelCompact, { color: t.text }]} numberOfLines={1}>
-              {sortLabel}
-            </Text>
-          </AnimatedPressable>
+          {showLegacySort ? (
+            <AnimatedPressable
+              onPress={onSort}
+              style={[
+                styles.sortBtnCompact,
+                { backgroundColor: t.surfaceChip, borderColor: t.border },
+                sortAnimStyle,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`${SHOP_SCREEN_UI.sortA11y}: ${sortLabel}`}
+            >
+              <Ionicons name="swap-vertical" size={13} color={t.accent} />
+              <Text style={[styles.sortLabelCompact, { color: t.text }]} numberOfLines={1}>
+                {sortLabel}
+              </Text>
+            </AnimatedPressable>
+          ) : null}
         </View>
       </View>
+
+      {useSortBar && typeof onSortChange === "function" ? (
+        <ShopSortBar value={sortKey} onChange={onSortChange} compact />
+      ) : null}
 
       {activeChips?.length ? (
         <ShopActiveFilters chips={activeChips} onRemove={onRemoveChip} onClearAll={onClearAll} inline />
@@ -266,11 +295,9 @@ export function ShopResultToolbar({
       <View style={styles.resultTop}>
         <View style={styles.resultCopy}>
           <Text style={[styles.resultEyebrow, { color: t.accent }]}>{SHOP_SCREEN_UI.pageEyebrow}</Text>
-          <Text style={[styles.resultCount, { color: t.text }]}>
-            <Text style={styles.resultCountBold}>{filtered}</Text>
-            <Text style={[styles.resultCountMuted, { color: t.textFaint }]}> / {total}</Text>
+          <Text style={[styles.resultCount, { color: t.textMuted }]} numberOfLines={2}>
+            {formatShopProductCount(filtered, total)}
           </Text>
-          <Text style={[styles.resultLabel, { color: t.textMuted }]}>{SHOP_SCREEN_UI.showingSuffix}</Text>
         </View>
         <View style={styles.resultMeta}>
           <Text style={[styles.resultCategory, { color: t.accent }]} numberOfLines={1}>
@@ -423,6 +450,9 @@ const styles = StyleSheet.create({
   pillTextCompact: {
     fontSize: typography.caption - 1,
   },
+  catalogSearchWrap: {
+    marginBottom: spacing.sm,
+  },
   compactToolbar: {
     gap: spacing.sm,
     marginBottom: spacing.sm,
@@ -442,21 +472,10 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   compactCount: {
-    fontFamily: FONT_DISPLAY,
-    fontSize: typography.body + 1,
-    letterSpacing: -0.3,
-  },
-  compactCountBold: { fontFamily: FONT_DISPLAY },
-  compactCountMuted: {
     fontFamily: fonts.medium,
     fontSize: typography.caption,
-  },
-  compactSuffix: {
-    fontFamily: fonts.medium,
-    fontSize: 10,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-    marginTop: 1,
+    letterSpacing: 0.15,
+    lineHeight: 18,
   },
   compactActions: {
     flexDirection: "row",
@@ -600,21 +619,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   resultCount: {
-    fontFamily: FONT_DISPLAY,
-    fontSize: typography.h3,
-    letterSpacing: -0.4,
-  },
-  resultCountBold: { fontFamily: FONT_DISPLAY },
-  resultCountMuted: {
     fontFamily: fonts.medium,
     fontSize: typography.bodySmall,
-  },
-  resultLabel: {
-    marginTop: 2,
-    fontFamily: fonts.medium,
-    fontSize: typography.caption,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
+    lineHeight: 20,
+    letterSpacing: 0.1,
   },
   resultMeta: {
     alignItems: "flex-end",
@@ -683,9 +691,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   sidebarTitle: {
-    fontFamily: FONT_DISPLAY,
-    fontSize: typography.body + 2,
-    letterSpacing: -0.3,
+    fontFamily: fonts.semibold,
+    fontSize: typography.body + 1,
+    letterSpacing: 0.2,
+    textTransform: "uppercase",
   },
   filterCountBadge: {
     minWidth: 18,
@@ -729,9 +738,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   mobileFilterTitle: {
-    fontFamily: FONT_DISPLAY,
-    fontSize: typography.body + 1,
-    letterSpacing: -0.2,
+    fontFamily: fonts.semibold,
+    fontSize: typography.bodySmall,
+    letterSpacing: 0.35,
+    textTransform: "uppercase",
   },
   mobileFilterTitleCompact: {
     fontSize: typography.bodySmall,

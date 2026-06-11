@@ -5,7 +5,7 @@ import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { Ionicons } from "@expo/vector-icons";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_BODY_SEMIBOLD } from "../../theme/typographyRoles";
 import { fonts, spacing } from "../../theme/tokens";
 import { useTheme } from "../../context/ThemeContext";
 import { platformShadow } from "../../theme/shadowPlatform";
@@ -185,12 +185,12 @@ const styles = StyleSheet.create({
     borderColor: "rgba(214, 173, 91, 0.45)",
   },
   avatarText: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_BODY_SEMIBOLD,
     fontSize: 34,
     color: "#fff",
   },
   name: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_BODY_SEMIBOLD,
     fontSize: 20,
     color: KANKREG_PALETTE.ink,
     textAlign: "center",

@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import BrandLogo from "../BrandLogo";
 import { BRAND_LOGO_SIZE } from "../../constants/brand";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { fonts, lineHeight, spacing, typography } from "../../theme/tokens";
 
 /** Lightweight native auth header — no video loop. `compact` reduces height when form card is primary. */
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
   },
   title: {
     textAlign: "center",
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: typography.h3 + 2,
     lineHeight: lineHeight.h3 + 4,
     color: "#f5efe4",
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   },
   titleCompact: {
     textAlign: "center",
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: typography.body + 2,
     lineHeight: lineHeight.body + 4,
     color: "#f5efe4",

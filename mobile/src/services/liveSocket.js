@@ -97,6 +97,23 @@ export function disconnectLiveSocket() {
   activeToken = null;
 }
 
+/** Release WebSocket before bfcache — keep token so pageshow can reconnect. */
+if (Platform.OS === "web" && typeof window !== "undefined") {
+  window.addEventListener("pagehide", () => {
+    if (socket?.connected) {
+      socket.disconnect();
+    }
+  });
+  window.addEventListener("pageshow", (event) => {
+    if (!event.persisted || !activeToken) return;
+    if (socket) {
+      if (!socket.connected) socket.connect();
+    } else {
+      connectLiveSocket(activeToken);
+    }
+  });
+}
+
 export function subscribeLiveOrder(orderId) {
   const id = String(orderId || "").trim();
   if (!id || !socket?.connected) return;

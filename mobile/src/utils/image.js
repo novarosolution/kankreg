@@ -161,6 +161,73 @@ export function getProductSectionImageUri(rawUri) {
   return getImageUriCandidates(rawUri, { width: 720, quality: "auto:good" })[0] || "";
 }
 
+/** Max delivery width for home hero slider (web). */
+export const HERO_SLIDE_DESKTOP_MAX_WIDTH = 1280;
+export const HERO_SLIDE_MOBILE_MAX_WIDTH = 840;
+
+/** CSS layout width → capped pixel width for hero `<img>` (respects DPR, never 4K). */
+export function getHeroSlideDisplayWidth(layoutWidth = 960, { isMobileWeb = false } = {}) {
+  const css = Math.max(320, Number(layoutWidth) || 960);
+  let dpr = 1;
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+  } else {
+    dpr = 2;
+  }
+  const cap = isMobileWeb ? HERO_SLIDE_MOBILE_MAX_WIDTH : HERO_SLIDE_DESKTOP_MAX_WIDTH;
+  return Math.min(Math.ceil(css * dpr), cap);
+}
+
+function preferWebHeroBundlerVariant(uri, width) {
+  const value = String(uri || "");
+  if (!value || Platform.OS !== "web") return value;
+
+  const isBundled =
+    isBundlerMediaPath(value) || value.includes("/assets/") || value.includes("unstable_path=");
+  if (!isBundled) return value;
+
+  const mobile = width <= HERO_SLIDE_MOBILE_MAX_WIDTH;
+  const targetSuffix = mobile ? "-web-840.webp" : "-web-1200.webp";
+
+  if (value.includes("-web-1200.webp") && mobile) {
+    return value.replace("-web-1200.webp", "-web-840.webp");
+  }
+  if (value.includes("-web-840.webp") && !mobile) {
+    return value.replace("-web-840.webp", "-web-1200.webp");
+  }
+  if (/\.(png|jpe?g)(\?|$)/i.test(value)) {
+    return value.replace(/\.(png|jpe?g)(\?.*)?$/i, (_, __, query) => `${targetSuffix}${query || ""}`);
+  }
+  return value;
+}
+
+/** Hero slider delivery URL — WebP variants on web, Cloudinary `w_` cap, never full 4K originals. */
+export function getHeroSlideImageUri(rawUri, { layoutWidth = 960, isMobileWeb = false, quality = "auto:good" } = {}) {
+  const deliveryWidth = getHeroSlideDisplayWidth(layoutWidth, { isMobileWeb });
+
+  if (rawUri == null || rawUri === "") return "";
+
+  if (typeof rawUri === "number") {
+    const bundled = resolveBundledModuleSrc(rawUri);
+    return preferWebHeroBundlerVariant(bundled, deliveryWidth) || bundled;
+  }
+
+  let resolved = "";
+  if (typeof rawUri === "string") {
+    resolved = resolveImageUri(rawUri) || rawUri;
+  } else if (typeof rawUri === "object" && rawUri?.uri) {
+    resolved = resolveImageUri(rawUri.uri) || rawUri.uri;
+  }
+  if (!resolved) return "";
+
+  const bundled = preferWebHeroBundlerVariant(resolved, deliveryWidth);
+  if (isBundlerMediaPath(bundled) || bundled.includes("/assets/")) {
+    return bundled;
+  }
+
+  return optimizeDisplayImageUrl(bundled, { width: deliveryWidth, quality }) || bundled;
+}
+
 /** Shared expo-image placeholder while remote heroes / catalog images resolve. */
 export const PRODUCT_HERO_BLURHASH = "LEHV6nWB2yk8pyo0adR*.7kCMdnj";
 
@@ -212,6 +279,41 @@ export function optimizeDisplayImageUrl(rawUri, { width = 960, quality = "auto" 
   return applyCloudinaryDeliveryTransform(uri, { width, quality });
 }
 
+/** Tiny LQIP URL — bundled `-preview-48.webp` or Cloudinary w_48. */
+export function getPreviewImageUri(rawUri, { width = 48, quality = "auto:low" } = {}) {
+  const raw = String(rawUri || "").trim();
+  if (!raw) return "";
+
+  if (typeof raw === "number" || (typeof raw === "object" && raw?.uri)) {
+    return getPreviewImageUri(typeof raw === "number" ? resolveBundledModuleSrc(raw) : raw.uri, {
+      width,
+      quality,
+    });
+  }
+
+  const full = optimizeDisplayImageUrl(raw, { width: 1200, quality: "auto:good" });
+  if (!full) return "";
+
+  if (full.includes("res.cloudinary.com")) {
+    return optimizeDisplayImageUrl(raw, { width, quality }) || "";
+  }
+
+  const preview = full.replace(/-web-\d+\.(webp|jpe?g|jpg|png)/i, "-preview-48.webp");
+  if (preview !== full) return preview;
+
+  return optimizeDisplayImageUrl(raw, { width: Math.min(width, 64), quality }) || "";
+}
+
+/** Full-quality display URL with optional width cap. */
+export function getDisplayImageUri(rawUri, { width = 960, quality = "auto:good" } = {}) {
+  const raw = String(rawUri || "").trim();
+  if (!raw) return "";
+  if (typeof raw === "number") {
+    return resolveBundledModuleSrc(raw) || "";
+  }
+  return optimizeDisplayImageUrl(raw, { width, quality }) || resolveImageUri(raw) || raw;
+}
+
 /** Warm product PDP gallery — thumbs first (instant placeholders), then hero. */
 export function prefetchProductGalleryImages(rawUris = [], { heroCount = 2 } = {}) {
   const uris = rawUris.map((u) => String(u || "").trim()).filter(Boolean);
@@ -241,32 +343,48 @@ export function prefetchProductHeroImage(rawUri) {
 }
 
 /** Web: warm browser cache for upcoming section images. */
-export function prefetchDisplayImages(sources, { eagerCount = 2, width = 960, quality = "auto:good" } = {}) {
+export function prefetchDisplayImages(
+  sources,
+  { eagerCount = 2, width = 960, quality = "auto:good", warmupAll = true } = {}
+) {
   if (Platform.OS !== "web" || typeof document === "undefined") return;
 
   const seen = new Set();
   sources.forEach((raw, index) => {
     const uri = optimizeDisplayImageUrl(
       typeof raw === "object" && raw?.uri ? raw.uri : raw,
-      { width: index < eagerCount ? Math.max(width, 1200) : width, quality }
+      { width, quality }
     );
     if (!uri || seen.has(uri)) return;
     seen.add(uri);
 
-    if (!document.querySelector(`link[data-kankreg-preload="${uri}"]`)) {
-      const link = document.createElement("link");
-      link.rel = "preload";
-      link.as = "image";
-      link.href = uri;
-      link.setAttribute("data-kankreg-preload", uri);
-      if (index < eagerCount && "fetchPriority" in link) {
-        link.fetchPriority = "high";
+    if (index < eagerCount) {
+      if (!document.querySelector(`link[data-kankreg-preload="${uri}"]`)) {
+        const link = document.createElement("link");
+        link.rel = "preload";
+        link.as = "image";
+        link.href = uri;
+        link.setAttribute("data-kankreg-preload", uri);
+        if ("fetchPriority" in link) {
+          link.fetchPriority = "high";
+        }
+        document.head.appendChild(link);
       }
-      document.head.appendChild(link);
     }
 
-    const img = new window.Image();
-    img.decoding = "async";
-    img.src = uri;
+    if (warmupAll || index < eagerCount) {
+      const preview = getPreviewImageUri(raw);
+      if (preview && preview !== uri) {
+        const previewImg = new window.Image();
+        previewImg.decoding = "async";
+        previewImg.src = preview;
+      }
+      const img = new window.Image();
+      img.decoding = "async";
+      if (index < eagerCount && "fetchPriority" in img) {
+        img.fetchPriority = "high";
+      }
+      img.src = uri;
+    }
   });
 }

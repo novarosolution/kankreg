@@ -5,7 +5,7 @@ import OrderLiveMapCard from "../orders/OrderLiveMapCard";
 import KankregSplitLayout from "./KankregSplitLayout";
 import { useTheme } from "../../context/ThemeContext";
 import { getKankregSurfaces } from "../../theme/kankregWeb";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { icon, spacing } from "../../theme/tokens";
 
 /** kankreg.html `.deliv-grid` — assignments + route map */
@@ -55,7 +55,7 @@ function createStyles(surfaces, isDark) {
       gap: spacing.sm,
     },
     mapPlaceholderTitle: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontSize: 18,
       color: surfaces.text,
     },

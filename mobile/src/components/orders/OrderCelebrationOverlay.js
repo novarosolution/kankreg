@@ -24,7 +24,7 @@ import {
   formatOrderPlacedMessage,
   formatOrderReference,
 } from "../../content/appContent";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { useTheme } from "../../context/ThemeContext";
 import { getKankregSurfaces, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { fonts, radius, spacing, typography } from "../../theme/tokens";
@@ -100,7 +100,7 @@ function createCardOverlayStyles(isDark, surfaces) {
       marginBottom: spacing.xs,
     },
     title: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontSize: typography.h2 + 2,
       lineHeight: typography.h2 + 6,
       color: surfaces.text,
@@ -186,7 +186,7 @@ function createPlacedOverlayStyles(isDark) {
       }),
     },
     title: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontSize: 34,
       lineHeight: 40,
       letterSpacing: -0.4,

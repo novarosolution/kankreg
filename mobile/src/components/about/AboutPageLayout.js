@@ -3,7 +3,8 @@ import { Platform, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../context/ThemeContext";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { ALCHEMY } from "../../theme/customerAlchemy";
+import { FONT_HEADING, FONT_PRICE, FONT_BODY_SEMIBOLD } from "../../theme/typographyRoles";
 import { getKankregSurfaces, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { createKankregEyebrowStyle } from "../../theme/kankregScreenStyles";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
@@ -235,7 +236,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   sidebarTitle: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 22,
     fontWeight: "400",
     marginTop: spacing.xs,
@@ -251,7 +252,7 @@ const styles = StyleSheet.create({
     minWidth: 120,
   },
   statValue: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_PRICE,
     fontSize: 22,
     fontWeight: "500",
   },
@@ -368,7 +369,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   craftStepNum: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_BODY_SEMIBOLD,
     fontSize: 20,
     fontWeight: "600",
   },
@@ -410,7 +411,7 @@ const styles = StyleSheet.create({
     minWidth: 200,
   },
   ctaTitle: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 26,
     fontWeight: "500",
     marginBottom: spacing.xs,

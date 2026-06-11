@@ -50,12 +50,15 @@ export default function SectionReveal({
     return 0;
   }, [delay, index]);
 
+  const skipGsap = Platform.OS === "web" && (reducedMotion || isMobileWeb);
+
   const { ref: gsapRef } = useGsapReveal({
     preset,
     start,
     delay: computedDelay / 1000,
-    reducedMotion,
+    reducedMotion: reducedMotion || isMobileWeb,
     immediate: revealImmediate,
+    disabled: skipGsap,
   });
 
   const setRef = useCallback(
@@ -70,7 +73,7 @@ export default function SectionReveal({
   if (Platform.OS === "web") {
     const Container = as || View;
     return (
-      <Container ref={setRef} style={[style, pointerStyle]}>
+      <Container ref={skipGsap ? undefined : setRef} style={[style, pointerStyle]}>
         {children}
       </Container>
     );

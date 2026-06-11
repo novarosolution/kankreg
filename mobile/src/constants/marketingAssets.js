@@ -95,8 +95,8 @@ export const HOME_HERO_WEB_SLIDER_SLIDES = [
 export const HOME_HERO_PRODUCT_PHONE_SLIDE = {
   key: "phone-hero-product",
   image: require("../../assets/marketing/hero-slide-kankreg-phone-hero.png"),
-  title: "",
-  subtitle: "",
+  title: "The benchmark of purity",
+  subtitle: "A2 Kankrej cow ghee — Bilona method, farm to table.",
   cta: "Shop ghee",
   action: "catalog",
   variant: "product",
@@ -105,6 +105,8 @@ export const HOME_HERO_PRODUCT_PHONE_SLIDE = {
   heightRatio: 1200 / 941,
   imageFit: "cover",
   captionAlign: "center",
+  captionMode: "overlay",
+  captionZone: "bottom",
 };
 
 /** Portrait product slide height ratio (941×1200 bundled). */
@@ -115,14 +117,16 @@ export const HOME_HERO_MOBILE_SLIDER_SLIDES = [
   {
     key: "phone-hero-jar",
     image: require("../../assets/marketing/hero-slide-kankreg-phone-02.png"),
-    title: "",
-    subtitle: "",
+    title: "Pure A2 Kankrej ghee",
+    subtitle: "Hand-churned Bilona ghee — grainy, golden, and honest.",
     cta: "Shop ghee",
     action: "catalog",
     contentPosition: "center",
     heightRatio: 1200 / 941,
     imageFit: "cover",
     captionAlign: "center",
+    captionMode: "overlay",
+    captionZone: "top",
   },
   {
     key: "phone-hero-meal",
@@ -136,6 +140,8 @@ export const HOME_HERO_MOBILE_SLIDER_SLIDES = [
     heightRatio: 1200 / 798,
     imageFit: "cover",
     captionAlign: "center",
+    captionMode: "overlay",
+    captionZone: "top",
   },
   {
     key: "phone-hero-purity",
@@ -148,14 +154,10 @@ export const HOME_HERO_MOBILE_SLIDER_SLIDES = [
     heightRatio: 1200 / 583,
     imageFit: "cover",
     captionAlign: "center",
+    captionMode: "baked",
+    captionZone: "bottom",
   },
 ];
-
-/** Our Story / about section brand film (unchanged). */
-export const HOME_BRAND_PROMO_VIDEO = require("../../assets/marketing/home-hero-video.mp4");
-
-/** Timeline brand film — dedicated section after home catalog (`imgs/Timeline 1.mov` → MP4). */
-export const HOME_TIMELINE_VIDEO = require("../../assets/marketing/timeline-brand-film.mp4");
 
 /** Softer JPEG for auth hero (lighter than large PNGs). */
 export const AUTH_AMBIENT_IMAGE = require("../../assets/marketing/hero-slide-04-wa.jpeg");

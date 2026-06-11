@@ -8,7 +8,8 @@ import HomeAmbientOrbs from "./HomeAmbientOrbs";
 import BrandLogo from "../BrandLogo";
 import { BRAND_LOGO_SIZE } from "../../constants/brand";
 import { HOME_HERO_BANNER } from "../../content/appContent";
-import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { ALCHEMY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { icon } from "../../theme/tokens";
 import { PRODUCT_HERO_BLURHASH } from "../../utils/image";
 
@@ -191,7 +192,7 @@ export default function HomeMarketingHero({
         isDark ? null : { backgroundColor: ALCHEMY.cardBg, borderColor: ALCHEMY.pillInactive },
       ]}
     >
-      <Text style={[styles.heroTitle, { fontFamily: FONT_DISPLAY }]}>{homeViewConfig.heroTitle}</Text>
+      <Text style={[styles.heroTitle, { fontFamily: FONT_HEADING }]}>{homeViewConfig.heroTitle}</Text>
       <Text style={styles.heroSubtext}>{homeViewConfig.heroSubtitle}</Text>
     </View>
   );

@@ -1,29 +1,66 @@
 import React, { useMemo } from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { FIGMA } from "../../theme/figmaApp";
 import { useTheme } from "../../context/ThemeContext";
 import { SEARCH_PLACEHOLDER } from "../../content/appContent";
-import { spacing } from "../../theme/tokens";
+import { fonts, spacing } from "../../theme/tokens";
 
 export default function NativeSearchBar({
   onPress,
   onFilterPress,
   placeholder = "Search essentials",
   filterBadgeCount = 0,
+  value,
+  onChangeText,
+  inputRef,
+  autoFocus = false,
+  onClear,
 }) {
   const { colors: c, isDark } = useTheme();
   const styles = useMemo(() => createStyles(isDark, c), [isDark, c]);
+  const editable = typeof onChangeText === "function";
   if (Platform.OS === "web") return null;
 
-  return (
-    <View style={styles.row}>
-      <Pressable style={styles.search} onPress={onPress}>
-        <Ionicons name="search-outline" size={14} color={styles.iconColor} />
+  const searchBody = (
+    <>
+      <Ionicons name="search-outline" size={14} color={styles.iconColor} />
+      {editable ? (
+        <TextInput
+          ref={inputRef}
+          style={styles.input}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder || SEARCH_PLACEHOLDER}
+          placeholderTextColor={styles.iconColor}
+          returnKeyType="search"
+          autoCorrect={false}
+          autoCapitalize="none"
+          autoFocus={autoFocus}
+          clearButtonMode={Platform.OS === "ios" ? "while-editing" : "never"}
+        />
+      ) : (
         <Text style={styles.placeholder} numberOfLines={1}>
           {placeholder || SEARCH_PLACEHOLDER}
         </Text>
-      </Pressable>
+      )}
+      {editable && value?.trim() && onClear ? (
+        <Pressable onPress={onClear} hitSlop={8} accessibilityLabel="Clear search">
+          <Ionicons name="close-circle" size={14} color={styles.iconColorActive} />
+        </Pressable>
+      ) : null}
+    </>
+  );
+
+  return (
+    <View style={styles.row}>
+      {editable ? (
+        <View style={styles.search}>{searchBody}</View>
+      ) : (
+        <Pressable style={styles.search} onPress={onPress} accessibilityRole="button" accessibilityLabel="Search shop">
+          {searchBody}
+        </Pressable>
+      )}
       {onFilterPress ? (
         <Pressable style={styles.filterBtn} onPress={onFilterPress} accessibilityLabel="Filters">
           <Ionicons name="options-outline" size={16} color={styles.iconColorActive} />
@@ -69,6 +106,14 @@ function createStyles(isDark, c) {
         flex: 1,
         fontSize: 12,
         color: iconColor,
+      },
+      input: {
+        flex: 1,
+        fontSize: 12,
+        fontFamily: fonts.regular,
+        color: isDark ? c.textPrimary : FIGMA.ink,
+        paddingVertical: 0,
+        minHeight: 20,
       },
       filterBtn: {
         width: 40,

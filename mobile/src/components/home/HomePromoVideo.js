@@ -4,7 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { fonts, icon, radius, spacing } from "../../theme/tokens";
-import { HOME_TIMELINE_VIDEO } from "../../constants/marketingAssets";
+import { HOME_TIMELINE_VIDEO } from "../../constants/marketingTimelineVideo";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { useTheme } from "../../context/ThemeContext";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
@@ -72,6 +72,7 @@ export default function HomePromoVideo({
   filmDuration = "2 min film",
   loopingLabel = "Always playing",
   stageHeight,
+  minimalChrome = false,
 }) {
   const { isDark } = useTheme();
   const { width, isXs } = useKankregLayout();
@@ -83,13 +84,13 @@ export default function HomePromoVideo({
     stageHeight ??
     (Platform.OS === "web"
       ? width >= 1080
-        ? 460
+        ? 520
         : width >= 720
-          ? 400
-          : Math.max(260, Math.min(380, Math.round(width * 0.56)))
+          ? 440
+          : Math.max(300, Math.min(440, Math.round(width * 0.62)))
       : isXs
-        ? Math.max(220, Math.round(width * 0.56))
-        : 300);
+        ? Math.max(280, Math.round(width * 0.62))
+        : 320);
 
   const player = useVideoPlayer(HOME_TIMELINE_VIDEO, (instance) => {
     instance.loop = true;
@@ -209,6 +210,7 @@ export default function HomePromoVideo({
         onPress={toggleMute}
         style={({ pressed, hovered }) => [
           styles.muteChip,
+          minimalChrome && styles.muteChipMinimal,
           isMuted ? styles.muteChipOff : styles.muteChipOn,
           pressed && styles.muteChipPressed,
           hovered && Platform.OS === "web" ? styles.muteChipHover : null,
@@ -222,30 +224,38 @@ export default function HomePromoVideo({
           size={icon.sm}
           color="#FFF9EC"
         />
-        <Text style={styles.muteLabel}>{isMuted ? "Sound off" : "Sound on"}</Text>
+        {!minimalChrome ? (
+          <Text style={styles.muteLabel}>{isMuted ? "Sound off" : "Sound on"}</Text>
+        ) : null}
       </Pressable>
 
-      <View style={styles.filmChrome} pointerEvents="none">
-        <View style={styles.filmChromeLeft}>
-          <View style={styles.filmBadge}>
-            <View style={styles.filmBadgeDot} />
+      {!minimalChrome ? (
+        <View style={styles.filmChrome} pointerEvents="none">
+          <View style={styles.filmChromeLeft}>
+            <View style={styles.filmBadge}>
+              <View style={styles.filmBadgeDot} />
+            </View>
+            <View style={styles.filmMeta}>
+              <Text style={styles.filmMetaLabel} numberOfLines={1}>
+                {filmLabel}
+              </Text>
+              {filmDuration ? (
+                <Text style={styles.filmMetaSub} numberOfLines={1}>
+                  {filmDuration}
+                </Text>
+              ) : null}
+            </View>
           </View>
-          <View style={styles.filmMeta}>
-            <Text style={styles.filmMetaLabel} numberOfLines={1}>
-              {filmLabel}
-            </Text>
-            <Text style={styles.filmMetaSub} numberOfLines={1}>
-              {filmDuration}
-            </Text>
-          </View>
+          {loopingLabel ? (
+            <View style={styles.loopPill}>
+              <View style={styles.loopDot} />
+              <Text style={styles.loopText} numberOfLines={1}>
+                {loopingLabel}
+              </Text>
+            </View>
+          ) : null}
         </View>
-        <View style={styles.loopPill}>
-          <View style={styles.loopDot} />
-          <Text style={styles.loopText} numberOfLines={1}>
-            {loopingLabel}
-          </Text>
-        </View>
-      </View>
+      ) : null}
     </View>
   );
 
@@ -420,6 +430,11 @@ const styles = StyleSheet.create({
   },
   muteChipOff: {
     borderColor: "rgba(255, 252, 248, 0.32)",
+  },
+  muteChipMinimal: {
+    minHeight: 34,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
   },
   muteChipOn: {
     borderColor: "rgba(214, 173, 91, 0.65)",

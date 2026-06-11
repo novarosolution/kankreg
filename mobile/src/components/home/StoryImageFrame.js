@@ -6,7 +6,8 @@ import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { HOME_SPACE, HOME_TYPE } from "../../theme/homeEditorial";
 import { fonts, radius } from "../../theme/tokens";
 import { resolveImageSource } from "../../utils/mediaSource";
-import { HtmlDiv, HtmlImg, toImageSrc } from "./compareWebDom";
+import { HtmlDiv, toImageSrc } from "./compareWebDom";
+import ProgressiveImage from "../ui/ProgressiveImage";
 
 /** Dark letterbox around story photos — pairs with cream page + cinematic video. */
 export const STORY_FRAME_BG = "#0a0908";
@@ -40,15 +41,14 @@ export default function StoryImageFrame({
           {Platform.OS === "web" ? (
             <HtmlDiv style={StyleSheet.absoluteFillObject}>
               {webSrc ? (
-                <HtmlImg
-                  src={webSrc}
-                  style={{
-                    ...styles.imageFramed,
-                    objectFit: "cover",
-                    objectPosition: "center",
-                  }}
-                  loading="lazy"
-                  decoding="async"
+                <ProgressiveImage
+                  uri={webSrc}
+                  style={styles.imageFramed}
+                  contentFit="cover"
+                  contentPosition="center"
+                  priority="normal"
+                  width={960}
+                  rounded={0}
                 />
               ) : null}
             </HtmlDiv>

@@ -4,7 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { ABOUT_SCREEN_UI } from "../../content/appContent";
 import { useTheme } from "../../context/ThemeContext";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { getKankregSurfaces, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { createKankregEyebrowStyle } from "../../theme/kankregScreenStyles";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
@@ -233,7 +233,7 @@ function createHeroStyles(stacked) {
       paddingVertical: spacing.md,
     },
     title: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontSize: Platform.OS === "web" ? "clamp(28px, 4vw, 44px)" : 32,
       lineHeight: Platform.OS === "web" ? "clamp(32px, 4.2vw, 48px)" : 38,
       fontWeight: "400",
@@ -263,7 +263,7 @@ function createHeroStyles(stacked) {
     },
     statCell: { minWidth: 72 },
     statValue: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontSize: 22,
       fontWeight: "500",
     },
@@ -317,7 +317,7 @@ function createHeroStyles(stacked) {
       borderColor: "rgba(232,200,90,0.22)",
     },
     quoteText: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontSize: 15,
       fontStyle: "italic",
       lineHeight: 22,
@@ -362,7 +362,7 @@ const stylesPillars = StyleSheet.create({
     alignSelf: "center",
   },
   heading: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 28,
     fontWeight: "400",
     marginTop: spacing.xs,
@@ -433,7 +433,7 @@ const stylesCraft = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   stepNum: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 20,
     fontWeight: "600",
   },
@@ -479,7 +479,7 @@ const stylesCta = StyleSheet.create({
   },
   copy: { flex: 1, minWidth: 200 },
   title: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 26,
     fontWeight: "500",
     marginBottom: spacing.xs,

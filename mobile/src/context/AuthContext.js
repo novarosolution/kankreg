@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { appleAuthRequest, googleAuthRequest, loginRequest, registerRequest } from "../services/authService";
 import { fetchUserProfile } from "../services/userService";
@@ -126,6 +127,12 @@ export function AuthProvider({ children }) {
             userRef.current = parsed.user;
           }
 
+          if (Platform.OS === "web") {
+            // Paint home immediately; refresh profile in background.
+            refreshProfile({ force: true }).catch(() => {});
+            return;
+          }
+
           // Keep role/profile fresh so admin access reflects backend state.
           try {
             const freshUser = await Promise.race([
@@ -151,11 +158,12 @@ export function AuthProvider({ children }) {
       }
     }
 
+    const watchdogMs = Platform.OS === "web" ? 800 : 5000;
     const watchdog = setTimeout(() => {
       if (isMounted) {
         setIsAuthLoading(false);
       }
-    }, 5000);
+    }, watchdogMs);
 
     restoreAuth();
 

@@ -29,7 +29,8 @@ import {
 } from "../content/appContent";
 import { useTheme } from "../context/ThemeContext";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
-import { ALCHEMY, FONT_DISPLAY, getCustomerShellGradient } from "../theme/customerAlchemy";
+import { ALCHEMY, getCustomerShellGradient } from "../theme/customerAlchemy";
+import { FONT_HEADING, FONT_PRICE } from "../theme/typographyRoles";
 import { customerPanel, customerScrollFill } from "../theme/screenLayout";
 import { KANKREG_PALETTE } from "../theme/kankregWeb";
 import { fonts, icon, radius, spacing, typography } from "../theme/tokens";
@@ -382,7 +383,7 @@ function createStyles(c, shadowPremium, isDark) {
       letterSpacing: 0.6,
     },
     heroTitle: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontSize: typography.h1 - 2,
       lineHeight: typography.h1 + 2,
       textAlign: "center",
@@ -401,7 +402,7 @@ function createStyles(c, shadowPremium, isDark) {
       marginBottom: spacing.lg,
     },
     sectionTitle: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontSize: typography.h3 - 2,
       letterSpacing: -0.2,
     },
@@ -482,7 +483,7 @@ function createStyles(c, shadowPremium, isDark) {
       fontSize: typography.body,
     },
     summaryTotal: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_PRICE,
       fontSize: typography.h3,
       letterSpacing: -0.2,
     },
@@ -527,7 +528,7 @@ function createStyles(c, shadowPremium, isDark) {
       paddingBottom: spacing.xl,
     },
     missingTitle: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontSize: typography.h3,
       marginBottom: spacing.sm,
     },

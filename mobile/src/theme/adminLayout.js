@@ -1,9 +1,58 @@
 import { useMemo } from "react";
 import { Platform, StyleSheet } from "react-native";
+import { useTheme } from "../context/ThemeContext";
 import { ALCHEMY } from "./customerAlchemy";
+import { KANKREG_PALETTE } from "./kankregWeb";
 import { useKankregLayout } from "./kankregBreakpoints";
 import { shadowStyleForPlatform } from "./shadowPlatform";
 import { darkColors, getSemanticColors, layout, semanticRadius, spacing } from "./tokens";
+
+/** Shared admin light/dark chrome — use in AdminTopBar, tables, KPI cards, etc. */
+export function getAdminChrome(c, isDark) {
+  const semantic = getSemanticColors(c);
+  return {
+    ink: c.textPrimary,
+    inkSoft: c.textSecondary,
+    inkFaint: c.textMuted,
+    card: isDark ? c.surface : ALCHEMY.cardBg,
+    paper: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
+    canvas: isDark ? c.background : "#d9d0c0",
+    line: isDark ? c.border : ALCHEMY.line,
+    lineSoft: isDark ? semantic.border.subtle : "rgba(227, 216, 196, 0.65)",
+    topBarBg: isDark ? "rgba(24, 21, 19, 0.94)" : "rgba(245, 239, 228, 0.72)",
+    sidebarBg: isDark ? c.surfaceElevated : KANKREG_PALETTE.ink,
+    mainBg: isDark ? c.background : KANKREG_PALETTE.paper,
+    shellBg: isDark ? c.surface : KANKREG_PALETTE.card,
+    shellBorder: isDark ? c.border : KANKREG_PALETTE.line,
+    linkMuted: isDark ? c.textMuted : "#bcb1a3",
+    linkOnBg: isDark ? "rgba(232, 200, 90, 0.14)" : "rgba(214, 173, 91, 0.16)",
+    linkOnBorder: isDark ? "rgba(232, 200, 90, 0.38)" : "rgba(214, 173, 91, 0.35)",
+    chipOnBg: isDark ? "rgba(232, 200, 90, 0.14)" : "rgba(214, 173, 91, 0.14)",
+    chipOnBorder: isDark ? "rgba(232, 200, 90, 0.38)" : "rgba(214, 173, 91, 0.35)",
+    tabOnBg: isDark ? c.primarySoft : KANKREG_PALETTE.ink,
+    tabOnBorder: isDark ? c.primaryBorder : KANKREG_PALETTE.ink,
+    tabOnText: isDark ? c.primaryBright : KANKREG_PALETTE.paper,
+    rowHover: isDark ? c.surfaceMuted : KANKREG_PALETTE.paper,
+    gold: c.primary,
+    goldBright: c.primaryBright,
+    goldDeep: isDark ? c.primaryDark : KANKREG_PALETTE.goldDeep,
+    danger: c.danger,
+    green: c.success,
+    meBorder: isDark ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.08)",
+    meName: isDark ? c.textPrimary : KANKREG_PALETTE.paper,
+    meEmail: isDark ? c.textMuted : "#bcb1a3",
+    brand: isDark ? c.primaryBright : KANKREG_PALETTE.paper,
+    groupLabel: isDark ? c.textMuted : "#6f6557",
+    shellShadow: isDark
+      ? "0 1px 2px rgba(0,0,0,.35), 0 20px 48px -24px rgba(0,0,0,.55)"
+      : "0 1px 2px rgba(25,20,15,.04), 0 20px 48px -24px rgba(25,20,15,.22)",
+  };
+}
+
+export function useAdminChrome() {
+  const { colors: c, isDark } = useTheme();
+  return useMemo(() => getAdminChrome(c, isDark), [c, isDark]);
+}
 
 /** Phone native + narrow web — stack dense admin rows instead of squeezing text. */
 export function useAdminCompactLayout() {

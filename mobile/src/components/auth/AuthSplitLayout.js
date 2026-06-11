@@ -4,7 +4,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { KankregGrainOverlay } from "../kankreg/KankregPageChrome";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
-import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { ALCHEMY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { fonts, lineHeight, radius, spacing, typography } from "../../theme/tokens";
 
@@ -103,7 +104,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   artTitle: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: typography.h2 + 6,
     lineHeight: lineHeight.h2 + 4,
     color: KANKREG_PALETTE.paper,

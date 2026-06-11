@@ -1,19 +1,46 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
+import { useTheme } from "../../context/ThemeContext";
 import { formatOrderPublicRef } from "../../content/appContent";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { getAdminChrome } from "../../theme/adminLayout";
+import { fonts } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
+import { getOrderItemQty } from "../../utils/adminOrderHelpers";
+import { productCoverUri, productStockMeta } from "../../utils/adminProductHelpers";
 import { getOrderStatusLabel } from "../../utils/orderStatus";
 import AdminStatusPill, { orderStatusTone } from "./AdminStatusPill";
 import AdminProductCell from "./AdminProductCell";
 
-const linkStyle = StyleSheet.create({
-  link: {
-    color: KANKREG_PALETTE.goldDeep,
-    fontWeight: "600",
-    fontSize: 12.5,
-  },
-}).link;
+function AdminTableAction({ label, onPress, decorative = false }) {
+  const { colors: c, isDark } = useTheme();
+  const chrome = useMemo(() => getAdminChrome(c, isDark), [c, isDark]);
+  const styles = useMemo(() => createLinkStyles(chrome), [chrome]);
+
+  if (decorative) {
+    return <Text style={styles.link}>{label} →</Text>;
+  }
+
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={6}
+      accessibilityRole="button"
+      accessibilityLabel={`${label} order`}
+    >
+      <Text style={styles.link}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function createLinkStyles(chrome) {
+  return StyleSheet.create({
+    link: {
+      color: chrome.goldBright,
+      fontFamily: fonts.semibold,
+      fontSize: 12.5,
+    },
+  });
+}
 
 function paymentLabel(order) {
   const m = String(order.paymentMethod || order.paymentMode || "").toLowerCase();
@@ -22,7 +49,7 @@ function paymentLabel(order) {
   return order.paymentMethod || "—";
 }
 
-export function buildOrderTableColumns({ onView }) {
+export function buildOrderTableColumns({ onView, rowPressable = false }) {
   return [
     {
       key: "ref",
@@ -48,9 +75,9 @@ export function buildOrderTableColumns({ onView }) {
     },
     {
       key: "items",
-      label: "Items",
+      label: "Qty",
       width: 56,
-      render: (row) => String((row.items || []).length || 0),
+      render: (row) => String(getOrderItemQty(row)),
     },
     {
       key: "total",
@@ -76,19 +103,65 @@ export function buildOrderTableColumns({ onView }) {
     {
       key: "view",
       label: "",
-      width: 52,
+      width: 56,
       align: "right",
       render: (row) =>
         onView ? (
-          <Pressable onPress={() => onView(row)}>
-            <Text style={linkStyle}>View</Text>
-          </Pressable>
+          <AdminTableAction
+            label="View"
+            onPress={() => onView(row)}
+            decorative={rowPressable}
+          />
         ) : null,
     },
   ];
 }
 
-export function buildInventoryTableColumns({ onEdit }) {
+export function buildProductTableColumns({ onEdit, rowPressable = false }) {
+  return [
+    {
+      key: "name",
+      label: "Product",
+      flex: 1.6,
+      render: (row) => <AdminProductCell name={row.name} imageUri={productCoverUri(row)} />,
+    },
+    { key: "category", label: "Category", flex: 1, render: (row) => row.category || "—" },
+    {
+      key: "price",
+      label: "Price",
+      flex: 0.8,
+      strong: true,
+      render: (row) => formatINR(row.price || 0),
+    },
+    {
+      key: "stock",
+      label: "Stock",
+      flex: 0.7,
+      render: (row) => `${Math.max(0, Number(row.stockQty) || 0)}`,
+    },
+    {
+      key: "status",
+      label: "Status",
+      flex: 0.9,
+      render: (row) => {
+        const meta = productStockMeta(row);
+        return <AdminStatusPill label={meta.label} tone={meta.pill} />;
+      },
+    },
+    {
+      key: "edit",
+      label: "",
+      width: 56,
+      align: "right",
+      render: (row) =>
+        onEdit ? (
+          <AdminTableAction label="Edit" onPress={() => onEdit(row)} decorative={rowPressable} />
+        ) : null,
+    },
+  ];
+}
+
+export function buildInventoryTableColumns({ onEdit, rowPressable = false }) {
   return [
     {
       key: "name",
@@ -109,6 +182,12 @@ export function buildInventoryTableColumns({ onEdit }) {
       label: "Status",
       flex: 0.8,
       render: (row) => {
+        if (row.isPublished === false) {
+          return <AdminStatusPill label="Unpublished" tone="low" />;
+        }
+        if (row.comingSoon === true) {
+          return <AdminStatusPill label="Coming soon" tone="soon" />;
+        }
         const q = Math.max(0, Number(row.stockQty) || 0);
         const out = row.inStock === false || q < 1;
         const low = !out && q <= 5;
@@ -124,9 +203,7 @@ export function buildInventoryTableColumns({ onEdit }) {
       align: "right",
       render: (row) =>
         onEdit ? (
-          <Pressable onPress={() => onEdit(row)}>
-            <Text style={linkStyle}>Edit</Text>
-          </Pressable>
+          <AdminTableAction label="Edit" onPress={() => onEdit(row)} decorative={rowPressable} />
         ) : null,
     },
   ];

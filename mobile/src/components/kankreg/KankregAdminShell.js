@@ -3,12 +3,12 @@ import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-n
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { Ionicons } from "@expo/vector-icons";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { platformElevation } from "../../theme/platformStyles";
 import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
 import { fonts, spacing } from "../../theme/tokens";
-import { adminShellMainPadding } from "../../theme/adminLayout";
+import { adminShellMainPadding, getAdminChrome } from "../../theme/adminLayout";
 import AdminBackLink from "../admin/AdminBackLink";
 import AdminMobileNav from "../admin/AdminMobileNav";
 import AdminTopBar from "../admin/AdminTopBar";
@@ -68,19 +68,24 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
   const isDashboard = current === "AdminDashboard";
   const showBackLink = !isDashboard && isPhone && !showMobileNav;
 
+  const chrome = useMemo(() => getAdminChrome(c, isDark), [c, isDark]);
   const palette = useMemo(
     () => ({
-      sideBg: isDark ? "#1a1612" : KANKREG_PALETTE.ink,
-      mainBg: isDark ? c.background : KANKREG_PALETTE.paper,
-      shellBg: isDark ? c.surface : KANKREG_PALETTE.card,
-      shellBorder: isDark ? c.border : KANKREG_PALETTE.line,
-      linkMuted: isDark ? "#9a9188" : "#bcb1a3",
-      linkOnBg: isDark ? "rgba(214, 173, 91, 0.2)" : "rgba(214, 173, 91, 0.16)",
-      linkOnBorder: isDark ? "rgba(214, 173, 91, 0.45)" : "rgba(214, 173, 91, 0.35)",
-      brand: isDark ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.paper,
-      groupLabel: isDark ? "#6f6557" : "#6f6557",
+      sideBg: chrome.sidebarBg,
+      mainBg: chrome.mainBg,
+      shellBg: chrome.shellBg,
+      shellBorder: chrome.shellBorder,
+      linkMuted: chrome.linkMuted,
+      linkOnBg: chrome.linkOnBg,
+      linkOnBorder: chrome.linkOnBorder,
+      brand: chrome.brand,
+      groupLabel: chrome.groupLabel,
+      meName: chrome.meName,
+      meEmail: chrome.meEmail,
+      meBorder: chrome.meBorder,
+      shellShadow: chrome.shellShadow,
     }),
-    [c.background, c.border, c.surface, isDark]
+    [chrome]
   );
 
   const adminInitial = String(user?.name || user?.email || "A")
@@ -119,7 +124,7 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
         <Ionicons
           name={link.icon}
           size={16}
-          color={on ? KANKREG_PALETTE.goldBright : palette.linkMuted}
+          color={on ? chrome.goldBright : palette.linkMuted}
         />
         <Text style={[styles.sideLinkText, { color: palette.linkMuted }, on && styles.sideLinkTextOn]}>
           {link.label}
@@ -142,15 +147,15 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
         </View>
       ))}
       <View style={styles.sideSpacer} />
-      <View style={styles.me}>
+      <View style={[styles.me, { borderTopColor: palette.meBorder }]}>
         <View style={styles.meAv}>
           <Text style={styles.meAvText}>{adminInitial}</Text>
         </View>
         <View style={styles.meText}>
-          <Text style={styles.meName} numberOfLines={1}>
+          <Text style={[styles.meName, { color: palette.meName }]} numberOfLines={1}>
             {user?.name || "Admin"}
           </Text>
-          <Text style={styles.meEmail} numberOfLines={1}>
+          <Text style={[styles.meEmail, { color: palette.meEmail }]} numberOfLines={1}>
             {user?.email || "admin@kankreg.com"}
           </Text>
         </View>
@@ -176,6 +181,7 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
         !showSidebar && styles.shellStack,
         isPhone && styles.shellPhone,
         { backgroundColor: palette.shellBg, borderColor: palette.shellBorder },
+        Platform.OS === "web" ? { boxShadow: palette.shellShadow } : null,
       ]}
     >
       {sidebarContent}
@@ -231,9 +237,7 @@ const styles = StyleSheet.create({
     marginHorizontal: Platform.OS === "web" ? spacing.md : 0,
     marginBottom: Platform.OS === "web" ? spacing.lg : 0,
     ...Platform.select({
-      web: {
-        boxShadow: "0 1px 2px rgba(25,20,15,.04), 0 20px 48px -24px rgba(25,20,15,.22)",
-      },
+      web: {},
       default: {},
     }),
   },
@@ -280,7 +284,7 @@ const styles = StyleSheet.create({
     backgroundColor: KANKREG_PALETTE.goldBright,
   },
   brand: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 21,
     fontWeight: "600",
   },
@@ -302,7 +306,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
   },
   brandRowLabel: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 15,
     color: KANKREG_PALETTE.goldBright,
     paddingHorizontal: 10,
@@ -335,7 +339,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingTop: 18,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.08)",
   },
   meAv: {
     width: 30,
@@ -346,19 +349,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   meAvText: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 14,
     color: "#fff",
   },
   meText: { flex: 1, minWidth: 0 },
   meName: {
     fontSize: 12,
-    color: KANKREG_PALETTE.paper,
     fontFamily: fonts.semibold,
   },
   meEmail: {
     fontSize: 10,
-    color: "#bcb1a3",
     fontFamily: fonts.regular,
   },
   main: { flex: 1, minWidth: 0 },

@@ -10,6 +10,7 @@ import BottomNavBar from "./BottomNavBar";
 import CustomerScreenShell from "./CustomerScreenShell";
 import SessionExpiredBanner from "./SessionExpiredBanner";
 import PremiumButton from "./ui/PremiumButton";
+import AppStartupScreen from "./AppStartupScreen";
 
 /**
  * Empty shell while auth is restoring.
@@ -36,14 +37,14 @@ export default function AuthGateShell({ navigation, signedOut = false }) {
               Continue to access your orders, saved addresses, account settings, and premium member benefits.
             </Text>
             <PremiumButton
-              title="Sign in"
+              label="Sign in"
               onPress={() => navigation.navigate("Login")}
               variant="primary"
               size="lg"
               style={styles.primaryBtn}
             />
             <PremiumButton
-              title="Continue as guest"
+              label="Continue as guest"
               onPress={() => resetNavigationToHome(navigation)}
               variant="ghost"
               size="lg"
@@ -59,7 +60,9 @@ export default function AuthGateShell({ navigation, signedOut = false }) {
   return (
     <CustomerScreenShell style={styles.shell}>
       <SessionExpiredBanner onSignIn={goToLogin} />
-      <View style={styles.fill} />
+      <View style={styles.fill}>
+        <AppStartupScreen useAppFonts={false} footnote="Checking your session…" />
+      </View>
       <BottomNavBar />
     </CustomerScreenShell>
   );

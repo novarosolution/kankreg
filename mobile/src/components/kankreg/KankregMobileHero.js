@@ -3,7 +3,7 @@ import { Platform, StyleSheet, Text, View } from "react-native";
 import PremiumButton from "../ui/PremiumButton";
 import { createKankregEyebrowStyle } from "../../theme/kankregScreenStyles";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { fonts, spacing, typography } from "../../theme/tokens";
 import { useTheme } from "../../context/ThemeContext";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   h1: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: typography.h2 + 4,
     lineHeight: typography.h2 + 10,
     marginTop: spacing.sm,

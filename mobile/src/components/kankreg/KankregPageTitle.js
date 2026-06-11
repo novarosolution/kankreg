@@ -3,10 +3,10 @@ import { Platform, StyleSheet, Text, View } from "react-native";
 import { FIGMA, figmaDisplayTitle, figmaEyebrow } from "../../theme/figmaApp";
 import { useTheme } from "../../context/ThemeContext";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
-import { spacing } from "../../theme/tokens";
+import { fonts, spacing } from "../../theme/tokens";
 
 /** figmaforkankreg.html — eyebrow + serif page title (app + web) */
-export default function KankregPageTitle({ eyebrow, title, right, style, compact = false }) {
+export default function KankregPageTitle({ eyebrow, title, subtitle, right, style, compact = false }) {
   const { isDark } = useTheme();
   const { pageGutterClamp } = useKankregLayout();
   const gutter = Platform.OS === "web" ? pageGutterClamp : FIGMA.gutter;
@@ -23,6 +23,11 @@ export default function KankregPageTitle({ eyebrow, title, right, style, compact
       <View style={styles.textCol}>
         {eyebrow ? <Text style={figmaEyebrow(isDark)}>{eyebrow}</Text> : null}
         <Text style={[figmaDisplayTitle(compact ? 20 : 22, isDark), eyebrow && styles.titleTight]}>{title}</Text>
+        {subtitle ? (
+          <Text style={[styles.subtitle, { color: isDark ? "rgba(245,239,228,0.62)" : FIGMA.inkSoft }]} numberOfLines={3}>
+            {subtitle}
+          </Text>
+        ) : null}
       </View>
       {right ? <View style={styles.right}>{right}</View> : null}
     </View>
@@ -47,6 +52,13 @@ const styles = StyleSheet.create({
   },
   titleTight: {
     marginTop: 4,
+  },
+  subtitle: {
+    marginTop: 6,
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    maxWidth: 520,
   },
   right: {
     flexShrink: 0,

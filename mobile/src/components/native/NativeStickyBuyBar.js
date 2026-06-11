@@ -3,7 +3,8 @@ import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_PRICE } from "../../theme/typographyRoles";
+import { ALCHEMY } from "../../theme/customerAlchemy";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { useTheme } from "../../context/ThemeContext";
 import { customerFloatingNavOffset } from "../../theme/screenLayout";
@@ -29,7 +30,9 @@ export default function NativeStickyBuyBar({
   if (Platform.OS === "web" || !visible) return null;
 
   const sheetBg = isDark ? "rgba(28,25,23,0.98)" : "rgba(255,253,248,0.98)";
-  const lineTotal = price * Math.max(quantity, 1);
+  const inCart = quantity > 0;
+  const lineTotal = inCart ? price * quantity : price;
+  const priceLabel = inCart ? PRODUCT_SCREEN.stickyPriceLabel || "Total" : "Price";
   const bottomOffset = dockedAboveTabBar ? customerFloatingNavOffset(insets) : 0;
 
   return (
@@ -57,7 +60,7 @@ export default function NativeStickyBuyBar({
 
         <View style={styles.row}>
           <View style={styles.meta}>
-            <Text style={styles.metaLabel}>{PRODUCT_SCREEN.stickyPriceLabel || "Total"}</Text>
+            <Text style={styles.metaLabel}>{priceLabel}</Text>
             <Text style={[styles.price, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
               {formatINR(lineTotal)}
             </Text>
@@ -72,7 +75,7 @@ export default function NativeStickyBuyBar({
             ) : null}
           </View>
 
-          {quantity > 0 && !disabled && onRemoveFromCart ? (
+          {inCart && !disabled && onRemoveFromCart ? (
             <View style={styles.stepper}>
               <Pressable
                 onPress={onRemoveFromCart}
@@ -102,21 +105,23 @@ export default function NativeStickyBuyBar({
                 <Text style={styles.buyNowText}>Buy now</Text>
               </Pressable>
             ) : null}
-            <Pressable
-              onPress={onAddToCart}
-              disabled={disabled}
-              style={({ pressed }) => [styles.ctaWrap, (pressed || disabled) && { opacity: 0.88 }]}
-              accessibilityRole="button"
-            >
-              <LinearGradient
-                colors={disabled ? ["#9a9a9a", "#7a7a7a"] : ["#cba24e", "#9c6b27"]}
-                start={{ x: 0, y: 0.5 }}
-                end={{ x: 1, y: 0.5 }}
-                style={styles.cta}
+            {!inCart ? (
+              <Pressable
+                onPress={onAddToCart}
+                disabled={disabled}
+                style={({ pressed }) => [styles.ctaWrap, (pressed || disabled) && { opacity: 0.88 }]}
+                accessibilityRole="button"
               >
-                <Text style={styles.ctaText}>{ctaLabel}</Text>
-              </LinearGradient>
-            </Pressable>
+                <LinearGradient
+                  colors={disabled ? ["#9a9a9a", "#7a7a7a"] : ["#cba24e", "#9c6b27"]}
+                  start={{ x: 0, y: 0.5 }}
+                  end={{ x: 1, y: 0.5 }}
+                  style={styles.cta}
+                >
+                  <Text style={styles.ctaText}>{ctaLabel}</Text>
+                </LinearGradient>
+              </Pressable>
+            ) : null}
           </View>
         </View>
       </View>
@@ -171,7 +176,7 @@ const styles = StyleSheet.create({
     color: KANKREG_PALETTE.inkFaint,
   },
   price: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_PRICE,
     fontSize: 19,
     fontWeight: "600",
     letterSpacing: -0.3,

@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { fonts } from "../../theme/tokens";
 
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
   },
   heroTitle: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 13,
     color: "#fff",
     marginTop: 4,

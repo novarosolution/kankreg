@@ -1,6 +1,6 @@
 import { Platform, StyleSheet } from "react-native";
 import { KANKREG_PALETTE, KANKREG_RADIUS } from "./kankregWeb";
-import { FONT_DISPLAY } from "./customerAlchemy";
+import { FONT_HEADING } from "./customerAlchemy";
 import { HOME_SPACE } from "./homeEditorial";
 import { fonts, typography } from "./tokens";
 
@@ -39,7 +39,7 @@ export function createKankregCardShell(isDark) {
 
 export function createKankregDisplayTitle(size = typography.h2, isDark = false) {
   return {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: size,
     letterSpacing: -0.5,
     lineHeight: size * 1.05,

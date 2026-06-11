@@ -11,11 +11,14 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { ALCHEMY } from "../../theme/customerAlchemy";
+import { FONT_HEADING, FONT_PRICE } from "../../theme/typographyRoles";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { useTheme } from "../../context/ThemeContext";
 import { formatINR } from "../../utils/currency";
 import { getProductThumbImageUri } from "../../utils/image";
+import { getComingSoonImageBlurStyle } from "../../utils/comingSoonImageStyle";
+import ComingSoonProductOverlay from "../product/ComingSoonProductOverlay";
 import ProgressiveProductImage from "../ui/ProgressiveProductImage";
 import {
   customerProductScrollPaddingBottom,
@@ -93,6 +96,8 @@ export default function NativeProductView({
   liveRatingAvg,
   reviewCountDisplay,
   isOutOfStock,
+  isComingSoon = false,
+  comingSoonNote = "",
   onAddToCart,
   onRemoveFromCart,
   onBuyNow,
@@ -178,7 +183,7 @@ export default function NativeProductView({
           <ProgressiveProductImage
             uri={heroImageUri}
             previewUri={getProductThumbImageUri(selectedImage || product?.image)}
-            style={styles.heroImage}
+            style={[styles.heroImage, isComingSoon && getComingSoonImageBlurStyle()]}
             contentFit="contain"
             priority="high"
             rounded={0}
@@ -188,6 +193,9 @@ export default function NativeProductView({
             <Ionicons name="cube-outline" size={72} color={KANKREG_PALETTE.goldDeep} />
           </View>
         )}
+        {isComingSoon ? (
+          <ComingSoonProductOverlay note={comingSoonNote} isDark={isDark} variant="hero" />
+        ) : null}
         <View style={styles.heroShadow} />
         <LinearGradient
           colors={["transparent", isDark ? "rgba(28,25,23,0.5)" : "rgba(255,253,248,0.85)"]}
@@ -280,6 +288,14 @@ export default function NativeProductView({
                 <Ionicons name="pricetag" size={11} color={KANKREG_PALETTE.green} />
                 <Text style={styles.saveChipText}>
                   {fillProductScreen(PRODUCT_SCREEN.savePctChip, { pct: String(offPct) })}
+                </Text>
+              </View>
+            ) : null}
+            {quantity > 0 ? (
+              <View style={styles.inBagPill}>
+                <Ionicons name="bag-check-outline" size={12} color={KANKREG_PALETTE.green} />
+                <Text style={styles.inBagPillText}>
+                  {fillProductScreen(PRODUCT_SCREEN.inCartCount, { count: String(quantity) })}
                 </Text>
               </View>
             ) : null}
@@ -573,9 +589,15 @@ export default function NativeProductView({
         onAddToCart={onAddToCart}
         onRemoveFromCart={onRemoveFromCart}
         onBuyNow={onBuyNow}
-        disabled={isOutOfStock}
+        disabled={isOutOfStock || isComingSoon}
         dockedAboveTabBar={false}
-        ctaLabel={isOutOfStock ? PRODUCT_SCREEN.outOfStock : PRODUCT_SCREEN.addToCart}
+        ctaLabel={
+          isComingSoon
+            ? PRODUCT_SCREEN.comingSoonTitle
+            : isOutOfStock
+              ? PRODUCT_SCREEN.outOfStock
+              : PRODUCT_SCREEN.addToCart
+        }
       />
     </View>
   );
@@ -889,7 +911,7 @@ const styles = StyleSheet.create({
     color: KANKREG_PALETTE.inkSoft,
   },
   title: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 24,
     fontWeight: "500",
     lineHeight: 30,
@@ -930,7 +952,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   price: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_PRICE,
     fontSize: 28,
     fontWeight: "600",
     letterSpacing: -0.5,
@@ -960,6 +982,24 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: KANKREG_PALETTE.green,
   },
+  inBagPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: "rgba(60,98,72,0.1)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(60,98,72,0.18)",
+    marginTop: 8,
+    alignSelf: "flex-start",
+  },
+  inBagPillText: {
+    fontFamily: fonts.semibold,
+    fontSize: 11,
+    color: KANKREG_PALETTE.green,
+  },
   block: {
     marginTop: spacing.md,
   },
@@ -972,7 +1012,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   blockTitle: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 16,
     fontWeight: "500",
     marginBottom: 10,
@@ -1048,7 +1088,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   sectionTitle: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 20,
     fontWeight: "500",
     letterSpacing: -0.2,
@@ -1077,7 +1117,7 @@ const styles = StyleSheet.create({
     borderLeftColor: ALCHEMY.goldBright,
   },
   pullQuoteText: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 18,
     lineHeight: 26,
     fontStyle: "italic",

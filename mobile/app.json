@@ -13,7 +13,8 @@
     "userInterfaceStyle": "automatic",
     "icon": "./assets/app-icon-light.png",
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
     "ios": {
       "infoPlist": {

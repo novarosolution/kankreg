@@ -203,8 +203,11 @@ export default function NotificationsScreen({ navigation }) {
     }
   };
 
-  if (isAuthLoading || !isAuthenticated) {
-    return <AuthGateShell />;
+  if (isAuthLoading) {
+    return <AuthGateShell navigation={navigation} />;
+  }
+  if (!isAuthenticated) {
+    return <AuthGateShell signedOut navigation={navigation} />;
   }
 
   const headerRefresh =

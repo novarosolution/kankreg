@@ -10,6 +10,7 @@ import React, {
 import { useAuth } from "./AuthContext";
 import { useLiveSocket } from "./LiveSocketContext";
 import OrderCelebrationOverlay from "../components/orders/OrderCelebrationOverlay";
+import { safeNavigate, safeReset } from "../navigation/navigationRef";
 
 const OrderCelebrationContext = createContext(undefined);
 
@@ -41,24 +42,20 @@ export function OrderCelebrationProvider({ children, navigationRef }) {
       localConfirmRef.current.add(id);
       statusByOrderRef.current.set(id, order.status || "confirmed");
       setTimeout(() => localConfirmRef.current.delete(id), 90_000);
-      if (navigationRef?.isReady?.()) {
-        navigationRef.reset({
-          index: 0,
-          routes: [{ name: "Home" }],
-        });
-      }
+      safeReset({
+        index: 0,
+        routes: [{ name: "Home" }],
+      });
       showCelebration("confirmed", order);
     },
-    [navigationRef, showCelebration]
+    [showCelebration]
   );
 
   const navigateSafe = useCallback(
     (routeName, params) => {
-      if (navigationRef?.isReady?.()) {
-        navigationRef.navigate(routeName, params);
-      }
+      safeNavigate(routeName, params);
     },
-    [navigationRef]
+    []
   );
 
   const handleTrackOrder = useCallback(() => {

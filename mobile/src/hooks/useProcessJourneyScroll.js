@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Platform } from "react-native";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { getGsap, getScrollTrigger } from "../utils/loadGsap";
 import { scheduleScrollTriggerRefresh } from "../utils/scrollTriggerRefresh";
 
 const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
@@ -33,10 +32,6 @@ function findScrollParent(element) {
     parent = parent.parentElement;
   }
   return null;
-}
-
-if (Platform.OS === "web") {
-  gsap.registerPlugin(ScrollTrigger);
 }
 
 /**
@@ -85,8 +80,16 @@ export default function useProcessJourneyScroll({ stepCount, disabled = false })
 
     const ensureVisible = () => setActive(0);
 
-    const setup = () => {
+    let startId;
+    let retryId;
+    let resizeTimer = null;
+
+    const setup = async () => {
       if (cancelled) return;
+      await getGsap();
+      const ScrollTrigger = await getScrollTrigger();
+      if (cancelled || !ScrollTrigger) return;
+
       const body = asDomNode(bodyRef);
       const panels = panelRefs.current.map(asDomNode).filter(Boolean);
       if (!body || panels.length < stepCount) return;
@@ -116,10 +119,9 @@ export default function useProcessJourneyScroll({ stepCount, disabled = false })
       scheduleScrollTriggerRefresh();
     };
 
-    const startId = requestAnimationFrame(() => requestAnimationFrame(setup));
-    const retryId = setTimeout(setup, 400);
+    startId = requestAnimationFrame(() => requestAnimationFrame(setup));
+    retryId = setTimeout(setup, 400);
 
-    let resizeTimer = null;
     const onResize = () => {
       if (resizeTimer) clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {

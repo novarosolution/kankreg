@@ -8,6 +8,7 @@ export const ADMIN_ROUTES = new Set([
   "AdminInventory",
   "AdminAddProduct",
   "AdminOrders",
+  "AdminOrderDetail",
   "AdminUsers",
   "AdminNotifications",
   "AdminAnalytics",

@@ -17,15 +17,30 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-import { fonts, getSemanticColors, icon, radius, spacing, typography } from "../theme/tokens";
-import { ALCHEMY, FONT_DISPLAY } from "../theme/customerAlchemy";
+import { SHOP_SCREEN_UI } from "../content/appContent";
+import { ALCHEMY } from "../theme/customerAlchemy";
+import { FONT_HEADING } from "../theme/typographyRoles";
 import { KANKREG_PALETTE } from "../theme/kankregWeb";
 import { useTheme } from "../context/ThemeContext";
+import { fonts, getSemanticColors, icon, radius, spacing, typography } from "../theme/tokens";
 import { formatINRWhole } from "../utils/currency";
 import { getImageUriCandidates, prefetchProductHeroImage } from "../utils/image";
+import { getComingSoonImageBlurStyle } from "../utils/comingSoonImageStyle";
+import ComingSoonProductOverlay from "./product/ComingSoonProductOverlay";
+import { COMING_SOON_RED } from "../theme/comingSoonTheme";
 import useReducedMotion from "../hooks/useReducedMotion";
 import useGsapReveal from "../hooks/useGsapReveal";
 import { platformShadow } from "../theme/shadowPlatform";
+
+const CARD_UI = SHOP_SCREEN_UI.card;
+
+function priceTypography(formattedPrice, compact) {
+  const len = String(formattedPrice || "").length;
+  if (len > 10) return { fontSize: compact ? 14 : 16, lineHeight: compact ? 17 : 19 };
+  if (len > 8) return { fontSize: compact ? 16 : 18, lineHeight: compact ? 19 : 21 };
+  if (len > 6) return { fontSize: compact ? 17 : 20, lineHeight: compact ? 20 : 23 };
+  return {};
+}
 
 /**
  * Premium product tile used on Home grid sections.
@@ -42,6 +57,8 @@ function PremiumProductCardBase({
   onRemoveFromCart,
   quantity = 0,
   isOutOfStock = false,
+  isComingSoon = false,
+  comingSoonNote = "",
   index,
   loading = false,
   imagePriority = "normal",
@@ -85,6 +102,8 @@ function PremiumProductCardBase({
     if (!listMrp) return null;
     return Math.round((1 - safePrice / listMrp) * 100);
   }, [safePrice, listMrp]);
+  const priceLabel = formatINRWhole(safePrice);
+  const priceTypo = useMemo(() => priceTypography(priceLabel, compact), [priceLabel, compact]);
   const ratingAvg = Number(product?.ratingAverage || 0);
 
   const cardScale = useSharedValue(1);
@@ -133,9 +152,13 @@ function PremiumProductCardBase({
       : undefined;
 
   const accessibilityLabel = `Open ${product?.name || "product"}`;
-  const addAccessibilityLabel = isOutOfStock
+  const launchNote = String(comingSoonNote || CARD_UI.comingSoonNoteFallback).trim();
+  const addAccessibilityLabel = isComingSoon
+    ? `${product?.name || "Product"} coming soon`
+    : isOutOfStock
     ? `${product?.name || "Product"} sold out`
     : `Add ${product?.name || "product"} to cart`;
+  const unavailable = isComingSoon || isOutOfStock;
 
   return (
     <Root
@@ -216,7 +239,7 @@ function PremiumProductCardBase({
                 {imageUri && !imageFailed ? (
                   <Image
                     source={{ uri: imageUri }}
-                    style={styles.image}
+                    style={[styles.image, isComingSoon && getComingSoonImageBlurStyle()]}
                     contentFit="contain"
                     transition={260}
                     recyclingKey={`${product?.id || "p"}:${imageUri}`}
@@ -235,14 +258,16 @@ function PremiumProductCardBase({
                       <Ionicons name="image-outline" size={icon.md} color={c.textMuted} />
                     </View>
                     <Text style={[styles.imageFallbackText, { color: c.textMuted }]}>
-                      {imageUris.length > 0 ? "Image unavailable" : "No image"}
+                      {imageUris.length > 0 ? CARD_UI.imageUnavailable : CARD_UI.noImage}
                     </Text>
                   </View>
                 )}
               </Animated.View>
-              {isOutOfStock ? (
+              {isComingSoon ? (
+                <ComingSoonProductOverlay note={launchNote} compact={compact} isDark={isDark} />
+              ) : isOutOfStock ? (
                 <View style={styles.outOfStockOverlay}>
-                  <Text style={styles.outOfStockText}>Sold out</Text>
+                  <Text style={styles.outOfStockText}>{CARD_UI.soldOut}</Text>
                 </View>
               ) : null}
             </View>
@@ -278,7 +303,7 @@ function PremiumProductCardBase({
                   color={isDark ? ALCHEMY.goldBright : ALCHEMY.brown}
                 />
                 <Text style={[styles.metaText, { color: c.textSecondary }]} numberOfLines={1}>
-                  {product?.unit || "1 pc"}
+                  {product?.unit || CARD_UI.unitFallback}
                 </Text>
               </View>
               {ratingAvg > 0 ? (
@@ -310,23 +335,23 @@ function PremiumProductCardBase({
               ) : null}
             </View>
 
-            <View style={styles.priceRow}>
-              <View style={styles.priceCol}>
+            <View style={styles.footer}>
+              <View style={styles.footerCopy}>
                 <Text
                   style={[
                     styles.price,
+                    priceTypo,
                     { color: isDark ? "#F2D679" : c.textPrimary },
                   ]}
                   numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.78}
                 >
-                  {formatINRWhole(safePrice)}
+                  {priceLabel}
                 </Text>
                 {listMrp ? (
                   <View style={styles.priceSubRow}>
-                    <Text
-                      style={[styles.mrp, { color: c.textMuted }]}
-                      numberOfLines={1}
-                    >
+                    <Text style={[styles.mrp, { color: c.textMuted }]} numberOfLines={1}>
                       {formatINRWhole(listMrp)}
                     </Text>
                     <View
@@ -411,35 +436,49 @@ function PremiumProductCardBase({
           ) : (
             <Pressable
               onPress={onAddToCart}
-              disabled={isOutOfStock || loading}
+              disabled={unavailable || loading}
               accessibilityRole="button"
               accessibilityLabel={addAccessibilityLabel}
-              accessibilityState={{ disabled: isOutOfStock || loading, busy: loading }}
+              accessibilityState={{ disabled: unavailable || loading, busy: loading }}
               style={({ pressed, hovered }) => [
                 styles.addBtnShell,
                 hovered && Platform.OS === "web" ? styles.addBtnShellHover : null,
                 pressed ? styles.addBtnShellPressed : null,
-                isOutOfStock || loading ? styles.addBtnShellDisabled : null,
+                unavailable || loading ? styles.addBtnShellDisabled : null,
               ]}
             >
-              <View
-                style={[
-                  styles.addCircle,
-                  {
-                    backgroundColor: isOutOfStock || loading ? "#9CA3AF" : KANKREG_PALETTE.ink,
-                  },
-                ]}
-              >
-                {loading ? (
-                  <ActivityIndicator size="small" color={KANKREG_PALETTE.paper} />
-                ) : (
-                  <Ionicons
-                    name={isOutOfStock ? "close" : "add"}
-                    size={icon.md}
-                    color={KANKREG_PALETTE.paper}
-                  />
-                )}
-              </View>
+              {isComingSoon ? (
+                <View style={styles.comingSoonCta}>
+                  <LinearGradient
+                    colors={[COMING_SOON_RED.mid, COMING_SOON_RED.deep]}
+                    style={styles.comingSoonCtaGrad}
+                  >
+                    <Ionicons name="time-outline" size={14} color={COMING_SOON_RED.ink} />
+                    <Text style={[styles.comingSoonCtaText, { color: COMING_SOON_RED.ink }]}>
+                      {CARD_UI.comingSoon}
+                    </Text>
+                  </LinearGradient>
+                </View>
+              ) : (
+                <View
+                  style={[
+                    styles.addCircle,
+                    {
+                      backgroundColor: unavailable || loading ? "#9CA3AF" : KANKREG_PALETTE.ink,
+                    },
+                  ]}
+                >
+                  {loading ? (
+                    <ActivityIndicator size="small" color={KANKREG_PALETTE.paper} />
+                  ) : (
+                    <Ionicons
+                      name={isOutOfStock ? "close" : "add"}
+                      size={icon.md}
+                      color={KANKREG_PALETTE.paper}
+                    />
+                  )}
+                </View>
+              )}
             </Pressable>
           )}
               </View>
@@ -498,6 +537,7 @@ function createStyles(c, isDark, compact = false) {
     },
     card: {
       width: "100%",
+      flex: 1,
       borderRadius: compact ? 16 : 20,
       backgroundColor: isDark ? c.surfaceElevated || c.surface : KANKREG_PALETTE.card,
       borderWidth: StyleSheet.hairlineWidth,
@@ -618,14 +658,36 @@ function createStyles(c, isDark, compact = false) {
     },
     outOfStockText: {
       color: isDark ? "#FFFCF8" : ALCHEMY.brownInk,
-      fontFamily: FONT_DISPLAY,
-      fontSize: typography.h3,
-      letterSpacing: -0.3,
+      fontFamily: fonts.semibold,
+      fontSize: typography.bodySmall,
+      letterSpacing: 0.3,
+      textTransform: "uppercase",
+    },
+    comingSoonCta: {
+      minWidth: 92,
+      borderRadius: radius.pill,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: COMING_SOON_RED.borderStrong,
+    },
+    comingSoonCtaGrad: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      minHeight: 40,
+    },
+    comingSoonCtaText: {
+      fontFamily: fonts.bold,
+      fontSize: 12,
+      letterSpacing: 0.2,
     },
     body: {
       paddingHorizontal: 2,
       gap: compact ? 5 : 8,
-      marginBottom: compact ? spacing.sm : spacing.md,
+      marginBottom: 0,
     },
     categoryLine: {
       fontFamily: fonts.semibold,
@@ -634,12 +696,11 @@ function createStyles(c, isDark, compact = false) {
       marginBottom: 2,
     },
     title: {
-      fontFamily: FONT_DISPLAY,
-      fontSize: compact ? 15 : 18,
-      lineHeight: compact ? 18 : 21,
-      fontWeight: "500",
-      letterSpacing: -0.2,
-      minHeight: compact ? 34 : 40,
+      fontFamily: fonts.semibold,
+      fontSize: compact ? 14 : 16,
+      lineHeight: compact ? 19 : 21,
+      letterSpacing: 0,
+      minHeight: compact ? 38 : 42,
     },
     metaRow: {
       flexDirection: "row",
@@ -661,26 +722,24 @@ function createStyles(c, isDark, compact = false) {
       fontSize: 11,
       letterSpacing: 0.15,
     },
-    priceRow: {
+    footer: {
       flexDirection: "row",
-      alignItems: "flex-end",
+      alignItems: "center",
       justifyContent: "space-between",
       gap: spacing.sm,
-      marginTop: 2,
+      marginTop: compact ? 4 : 6,
+      minHeight: 44,
     },
-    priceCol: {
+    footerCopy: {
       flex: 1,
       minWidth: 0,
+      justifyContent: "center",
     },
     price: {
-      fontFamily: FONT_DISPLAY,
-      fontSize: compact ? 19 : 24,
-      lineHeight: compact ? 22 : 28,
-      letterSpacing: -0.5,
-      ...Platform.select({
-        web: { fontSize: compact ? 20 : 26, lineHeight: compact ? 24 : 30 },
-        default: {},
-      }),
+      fontFamily: fonts.bold,
+      fontSize: compact ? 18 : 22,
+      lineHeight: compact ? 21 : 26,
+      letterSpacing: -0.2,
     },
     priceSubRow: {
       marginTop: 4,
@@ -707,6 +766,7 @@ function createStyles(c, isDark, compact = false) {
     },
     ctaWrap: {
       flexShrink: 0,
+      minWidth: 44,
       alignItems: "flex-end",
       justifyContent: "center",
     },
@@ -767,6 +827,7 @@ function createStyles(c, isDark, compact = false) {
       borderWidth: 1.25,
       paddingHorizontal: 6,
       height: 44,
+      width: compact ? 92 : 96,
     },
     stepBtn: {
       width: 36,
@@ -801,6 +862,8 @@ function arePropsEqual(prev, next) {
     prev.product?.ratingAverage === next.product?.ratingAverage &&
     prev.quantity === next.quantity &&
     prev.isOutOfStock === next.isOutOfStock &&
+    prev.isComingSoon === next.isComingSoon &&
+    prev.comingSoonNote === next.comingSoonNote &&
     prev.loading === next.loading &&
     prev.index === next.index &&
     prev.imagePriority === next.imagePriority

@@ -70,7 +70,7 @@ export default function NativeHomeHeader({
         </Pressable>
         <Pressable
           style={circle}
-          onPress={() => navigation.navigate("Shop")}
+          onPress={() => navigation.navigate("Shop", { focusSearch: true })}
           accessibilityLabel="Search shop"
         >
           <Ionicons name="search-outline" size={16} color={figmaIconSoft(isDark)} />

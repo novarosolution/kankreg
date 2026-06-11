@@ -33,6 +33,7 @@ export default function KankregUnifiedPageHeader({
         index={index}
         eyebrow={eyebrow}
         title={title}
+        kicker={subtitle}
         right={right}
       />
     );

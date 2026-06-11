@@ -1,10 +1,18 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { useTheme } from "../../context/ThemeContext";
+import { adminPanel, getAdminChrome } from "../../theme/adminLayout";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { fonts } from "../../theme/tokens";
 
 export default function AdminPanel({ title, meta, action, onAction, children, style, noPadding }) {
+  const { colors: c, shadowPremium, isDark } = useTheme();
+  const chrome = useMemo(() => getAdminChrome(c, isDark), [c, isDark]);
+  const styles = useMemo(
+    () => createStyles(chrome, adminPanel(c, shadowPremium, isDark)),
+    [chrome, c, shadowPremium, isDark]
+  );
+
   return (
     <View style={[styles.panel, style]}>
       {title ? (
@@ -25,56 +33,56 @@ export default function AdminPanel({ title, meta, action, onAction, children, st
   );
 }
 
-const styles = StyleSheet.create({
-  panel: {
-    backgroundColor: KANKREG_PALETTE.card,
-    borderWidth: 1,
-    borderColor: KANKREG_PALETTE.line,
-    borderRadius: 14,
-    padding: 18,
-    ...Platform.select({
-      web: { boxShadow: "0 1px 2px rgba(25,20,15,.03)" },
-      default: {},
-    }),
-  },
-  head: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    marginBottom: 14,
-  },
-  titleRow: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "baseline",
-    flexWrap: "wrap",
-    gap: 8,
-    minWidth: 0,
-  },
-  title: {
-    fontFamily: FONT_DISPLAY,
-    fontSize: 17,
-    fontWeight: "500",
-    color: KANKREG_PALETTE.ink,
-  },
-  meta: {
-    fontSize: 11,
-    color: KANKREG_PALETTE.inkFaint,
-    fontFamily: fonts.regular,
-  },
-  actionBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: KANKREG_PALETTE.line,
-    backgroundColor: KANKREG_PALETTE.paper,
-  },
-  action: {
-    fontSize: 11,
-    color: KANKREG_PALETTE.goldDeep,
-    fontFamily: fonts.semibold,
-  },
-  body: {},
-});
+function createStyles(chrome, panelBase) {
+  return StyleSheet.create({
+    panel: {
+      ...panelBase,
+      ...Platform.select({
+        web: {
+          boxShadow: panelBase.boxShadow || "0 1px 2px rgba(25,20,15,.03)",
+        },
+        default: {},
+      }),
+    },
+    head: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+      marginBottom: 14,
+    },
+    titleRow: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "baseline",
+      flexWrap: "wrap",
+      gap: 8,
+      minWidth: 0,
+    },
+    title: {
+      fontFamily: FONT_HEADING,
+      fontSize: 17,
+      fontWeight: "500",
+      color: chrome.ink,
+    },
+    meta: {
+      fontSize: 11,
+      color: chrome.inkFaint,
+      fontFamily: fonts.regular,
+    },
+    actionBtn: {
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: chrome.line,
+      backgroundColor: chrome.paper,
+    },
+    action: {
+      fontSize: 11,
+      color: chrome.goldDeep,
+      fontFamily: fonts.semibold,
+    },
+    body: {},
+  });
+}

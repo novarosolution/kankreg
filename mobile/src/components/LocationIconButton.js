@@ -3,6 +3,7 @@ import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import { safeNavigate } from "../navigation/navigationRef";
 import { getSemanticColors, icon, semanticRadius } from "../theme/tokens";
 
 /**
@@ -16,11 +17,7 @@ export default function LocationIconButton({ navigation, navigationRef, size = i
 
   const onPress = () => {
     const dest = isAuthenticated ? "ManageAddress" : "Login";
-    if (navigationRef?.isReady?.() && typeof navigationRef.navigate === "function") {
-      navigationRef.navigate(dest);
-      return;
-    }
-    if (navigation?.navigate) {
+    if (!safeNavigate(dest) && navigation?.navigate) {
       navigation.navigate(dest);
     }
   };

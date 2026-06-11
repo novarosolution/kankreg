@@ -23,7 +23,8 @@ import GoldHairline from "../ui/GoldHairline";
 import ProgressiveProductImage from "../ui/ProgressiveProductImage";
 import { useTheme } from "../../context/ThemeContext";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
-import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { ALCHEMY } from "../../theme/customerAlchemy";
+import { FONT_BODY_SEMIBOLD, FONT_HEADING, FONT_PRICE } from "../../theme/typographyRoles";
 import {
   GOLD_HAIRLINE_EDITORIAL,
   HOME_SPACE,
@@ -40,6 +41,10 @@ import {
   getProductThumbImageUri,
 } from "../../utils/image";
 import { PRODUCT_SCREEN, fillProductScreen } from "../../content/appContent";
+import { getProductCardFlags } from "../../utils/productAvailability";
+import { getComingSoonImageBlurStyle } from "../../utils/comingSoonImageStyle";
+import ComingSoonProductOverlay from "../product/ComingSoonProductOverlay";
+import ComingSoonPurchasePanel from "../product/ComingSoonPurchasePanel";
 import { resolveProductPageContent } from "../../utils/resolveProductPageContent";
 import { fonts, icon as sz, layout, radius, spacing, typography } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
@@ -230,6 +235,8 @@ export default function WebProductView({
   liveRatingAvg,
   reviewCountDisplay,
   isOutOfStock,
+  isComingSoon = false,
+  comingSoonNote = "",
   quantity,
   onAddToCart,
   onRemoveFromCart,
@@ -279,7 +286,7 @@ export default function WebProductView({
 
   if (Platform.OS !== "web") return null;
 
-  const qtyDisplay = quantity > 0 ? quantity : 1;
+  const inCart = quantity > 0;
   const visibleReviews = (reviews || []).slice(0, isMd ? 6 : 3);
 
   const handleBack = () => {
@@ -314,7 +321,11 @@ export default function WebProductView({
                 <ProgressiveProductImage
                   uri={heroImageUri}
                   previewUri={heroPreviewUri}
-                  style={[styles.heroImageInner, { height: Math.max(180, heroImageHeight - 32) }]}
+                  style={[
+                    styles.heroImageInner,
+                    { height: Math.max(180, heroImageHeight - 32) },
+                    isComingSoon && getComingSoonImageBlurStyle(),
+                  ]}
                   contentFit="contain"
                   priority="high"
                   recyclingKey={heroImageUri}
@@ -329,7 +340,9 @@ export default function WebProductView({
               <Text style={styles.heroFallbackText}>{PRODUCT_SCREEN.heroImageUnavailable}</Text>
             </View>
           )}
-          {product.badgeText ? (
+          {isComingSoon ? (
+            <ComingSoonProductOverlay note={comingSoonNote} isDark={isDark} variant="hero" />
+          ) : product.badgeText ? (
             <View style={styles.heroBadgeBest}>
               <Text style={styles.heroBadgeBestText} numberOfLines={2}>
                 {String(product.badgeText).toUpperCase()}
@@ -384,13 +397,23 @@ export default function WebProductView({
           )}
         </View>
 
-        <View style={styles.priceRowMain}>
-          <Text style={[styles.priceNow, { color: ink }]}>{formatINR(displayPrice)}</Text>
-          {showMrp && mrp ? <Text style={styles.priceWas}>{formatINR(mrp)}</Text> : null}
-          {offPct != null && offPct > 0 ? (
-            <Text style={styles.priceSave}>
-              {fillProductScreen(PRODUCT_SCREEN.savePctChip, { pct: String(offPct) })}
-            </Text>
+        <View style={[styles.pricePanel, isDark && styles.pricePanelDark]}>
+          <View style={styles.priceRowMain}>
+            <Text style={[styles.priceNow, { color: ink }]}>{formatINR(displayPrice)}</Text>
+            {showMrp && mrp ? <Text style={styles.priceWas}>{formatINR(mrp)}</Text> : null}
+            {offPct != null && offPct > 0 ? (
+              <Text style={styles.priceSave}>
+                {fillProductScreen(PRODUCT_SCREEN.savePctChip, { pct: String(offPct) })}
+              </Text>
+            ) : null}
+          </View>
+          {inCart ? (
+            <View style={styles.inBagPill}>
+              <Ionicons name="bag-check-outline" size={14} color={KANKREG_PALETTE.green} />
+              <Text style={styles.inBagPillText}>
+                {fillProductScreen(PRODUCT_SCREEN.inCartCount, { count: String(quantity) })}
+              </Text>
+            </View>
           ) : null}
         </View>
 
@@ -420,49 +443,58 @@ export default function WebProductView({
       ) : null}
 
       <SectionReveal immediate delay={200} preset="fade-up">
-          <View style={[styles.buyRow, isXs && styles.buyRowStack]}>
-            {!isOutOfStock ? (
-              <View style={[styles.qtyBox, isDark && styles.qtyBoxDark]}>
+          <View style={[styles.purchasePanel, isDark && styles.purchasePanelDark]}>
+            {isComingSoon ? (
+              <ComingSoonPurchasePanel note={comingSoonNote} isDark={isDark} ink={ink} muted={muted} />
+            ) : (
+            <View style={[styles.buyRow, isXs && styles.buyRowStack]}>
+              {!isOutOfStock && inCart ? (
+                <View style={[styles.qtyBox, isDark && styles.qtyBoxDark]}>
+                  <Pressable
+                    style={styles.qtyBtn}
+                    onPress={onRemoveFromCart}
+                    accessibilityLabel="Decrease quantity"
+                  >
+                    <Text style={styles.qtyBtnText}>−</Text>
+                  </Pressable>
+                  <Text style={[styles.qtyCount, { color: ink }]}>{quantity}</Text>
+                  <Pressable style={styles.qtyBtn} onPress={onAddToCart} accessibilityLabel="Increase quantity">
+                    <Text style={styles.qtyBtnText}>+</Text>
+                  </Pressable>
+                </View>
+              ) : null}
+              {!isOutOfStock && !inCart ? (
                 <Pressable
-                  style={styles.qtyBtn}
-                  onPress={quantity > 0 ? onRemoveFromCart : undefined}
-                  disabled={quantity <= 0}
-                  accessibilityLabel="Decrease quantity"
+                  className={Platform.OS === "web" ? PRODUCT_BTN_CART_CLASS : undefined}
+                  style={[styles.btnCart, isXs && styles.btnFull]}
+                  onPress={onAddToCart}
                 >
-                  <Text style={styles.qtyBtnText}>−</Text>
+                  <Ionicons name="bag-outline" size={16} color={KANKREG_PALETTE.green} style={styles.btnCartIcon} />
+                  <Text style={styles.btnCartText}>{PRODUCT_SCREEN.addToCart}</Text>
                 </Pressable>
-                <Text style={[styles.qtyCount, { color: ink }]}>{qtyDisplay}</Text>
-                <Pressable style={styles.qtyBtn} onPress={onAddToCart} accessibilityLabel="Increase quantity">
-                  <Text style={styles.qtyBtnText}>+</Text>
-                </Pressable>
-              </View>
-            ) : null}
-            <Pressable
-              className={Platform.OS === "web" ? PRODUCT_BTN_CART_CLASS : undefined}
-              style={[styles.btnCart, isOutOfStock && styles.btnDisabled, isXs && styles.btnFull]}
-              onPress={isOutOfStock ? undefined : onAddToCart}
-              disabled={isOutOfStock}
-            >
-              <Text style={styles.btnCartText}>
-                {isOutOfStock ? PRODUCT_SCREEN.outOfStock : PRODUCT_SCREEN.addToCart}
-              </Text>
-            </Pressable>
-            {!isOutOfStock ? (
-              <Pressable
-                className={Platform.OS === "web" ? PRODUCT_BTN_BUY_CLASS : undefined}
-                style={[styles.btnBuy, isXs && styles.btnFull]}
-                onPress={onBuyNow}
-              >
-                <LinearGradient
-                  colors={["#C9971F", "#A0741A"]}
-                  style={styles.btnBuyGrad}
-                  start={{ x: 0.5, y: 0 }}
-                  end={{ x: 0.5, y: 1 }}
+              ) : null}
+              {!isOutOfStock ? (
+                <Pressable
+                  className={Platform.OS === "web" ? PRODUCT_BTN_BUY_CLASS : undefined}
+                  style={[styles.btnBuy, isXs && styles.btnFull, inCart && styles.btnBuyInCart]}
+                  onPress={onBuyNow}
                 >
-                  <Text style={styles.btnBuyText}>Buy Now</Text>
-                </LinearGradient>
-              </Pressable>
-            ) : null}
+                  <LinearGradient
+                    colors={["#D4A843", "#9A6B1F"]}
+                    style={styles.btnBuyGrad}
+                    start={{ x: 0, y: 0.5 }}
+                    end={{ x: 1, y: 0.5 }}
+                  >
+                    <Text style={styles.btnBuyText}>Buy now</Text>
+                  </LinearGradient>
+                </Pressable>
+              ) : (
+                <View style={[styles.btnBuy, styles.btnDisabled, isXs && styles.btnFull]}>
+                  <Text style={styles.btnOutOfStockText}>{PRODUCT_SCREEN.outOfStock}</Text>
+                </View>
+              )}
+            </View>
+            )}
           </View>
         </SectionReveal>
 
@@ -789,7 +821,9 @@ export default function WebProductView({
         <SectionReveal immediate delay={500} preset="fade-up" style={styles.sectionBlock}>
           <SectionHeader eyebrow="Catalog" title="You may also like" compact />
           <CatalogGridReveal>
-            {relatedProducts.map((item, idx) => (
+            {relatedProducts.map((item, idx) => {
+              const flags = getProductCardFlags(item, PRODUCT_SCREEN.comingSoonNoteFallback);
+              return (
               <HomeCatalogGridCard
                 key={item.id}
                 idx={idx}
@@ -799,11 +833,13 @@ export default function WebProductView({
                 navigation={navigation}
                 quantity={getItemQuantity(item.id)}
                 styles={relatedGridStyles}
-                isOutOfStock={item.inStock === false}
+                isOutOfStock={flags.isOutOfStock}
+                isComingSoon={flags.isComingSoon}
+                comingSoonNote={flags.comingSoonNote}
                 onAddToCart={() => onAddRelated(item)}
                 onRemoveFromCart={() => onRemoveRelated(item.id)}
               />
-            ))}
+            );})}
           </CatalogGridReveal>
         </SectionReveal>
       ) : null}
@@ -1033,7 +1069,7 @@ function createStyles(c, isDark) {
       marginBottom: 8,
     },
     title: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontSize: 42,
       lineHeight: 44,
       fontWeight: "600",
@@ -1068,10 +1104,50 @@ function createStyles(c, isDark) {
       alignItems: "baseline",
       flexWrap: "wrap",
       gap: 10,
-      marginBottom: 12,
+    },
+    pricePanel: {
+      marginTop: 4,
+      marginBottom: 4,
+      padding: 16,
+      borderRadius: 16,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: "rgba(201, 162, 39, 0.28)",
+      borderTopWidth: 2,
+      borderTopColor: KANKREG_PALETTE.gold,
+      backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(255, 253, 249, 0.96)",
+      gap: 10,
+      ...platformShadow({
+        web: {
+          boxShadow: isDark
+            ? "0 10px 28px rgba(0,0,0,0.22)"
+            : "0 8px 24px rgba(61, 42, 18, 0.06), inset 0 1px 0 rgba(255,255,255,0.92)",
+        },
+        default: {},
+      }),
+    },
+    pricePanelDark: {
+      borderColor: "rgba(232, 200, 90, 0.22)",
+      borderTopColor: "rgba(232, 200, 90, 0.55)",
+    },
+    inBagPill: {
+      alignSelf: "flex-start",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: radius.pill,
+      backgroundColor: "rgba(60, 98, 72, 0.1)",
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: "rgba(60, 98, 72, 0.18)",
+    },
+    inBagPillText: {
+      fontFamily: fonts.semibold,
+      fontSize: 12,
+      color: KANKREG_PALETTE.green,
     },
     priceNow: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_PRICE,
       fontSize: 32,
       fontWeight: "600",
       letterSpacing: -0.4,
@@ -1138,7 +1214,7 @@ function createStyles(c, isDark) {
       backgroundColor: "rgba(31,77,54,0.05)",
     },
     sizeLabel: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_BODY_SEMIBOLD,
       fontSize: 17,
       fontWeight: "600",
       color: KANKREG_PALETTE.ink,
@@ -1160,9 +1236,73 @@ function createStyles(c, isDark) {
     buyRow: {
       flexDirection: "row",
       gap: 13,
-      marginTop: 24,
       alignItems: "stretch",
       flexWrap: "wrap",
+    },
+    purchasePanel: {
+      marginTop: 20,
+      padding: 14,
+      borderRadius: 18,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: KANKREG_PALETTE.line,
+      backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "#FFFEFA",
+      ...platformShadow({
+        web: {
+          boxShadow: isDark
+            ? "0 12px 32px rgba(0,0,0,0.2)"
+            : "0 10px 28px rgba(61, 42, 18, 0.07)",
+        },
+        default: {},
+      }),
+    },
+    purchasePanelDark: {
+      borderColor: c.border,
+    },
+    comingSoonPanel: {
+      borderRadius: 16,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: "rgba(199, 154, 58, 0.34)",
+    },
+    comingSoonPanelDark: {
+      borderColor: "rgba(231, 200, 90, 0.28)",
+    },
+    comingSoonPanelGrad: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 14,
+      padding: 16,
+    },
+    comingSoonPanelIcon: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: "rgba(199, 154, 58, 0.35)",
+      backgroundColor: "rgba(255, 252, 246, 0.72)",
+    },
+    comingSoonPanelCopy: {
+      flex: 1,
+      minWidth: 0,
+      gap: 4,
+    },
+    comingSoonPanelTitle: {
+      fontFamily: FONT_HEADING,
+      fontSize: 20,
+      letterSpacing: -0.3,
+    },
+    comingSoonPanelBody: {
+      fontFamily: fonts.semibold,
+      fontSize: 13,
+      lineHeight: 18,
+    },
+    comingSoonPanelHint: {
+      fontFamily: fonts.regular,
+      fontSize: 12,
+      lineHeight: 17,
+      marginTop: 2,
     },
     buyRowStack: {
       flexDirection: "column",
@@ -1194,25 +1334,32 @@ function createStyles(c, isDark) {
     qtyCount: {
       width: 40,
       textAlign: "center",
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_BODY_SEMIBOLD,
       fontWeight: "700",
       fontSize: 16,
     },
     btnCart: {
       flex: 1,
-      minWidth: 140,
+      minWidth: 148,
       minHeight: 54,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
       borderWidth: 1.5,
       borderColor: KANKREG_PALETTE.green,
       borderRadius: 14,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: isDark ? c.surface : "#FFFEFA",
+      backgroundColor: isDark ? "rgba(31,77,54,0.08)" : "rgba(31,77,54,0.04)",
+      paddingHorizontal: 16,
+    },
+    btnCartIcon: {
+      marginTop: 1,
     },
     btnCartText: {
       fontFamily: fonts.bold,
-      fontSize: 15.5,
+      fontSize: 14.5,
       color: KANKREG_PALETTE.green,
+      letterSpacing: 0.15,
     },
     btnBuy: {
       flex: 1.2,
@@ -1221,8 +1368,11 @@ function createStyles(c, isDark) {
       borderRadius: 14,
       overflow: "hidden",
       ...platformShadow({
-        web: { boxShadow: "0 8px 20px -8px rgba(160, 116, 26, 0.35)" },
+        web: { boxShadow: "0 10px 24px rgba(160, 116, 26, 0.32)" },
       }),
+    },
+    btnBuyInCart: {
+      flex: 1.4,
     },
     btnBuyGrad: {
       flex: 1,
@@ -1234,6 +1384,14 @@ function createStyles(c, isDark) {
       fontFamily: fonts.bold,
       fontSize: 15.5,
       color: "#FFF9EC",
+      letterSpacing: 0.2,
+    },
+    btnOutOfStockText: {
+      fontFamily: fonts.semibold,
+      fontSize: 14,
+      color: KANKREG_PALETTE.inkFaint,
+      textAlign: "center",
+      paddingVertical: 16,
     },
     btnFull: {
       width: "100%",
@@ -1322,7 +1480,7 @@ function createStyles(c, isDark) {
       marginBottom: 10,
     },
     secTitle: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontSize: 30,
       fontWeight: "600",
       letterSpacing: -0.4,
@@ -1383,7 +1541,7 @@ function createStyles(c, isDark) {
       marginBottom: 11,
     },
     featTitle: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontSize: 15,
       fontWeight: "600",
       textAlign: "center",
@@ -1430,7 +1588,7 @@ function createStyles(c, isDark) {
       paddingHorizontal: 18,
     },
     ntableHeadTitle: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontWeight: "600",
       fontSize: 17,
       color: "#F4E9C9",
@@ -1457,7 +1615,7 @@ function createStyles(c, isDark) {
       fontFamily: fonts.regular,
     },
     ntableValue: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_BODY_SEMIBOLD,
       fontWeight: "600",
       fontSize: 14,
     },
@@ -1474,7 +1632,7 @@ function createStyles(c, isDark) {
       borderColor: c.border,
     },
     qrcardTitle: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontWeight: "600",
       fontSize: 19,
     },
@@ -1518,13 +1676,13 @@ function createStyles(c, isDark) {
       borderLeftColor: ALCHEMY.goldBright,
     },
     pullQuoteGlyph: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontSize: 36,
       lineHeight: 32,
       marginBottom: -4,
     },
     pullQuoteText: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontSize: 20,
       lineHeight: 30,
       fontStyle: "italic",
@@ -1631,7 +1789,7 @@ function createStyles(c, isDark) {
       backgroundColor: "rgba(31,77,54,0.08)",
     },
     usageTitle: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontSize: 16,
       fontWeight: "600",
     },
@@ -1660,7 +1818,7 @@ function createStyles(c, isDark) {
       marginBottom: 8,
     },
     revBig: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_PRICE,
       fontWeight: "700",
       fontSize: 52,
       lineHeight: 52,

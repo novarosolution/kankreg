@@ -3,14 +3,14 @@ import { Platform, StyleSheet, Text, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { createKankregEyebrowStyle, kankregSectionIndex } from "../../theme/kankregScreenStyles";
 import { fonts, spacing, typography } from "../../theme/tokens";
 import { useTheme } from "../../context/ThemeContext";
 import GoldHairline from "../ui/GoldHairline";
 /** `.section-head` from kankreg.html */
-export function KankregSectionHead({ index, eyebrow, title, right }) {
+export function KankregSectionHead({ index, eyebrow, title, kicker, right }) {
   const { isDark } = useTheme();
   const { isMd, isSm, isXs } = useKankregLayout();
   const titleSize =
@@ -44,6 +44,16 @@ export function KankregSectionHead({ index, eyebrow, title, right }) {
         >
           {title}
         </Text>
+        {kicker ? (
+          <Text
+            style={[
+              styles.kicker,
+              { color: isDark ? "rgba(245, 239, 228, 0.62)" : KANKREG_PALETTE.inkFaint },
+            ]}
+          >
+            {kicker}
+          </Text>
+        ) : null}
         <GoldHairline marginVertical={spacing.sm} short />
       </View>
       {right ? <View style={styles.sectionRight}>{right}</View> : null}
@@ -177,17 +187,24 @@ const styles = StyleSheet.create({
   sectionLeftFull: { minWidth: 0, width: "100%" },
   sectionRight: { flexShrink: 0, maxWidth: "100%" },
   ix: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 13,
     marginBottom: 6,
     letterSpacing: 0.5,
   },
   title: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: Platform.OS === "web" ? 42 : typography.h2 + 6,
     fontWeight: "400",
     lineHeight: Platform.OS === "web" ? 44 : typography.h2 + 8,
     letterSpacing: -0.5,
+  },
+  kicker: {
+    fontFamily: fonts.regular,
+    fontSize: typography.bodySmall,
+    lineHeight: 22,
+    marginTop: spacing.xs,
+    maxWidth: 560,
   },
   steps: {
     flexDirection: "row",

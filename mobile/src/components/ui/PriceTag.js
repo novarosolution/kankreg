@@ -1,7 +1,8 @@
 import React, { memo, useMemo } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { fonts, radius } from "../../theme/tokens";
-import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_PRICE, FONT_PRICE_MEDIUM } from "../../theme/typographyRoles";
+import { ALCHEMY } from "../../theme/customerAlchemy";
 import { useTheme } from "../../context/ThemeContext";
 import { formatINRWhole } from "../../utils/currency";
 
@@ -68,7 +69,7 @@ function createStyles(c, isDark, t, alignVertical, goldTinted) {
       gap: 4,
     },
     price: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_PRICE,
       fontSize: t.price,
       lineHeight: t.price + 4,
       letterSpacing: -0.5,

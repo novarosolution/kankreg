@@ -1,9 +1,16 @@
-# Env (never commit secrets)
+# Env — never commit (local secrets only)
 .env
 .env.local
+.env.*
+!.xcode.env
+!**/.xcode.env
 mobile/.env
 mobile/.env.local
 backend/.env
+backend/.env.local
+landing/.env
+landing/.env.local
+**/.env.example
 
 # Dependencies
 node_modules

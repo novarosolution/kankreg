@@ -1,9 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import L from "leaflet";
-import "../../styles/leafletWeb.css";
-import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import { useTheme } from "../../context/ThemeContext";
 import { ORDER_LIVE_TRACKING } from "../../content/appContent";
 import { fetchOrderDrivingRoute } from "../../services/userService";
@@ -14,8 +11,16 @@ import { fonts, icon, radius, semanticRadius, spacing, typography } from "../../
 import PremiumCard from "../ui/PremiumCard";
 import PremiumButton from "../ui/PremiumButton";
 import PremiumSectionHeader from "../ui/PremiumSectionHeader";
-import { collectOrderMapPoints, computeMapRegionFromPoints } from "../../utils/orderMapBounds";
+import { collectOrderMapPoints } from "../../utils/orderMapBounds";
 import { openMapsDirections, STALE_MS } from "./orderLiveMapShared";
+
+const LeafletMapComponent = __DEV__
+  ? // eslint-disable-next-line global-require
+    require("./OrderLiveMapLeaflet.web").default
+  : null;
+const LazyLeafletMap = __DEV__
+  ? LeafletMapComponent
+  : React.lazy(() => import("./OrderLiveMapLeaflet.web"));
 
 function hasDestinationSummary(dest) {
   if (!dest || typeof dest !== "object") return false;
@@ -36,174 +41,7 @@ function formatDestinationSubtitle(dest) {
   return parts.join(" · ");
 }
 
-const leafletChromeStyles = StyleSheet.create({
-  leafletWrap: {
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.sm,
-    overflow: "hidden",
-    borderRadius: semanticRadius.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderTopWidth: 2,
-  },
-  osmAttrib: {
-    fontSize: 10,
-    color: "#6E6254",
-    marginTop: 6,
-    paddingHorizontal: spacing.xs,
-  },
-  googleAttrib: {
-    fontSize: 10,
-    color: "#6E6254",
-    marginTop: 4,
-    paddingHorizontal: spacing.xs,
-  },
-});
-
-function MapViewSync({ mapPoints }) {
-  const map = useMap();
-  useEffect(() => {
-    if (!mapPoints?.length) return;
-    if (mapPoints.length === 1) {
-      const p = mapPoints[0];
-      map.setView([p.latitude, p.longitude], 14, { animate: false });
-      return;
-    }
-    const bounds = L.latLngBounds(mapPoints.map((p) => L.latLng(p.latitude, p.longitude)));
-    map.fitBounds(bounds, { padding: [28, 28], maxZoom: 15 });
-  }, [map, mapPoints]);
-  return null;
-}
-
-function LiveLeafletMap({
-  plat,
-  plng,
-  slat,
-  slng,
-  dlat,
-  dlng,
-  hasPartner,
-  hasShop,
-  hasDest,
-  partnerLabel,
-  shopLabel,
-  isDark,
-  routeColor,
-  routePositions,
-  mapPoints,
-}) {
-  const center = useMemo(() => {
-    const region = computeMapRegionFromPoints(mapPoints);
-    return [region.latitude, region.longitude];
-  }, [mapPoints]);
-
-  const partnerBikeIcon = useMemo(() => {
-    const bg = isDark ? "rgba(28,25,23,0.96)" : "#FFFCF8";
-    const border = isDark ? "#E8C85A" : "#C9A227";
-    const shadow = isDark ? "0 4px 14px rgba(0,0,0,0.38)" : "0 3px 10px rgba(61,42,18,0.14)";
-    const html = `<div style="width:42px;height:42px;border-radius:21px;background:${bg};border:2px solid ${border};box-shadow:${shadow};display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;">🚴</div>`;
-    return L.divIcon({
-      className: "order-live-map-partner-bike",
-      html,
-      iconSize: [42, 42],
-      iconAnchor: [21, 42],
-    });
-  }, [isDark]);
-
-  const destIcon = useMemo(
-    () =>
-      L.divIcon({
-        className: "order-live-map-dest-icon",
-        html: `<div style="width:30px;height:30px;border-radius:50%;background:#16a34a;border:2px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.22);font-size:14px;line-height:1;">🏠</div>`,
-        iconSize: [30, 30],
-        iconAnchor: [15, 30],
-      }),
-    []
-  );
-
-  const shopIcon = useMemo(() => {
-    const border = isDark ? "#E8C85A" : "#C9A227";
-    const bg = isDark ? "rgba(28,25,23,0.96)" : "#FFFCF8";
-    return L.divIcon({
-      className: "order-live-map-shop-icon",
-      html: `<div style="width:34px;height:34px;border-radius:17px;background:${bg};border:2px solid ${border};display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.18);font-size:15px;line-height:1;">🏪</div>`,
-      iconSize: [34, 34],
-      iconAnchor: [17, 34],
-    });
-  }, [isDark]);
-
-  const tile = isDark
-    ? {
-        url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      }
-    : {
-        url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      };
-
-  return (
-    <View
-      style={[
-        leafletChromeStyles.leafletWrap,
-        {
-          borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(116, 79, 28, 0.15)",
-          borderTopColor: isDark ? "rgba(232, 200, 90, 0.42)" : "rgba(201, 162, 39, 0.45)",
-        },
-      ]}
-    >
-      <MapContainer
-        key={isDark ? "dark" : "light"}
-        center={center}
-        zoom={hasPartner && hasDest ? 12 : 14}
-        style={{ height: 256, width: "100%", borderRadius: semanticRadius.card }}
-        scrollWheelZoom={false}
-        attributionControl
-      >
-        <TileLayer attribution={tile.attribution} url={tile.url} />
-        <MapViewSync mapPoints={mapPoints} />
-        {hasPartner && hasDest ? (
-          <Polyline
-            positions={
-              routePositions && routePositions.length >= 2
-                ? routePositions
-                : [
-                    [plat, plng],
-                    [dlat, dlng],
-                  ]
-            }
-            pathOptions={{ color: routeColor, weight: 3, opacity: 0.88 }}
-          />
-        ) : null}
-        {hasShop ? (
-          <Marker position={[slat, slng]} icon={shopIcon}>
-            <Popup>{shopLabel}</Popup>
-          </Marker>
-        ) : null}
-        {hasPartner ? (
-          <Marker position={[plat, plng]} icon={partnerBikeIcon}>
-            <Popup>{partnerLabel}</Popup>
-          </Marker>
-        ) : null}
-        {hasDest ? (
-          <Marker position={[dlat, dlng]} icon={destIcon}>
-            <Popup>{ORDER_LIVE_TRACKING.markerDestination}</Popup>
-          </Marker>
-        ) : null}
-      </MapContainer>
-      <Text style={leafletChromeStyles.osmAttrib} accessibilityRole="text">
-        {isDark ? ORDER_LIVE_TRACKING.osmAttribDark : ORDER_LIVE_TRACKING.osmAttrib}
-      </Text>
-      {routePositions && routePositions.length > 2 ? (
-        <Text style={leafletChromeStyles.googleAttrib} accessibilityRole="text">
-          {ORDER_LIVE_TRACKING.googleRouteAttrib}
-        </Text>
-      ) : null}
-    </View>
-  );
-}
-
-/** Web: Leaflet + OSM / Carto dark (no react-native-maps). */
+/** Web: shell card — Leaflet map lazy-loads in separate chunk. */
 export default function OrderLiveMapCard({ orderId }) {
   const { colors: c, isDark } = useTheme();
   const { data, error, loading } = useOrderLiveLocation(orderId);
@@ -379,23 +217,31 @@ export default function OrderLiveMapCard({ orderId }) {
       ) : null}
 
       {showMap ? (
-        <LiveLeafletMap
-          plat={plat}
-          plng={plng}
-          slat={slat}
-          slng={slng}
-          dlat={dlat}
-          dlng={dlng}
-          hasPartner={hasPartner}
-          hasShop={hasShop}
-          hasDest={hasDest}
-          partnerLabel={partnerLabel}
-          shopLabel={shopLabel}
-          isDark={isDark}
-          routeColor={routeColor}
-          routePositions={routePositions}
-          mapPoints={mapPoints}
-        />
+        <Suspense
+          fallback={
+            <View style={{ height: 256, alignItems: "center", justifyContent: "center" }}>
+              <ActivityIndicator color={c.primary} />
+            </View>
+          }
+        >
+          <LazyLeafletMap
+            plat={plat}
+            plng={plng}
+            slat={slat}
+            slng={slng}
+            dlat={dlat}
+            dlng={dlng}
+            hasPartner={hasPartner}
+            hasShop={hasShop}
+            hasDest={hasDest}
+            partnerLabel={partnerLabel}
+            shopLabel={shopLabel}
+            isDark={isDark}
+            routeColor={routeColor}
+            routePositions={routePositions}
+            mapPoints={mapPoints}
+          />
+        </Suspense>
       ) : null}
 
       {trackable ? (

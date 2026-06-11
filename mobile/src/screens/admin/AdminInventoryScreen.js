@@ -22,7 +22,8 @@ import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 import AdminPanel from "../../components/admin/AdminPanel";
 import { buildInventoryTableColumns } from "../../components/admin/adminTableColumns";
-import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { ALCHEMY } from "../../theme/customerAlchemy";
+import { FONT_HEADING, FONT_PRICE } from "../../theme/typographyRoles";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { fonts, layout, radius, spacing, typography } from "../../theme/tokens";
 import PremiumLoader from "../../components/ui/PremiumLoader";
@@ -66,7 +67,7 @@ export default function AdminInventoryScreen({ navigation, route }) {
   const [busyId, setBusyId] = useState("");
   const [draftQty, setDraftQty] = useState({});
 
-  const styles = useMemo(() => createStyles(c, shadowPremium), [c, shadowPremium]);
+  const styles = useMemo(() => createStyles(c, shadowPremium, isDark), [c, shadowPremium, isDark]);
   const compact = useAdminCompactLayout();
 
   const load = useCallback(async (opts = {}) => {
@@ -217,23 +218,6 @@ export default function AdminInventoryScreen({ navigation, route }) {
               items={FILTERS.map((f) => ({ key: f.id, label: f.label }))}
               style={{ marginVertical: spacing.sm }}
             />
-            {!compact && visible.length > 0 ? (
-              <AdminPanel noPadding style={{ marginBottom: spacing.md }}>
-                <AdminDataTable
-                  rows={visible.slice(0, 50)}
-                  keyExtractor={(row) => row._id}
-                  columns={buildInventoryTableColumns({
-                    onEdit: (row) => navigation.navigate("AdminAddProduct", { product: row }),
-                  })}
-                />
-              </AdminPanel>
-            ) : null}
-
-            {error ? (
-              <View style={styles.bannerSpacer}>
-                <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
-              </View>
-            ) : null}
 
             <View style={[adminModuleSection(isDark, c), styles.filterShell]}>
               <View style={styles.searchRow}>
@@ -259,6 +243,12 @@ export default function AdminInventoryScreen({ navigation, route }) {
               </View>
             </View>
 
+            {error ? (
+              <View style={styles.bannerSpacer}>
+                <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+              </View>
+            ) : null}
+
             {loading ? (
               <View style={styles.loadRow}>
                 <PremiumLoader size="sm" caption="Loading inventory…" inline />
@@ -267,6 +257,18 @@ export default function AdminInventoryScreen({ navigation, route }) {
             <Text style={styles.listCount}>
               {visible.length} of {products.length} products
             </Text>
+
+            {!compact && visible.length > 0 ? (
+              <AdminPanel noPadding style={{ marginBottom: spacing.md }}>
+                <AdminDataTable
+                  rows={visible.slice(0, 50)}
+                  keyExtractor={(row) => row._id}
+                  columns={buildInventoryTableColumns({
+                    onEdit: (row) => navigation.navigate("AdminAddProduct", { product: row }),
+                  })}
+                />
+              </AdminPanel>
+            ) : null}
           </View>
         }
         ListEmptyComponent={
@@ -392,7 +394,7 @@ export default function AdminInventoryScreen({ navigation, route }) {
   );
 }
 
-function createStyles(c, shadowPremium) {
+function createStyles(c, shadowPremium, isDark) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -407,7 +409,7 @@ function createStyles(c, shadowPremium) {
     titleRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
     h1: {
       fontSize: typography.h1,
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       color: c.textPrimary,
       letterSpacing: -0.4},
     subH: {
@@ -456,7 +458,9 @@ function createStyles(c, shadowPremium) {
       ...shadowPremium,
       ...Platform.select({
         web: {
-          boxShadow: "0 10px 24px rgba(28, 25, 23, 0.08), inset 0 1px 0 rgba(255,255,255,0.72)",
+          boxShadow: isDark
+            ? "0 10px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.06)"
+            : "0 10px 24px rgba(28, 25, 23, 0.08), inset 0 1px 0 rgba(255,255,255,0.72)",
           transition: "box-shadow 0.18s ease, border-color 0.18s ease, transform 0.18s ease"},
         default: {}})},
     rowWarn: { borderLeftWidth: 3, borderLeftColor: c.danger },
@@ -485,7 +489,7 @@ function createStyles(c, shadowPremium) {
     footCtaD: { fontSize: typography.caption, marginTop: 2, fontFamily: fonts.regular },
     emptyWrap: { marginBottom: spacing.md },
     denied: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.sm },
-    deniedTitle: { fontSize: typography.h2, fontFamily: FONT_DISPLAY, color: c.textPrimary, marginTop: spacing.md },
+    deniedTitle: { fontSize: typography.h2, fontFamily: FONT_HEADING, color: c.textPrimary, marginTop: spacing.md },
     deniedSub: { color: c.textSecondary, textAlign: "center", paddingHorizontal: spacing.xl, fontFamily: fonts.regular },
     gateCta: { marginTop: spacing.md }});
 }

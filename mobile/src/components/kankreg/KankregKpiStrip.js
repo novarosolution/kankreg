@@ -1,7 +1,7 @@
 import React from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_PRICE } from "../../theme/typographyRoles";
 import { getKankregSurfaces } from "../../theme/kankregWeb";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { fonts, spacing } from "../../theme/tokens";
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   n: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_PRICE,
     fontSize: 30,
     fontWeight: "600",
     marginTop: spacing.sm,

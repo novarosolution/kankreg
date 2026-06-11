@@ -10,7 +10,8 @@ import {
   spacing,
   typography,
 } from "../../theme/tokens";
-import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { ALCHEMY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { useTheme } from "../../context/ThemeContext";
 
 /**
@@ -174,7 +175,7 @@ function createStyles(c, isDark, align, compact) {
       flexWrap: "wrap",
     },
     title: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontSize: titleSize,
       lineHeight: titleSize + 4,
       letterSpacing: -0.4,

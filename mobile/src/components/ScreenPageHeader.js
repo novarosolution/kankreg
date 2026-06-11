@@ -8,7 +8,8 @@ import { useTheme } from "../context/ThemeContext";
 import { BRAND_LOGO_SIZE } from "../constants/brand";
 import { fonts, getSemanticColors, icon, lineHeight, semanticRadius, spacing, typography } from "../theme/tokens";
 import { customerContentWidth } from "../theme/screenLayout";
-import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../theme/customerAlchemy";
+import { ALCHEMY } from "../theme/customerAlchemy";
+import { FONT_HEADING, FONT_BODY, FONT_BODY_SEMIBOLD } from "../theme/typographyRoles";
 
 const HEADER_LOGO = BRAND_LOGO_SIZE.headerCompact;
 /** Row height follows logo only — extra space was making the bar feel tall. */
@@ -116,7 +117,7 @@ export default function ScreenPageHeader({
               style={[
                 styles.title,
                 eyebrow && compact ? styles.titleAfterEyebrow : null,
-                { color: titleColor || c.textPrimary, fontFamily: FONT_DISPLAY },
+                { color: titleColor || c.textPrimary, fontFamily: FONT_HEADING },
               ]}
               numberOfLines={2}
             >
@@ -128,7 +129,7 @@ export default function ScreenPageHeader({
                   style={[
                     styles.sub,
                     styles.subCompact,
-                    { color: subtitleColor || c.textSecondary, fontFamily: FONT_DISPLAY_SEMI },
+                    { color: subtitleColor || c.textSecondary, fontFamily: FONT_BODY },
                   ]}
                   numberOfLines={2}
                 >
@@ -152,7 +153,7 @@ export default function ScreenPageHeader({
                   <Text
                     style={[
                       styles.sub,
-                      { color: subtitleColor || c.textSecondary, fontFamily: FONT_DISPLAY_SEMI },
+                      { color: subtitleColor || c.textSecondary, fontFamily: FONT_BODY },
                     ]}
                     numberOfLines={2}
                   >

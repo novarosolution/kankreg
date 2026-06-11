@@ -9,6 +9,8 @@ import Animated, {
   cancelAnimation,
 } from "react-native-reanimated";
 import useReducedMotion from "../../hooks/useReducedMotion";
+import { useKankregLayout } from "../../theme/kankregBreakpoints";
+import { getGsap } from "../../utils/loadGsap";
 
 /**
  * Soft floating gold/emerald orbs behind the hero. Mirrors the premium hero
@@ -20,6 +22,7 @@ import useReducedMotion from "../../hooks/useReducedMotion";
  */
 export default function HomeAmbientOrbs({ isDark }) {
   const reduced = useReducedMotion();
+  const { isMobileWeb } = useKankregLayout();
   const orb1Ref = useRef(null);
   const orb2Ref = useRef(null);
 
@@ -61,16 +64,14 @@ export default function HomeAmbientOrbs({ isDark }) {
   }, [reduced, orb1Y, orb1Op, orb2Y, orb2Op]);
 
   useEffect(() => {
-    if (Platform.OS !== "web" || reduced) return undefined;
+    if (Platform.OS !== "web" || reduced || isMobileWeb) return undefined;
     let cancelled = false;
     let tween1;
     let tween2;
 
     (async () => {
-      const gsapModule = await import("gsap");
-      if (cancelled) return;
-      const gsapLib = gsapModule?.gsap || gsapModule?.default || gsapModule;
-      if (!gsapLib) return;
+      const gsapLib = await getGsap();
+      if (cancelled || !gsapLib) return;
       if (orb1Ref.current) {
         tween1 = gsapLib.to(orb1Ref.current, {
           y: -14,
@@ -99,7 +100,7 @@ export default function HomeAmbientOrbs({ isDark }) {
       tween1?.kill?.();
       tween2?.kill?.();
     };
-  }, [reduced]);
+  }, [isMobileWeb, reduced]);
 
   const orb1Style = useAnimatedStyle(() => ({
     transform: [{ translateY: orb1Y.value }],

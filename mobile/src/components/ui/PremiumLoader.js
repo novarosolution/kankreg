@@ -1,7 +1,8 @@
 import React, { memo, useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { fonts, spacing, typography } from "../../theme/tokens";
-import { ALCHEMY, FONT_DISPLAY_ITALIC } from "../../theme/customerAlchemy";
+import { ALCHEMY } from "../../theme/customerAlchemy";
+import { FONT_HEADING_ITALIC } from "../../theme/typographyRoles";
 import { useTheme } from "../../context/ThemeContext";
 import { BouncingDots, GoldRingLoader } from "../loading";
 
@@ -51,7 +52,7 @@ function createStyles(_c, _isDark, inline) {
       paddingVertical: inline ? 0 : spacing.lg,
     },
     caption: {
-      fontFamily: FONT_DISPLAY_ITALIC,
+      fontFamily: FONT_HEADING_ITALIC,
       letterSpacing: -0.2,
       textAlign: "center",
       marginTop: inline ? 0 : 4,

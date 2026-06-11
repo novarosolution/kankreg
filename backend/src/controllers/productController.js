@@ -94,8 +94,21 @@ function toBoolean(value, fallback) {
 
 async function getProducts(req, res, next) {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
+    const products = await Product.find({ isPublished: { $ne: false } }).sort({ createdAt: -1 });
     res.json(products);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getProductById(req, res, next) {
+  try {
+    const { id } = req.params;
+    const product = await Product.findOne({ _id: id, isPublished: { $ne: false } });
+    if (!product) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+    res.json(product);
   } catch (error) {
     next(error);
   }
@@ -113,12 +126,15 @@ async function createProduct(req, res, next) {
       homeSection,
       productType,
       showOnHome,
+      isPublished,
       homeOrder,
       brand,
       sku,
       unit,
       eta,
       isSpecial,
+      comingSoon,
+      comingSoonNote,
       inStock,
       stockQty,
       mrp,
@@ -170,12 +186,15 @@ async function createProduct(req, res, next) {
       homeSection: homeSection || "Prime Products",
       productType: productType || category || "General",
       showOnHome: toBoolean(showOnHome, true),
+      isPublished: toBoolean(isPublished, true),
       homeOrder: toNumber(homeOrder, 0),
       brand: brand || "",
       sku: sku || "",
       unit: unit || "1 pc",
       eta: eta || "10 MINS",
       isSpecial: toBoolean(isSpecial, false),
+      comingSoon: toBoolean(comingSoon, false),
+      comingSoonNote: String(comingSoonNote || "").trim(),
       inStock: toBoolean(inStock, true),
       stockQty: Math.max(0, toNumber(stockQty, 0)),
       ratingAverage: ratingNum,
@@ -227,12 +246,15 @@ async function updateProduct(req, res, next) {
       homeSection,
       productType,
       showOnHome,
+      isPublished,
       homeOrder,
       brand,
       sku,
       unit,
       eta,
       isSpecial,
+      comingSoon,
+      comingSoonNote,
       inStock,
       stockQty,
       mrp,
@@ -272,12 +294,15 @@ async function updateProduct(req, res, next) {
     if (homeSection !== undefined) product.homeSection = homeSection;
     if (productType !== undefined) product.productType = productType;
     if (showOnHome !== undefined) product.showOnHome = toBoolean(showOnHome, product.showOnHome);
+    if (isPublished !== undefined) product.isPublished = toBoolean(isPublished, product.isPublished);
     if (homeOrder !== undefined) product.homeOrder = toNumber(homeOrder, product.homeOrder);
     if (brand !== undefined) product.brand = brand;
     if (sku !== undefined) product.sku = sku;
     if (unit !== undefined) product.unit = unit;
     if (eta !== undefined) product.eta = eta;
     if (isSpecial !== undefined) product.isSpecial = toBoolean(isSpecial, product.isSpecial);
+    if (comingSoon !== undefined) product.comingSoon = toBoolean(comingSoon, product.comingSoon);
+    if (comingSoonNote !== undefined) product.comingSoonNote = String(comingSoonNote || "").trim();
     if (inStock !== undefined) product.inStock = toBoolean(inStock, product.inStock);
     if (stockQty !== undefined) product.stockQty = Math.max(0, toNumber(stockQty, product.stockQty));
     if (ratingAverage !== undefined) {
@@ -382,6 +407,7 @@ async function uploadMarketingVideo(req, res, next) {
     const uploaded = await cloudinary.uploader.upload(uploadSource, {
       folder: "kankreg/marketing",
       resource_type: "video",
+      transformation: [{ width: 1280, crop: "limit", quality: "auto:good" }],
     });
 
     res.status(201).json({
@@ -470,6 +496,7 @@ async function createOrUpdateProductReview(req, res, next) {
 
 module.exports = {
   getProducts,
+  getProductById,
   createProduct,
   updateProduct,
   deleteProduct,

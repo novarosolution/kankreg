@@ -6,7 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { KankregGrainOverlay } from "../kankreg/KankregPageChrome";
 import { FIGMA } from "../../theme/figmaApp";
 import { useTheme } from "../../context/ThemeContext";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { formatINR } from "../../utils/currency";
 import { getImageUriCandidates, PRODUCT_HERO_BLURHASH } from "../../utils/image";
 import { fonts, spacing } from "../../theme/tokens";
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   priceChipValue: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 16,
     fontWeight: "600",
     color: FIGMA.ink,
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.92)",
   },
   title: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 23,
     fontWeight: "400",
     color: "#fff",

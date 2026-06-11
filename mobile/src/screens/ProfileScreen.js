@@ -166,7 +166,7 @@ export default function ProfileScreen({ navigation }) {
   }, [hasAddress, displayName, defaultAddress, phoneText]);
 
   if (isAuthLoading) {
-    return <AuthGateShell />;
+    return <AuthGateShell navigation={navigation} />;
   }
   if (!isAuthenticated) {
     return <AuthGateShell signedOut navigation={navigation} />;

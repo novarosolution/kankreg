@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Platform } from "react-native";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { getGsap, getScrollTrigger } from "../utils/loadGsap";
 import { scheduleScrollTriggerRefresh } from "../utils/scrollTriggerRefresh";
 
 const PRESETS = {
@@ -22,10 +21,6 @@ const PRESETS = {
     to: { x: 0, opacity: 1, duration: 0.55, ease: "power2.out" },
   },
 };
-
-if (Platform.OS === "web") {
-  gsap.registerPlugin(ScrollTrigger);
-}
 
 /** RN Web scrolls inside MotionScrollView — not the window. */
 function findScrollParent(element) {
@@ -62,9 +57,6 @@ function isElementInScrollView(target, scroller) {
 /**
  * Web-only ScrollTrigger reveal helper. Returns `{ ref }` to attach to a View.
  * On native it's a no-op so callers can render the View unconditionally.
- *
- *   const { ref } = useGsapReveal({ preset: "fade-up", start: "top 88%" });
- *   <View ref={ref} ... />
  */
 export default function useGsapReveal({
   preset = "fade-up",
@@ -75,7 +67,6 @@ export default function useGsapReveal({
   delay = 0,
   disabled = false,
   reducedMotion = false,
-  /** Play on mount (above-the-fold) instead of ScrollTrigger. */
   immediate = false,
 } = {}) {
   const ref = useRef(null);
@@ -98,53 +89,66 @@ export default function useGsapReveal({
       return undefined;
     }
 
+    let cancelled = false;
+    let tween;
+    let refreshId;
+    let safetyId;
+
     const settings = PRESETS[preset] || PRESETS["fade-up"];
-    gsap.set(target, settings.from);
 
-    const revealNow = () => {
-      gsap.to(target, { ...settings.to, delay, overwrite: "auto" });
-    };
+    (async () => {
+      const gsap = await getGsap();
+      await getScrollTrigger();
+      if (cancelled || !gsap) return;
 
-    if (immediate) {
-      revealNow();
-      return undefined;
-    }
+      gsap.set(target, settings.from);
 
-    const scroller = findScrollParent(target);
-    const tween = gsap.fromTo(target, settings.from, {
-      ...settings.to,
-      delay,
-      scrollTrigger: {
-        trigger: target,
-        scroller: scroller || undefined,
-        start,
-        end,
-        scrub,
-        toggleActions,
-        once: true,
-      },
-    });
+      const revealNow = () => {
+        gsap.to(target, { ...settings.to, delay, overwrite: "auto" });
+      };
 
-    const refreshId = requestAnimationFrame(() => {
-      scheduleScrollTriggerRefresh();
-      if (isElementInScrollView(target, scroller)) {
+      if (immediate) {
+        revealNow();
+        return;
+      }
+
+      const scroller = findScrollParent(target);
+      tween = gsap.fromTo(target, settings.from, {
+        ...settings.to,
+        delay,
+        scrollTrigger: {
+          trigger: target,
+          scroller: scroller || undefined,
+          start,
+          end,
+          scrub,
+          toggleActions,
+          once: true,
+        },
+      });
+
+      refreshId = requestAnimationFrame(() => {
+        scheduleScrollTriggerRefresh();
+        if (isElementInScrollView(target, scroller)) {
+          const opacity = Number(gsap.getProperty(target, "opacity"));
+          if (!Number.isFinite(opacity) || opacity < 0.2) {
+            revealNow();
+          }
+        }
+      });
+
+      safetyId = setTimeout(() => {
         const opacity = Number(gsap.getProperty(target, "opacity"));
-        if (!Number.isFinite(opacity) || opacity < 0.2) {
+        if (!Number.isFinite(opacity) || opacity < 0.85) {
           revealNow();
         }
-      }
-    });
-
-    const safetyId = setTimeout(() => {
-      const opacity = Number(gsap.getProperty(target, "opacity"));
-      if (!Number.isFinite(opacity) || opacity < 0.85) {
-        revealNow();
-      }
-    }, 1800);
+      }, 1800);
+    })();
 
     return () => {
-      cancelAnimationFrame(refreshId);
-      clearTimeout(safetyId);
+      cancelled = true;
+      if (refreshId != null) cancelAnimationFrame(refreshId);
+      if (safetyId != null) clearTimeout(safetyId);
       if (tween?.scrollTrigger && typeof tween.scrollTrigger.kill === "function") {
         tween.scrollTrigger.kill();
       }

@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { customerPanel } from "../../theme/screenLayout";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { spacing, typography } from "../../theme/tokens";
 
 /** kankreg.html `.info-card` wrapper for checkout sections. */
@@ -26,7 +26,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   title: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: typography.h3,
     fontWeight: "500",
     marginBottom: spacing.md,

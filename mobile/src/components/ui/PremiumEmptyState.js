@@ -2,7 +2,8 @@ import React, { memo, useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
-import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { ALCHEMY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { useTheme } from "../../context/ThemeContext";
 import PremiumButton from "./PremiumButton";
 import { platformShadow } from "../../theme/shadowPlatform";
@@ -109,7 +110,7 @@ function createStyles(c, isDark, compact) {
       ...iconShadow,
     },
     title: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontSize: compact ? typography.h3 : typography.h2,
       lineHeight: compact ? typography.h3 + 6 : typography.h2 + 6,
       color: c.textPrimary,

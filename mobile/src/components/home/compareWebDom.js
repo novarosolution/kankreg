@@ -65,6 +65,7 @@ export function HtmlH3(props) {
 }
 
 export function HtmlImg({
+  alt,
   loading = "lazy",
   decoding = "async",
   fetchPriority,
@@ -73,7 +74,7 @@ export function HtmlImg({
   ...props
 }) {
   return createElement("img", {
-    alt: "",
+    ...(alt != null ? { alt } : { alt: "" }),
     className,
     loading,
     decoding,

@@ -1,5 +1,6 @@
 import { Platform, StyleSheet } from "react-native";
-import { ALCHEMY, FONT_DISPLAY } from "./customerAlchemy";
+import { ALCHEMY } from "./customerAlchemy";
+import { FONT_HEADING } from "./typographyRoles";
 import { KANKREG_PALETTE, KANKREG_RADIUS } from "./kankregWeb";
 import { fonts, spacing, typography } from "./tokens";
 import { createKankregCardShell, createKankregEyebrowStyle } from "./kankregScreenStyles";
@@ -33,11 +34,11 @@ export function createQuoteBlockStyles(isDark = false) {
       fontSize: 120,
       lineHeight: 72,
       color: isDark ? "rgba(214, 173, 91, 0.18)" : "rgba(214, 173, 91, 0.2)",
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
     },
     block: { alignItems: "center" },
     text: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontSize: typography.h2 + 4,
       lineHeight: typography.h2 + 12,
       color: KANKREG_PALETTE.paper,
@@ -77,7 +78,7 @@ export function createSectionHeaderStyles(isDark) {
   return StyleSheet.create({
     eyebrow: createKankregEyebrowStyle(isDark),
     title: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontSize: typography.h2,
       letterSpacing: -0.4,
       color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink,

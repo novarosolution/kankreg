@@ -12,7 +12,8 @@ import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { fetchAdminAnalytics } from "../../services/adminService";
 import { useTheme } from "../../context/ThemeContext";
-import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../../theme/customerAlchemy";
+import { ALCHEMY } from "../../theme/customerAlchemy";
+import { FONT_HEADING, FONT_HEADING_SEMI, FONT_BODY_SEMIBOLD } from "../../theme/typographyRoles";
 import { adminPanel, useAdminCompactLayout } from "../../theme/adminLayout";
 import AdminKpiCard, { AdminKpiGrid } from "../../components/admin/AdminKpiCard";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
@@ -1110,7 +1111,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     justifyContent: "center"},
   title: {
     fontSize: typography.h2,
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     color: c.textPrimary,
     letterSpacing: -0.35},
   titleLight: {
@@ -1126,7 +1127,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     marginTop: spacing.md,
     marginBottom: spacing.sm,
     fontSize: typography.caption,
-    fontFamily: FONT_DISPLAY_SEMI,
+    fontFamily: FONT_BODY_SEMIBOLD,
     color: c.textMuted,
     letterSpacing: 0.8,
     textTransform: "uppercase"},
@@ -1166,7 +1167,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
   sectionTitle: {
     color: c.textPrimary,
     fontSize: typography.h3,
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     letterSpacing: -0.25,
     flex: 1,
     ...Platform.select({

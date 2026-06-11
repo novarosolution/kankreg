@@ -9,6 +9,7 @@ const {
 } = require("../controllers/productController");
 const {
   getAllOrders,
+  getAdminOrderById,
   updateOrderStatus,
   deleteOrder,
   updateAdminOrderDetails,
@@ -57,6 +58,7 @@ router.post("/uploads/image", uploadProductImage);
 router.post("/uploads/video", uploadMarketingVideo);
 
 router.get("/orders", getAllOrders);
+router.get("/orders/:id", getAdminOrderById);
 router.patch("/orders/:id/status", updateOrderStatus);
 router.put("/orders/:id", updateAdminOrderDetails);
 router.delete("/orders/:id", deleteOrder);

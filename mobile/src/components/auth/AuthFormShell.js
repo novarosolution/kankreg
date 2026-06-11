@@ -2,7 +2,7 @@ import React from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { AUTH_UI } from "../../content/appContent";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { fonts, lineHeight, spacing, typography } from "../../theme/tokens";
 import AuthRoutePills from "./AuthRoutePills";
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     maxWidth: "100%",
   },
   h1: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontWeight: "400",
     fontSize: Platform.select({ web: 38, default: typography.h1 }),
     lineHeight: Platform.select({ web: 44, default: lineHeight.h1 + 4 }),

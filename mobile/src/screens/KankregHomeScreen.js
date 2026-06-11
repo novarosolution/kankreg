@@ -10,17 +10,22 @@ import {
   HomeMarqueeTicker,
 } from "../components/home/HomeKankregSections";
 import WebPremiumHero from "../components/home/WebPremiumHero";
-import AboutKankregMedia from "../components/home/AboutKankregMedia";
-import HomeTimelineVideoSection from "../components/home/HomeTimelineVideoSection";
-import HomeProcessJourney from "../components/home/HomeProcessJourney";
-import HomeCommunitySection from "../components/home/HomeCommunitySection";
+import {
+  WebTimelineSection,
+  WebProcessSection,
+  WebAboutSection,
+  WebCommunitySection,
+} from "../components/home/homeWebSections";
+import DeferredMount from "../components/ui/DeferredMount";
 import {
   normalizeAboutSection,
   normalizeCommunitySection,
-  normalizeProcessSection,
+  resolveProcessDisplay,
 } from "../utils/homeViewMedia";
+import { buildProcessSectionDefaults } from "../content/processHomeContent";
 import HomeStatsStrip from "../components/home/HomeStatsStrip";
 import HomeTestimonials from "../components/home/HomeTestimonials";
+import HomeComingSoonStrip from "../components/home/HomeComingSoonStrip";
 import { HomeCatalogGridCard, HomeCatalogViewAllLink } from "../components/home/HomeCatalogProductViews";
 import { SectionHeader, ScrollFadeUp } from "../components/home/editorial";
 import { KankregGrainOverlay, KankregPageWrap } from "../components/kankreg/KankregPageChrome";
@@ -33,9 +38,11 @@ import { KANKREG_CHROME } from "../theme/kankregWeb";
 import { HOME_SECTION_GAP, HOME_SPACE } from "../theme/homeEditorial";
 import { useCart } from "../context/CartContext";
 import { useTheme } from "../context/ThemeContext";
-import { DEFAULT_HOME_VIEW_CONFIG, getHomeViewConfig, getProducts } from "../services/productService";
-import { getHomeCatalogProducts } from "../utils/shopFilters";
-import { HOME_SCREEN_UI } from "../content/appContent";
+import { DEFAULT_HOME_VIEW_CONFIG, getHomeViewConfig, getProducts, invalidateProductsCache } from "../services/productService";
+import { getHomeCatalogProducts, getShopCatalogProducts } from "../utils/productAvailability";
+import { HOME_SCREEN_UI, SHOP_SCREEN_UI } from "../content/appContent";
+import { getProductCardFlags } from "../utils/productAvailability";
+import { getScrollTrigger } from "../utils/loadGsap";
 import { createQuoteBlockStyles } from "../theme/screenThemes";
 import { productToCartLine } from "../utils/productCart";
 import NativeHomeHeader from "../components/native/NativeHomeHeader";
@@ -197,6 +204,21 @@ export default function KankregHomeScreen({ navigation }) {
     load();
   }, [load]);
 
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      invalidateProductsCache();
+      getProducts()
+        .then((list) => {
+          if (!cancelled) setProducts(Array.isArray(list) ? list : []);
+        })
+        .catch(() => {});
+      return () => {
+        cancelled = true;
+      };
+    }, [])
+  );
+
   useEffect(() => {
     if (!isAuthenticated || !token) {
       setHasUnreadNotifications(false);
@@ -220,21 +242,26 @@ export default function KankregHomeScreen({ navigation }) {
   const catalogCardCompact =
     homeView?.productCardStyle === "comfortable" ? false : homeView?.productCardStyle === "compact" ? true : layoutCompact;
 
+  const shopCatalog = useMemo(() => getShopCatalogProducts(products), [products]);
   const homeCatalog = useMemo(() => getHomeCatalogProducts(products), [products]);
-  const featuredProduct = homeCatalog[0] || products.find((p) => p.inStock !== false) || products[0];
+  const comingSoonOnHome = useMemo(
+    () => homeCatalog.filter((p) => getProductCardFlags(p).isComingSoon),
+    [homeCatalog]
+  );
+  const featuredProduct = homeCatalog[0] || products[0];
 
   useEffect(() => {
-    if (Platform.OS !== "web" || loading) return undefined;
+    if (Platform.OS !== "web" || loading || isMobileWeb) return undefined;
     let cancelled = false;
-    import("gsap/ScrollTrigger")
-      .then(({ ScrollTrigger }) => {
-        if (!cancelled) ScrollTrigger.refresh();
+    getScrollTrigger()
+      .then((ScrollTrigger) => {
+        if (!cancelled && ScrollTrigger) ScrollTrigger.refresh();
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [loading, homeCatalog.length]);
+  }, [loading, homeCatalog.length, isMobileWeb]);
   const handleAdd = (p) => addToCart(productToCartLine(p));
   const handleRemove = (id) => removeFromCart(id);
 
@@ -243,6 +270,14 @@ export default function KankregHomeScreen({ navigation }) {
   const showCategories = homeView?.showProductTypeSections !== false;
   const showHomeExtras = homeView?.showHomeSections !== false;
   const ready = !loading;
+  const processSection = homeView?.processSection ?? DEFAULT_HOME_VIEW_CONFIG.processSection;
+  const showProcessSection = useMemo(() => {
+    if (!ready || !showHomeExtras) return false;
+    return Boolean(
+      resolveProcessDisplay(processSection) ??
+        resolveProcessDisplay(buildProcessSectionDefaults())
+    );
+  }, [ready, showHomeExtras, processSection]);
   if (Platform.OS !== "web") {
     return (
       <CustomerScreenShell style={nativeHomeStyles.shell}>
@@ -292,7 +327,7 @@ export default function KankregHomeScreen({ navigation }) {
                 tight
               />
               <NativeCategoryRow
-                products={products}
+                products={shopCatalog}
                 onPress={(label) => navigation.navigate("Shop", { category: label })}
               />
             </>
@@ -327,13 +362,13 @@ export default function KankregHomeScreen({ navigation }) {
 
           {ready ? (
             <View style={nativeHomeStyles.filmWrap}>
-              <HomeTimelineVideoSection />
+              <WebTimelineSection />
             </View>
           ) : null}
 
-          {ready && normalizeProcessSection(homeView?.processSection ?? DEFAULT_HOME_VIEW_CONFIG.processSection).enabled ? (
+          {showProcessSection ? (
             <View style={nativeHomeStyles.processWrap}>
-              <HomeProcessJourney processSection={homeView?.processSection ?? DEFAULT_HOME_VIEW_CONFIG.processSection} />
+              <WebProcessSection processSection={processSection} />
             </View>
           ) : null}
 
@@ -350,10 +385,6 @@ export default function KankregHomeScreen({ navigation }) {
   const aboutSection = homeView?.aboutSection ?? DEFAULT_HOME_VIEW_CONFIG.aboutSection;
   const communitySection =
     homeView?.communitySection ?? DEFAULT_HOME_VIEW_CONFIG.communitySection;
-  const processSection =
-    homeView?.processSection ?? DEFAULT_HOME_VIEW_CONFIG.processSection;
-  const showProcessSection =
-    ready && normalizeProcessSection(processSection).enabled;
   const showAboutStory = ready && normalizeAboutSection(aboutSection).enabled;
   const showCommunitySection =
     showCommunity &&
@@ -416,13 +447,13 @@ export default function KankregHomeScreen({ navigation }) {
                       tight
                     />
                     <NativeCategoryRow
-                      products={products}
+                      products={shopCatalog}
                       onPress={(label) => navigation.navigate("Shop", { category: label })}
                     />
                   </>
                 ) : (
                   <HomeCategoryCards
-                    products={products}
+                    products={shopCatalog}
                     productTypeTitle={homeView?.productTypeTitle}
                     onBrowse={(label) => navigation.navigate("Shop", { category: label })}
                     onOpenShop={() => navigation.navigate("Shop")}
@@ -444,14 +475,17 @@ export default function KankregHomeScreen({ navigation }) {
                       />
                     }
                   />
+                  {comingSoonOnHome.length ? <HomeComingSoonStrip products={comingSoonOnHome} /> : null}
                   <View nativeID="home-catalog">
                     {homeCatalog.length ? (
                       <CatalogGridReveal
-                        immediateFirst={Math.min(homeCatalog.length, 8)}
+                        immediateFirst={Math.min(homeCatalog.length, isMobileWeb ? 1 : 8)}
                         staggerGap={52}
                         staggerInitialDelay={48}
                       >
-                        {homeCatalog.map((item, idx) => (
+                        {homeCatalog.map((item, idx) => {
+                          const flags = getProductCardFlags(item, SHOP_SCREEN_UI.card.comingSoonNoteFallback);
+                          return (
                           <HomeCatalogGridCard
                             key={item.id}
                             idx={idx}
@@ -461,11 +495,13 @@ export default function KankregHomeScreen({ navigation }) {
                             navigation={navigation}
                             quantity={getItemQuantity(item.id)}
                             styles={homeGridStyles}
-                            isOutOfStock={item.inStock === false}
+                            isOutOfStock={flags.isOutOfStock}
+                            isComingSoon={flags.isComingSoon}
+                            comingSoonNote={flags.comingSoonNote}
                             onAddToCart={() => handleAdd(item)}
                             onRemoveFromCart={() => handleRemove(item.id)}
                           />
-                        ))}
+                        );})}
                       </CatalogGridReveal>
                     ) : (
                       <PremiumEmptyState
@@ -483,16 +519,20 @@ export default function KankregHomeScreen({ navigation }) {
 
             {ready ? (
               <ScrollFadeUp index={2}>
-                <HomeTimelineVideoSection />
+                <DeferredMount minHeight={320} rootMargin="320px 0px">
+                  <WebTimelineSection />
+                </DeferredMount>
+              </ScrollFadeUp>
+            ) : null}
+
+            {showProcessSection ? (
+              <ScrollFadeUp index={3} immediate>
+                <WebProcessSection processSection={processSection} />
               </ScrollFadeUp>
             ) : null}
 
           </KankregPageWrap>
         </View>
-
-        {showProcessSection ? (
-          <HomeProcessJourney processSection={processSection} />
-        ) : null}
 
         <View
           style={[
@@ -505,16 +545,20 @@ export default function KankregHomeScreen({ navigation }) {
           <KankregPageWrap gap={isMobileWeb ? spacing.lg : HOME_SECTION_GAP}>
             {showAboutStory ? (
               <ScrollFadeUp index={4}>
-                <AboutKankregMedia
-                  aboutSection={aboutSection}
-                  navigation={navigation}
-                  variant="editorial"
-                />
+                <DeferredMount minHeight={400} rootMargin="280px 0px">
+                  <WebAboutSection
+                    aboutSection={aboutSection}
+                    navigation={navigation}
+                    variant="editorial"
+                  />
+                </DeferredMount>
               </ScrollFadeUp>
             ) : null}
 
             {showCommunitySection ? (
-              <HomeCommunitySection communitySection={communitySection} />
+              <DeferredMount minHeight={280} rootMargin="240px 0px">
+                <WebCommunitySection communitySection={communitySection} />
+              </DeferredMount>
             ) : null}
 
             {showHomeExtras && HOME_SCREEN_UI.web?.showStatsStrip && !isMobileWeb && ready ? (

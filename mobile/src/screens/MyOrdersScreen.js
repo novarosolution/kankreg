@@ -3,28 +3,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   View} from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  Easing as ReanimatedEasing,
-  interpolateColor} from "react-native-reanimated";
 import SectionReveal from "../components/motion/SectionReveal";
-import { staggerDelay } from "../theme/motion";
-import useReducedMotion from "../hooks/useReducedMotion";
-import useCountUp from "../hooks/useCountUp";
-import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
 import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 
 import BottomNavBar from "../components/BottomNavBar";
 import AuthGateShell from "../components/AuthGateShell";
 import CustomerScreenShell from "../components/CustomerScreenShell";
-import KankregResponsiveGrid from "../components/kankreg/KankregResponsiveGrid";
 import { useAuth } from "../context/AuthContext";
 import { useLiveSocket } from "../context/LiveSocketContext";
 import { useOrderCelebration } from "../context/OrderCelebrationContext";
@@ -39,39 +26,26 @@ import {
   customerPanel,
   customerScrollFill} from "../theme/screenLayout";
 import { getKankregChromeTop } from "../components/kankreg/KankregSiteHeader";
-import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../theme/customerAlchemy";
+import { ALCHEMY } from "../theme/customerAlchemy";
+import { FONT_HEADING, FONT_HEADING_SEMI, FONT_BODY_SEMIBOLD, FONT_PRICE } from "../theme/typographyRoles";
 import { fonts, layout, lineHeight, radius, semanticRadius, spacing, typography } from "../theme/tokens";
-import { formatINR } from "../utils/currency";
 import PremiumEmptyState from "../components/ui/PremiumEmptyState";
-import PremiumInput from "../components/ui/PremiumInput";
 import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
-import PremiumStatCard from "../components/ui/PremiumStatCard";
 import SkeletonBlock from "../components/ui/SkeletonBlock";
 import PremiumButton from "../components/ui/PremiumButton";
-import PremiumCard from "../components/ui/PremiumCard";
 import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
-import GoldHairline from "../components/ui/GoldHairline";
 import {
-  ORDER_PROGRESS_STEPS,
-  getActiveProgressStep,
-  getOrderStatusHint,
-  getOrderStatusLabel,
   isCancelledOrder,
   isDeliveredOrder,
   ORDER_STATUSES_ALLOW_ADDRESS_EDIT} from "../utils/orderStatus";
-import PaymentStatusBanner from "../components/payments/PaymentStatusBanner";
-import OrderLiveMapCard from "../components/orders/OrderLiveMapCard";
-import KankregOrderTrack from "../components/kankreg/KankregOrderTrack";
-import KankregOrderTrackingCard from "../components/kankreg/KankregOrderTrackingCard";
+import OrderListItem from "../components/orders/OrderListItem";
+import OrdersPageSummary from "../components/orders/OrdersPageSummary";
 import KankregOrdersFilterRow from "../components/kankreg/KankregOrdersFilterRow";
 import KankregCustomerPageHeader from "../components/kankreg/KankregCustomerPageHeader";
 import { FIGMA } from "../theme/figmaApp";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
 import { MY_ORDERS_UI } from "../content/appContent";
 import { getOrdersPageEyebrow } from "../utils/orderDisplay";
-import { formatCompactShippingLine } from "../utils/shippingAddressFormat";
-
-const ORDER_STATUSES_WITH_LIVE_MAP = new Set(["ready_for_pickup", "shipped", "out_for_delivery"]);
 
 function formatPaymentStatusLabel(ps) {
   const s = String(ps || "pending").toLowerCase();
@@ -171,7 +145,7 @@ function buildInvoiceHtml(order) {
           body {
             background: radial-gradient(circle at 18% 8%, #FDF7EC 0%, #F8F4EC 42%, #F2EBE0 100%);
             color: var(--ink);
-            font-family: "Fraunces", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+            font-family: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
             font-feature-settings: "tnum" 1, "lnum" 1;
             padding: 24px;
           }
@@ -200,7 +174,7 @@ function buildInvoiceHtml(order) {
             position: absolute;
             right: 32px;
             bottom: 36px;
-            font-family: "Fraunces", Georgia, serif;
+            font-family: "CIENUR", Georgia, serif;
             font-size: 90px;
             font-weight: 800;
             color: rgba(138, 90, 18, 0.05);
@@ -222,7 +196,7 @@ function buildInvoiceHtml(order) {
           }
           .brandCol { max-width: 58%; }
           .wordmark {
-            font-family: "Fraunces", Georgia, serif;
+            font-family: "CIENUR", Georgia, serif;
             font-size: 36px;
             line-height: 1;
             font-weight: 800;
@@ -299,7 +273,7 @@ function buildInvoiceHtml(order) {
             color: var(--brown-ink);
           }
           .invoiceCard .invNumber {
-            font-family: "Fraunces", Georgia, serif;
+            font-family: "CIENUR", Georgia, serif;
             font-size: 18px;
             font-weight: 800;
             letter-spacing: -0.3px;
@@ -358,7 +332,7 @@ function buildInvoiceHtml(order) {
             margin-bottom: 8px;
           }
           .metaCard .heading {
-            font-family: "Fraunces", Georgia, serif;
+            font-family: "CIENUR", Georgia, serif;
             font-size: 16px;
             font-weight: 800;
             color: var(--brown-ink);
@@ -374,7 +348,7 @@ function buildInvoiceHtml(order) {
           .metaCard .line.muted { color: var(--muted); }
 
           .sectionTitle {
-            font-family: "Fraunces", Georgia, serif;
+            font-family: "CIENUR", Georgia, serif;
             font-size: 17px;
             font-weight: 800;
             color: var(--brown-ink);
@@ -490,14 +464,14 @@ function buildInvoiceHtml(order) {
             border-top: 1.5px dashed var(--line-strong);
           }
           .totals .ttRow.grand .key {
-            font-family: "Fraunces", Georgia, serif;
+            font-family: "CIENUR", Georgia, serif;
             font-weight: 800;
             font-size: 14px;
             color: var(--brown-ink);
             letter-spacing: -0.2px;
           }
           .totals .ttRow.grand .val {
-            font-family: "Fraunces", Georgia, serif;
+            font-family: "Hanken Grotesk", "Inter", sans-serif;
             font-weight: 800;
             font-size: 22px;
             color: var(--brown-ink);
@@ -534,7 +508,7 @@ function buildInvoiceHtml(order) {
             font-family: "Inter", sans-serif;
           }
           .footer .thanks {
-            font-family: "Fraunces", Georgia, serif;
+            font-family: "CIENUR", Georgia, serif;
             font-size: 16px;
             font-weight: 800;
             color: var(--brown-ink);
@@ -710,124 +684,15 @@ function printInvoiceOnWeb(html) {
   popup.document.close();
 }
 
-const TRACK_STEP_ICONS = {
-  placed: "time-outline",
-  confirmed: "checkmark-done-outline",
-  preparing: "cube-outline",
-  ready: "bag-check-outline",
-  out: "car-outline",
-  done: "gift-outline"};
-
-function OrderProgressStrip({ status, styles, c, isDark }) {
-  if (String(status || "") === "pending_payment") {
-    return null;
-  }
-  if (isCancelledOrder(status)) {
-    return (
-      <View style={[styles.trackShell, styles.trackShellCancelled]}>
-        <View style={styles.trackCancelledInner}>
-          <View style={[styles.trackCancelledIcon, { borderColor: c.danger }]}>
-            <Ionicons name="close-circle-outline" size={22} color={c.danger} />
-          </View>
-          <View style={styles.trackCancelledText}>
-            <Text style={styles.trackCancelledTitle}>Order cancelled</Text>
-            <Text style={styles.trackCancelledSub}>Progress timeline is not shown for cancelled orders.</Text>
-          </View>
-        </View>
-      </View>
-    );
-  }
-  const delivered = isDeliveredOrder(status);
-  const activeIdx = getActiveProgressStep(status);
-  const totalSteps = ORDER_PROGRESS_STEPS.length;
-  const stepLabel = delivered ? totalSteps : Math.min(activeIdx + 1, totalSteps);
-  const progressLabel = delivered ? "Complete" : `Step ${stepLabel} of ${totalSteps}`;
-  const pct = delivered ? 100 : Math.round((activeIdx / (totalSteps - 1)) * 100);
-
-  const shellGradient = isDark
-    ? ["rgba(20, 83, 45, 0.22)", "rgba(15, 23, 42, 0.5)", "rgba(15, 23, 42, 0.35)"]
-    : ["rgba(255, 251, 235, 0.95)", "rgba(255, 253, 248, 0.98)", "rgba(237, 228, 212, 0.55)"];
-
-  return (
-    <View style={styles.trackShell}>
-      <LinearGradient
-        colors={shellGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.trackGradient}
-      >
-        <View style={[styles.trackGoldLine, { backgroundColor: isDark ? "rgba(232, 200, 90, 0.55)" : ALCHEMY.gold }]} />
-        <View style={styles.trackHeadRow}>
-          <View style={styles.trackHeadLeft}>
-            <Ionicons name="navigate-circle-outline" size={20} color={isDark ? c.primaryBright : ALCHEMY.brown} />
-            <View>
-              <Text style={[styles.trackHeadTitle, isDark ? null : styles.trackHeadTitleLight]}>Track your order</Text>
-              <Text style={styles.trackHeadSub}>{progressLabel}</Text>
-            </View>
-          </View>
-          <View style={[styles.trackPctPill, { borderColor: c.primaryBorder, backgroundColor: c.primarySoft }]}>
-            <Text style={[styles.trackPctText, { color: c.primaryDark }]}>{delivered ? "100%" : `${pct}%`}</Text>
-          </View>
-        </View>
-        <View style={styles.trackList}>
-          {ORDER_PROGRESS_STEPS.map((step, idx) => {
-            const done = delivered || idx < activeIdx;
-            const current = !delivered && idx === activeIdx;
-            const barDone = delivered || activeIdx > idx;
-            const stepIcon = TRACK_STEP_ICONS[step.key] || "ellipse-outline";
-            return (
-              <View key={step.key} style={styles.trackRow}>
-                <View style={styles.trackLeftCol}>
-                  <View
-                    style={[
-                      styles.trackDot,
-                      done && styles.trackDotDone,
-                      current && styles.trackDotCurrent,
-                      !done && !current && styles.trackDotUpcoming,
-                    ]}
-                  >
-                    {done ? (
-                      <Ionicons name="checkmark" size={13} color={c.onSecondary} />
-                    ) : (
-                      <Ionicons
-                        name={stepIcon}
-                        size={14}
-                        color={current ? c.primary : c.textMuted}
-                      />
-                    )}
-                  </View>
-                  {idx < ORDER_PROGRESS_STEPS.length - 1 ? (
-                    <View style={styles.trackBarWrap}>
-                      <View style={[styles.trackBar, barDone && styles.trackBarDone, !barDone && styles.trackBarMuted]} />
-                    </View>
-                  ) : null}
-                </View>
-                <View style={styles.trackTextCol}>
-                  <Text style={[styles.trackTitle, done && styles.trackTitleDone, current && styles.trackTitleCurrent]}>
-                    {step.title}
-                  </Text>
-                  <Text style={[styles.trackSub, current && styles.trackSubCurrent]}>{step.subtitle}</Text>
-                </View>
-              </View>
-            );
-          })}
-        </View>
-      </LinearGradient>
-    </View>
-  );
-}
-
 export default function MyOrdersScreen({ navigation, route }) {
   const { colors: c, shadowPremium, isDark } = useTheme();
     const { useSplitLayout, isXs } = useKankregLayout();
   const isWide = useSplitLayout;
   const isPhoneCompact = isXs;
-  const isNativeApp = Platform.OS !== "web";
   const styles = useMemo(
     () => createMyOrdersStyles(c, shadowPremium, isDark, { isWide, isPhoneCompact }),
     [c, shadowPremium, isDark, isWide, isPhoneCompact]
   );
-  const reducedMotion = useReducedMotion();
   const [filter, setFilter] = useState("all");
   const { isAuthenticated, token, user, isAuthLoading, refreshProfile } = useAuth();
   const { refreshCartFromServer } = useCart();
@@ -953,6 +818,17 @@ export default function MyOrdersScreen({ navigation, route }) {
         _itemCount: (order?.products || []).reduce((sum, p) => sum + Number(p.quantity || 0), 0)})),
     [visibleOrders]
   );
+  const activeOrderViewModels = useMemo(
+    () =>
+      activeOrders.map((order) => ({
+        ...order,
+        _shortId: String(order?._id || "").slice(-6).toUpperCase(),
+        _createdAtLabel: order?.createdAt ? new Date(order.createdAt).toLocaleString() : "",
+        _lineCount: (order?.products || []).length,
+        _itemCount: (order?.products || []).reduce((sum, p) => sum + Number(p.quantity || 0), 0),
+      })),
+    [activeOrders]
+  );
   const historyOrderViewModels = useMemo(
     () =>
       historyOrders.map((order) => ({
@@ -963,45 +839,14 @@ export default function MyOrdersScreen({ navigation, route }) {
         _itemCount: (order?.products || []).reduce((sum, p) => sum + Number(p.quantity || 0), 0)})),
     [historyOrders]
   );
-  const [historyExpanded, setHistoryExpanded] = useState(true);
   const [renderCount, setRenderCount] = useState(20);
-  const allDisplayedOrders = useMemo(
-    () =>
-      isWide && filter === "all"
-        ? (historyExpanded ? historyOrderViewModels : [])
-        : visibleOrderViewModels,
-    [isWide, filter, historyExpanded, historyOrderViewModels, visibleOrderViewModels]
-  );
-  const displayedOrderViewModels = useMemo(
-    () => allDisplayedOrders.slice(0, renderCount),
-    [allDisplayedOrders, renderCount]
-  );
+  const useSectionedList = filter === "all";
 
   useEffect(() => {
     setRenderCount(20);
-  }, [filter, historyExpanded, isWide, allDisplayedOrders.length]);
+  }, [filter]);
 
   const statsActive = !loading && orders.length > 0;
-  const totalOrdersCount = useCountUp({
-    target: orderStats.total,
-    active: statsActive,
-    reducedMotion,
-    duration: 900});
-  const inFlightCount = useCountUp({
-    target: orderStats.inFlight,
-    active: statsActive,
-    reducedMotion,
-    duration: 900});
-  const deliveredCount = useCountUp({
-    target: orderStats.delivered,
-    active: statsActive,
-    reducedMotion,
-    duration: 900});
-  const totalSpentCount = useCountUp({
-    target: orderStats.totalSpent,
-    active: statsActive,
-    reducedMotion,
-    duration: 1100});
 
   const filterCounts = useMemo(
     () => ({
@@ -1013,73 +858,7 @@ export default function MyOrdersScreen({ navigation, route }) {
     [orders.length, activeOrders.length, orderStats.delivered]
   );
 
-  const useFigmaOrderCard = isNativeApp || isPhoneCompact;
   const pageEyebrow = getOrdersPageEyebrow(activeOrders.length);
-
-  function StatusChip({ status }) {
-    const s = String(status || "");
-    const isDel = isDeliveredOrder(s);
-    const isCan = isCancelledOrder(s);
-
-    const targetState = isDel ? 2 : isCan ? 1 : 0;
-    const stateAnim = useSharedValue(targetState);
-
-    useEffect(() => {
-      if (reducedMotion) {
-        stateAnim.value = targetState;
-        return;
-      }
-      stateAnim.value = withTiming(targetState, {
-        duration: 360,
-        easing: ReanimatedEasing.bezier(0.22, 1, 0.36, 1)});
-    }, [targetState, stateAnim]);
-
-    const animatedChipStyle = useAnimatedStyle(() => {
-      const bg = interpolateColor(
-        stateAnim.value,
-        [0, 1, 2],
-        [c.secondarySoft, "rgba(220, 38, 38, 0.08)", c.secondarySoft],
-      );
-      const border = interpolateColor(
-        stateAnim.value,
-        [0, 1, 2],
-        [c.secondaryBorder, c.danger, c.secondaryBorder],
-      );
-      return { backgroundColor: bg, borderColor: border };
-    });
-
-    return (
-      <Animated.View style={[styles.statusChip, animatedChipStyle]}>
-        <Text style={styles.statusChipText}>{getOrderStatusLabel(s)}</Text>
-      </Animated.View>
-    );
-  }
-
-  function InvoiceChip({ invoice }) {
-    const invoiceStatus = String(invoice?.status || "draft");
-    const isPaid = invoiceStatus === "paid";
-    const isFinal = invoiceStatus === "final";
-    const isVoid = invoiceStatus === "void";
-    return (
-      <View
-        style={[
-          styles.invoiceChip,
-          isPaid ? styles.invoiceChipPaid : null,
-          isFinal ? styles.invoiceChipFinal : null,
-          isVoid ? styles.invoiceChipVoid : null,
-        ]}
-      >
-        <Ionicons
-          name={isPaid ? "checkmark-done-outline" : isVoid ? "close-circle-outline" : "document-text-outline"}
-          size={12}
-          color={isVoid ? c.danger : c.primary}
-        />
-        <Text style={[styles.invoiceChipText, isVoid ? { color: c.danger } : null]}>
-          Invoice: {invoiceStatus}
-        </Text>
-      </View>
-    );
-  }
 
   const handleReorder = async (orderId) => {
     try {
@@ -1182,8 +961,42 @@ export default function MyOrdersScreen({ navigation, route }) {
     }
   };
 
-  if (isAuthLoading || !isAuthenticated) {
-    return <AuthGateShell />;
+  const handleAddressChange = useCallback((key, value) => {
+    setAddressForm((current) => ({ ...current, [key]: value }));
+  }, []);
+
+  const renderOrderCard = (item, _idx, compact = false) => (
+    <OrderListItem
+      key={item._id}
+      order={item}
+      compact={compact}
+      expanded={expandedOrderId === item._id}
+      editing={editingOrderId === item._id}
+      addressForm={addressForm}
+      onAddressChange={handleAddressChange}
+      onToggleDetails={() => setExpandedOrderId((current) => (current === item._id ? "" : item._id))}
+      onOpenEditAddress={() => openEditAddress(item)}
+      onSaveAddress={() => handleSaveAddress(item._id)}
+      onCancelEdit={() => setEditingOrderId("")}
+      onDownloadInvoice={() => handleDownloadInvoice(item)}
+      onClaimReward={() => handleClaimReward(item._id)}
+      onReorder={() => handleReorder(item._id)}
+      canEditAddress={canEditAddress(item)}
+      downloading={downloadingOrderId === item._id}
+      claimingReward={claimingRewardOrderId === item._id}
+      saving={savingOrderId === item._id}
+      reordering={reorderingOrderId === item._id}
+      token={token}
+      user={user}
+      onRefreshOrders={loadOrders}
+    />
+  );
+
+  if (isAuthLoading) {
+    return <AuthGateShell navigation={navigation} />;
+  }
+  if (!isAuthenticated) {
+    return <AuthGateShell signedOut navigation={navigation} />;
   }
 
   return (
@@ -1206,19 +1019,18 @@ export default function MyOrdersScreen({ navigation, route }) {
         <KankregCustomerPageHeader
           eyebrow={pageEyebrow}
           title={MY_ORDERS_UI.pageTitle}
+          subtitle={MY_ORDERS_UI.pageSubtitle}
           navigation={navigation}
           showBack={false}
           figmaOnWeb
           right={
-            !isPhoneCompact ? (
-              <PremiumButton
-                label={MY_ORDERS_UI.refresh}
-                iconLeft="refresh-outline"
-                size="sm"
-                variant="ghost"
-                onPress={loadOrders}
-              />
-            ) : undefined
+            <PremiumButton
+              label={MY_ORDERS_UI.refresh}
+              iconLeft="refresh-outline"
+              size="sm"
+              variant="ghost"
+              onPress={loadOrders}
+            />
           }
         />
         {error ? (
@@ -1232,38 +1044,11 @@ export default function MyOrdersScreen({ navigation, route }) {
           </View>
         ) : null}
 
-        {!loading && orders.length > 0 && !isNativeApp ? (
+        {!loading && orders.length > 0 ? (
           <SectionReveal preset="fade-up" delay={60}>
-            <KankregResponsiveGrid variant="stats">
-              <PremiumStatCard
-                iconName="receipt-outline"
-                label={MY_ORDERS_UI.statTotal}
-                value={String(Math.round(totalOrdersCount))}
-                tone="gold"
-              />
-              <PremiumStatCard
-                iconName="rocket-outline"
-                label={MY_ORDERS_UI.statInFlight}
-                value={String(Math.round(inFlightCount))}
-                tone="navy"
-              />
-              <PremiumStatCard
-                iconName="checkmark-done-outline"
-                label={MY_ORDERS_UI.statDelivered}
-                value={String(Math.round(deliveredCount))}
-                tone="green"
-              />
-              <PremiumStatCard
-                iconName="wallet-outline"
-                label={MY_ORDERS_UI.statSpend}
-                value={formatINR(Math.round(totalSpentCount))}
-                tone="neutral"
-              />
-            </KankregResponsiveGrid>
+            <OrdersPageSummary stats={orderStats} active={statsActive} />
           </SectionReveal>
         ) : null}
-
-        {!loading && orders.length > 0 && !isNativeApp ? <GoldHairline marginVertical={spacing.md} /> : null}
 
         {loading ? (
           <View style={styles.loaderWrap}>
@@ -1285,17 +1070,7 @@ export default function MyOrdersScreen({ navigation, route }) {
           </View>
         ) : orders.length === 0 ? (
           <View style={[styles.panel, styles.emptyPanel]}>
-            <LinearGradient
-              colors={
-                isDark
-                  ? ["rgba(20, 83, 45, 0.15)", "rgba(15, 23, 42, 0.4)"]
-                  : ["rgba(255, 251, 235, 0.9)", "rgba(255, 255, 255, 0.95)"]
-              }
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.emptyGradient}
-            >
-              <PremiumEmptyState
+            <PremiumEmptyState
                 iconName="cube-outline"
                 title={MY_ORDERS_UI.emptyTitle}
                 description={MY_ORDERS_UI.emptyDescription}
@@ -1303,447 +1078,79 @@ export default function MyOrdersScreen({ navigation, route }) {
                 ctaIconLeft="storefront-outline"
                 onCtaPress={() => navigation.navigate("Home")}
               />
-            </LinearGradient>
           </View>
         ) : (
           <>
           <KankregOrdersFilterRow selected={filter} onSelect={setFilter} counts={filterCounts} />
 
-          {isWide && filter === "all" && activeOrders.length > 0 ? (
-            <View style={styles.inFlightSection}>
-              <PremiumSectionHeader
-                compact
-                title={MY_ORDERS_UI.inFlightTitle}
-                count={activeOrders.length}
-              />
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.inFlightRailContent}
-                {...(Platform.OS === "web"
-                  ? { style: { scrollSnapType: "x mandatory" } }
-                  : {})}
-              >
-                {activeOrders.map((order) => (
-                  <PremiumCard
-                    key={order._id}
-                    padding="md"
-                    interactive
-                    onPress={() => setExpandedOrderId(order._id)}
-                    style={styles.inFlightCard}
-                    accessibilityLabel={`Open order ${String(order._id).slice(-6)}`}
-                  >
-                    <View style={styles.inFlightCardTop}>
-                      <Text style={styles.inFlightCardKicker}>Order</Text>
-                      <StatusChip status={order.status} />
-                    </View>
-                    <Text style={[styles.inFlightCardId, isDark ? null : styles.orderTitleLight]} numberOfLines={1}>
-                      #{String(order._id).slice(-6).toUpperCase()}
-                    </Text>
-                    <Text style={styles.inFlightCardAmount} numberOfLines={1}>
-                      {formatINR(order.totalPrice)}
-                    </Text>
-                    <Text style={styles.inFlightCardMeta} numberOfLines={1}>
-                      {(order.products || []).reduce((s, p) => s + Number(p.quantity || 0), 0)} items ·{" "}
-                      {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : ""}
-                    </Text>
-                  </PremiumCard>
-                ))}
-              </ScrollView>
-              <View style={styles.historyHeaderRow}>
-                <View style={styles.historyHeaderTitle}>
-                  <PremiumSectionHeader
-                    compact
-                    title={MY_ORDERS_UI.historyTitle}
-                    count={historyOrders.length}
-                  />
-                </View>
-                <PremiumButton
-                  iconLeft={historyExpanded ? "chevron-up-outline" : "chevron-down-outline"}
-                  variant="ghost"
-                  size="sm"
-                  onPress={() => setHistoryExpanded((v) => !v)}
-                  accessibilityLabel={historyExpanded ? "Collapse order history" : "Expand order history"}
-                  style={styles.historyToggleBtn}
-                />
-              </View>
-            </View>
-          ) : null}
-
-          {displayedOrderViewModels.map((item, idx) => {
-            const statusStr = String(item.status || "");
-            const showLiveMapCard = ORDER_STATUSES_WITH_LIVE_MAP.has(statusStr);
-            const compactShipLine = formatCompactShippingLine(item.shippingAddress);
-
-            const orderFooter = (
-              <>
-              <View style={[styles.rowButtons, useFigmaOrderCard && styles.figmaRowButtons]}>
-                <PremiumButton
-                  label={
-                    expandedOrderId === item._id ? MY_ORDERS_UI.detailsCollapse : MY_ORDERS_UI.detailsExpand
-                  }
-                  iconLeft={expandedOrderId === item._id ? "chevron-up-outline" : "chevron-down-outline"}
-                  size="sm"
-                  variant="ghost"
-                  fullWidth={isPhoneCompact}
-                  onPress={() => setExpandedOrderId((current) => (current === item._id ? "" : item._id))}
-                />
-                {canEditAddress(item) ? (
-                  <PremiumButton
-                    label={MY_ORDERS_UI.changeAddress}
-                    iconLeft="location-outline"
-                    size="sm"
-                    variant="ghost"
-                    fullWidth={isPhoneCompact}
-                    onPress={() => openEditAddress(item)}
-                  />
-                ) : null}
-                <PremiumButton
-                  label={
-                    downloadingOrderId === item._id
-                      ? MY_ORDERS_UI.invoiceGenerating
-                      : MY_ORDERS_UI.invoiceDownload
-                  }
-                  iconLeft="document-text-outline"
-                  size="sm"
-                  variant="ghost"
-                  fullWidth={isPhoneCompact}
-                  disabled={downloadingOrderId === item._id}
-                  onPress={() => handleDownloadInvoice(item)}
-                />
-                {isDeliveredOrder(item.status) ? (
-                  <PremiumButton
-                    label={
-                      item.reward?.claimedAt
-                        ? MY_ORDERS_UI.claimedReward
-                        : claimingRewardOrderId === item._id
-                          ? MY_ORDERS_UI.claimRewardLoading
-                          : MY_ORDERS_UI.claimReward
-                    }
-                    iconLeft={item.reward?.claimedAt ? "checkmark-circle-outline" : "gift-outline"}
-                    size="sm"
-                    variant={item.reward?.claimedAt ? "subtle" : "secondary"}
-                    fullWidth={isPhoneCompact}
-                    disabled={Boolean(item.reward?.claimedAt) || claimingRewardOrderId === item._id}
-                    loading={claimingRewardOrderId === item._id}
-                    onPress={() => handleClaimReward(item._id)}
-                  />
-                ) : null}
-              </View>
-              {Platform.OS === "web" ? (
-                <Text style={styles.invoiceHintWeb}>{MY_ORDERS_UI.invoiceHintWeb}</Text>
-              ) : null}
-              {expandedOrderId === item._id ? (
-                <View style={styles.detailBox}>
-                  <Text style={styles.detailKicker}>Full order</Text>
-                  <Text style={styles.detailTitle}>Price Breakdown</Text>
-                  <Text style={styles.meta}>Items: {formatINR(item.priceBreakdown?.itemsTotal || 0)}</Text>
-                  <Text style={styles.meta}>Delivery: {formatINR(item.priceBreakdown?.deliveryFee || 0)}</Text>
-                  <Text style={styles.meta}>Platform Fee: {formatINR(item.priceBreakdown?.platformFee || 0)}</Text>
-                  <Text style={styles.meta}>Discount: -{formatINR(item.priceBreakdown?.discountAmount || 0)}</Text>
-                  <Text style={styles.meta}>Payment Method: {item.paymentMethod || "Cash on Delivery"}</Text>
-                  <Text style={styles.meta}>
-                    Payment status: {formatPaymentStatusLabel(item.paymentStatus)}
-                  </Text>
-                  {item.razorpay?.paymentId ? (
-                    <Text style={styles.meta} numberOfLines={2}>
-                      Razorpay payment ID: {item.razorpay.paymentId}
-                    </Text>
-                  ) : null}
-                  <View style={styles.addressDetailStack}>
-                    {String(item.shippingAddress?.fullName || "").trim() ? (
-                      <Text style={styles.addressDetailLine}>{item.shippingAddress.fullName}</Text>
-                    ) : null}
-                    {String(item.shippingAddress?.line1 || "").trim() ? (
-                      <Text style={styles.addressDetailLine}>{item.shippingAddress.line1}</Text>
-                    ) : null}
-                    {(() => {
-                      const cs = [item.shippingAddress?.city, item.shippingAddress?.state]
-                        .filter((x) => String(x || "").trim())
-                        .join(", ");
-                      const pc = String(item.shippingAddress?.postalCode || "").trim();
-                      const line = [cs, pc].filter(Boolean).join(" ");
-                      return line ? <Text style={styles.addressDetailLine}>{line}</Text> : null;
-                    })()}
-                    {String(item.shippingAddress?.country || "").trim() ? (
-                      <Text style={styles.metaMuted}>{item.shippingAddress.country}</Text>
-                    ) : null}
-                  </View>
-                </View>
-              ) : null}
-              {editingOrderId === item._id ? (
-                <View style={styles.editBox}>
-                  <Text style={styles.detailTitle}>{MY_ORDERS_UI.editAddressTitle}</Text>
-                  <View style={styles.editFieldGap}>
-                    <PremiumInput
-                      label="Full name"
-                      value={addressForm.fullName}
-                      onChangeText={(value) => setAddressForm((current) => ({ ...current, fullName: value }))}
-                      iconLeft="person-outline"
-                      autoCapitalize="words"
-                    />
-                  </View>
-                  <View style={styles.editFieldGap}>
-                    <PremiumInput
-                      label="Phone"
-                      value={addressForm.phone}
-                      onChangeText={(value) => setAddressForm((current) => ({ ...current, phone: value }))}
-                      iconLeft="call-outline"
-                      keyboardType="phone-pad"
-                    />
-                  </View>
-                  <View style={styles.editFieldGap}>
-                    <PremiumInput
-                      label="Address line"
-                      value={addressForm.line1}
-                      onChangeText={(value) => setAddressForm((current) => ({ ...current, line1: value }))}
-                      iconLeft="home-outline"
-                      autoCapitalize="sentences"
-                    />
-                  </View>
-                  <View style={styles.splitRow}>
-                    <View style={[styles.editFieldGap, styles.editHalfField]}>
-                      <PremiumInput
-                        label="City"
-                        value={addressForm.city}
-                        onChangeText={(value) => setAddressForm((current) => ({ ...current, city: value }))}
-                        autoCapitalize="words"
-                      />
-                    </View>
-                    <View style={[styles.editFieldGap, styles.editHalfField]}>
-                      <PremiumInput
-                        label="State"
-                        value={addressForm.state}
-                        onChangeText={(value) => setAddressForm((current) => ({ ...current, state: value }))}
-                        autoCapitalize="words"
-                      />
-                    </View>
-                  </View>
-                  <View style={styles.splitRow}>
-                    <View style={[styles.editFieldGap, styles.editHalfField]}>
-                      <PremiumInput
-                        label="Postal code"
-                        value={addressForm.postalCode}
-                        onChangeText={(value) => setAddressForm((current) => ({ ...current, postalCode: value }))}
-                        keyboardType="number-pad"
-                      />
-                    </View>
-                    <View style={[styles.editFieldGap, styles.editHalfField]}>
-                      <PremiumInput
-                        label="Country"
-                        value={addressForm.country}
-                        onChangeText={(value) => setAddressForm((current) => ({ ...current, country: value }))}
-                        autoCapitalize="words"
-                      />
-                    </View>
-                  </View>
-                  <View style={styles.editFieldGap}>
-                    <PremiumInput
-                      label="Note (optional)"
-                      value={addressForm.note}
-                      onChangeText={(value) => setAddressForm((current) => ({ ...current, note: value }))}
-                      iconLeft="chatbubbles-outline"
-                    />
-                  </View>
-                  <View style={styles.rowButtons}>
-                    <PremiumButton
-                      label={savingOrderId === item._id ? MY_ORDERS_UI.savingAddress : MY_ORDERS_UI.saveAddress}
-                      size="sm"
-                      variant="primary"
-                      onPress={() => handleSaveAddress(item._id)}
-                      disabled={savingOrderId === item._id}
-                    />
-                    <PremiumButton
-                      label={MY_ORDERS_UI.cancel}
-                      size="sm"
-                      variant="ghost"
-                      onPress={() => setEditingOrderId("")}
-                    />
-                  </View>
-                </View>
-              ) : null}
-              <PremiumButton
-                label={reorderingOrderId === item._id ? MY_ORDERS_UI.reorderLoading : MY_ORDERS_UI.reorder}
-                iconLeft="refresh-outline"
-                variant="primary"
-                size="md"
-                fullWidth
-                style={styles.reorderBtn}
-                onPress={() => handleReorder(item._id)}
-                disabled={reorderingOrderId === item._id}
-              />
-              </>
-            );
-
-            const panel = useFigmaOrderCard ? (
-              <KankregOrderTrackingCard
-                order={item}
-                showLiveMap={showLiveMapCard}
-                liveMapSlot={showLiveMapCard ? <OrderLiveMapCard orderId={item._id} /> : null}
-                etaLabel={showLiveMapCard ? MY_ORDERS_UI.etaFallback : undefined}
-                style={isNativeApp ? styles.nativeFigmaOrderCard : undefined}
-              >
-                {item.status === "pending_payment" && item.paymentStatus === "pending" ? (
-                  <PaymentStatusBanner order={item} token={token} user={user} onRefresh={loadOrders} />
-                ) : null}
-                <Text style={[styles.figmaOrderTotal, { color: c.text }]}>{formatINR(item.totalPrice)}</Text>
-                {orderFooter}
-              </KankregOrderTrackingCard>
-            ) : (
-              <View style={[styles.panel, isNativeApp && styles.nativeOrderPanel]}>
-              <View style={[styles.orderCardHeader, isPhoneCompact && styles.orderCardHeaderCompact]}>
-                <View style={styles.orderTitleBlock}>
-                  <Text style={styles.orderKicker}>Order</Text>
-                  <Text style={[styles.orderTitle, isDark ? null : styles.orderTitleLight]}>
-                    #{item._shortId}
-                  </Text>
-                  <View style={styles.placedRow}>
-                    <Ionicons name="calendar-outline" size={14} color={c.textMuted} />
-                    <Text style={styles.placedAt}>{item._createdAtLabel}</Text>
-                  </View>
-                  <Text style={styles.orderMetaSummary}>
-                    {item._itemCount} items · {item._lineCount} line{item._lineCount === 1 ? "" : "s"}
-                  </Text>
-                </View>
-                <StatusChip status={item.status} />
-              </View>
-
-              {item.status === "pending_payment" && item.paymentStatus === "pending" ? (
-                <PaymentStatusBanner order={item} token={token} user={user} onRefresh={loadOrders} />
-              ) : null}
-
-              <OrderProgressStrip status={item.status} styles={styles} c={c} isDark={isDark} />
-
-              {getOrderStatusHint(item.status) ? (
-                <View
-                  style={[
-                    styles.hintCallout,
-                    isCancelledOrder(item.status) ? styles.hintCalloutDanger : null,
-                    !isCancelledOrder(item.status) && !isDeliveredOrder(item.status)
-                      ? styles.hintCalloutProgress
-                      : null,
-                    isDeliveredOrder(item.status) ? styles.hintCalloutSuccess : null,
-                  ]}
-                >
-                  <Ionicons
-                    name={
-                      isCancelledOrder(item.status)
-                        ? "alert-circle-outline"
-                        : isDeliveredOrder(item.status)
-                          ? "checkmark-circle-outline"
-                          : "pulse-outline"
-                    }
-                    size={20}
-                    color={
-                      isCancelledOrder(item.status)
-                        ? c.danger
-                        : isDeliveredOrder(item.status)
-                          ? c.secondary
-                          : c.primary
-                    }
-                  />
-                  <Text style={styles.hintCalloutText}>{getOrderStatusHint(item.status)}</Text>
-                </View>
-              ) : null}
-
-              <View style={styles.summaryBand}>
-                <View style={styles.summaryBandMain}>
-                  <Text style={styles.summaryBandLabel}>Total</Text>
-                  <Text style={[styles.amountMain, styles.amountMainHero]}>{formatINR(item.totalPrice)}</Text>
-                </View>
-                <View style={styles.summaryBandMeta}>
-                  <View style={[styles.metaChip, { borderColor: c.border, backgroundColor: c.surfaceMuted }]}>
-                    <Ionicons name="layers-outline" size={14} color={c.textSecondary} />
-                    <Text style={styles.metaChipText}>
-                      {item._lineCount} line{item._lineCount === 1 ? "" : "s"}
-                    </Text>
-                  </View>
-                  <View style={[styles.metaChip, { borderColor: c.border, backgroundColor: c.surfaceMuted }]}>
-                    <Ionicons name="bag-handle-outline" size={14} color={c.textSecondary} />
-                    <Text style={styles.metaChipText}>
-                      {item._itemCount} items
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              <View style={styles.orderMetaRow}>
-                <InvoiceChip invoice={item.invoice} />
-                {item.invoice?.number ? (
-                  <Text style={styles.invoiceNumberText} numberOfLines={1}>
-                    {item.invoice.number}
-                  </Text>
-                ) : null}
-              </View>
-
-              {compactShipLine && !showLiveMapCard ? (
-                <View style={styles.shipRow}>
-                  <Ionicons name="location-outline" size={16} color={c.primary} />
-                  <Text style={styles.shipRowText} numberOfLines={2}>
-                    {compactShipLine}
-                  </Text>
-                </View>
-              ) : null}
-              {item.coupon?.code ? (
-                <View style={styles.couponRow}>
-                  <Ionicons name="pricetag-outline" size={16} color={c.secondary} />
-                  <Text style={styles.couponText}>
-                    {item.coupon.code} · −{formatINR(item.coupon.discountAmount || 0)}
-                  </Text>
-                </View>
-              ) : null}
-
-              {showLiveMapCard ? (
+          {useSectionedList ? (
+            <>
+              {activeOrderViewModels.length > 0 ? (
                 <>
-                  <KankregOrderTrack status={statusStr} />
-                  <OrderLiveMapCard orderId={item._id} />
+                  <View style={styles.sectionHeaderWrap}>
+                    <PremiumSectionHeader
+                      compact
+                      overline={MY_ORDERS_UI.sectionActiveOverline}
+                      title={MY_ORDERS_UI.sectionActive}
+                      subtitle={MY_ORDERS_UI.sectionActiveSubtitle}
+                      count={activeOrderViewModels.length}
+                    />
+                  </View>
+                  {activeOrderViewModels.map((item, idx) => renderOrderCard(item, idx, false))}
                 </>
               ) : null}
 
-              {(item.products || []).length > 0 ? (
-                <View style={styles.itemsPreview}>
-                  <Text style={styles.itemsPreviewTitle}>{MY_ORDERS_UI.itemsPreviewTitle}</Text>
-                  {(item.products || []).slice(0, 4).map((productItem, index) => (
-                    <View key={`${item._id}-${index}`} style={[styles.itemLineRow, isPhoneCompact && styles.itemLineRowCompact]}>
-                      <View style={[styles.itemBullet, { backgroundColor: c.primarySoft }]} />
-                      <Text style={styles.itemLine} numberOfLines={2}>
-                        {productItem.name}{" "}
-                        <Text style={styles.itemQty}>× {productItem.quantity}</Text>
-                      </Text>
-                    </View>
-                  ))}
-                  {(item.products || []).length > 4 ? (
-                    <Text style={styles.itemsMore}>+{(item.products || []).length - 4} more items</Text>
-                  ) : null}
+              {historyOrderViewModels.length > 0 ? (
+                <>
+                  <View style={[styles.sectionHeaderWrap, styles.sectionHeaderHistory]}>
+                    <PremiumSectionHeader
+                      compact
+                      overline={MY_ORDERS_UI.sectionHistoryOverline}
+                      title={MY_ORDERS_UI.sectionHistory}
+                      subtitle={MY_ORDERS_UI.sectionHistorySubtitle}
+                      count={historyOrderViewModels.length}
+                    />
+                  </View>
+                  {historyOrderViewModels.slice(0, renderCount).map((item, idx) =>
+                    renderOrderCard(item, idx + activeOrderViewModels.length, true)
+                  )}
+                </>
+              ) : null}
+
+              {historyOrderViewModels.length > renderCount ? (
+                <View style={styles.loadMoreWrap}>
+                  <PremiumButton
+                    label={MY_ORDERS_UI.loadMore}
+                    variant="subtle"
+                    size="md"
+                    onPress={() => setRenderCount((prev) => prev + 20)}
+                    fullWidth
+                  />
                 </View>
               ) : null}
-              {orderFooter}
-              </View>
-            );
-
-            if (idx > 7) {
-              return <View key={item._id}>{panel}</View>;
-            }
-            return (
-              <SectionReveal
-                key={item._id}
-                preset="fade-up"
-                index={idx}
-                delay={staggerDelay(idx, { initialDelay: 80 })}
-              >
-                {panel}
-              </SectionReveal>
-            );
-          })}
-          {displayedOrderViewModels.length < allDisplayedOrders.length ? (
-            <PremiumButton
-              label={MY_ORDERS_UI.loadMore}
-              variant="subtle"
-              size="md"
-              onPress={() => setRenderCount((prev) => prev + 20)}
-              fullWidth
-            />
-          ) : null}
+            </>
+          ) : (
+            <>
+              {visibleOrderViewModels.slice(0, renderCount).map((item, idx) =>
+                renderOrderCard(
+                  item,
+                  idx,
+                  filter === "delivered" || filter === "cancelled" || isDeliveredOrder(item.status) || isCancelledOrder(item.status)
+                )
+              )}
+              {visibleOrderViewModels.length > renderCount ? (
+                <View style={styles.loadMoreWrap}>
+                  <PremiumButton
+                    label={MY_ORDERS_UI.loadMore}
+                    variant="subtle"
+                    size="md"
+                    onPress={() => setRenderCount((prev) => prev + 20)}
+                    fullWidth
+                  />
+                </View>
+              ) : null}
+            </>
+          )}
           </>
         )}
 </KankregScrollPage>
@@ -1771,6 +1178,19 @@ function createMyOrdersStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     justifyContent: "center"},
   flashBar: {
     marginBottom: spacing.md},
+  sectionHeaderWrap: {
+    paddingHorizontal: FIGMA.gutter,
+    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  sectionHeaderHistory: {
+    marginTop: spacing.lg,
+  },
+  loadMoreWrap: {
+    paddingHorizontal: FIGMA.gutter,
+    marginTop: spacing.sm,
+    marginBottom: spacing.md,
+  },
   nativeOrderPanel: {
     marginHorizontal: FIGMA.gutter,
     backgroundColor: isDark ? c.surface : FIGMA.card,
@@ -1859,7 +1279,7 @@ function createMyOrdersStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     color: c.textMuted,
     textTransform: "uppercase"},
   inFlightCardId: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_BODY_SEMIBOLD,
     fontSize: typography.h3,
     color: c.textPrimary,
     letterSpacing: -0.4},
@@ -1924,7 +1344,7 @@ function createMyOrdersStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     fontFamily: fonts.bold,
     fontSize: typography.bodySmall},
   emptyTitleLight: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     color: ALCHEMY.brown},
   orderCardHeaderCompact: {
     flexDirection: "column",
@@ -1986,7 +1406,7 @@ function createMyOrdersStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     flex: 1,
     minWidth: 0},
   trackCancelledTitle: {
-    fontFamily: FONT_DISPLAY_SEMI,
+    fontFamily: FONT_HEADING_SEMI,
     fontSize: typography.body,
     color: c.textPrimary},
   trackCancelledSub: {
@@ -2016,12 +1436,12 @@ function createMyOrdersStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     flex: 1,
     minWidth: 0},
   trackHeadTitle: {
-    fontFamily: FONT_DISPLAY_SEMI,
+    fontFamily: FONT_HEADING_SEMI,
     fontSize: typography.body,
     color: "#f8fafc"},
   trackHeadTitleLight: {
     color: ALCHEMY.brown,
-    fontFamily: FONT_DISPLAY},
+    fontFamily: FONT_HEADING},
   trackHeadSub: {
     marginTop: 2,
     fontSize: typography.caption,
@@ -2106,7 +1526,7 @@ function createMyOrdersStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     color: c.textSecondary},
   trackTitleCurrent: {
     color: c.textPrimary,
-    fontFamily: FONT_DISPLAY_SEMI,
+    fontFamily: FONT_HEADING_SEMI,
     fontSize: typography.body},
   trackSub: {
     fontSize: typography.caption,
@@ -2185,7 +1605,7 @@ function createMyOrdersStyles(c, shadowPremium, isDark, layoutFlags = {}) {
   amountMainHero: {
     fontSize: typography.h2,
     letterSpacing: -0.5,
-    fontFamily: FONT_DISPLAY},
+    fontFamily: FONT_PRICE},
   shipRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -2215,7 +1635,7 @@ function createMyOrdersStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     borderColor: isDark ? c.border : ALCHEMY.line,
     backgroundColor: isDark ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.55)"},
   itemsPreviewTitle: {
-    fontFamily: FONT_DISPLAY_SEMI,
+    fontFamily: FONT_HEADING_SEMI,
     fontSize: typography.caption,
     color: c.textMuted,
     textTransform: "uppercase",
@@ -2263,7 +1683,7 @@ function createMyOrdersStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     fontFamily: fonts.semibold},
   orderTitle: {
     color: c.textPrimary,
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: typography.h2,
     letterSpacing: -0.5},
   orderTitleLight: {

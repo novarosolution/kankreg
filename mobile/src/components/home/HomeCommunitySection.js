@@ -14,7 +14,7 @@ import {
 import { SectionHeader, ScrollFadeUp } from "./editorial";
 import GoldHairline from "../ui/GoldHairline";
 import { resolveCommunityDisplay } from "../../utils/homeViewMedia";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_HEADING, FONT_BODY, FONT_BODY_SEMIBOLD } from "../../theme/typographyRoles";
 import {
   GOLD_HAIRLINE_EDITORIAL,
   HOME_SPACE,
@@ -28,6 +28,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon, radius } from "../../theme/tokens";
 import { PRODUCT_HERO_BLURHASH } from "../../utils/image";
 import { resolveImageSource } from "../../utils/mediaSource";
+import ProgressiveImage from "../ui/ProgressiveImage";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 import { getHomePhoneBleed } from "../../utils/homeSectionBleed";
 
@@ -99,16 +100,30 @@ function CommunityPostCard({ post, isDark, index, cardWidth, phone = false }) {
         />
         <View style={[styles.media, isDark && styles.mediaDark]}>
           {imageSource ? (
-            <Image
-              source={imageSource}
-              style={styles.mediaImage}
-              contentFit="cover"
-              contentPosition="top center"
-              transition={300}
-              placeholder={{ blurhash: PRODUCT_HERO_BLURHASH }}
-              cachePolicy="memory-disk"
-              recyclingKey={post.id || post.key}
-            />
+            Platform.OS === "web" ? (
+              <ProgressiveImage
+                source={post.image}
+                alt={post.author?.subtitle || post.tag || "Community post"}
+                style={styles.mediaImage}
+                contentFit="cover"
+                contentPosition="top center"
+                priority="low"
+                width={504}
+                recyclingKey={post.id || post.key}
+                rounded={0}
+              />
+            ) : (
+              <Image
+                source={imageSource}
+                style={styles.mediaImage}
+                contentFit="cover"
+                contentPosition="top center"
+                transition={300}
+                placeholder={{ blurhash: PRODUCT_HERO_BLURHASH }}
+                cachePolicy="memory-disk"
+                recyclingKey={post.id || post.key}
+              />
+            )
           ) : (
             <View style={[styles.mediaImage, styles.mediaFallback]} />
           )}
@@ -423,7 +438,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   handleName: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_BODY_SEMIBOLD,
     fontSize: HOME_TYPE.kicker,
     lineHeight: HOME_TYPE.body.lineHeight,
     letterSpacing: -0.15,
@@ -643,13 +658,13 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   quoteMark: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 28,
     lineHeight: 24,
     color: "rgba(214, 173, 91, 0.75)",
   },
   quote: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_BODY,
     fontSize: 14,
     lineHeight: 19,
     fontStyle: "italic",
@@ -682,7 +697,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   avatarText: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_BODY_SEMIBOLD,
     fontSize: 12,
     color: "#FFF9EC",
   },

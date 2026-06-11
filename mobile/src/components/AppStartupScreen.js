@@ -5,7 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { fonts, spacing } from "../theme/tokens";
 import { BRAND_LOGO_SIZE } from "../constants/brand";
-import { FONT_DISPLAY_SEMI } from "../theme/customerAlchemy";
+import { FONT_HEADING_SEMI } from "../theme/typographyRoles";
 import { LOADING_THEME } from "../theme/loadingTheme";
 import BrandLogo from "./BrandLogo";
 import { GoldRingLoader, IndeterminateProgressBar } from "./loading";
@@ -21,7 +21,7 @@ export default function AppStartupScreen({
   footnote = "Preparing your boutique…",
   isDark = false,
 }) {
-  const displayFont = useAppFonts ? { fontFamily: FONT_DISPLAY_SEMI } : {};
+  const displayFont = useAppFonts ? { fontFamily: FONT_HEADING_SEMI } : {};
   const footFont = useAppFonts ? { fontFamily: fonts.medium } : {};
   const gradient = useMemo(
     () => (isDark ? LOADING_THEME.splashRadialDark : LOADING_THEME.splashRadialLight),

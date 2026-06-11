@@ -3,7 +3,8 @@ import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
-import { ALCHEMY, FONT_DISPLAY_SEMI } from "../../theme/customerAlchemy";
+import { ALCHEMY } from "../../theme/customerAlchemy";
+import { FONT_BODY_SEMIBOLD } from "../../theme/typographyRoles";
 import { platformShadow } from "../../theme/shadowPlatform";
 import { LOCATION_BAR } from "../../content/appContent";
 
@@ -141,7 +142,7 @@ function createStyles(c, isDark) {
     },
     label: {
       fontSize: typography.bodySmall + 1,
-      fontFamily: FONT_DISPLAY_SEMI,
+      fontFamily: FONT_BODY_SEMIBOLD,
       color: c.textPrimary,
       letterSpacing: -0.15,
     },

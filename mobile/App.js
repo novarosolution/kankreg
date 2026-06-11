@@ -2,7 +2,11 @@ import React, { useEffect, useState } from "react";
 import { Appearance, Platform, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
-import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
+import { NavigationContainer } from "@react-navigation/native";
+import {
+  flushPendingNavigationActions,
+  navigationRef,
+} from "./src/navigation/navigationRef";
 import * as ExpoLinking from "expo-linking";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import {
@@ -32,7 +36,7 @@ import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 import useAppIconSync from "./src/hooks/useAppIconSync";
 import AppStartupScreen from "./src/components/AppStartupScreen";
 import AppNavigator from "./src/navigation/AppNavigator";
-import { applyWebPremiumChrome, webRootStyle } from "./src/theme/web";
+import { applyWebPremiumChrome, injectWebDocumentMeta, webRootStyle } from "./src/theme/web";
 
 const STARTUP_WELCOME_KEY = "@kankreg_startup_welcome_shown";
 
@@ -40,7 +44,6 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const safeAreaRootStyle = { flex: 1, width: "100%" };
 
-const navigationRef = createNavigationContainerRef();
 const linking = {
   prefixes: [ExpoLinking.createURL("/")],
   config: {
@@ -107,6 +110,7 @@ function WebBodySync() {
   const { colors, isDark } = useTheme();
   useEffect(() => {
     if (Platform.OS !== "web" || typeof document === "undefined") return;
+    injectWebDocumentMeta();
     applyWebPremiumChrome(isDark, colors.background);
   }, [colors.background, isDark]);
   return null;
@@ -133,7 +137,10 @@ function AppNavigationShell() {
       <NavigationContainer
         ref={navigationRef}
         linking={linking}
-        onReady={() => setNavReady(true)}
+        onReady={() => {
+          setNavReady(true);
+          flushPendingNavigationActions();
+        }}
       >
         <AppNavigator navigationRef={navigationRef} navReady={navReady} />
       </NavigationContainer>
@@ -142,16 +149,24 @@ function AppNavigationShell() {
 }
 
 export default function App() {
-  const [fontsLoaded] = useFonts({
-    HankenGrotesk_400Regular,
-    HankenGrotesk_500Medium,
-    HankenGrotesk_600SemiBold,
-    HankenGrotesk_700Bold,
-    HankenGrotesk_800ExtraBold,
-    Fraunces_600SemiBold,
-    Fraunces_700Bold,
-    Fraunces_400Regular_Italic,
-  });
+  const fontMap =
+    Platform.OS === "web"
+      ? {
+          HankenGrotesk_400Regular,
+          HankenGrotesk_600SemiBold,
+          HankenGrotesk_700Bold,
+        }
+      : {
+          HankenGrotesk_400Regular,
+          HankenGrotesk_500Medium,
+          HankenGrotesk_600SemiBold,
+          HankenGrotesk_700Bold,
+          HankenGrotesk_800ExtraBold,
+          Fraunces_600SemiBold,
+          Fraunces_700Bold,
+          Fraunces_400Regular_Italic,
+        };
+  const [fontsLoaded] = useFonts(fontMap);
   const [bootFootnote, setBootFootnote] = useState("Preparing your boutique…");
 
   useEffect(() => {
@@ -176,12 +191,28 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (Platform.OS === "web") {
+      injectWebDocumentMeta();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS === "web" && typeof document !== "undefined") {
+      const shell = document.getElementById("kankreg-lcp-shell");
+      if (shell) {
+        shell.style.pointerEvents = "none";
+        shell.style.zIndex = "0";
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync().catch(() => {});
     }
   }, [fontsLoaded]);
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded && Platform.OS !== "web") {
     return (
       <SafeAreaProvider style={safeAreaRootStyle}>
         <View style={webRootStyle}>

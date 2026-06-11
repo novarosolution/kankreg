@@ -2,7 +2,7 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { fonts, spacing } from "../../theme/tokens";
 
 /** kankreg.html `.reward-hero` */
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
   },
   pts: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 36,
     color: KANKREG_PALETTE.paper,
     marginTop: 6,

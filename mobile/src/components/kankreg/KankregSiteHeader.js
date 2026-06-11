@@ -21,6 +21,7 @@ import KankregMobileNav from "./KankregMobileNav";
 import { buildKankregNavItems, routeMatchesNav } from "./kankregNav";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { KANKREG_HEADER } from "../../content/appContent";
+import { safeNavigate } from "../../navigation/navigationRef";
 export const KANKREG_HEADER_BODY_HEIGHT = WEB_HEADER_HEIGHT;
 export const KANKREG_ANNOUNCE_HEIGHT = WEB_ANNOUNCE_HEIGHT;
 export { getKankregChromeTop } from "../../theme/kankregChrome";
@@ -57,13 +58,15 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
   const go = React.useCallback(
     (name, requiresAuth = false, params) => {
       const dest = requiresAuth && !isAuthenticated ? "Login" : name;
-      if (navigationRef?.isReady?.()) {
-        navigationRef.navigate(dest, params);
-      }
+      safeNavigate(dest, params);
       setMobileOpen(false);
     },
-    [isAuthenticated, navigationRef]
+    [isAuthenticated]
   );
+
+  const openShopSearch = React.useCallback(() => {
+    go("Shop", false, { focusSearch: true });
+  }, [go]);
 
   const goProduct = React.useCallback(() => {
     if (typeof globalThis.sessionStorage !== "undefined") {
@@ -145,6 +148,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
                     ]}
                     accessibilityRole="tab"
                     accessibilityState={{ selected: active }}
+                    accessibilityLabel={item.label}
                   >
                     <Text
                       style={[
@@ -163,7 +167,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
 
           <View style={styles.actions}>
             <Pressable
-              onPress={() => go("Shop")}
+              onPress={openShopSearch}
               style={({ hovered }) => [
                 styles.iconBtn,
                 isDark && styles.iconBtnDark,
@@ -205,6 +209,10 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
                   hovered && styles.signInHover,
                   pressed && { opacity: 0.9 },
                 ]}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  isAuthenticated ? KANKREG_HEADER.accountLabel : KANKREG_HEADER.signInLabel
+                }
               >
                 <Text style={styles.signInText}>
                   {isAuthenticated ? KANKREG_HEADER.accountLabel : KANKREG_HEADER.signInLabel}
@@ -304,8 +312,10 @@ const styles = StyleSheet.create({
     ...Platform.select({ web: { overflow: "hidden" }, default: {} }),
   },
   navBtn: {
-    paddingVertical: 8,
+    paddingVertical: 12,
     paddingHorizontal: 11,
+    minHeight: 44,
+    justifyContent: "center",
     borderRadius: 999,
     flexShrink: 0,
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),

@@ -3,7 +3,7 @@ import { Linking, Platform, Pressable, StyleSheet, Text, View } from "react-nati
 import { useNavigation } from "@react-navigation/native";
 import Constants from "expo-constants";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { gsap } from "gsap";
+import { getGsap } from "../utils/loadGsap";
 import {
   APP_ENGINEER_NAME,
   APP_ENGINEER_URL,
@@ -56,13 +56,22 @@ export default function AppFooter({ webTight = false }) {
   const footerRef = useRef(null);
 
   useEffect(() => {
-    if (Platform.OS !== "web" || !footerRef.current) return;
-    const tween = gsap.fromTo(
-      footerRef.current,
-      { y: 22 },
-      { y: 0, duration: 0.58, ease: "power3.out", delay: 0.08 }
-    );
-    return () => tween.kill();
+    if (Platform.OS !== "web" || !footerRef.current) return undefined;
+    let tween;
+    let cancelled = false;
+    (async () => {
+      const gsap = await getGsap();
+      if (cancelled || !gsap || !footerRef.current) return;
+      tween = gsap.fromTo(
+        footerRef.current,
+        { y: 22 },
+        { y: 0, duration: 0.58, ease: "power3.out", delay: 0.08 }
+      );
+    })();
+    return () => {
+      cancelled = true;
+      tween?.kill?.();
+    };
   }, []);
 
   return (

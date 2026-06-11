@@ -13,8 +13,12 @@ import {
 import { useTheme } from "../../context/ThemeContext";
 import { formatINR } from "../../utils/currency";
 import { getImageUriCandidates, prefetchProductHeroImage } from "../../utils/image";
+import { SHOP_SCREEN_UI } from "../../content/appContent";
 import { fonts } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
+import ComingSoonProductOverlay from "../product/ComingSoonProductOverlay";
+import { getComingSoonImageBlurStyle } from "../../utils/comingSoonImageStyle";
+import { COMING_SOON_RED } from "../../theme/comingSoonTheme";
 
 const cardShadow = platformShadow({
   ios: {
@@ -34,6 +38,8 @@ export default function NativeProductCard({
   onAddToCart,
   category,
   isOutOfStock = false,
+  isComingSoon = false,
+  comingSoonNote = "",
   isFeatured = false,
 }) {
   const { colors: c, isDark } = useTheme();
@@ -65,13 +71,14 @@ export default function NativeProductCard({
       style={({ pressed }) => [
         figmaCardShell(isDark),
         styles.card,
+        isComingSoon && styles.cardComingSoon,
         isFeatured && (isDark ? styles.cardFeaturedDark : styles.cardFeatured),
         cardShadow,
         pressed && styles.cardPressed,
       ]}
       onPressIn={() => prefetchProductHeroImage(product?.image || product?.images?.[0])}
       onPress={onPress}
-      disabled={isOutOfStock}
+      disabled={isOutOfStock && !isComingSoon}
     >
       <View style={styles.tile}>
         <LinearGradient
@@ -81,9 +88,16 @@ export default function NativeProductCard({
           style={StyleSheet.absoluteFillObject}
         />
         {imageUri ? (
-          <Image source={{ uri: imageUri }} style={styles.image} contentFit="contain" />
+          <Image
+            source={{ uri: imageUri }}
+            style={[styles.image, isComingSoon && getComingSoonImageBlurStyle()]}
+            contentFit="contain"
+          />
         ) : null}
         <View style={styles.floor} />
+        {isComingSoon ? (
+          <ComingSoonProductOverlay note={comingSoonNote} compact isDark={isDark} />
+        ) : null}
         {isFeatured ? (
           <View style={styles.featuredBadge}>
             <Text style={styles.featuredBadgeText}>Top pick</Text>
@@ -108,21 +122,23 @@ export default function NativeProductCard({
             {listMrp ? <Text style={[styles.was, figmaTextMuted(isDark)]}>{formatINR(listMrp)}</Text> : null}
           </View>
           <Pressable
-            style={[styles.addBtn, isOutOfStock && styles.addBtnDisabled]}
+            style={[styles.addBtn, (isOutOfStock || isComingSoon) && styles.addBtnDisabled]}
             onPress={(e) => {
               e?.stopPropagation?.();
-              onAddToCart?.();
+              if (!isComingSoon) onAddToCart?.();
             }}
-            disabled={isOutOfStock}
-            accessibilityLabel="Add to cart"
+            disabled={isOutOfStock || isComingSoon}
+            accessibilityLabel={isComingSoon ? "Coming soon" : "Add to cart"}
           >
             <LinearGradient
               colors={
-                isOutOfStock
-                  ? ["#9a9a9a", "#7a7a7a"]
-                  : isDark
-                    ? ["#d6ad5b", "#a9772e"]
-                    : ["#2a241e", "#19140f"]
+                isComingSoon
+                  ? [COMING_SOON_RED.mid, COMING_SOON_RED.deep]
+                  : isOutOfStock
+                    ? ["#9a9a9a", "#7a7a7a"]
+                    : isDark
+                      ? ["#d6ad5b", "#a9772e"]
+                      : ["#2a241e", "#19140f"]
               }
               style={styles.addBtnGrad}
             >
@@ -142,6 +158,10 @@ const styles = StyleSheet.create({
     borderRadius: FIGMA.radiusCard,
     overflow: "hidden",
   },
+  cardComingSoon: {
+    borderColor: COMING_SOON_RED.cardBorder,
+    borderWidth: 1,
+  },
   cardFeatured: {
     borderColor: "rgba(169,119,46,0.35)",
     borderWidth: 1,
@@ -159,6 +179,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
+    position: "relative",
   },
   image: {
     width: "68%",

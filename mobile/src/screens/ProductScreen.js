@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 
@@ -20,8 +21,16 @@ import { platformShadow } from "../theme/shadowPlatform";
 import { getImageUriCandidates, getProductHeroImageUri, prefetchProductGalleryImages } from "../utils/image";
 import { matchesShelfProduct } from "../utils/shelfMatch";
 import { productToCartLine } from "../utils/productCart";
-import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../theme/customerAlchemy";
+import { ALCHEMY } from "../theme/customerAlchemy";
+import { FONT_HEADING, FONT_BODY_SEMIBOLD } from "../theme/typographyRoles";
 import { PRODUCT_SCREEN } from "../content/appContent";
+import {
+  getComingSoonNote,
+  getShopCatalogProducts,
+  isProductComingSoon,
+  isProductOutOfStock,
+  isProductPurchasable,
+} from "../utils/productAvailability";
 import PremiumEmptyState from "../components/ui/PremiumEmptyState";
 import KankregBuyBar from "../components/kankreg/KankregBuyBar";
 import WebProductView from "../components/kankreg/WebProductView";
@@ -51,17 +60,18 @@ export default function ProductScreen({ route, navigation }) {
   const reducedMotion = useReducedMotion();
   const heroFade = useSharedValue(1);
 
-  useEffect(() => {
-    async function loadProduct() {
+  const loadProduct = useCallback(
+    async ({ fresh = false, silent = false } = {}) => {
       try {
-        setLoading(true);
-        setError("");
+        if (!silent) {
+          setLoading(true);
+          setError("");
+        }
         let item = null;
         let resolvedId = productId;
         if (productId) {
-          item = await getProductById(productId);
+          item = await getProductById(productId, { fresh });
         } else {
-          /** Opened from the "Product" menu link without a specific id — show the first catalog product. */
           const list = await getProducts().catch(() => []);
           item = Array.isArray(list) && list.length ? list[0] : null;
           resolvedId = item?.id;
@@ -80,17 +90,29 @@ export default function ProductScreen({ route, navigation }) {
         } catch {
           setReviews([]);
         }
-        setSelectedImage(item?.image || "");
+        setSelectedImage((current) => current || item?.image || "");
         const vars = Array.isArray(item?.variants) ? item.variants : [];
-        setSelectedVariantLabel(vars[0]?.label ? String(vars[0].label) : "");
+        setSelectedVariantLabel((current) => current || (vars[0]?.label ? String(vars[0].label) : ""));
       } catch (err) {
         setError(err.message || PRODUCT_SCREEN.loadErrorFallback);
       } finally {
-        setLoading(false);
+        if (!silent) setLoading(false);
       }
-    }
-    loadProduct();
-  }, [productId]);
+    },
+    [productId]
+  );
+
+  useEffect(() => {
+    loadProduct({ fresh: true });
+  }, [loadProduct]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!productId) return undefined;
+      loadProduct({ fresh: true, silent: Boolean(product) });
+      return undefined;
+    }, [productId, loadProduct, product])
+  );
 
   // Reveal motion now lives on `SectionReveal` blocks below; this effect was a bespoke
   // GSAP intro that is replaced by the unified motion primitives.
@@ -143,11 +165,10 @@ export default function ProductScreen({ route, navigation }) {
     if (!product?.id) return [];
     const cat = String(product.category || "").trim().toLowerCase();
     if (!cat) return [];
-    return catalog
+    return getShopCatalogProducts(catalog)
       .filter(
         (p) =>
           p.id !== product.id &&
-          p.inStock !== false &&
           String(p.category || "").trim().toLowerCase() === cat
       )
       .slice(0, 4);
@@ -199,7 +220,7 @@ export default function ProductScreen({ route, navigation }) {
   }
 
   const handleAddToCart = () => {
-    if (product.inStock === false || Number(product.stockQty || 0) <= 0) {
+    if (!isProductPurchasable(product)) {
       return;
     }
     if (!isAuthenticated) {
@@ -219,7 +240,9 @@ export default function ProductScreen({ route, navigation }) {
   };
 
   const quantity = getItemQuantity(product.id, cartLine?.variantLabel ?? "");
-  const isOutOfStock = product.inStock === false || Number(product.stockQty || 0) <= 0;
+  const isComingSoon = isProductComingSoon(product);
+  const isOutOfStock = isProductOutOfStock(product);
+  const comingSoonNote = getComingSoonNote(product, PRODUCT_SCREEN.comingSoonNoteFallback);
   const displayPrice = cartLine ? cartLine.price : product.price;
   const variants = Array.isArray(product.variants) ? product.variants : [];
   const ratingAvg = Number(product.ratingAverage) || 0;
@@ -235,7 +258,7 @@ export default function ProductScreen({ route, navigation }) {
   const offPct =
     showMrp && mrp > 0 ? Math.max(0, Math.round((1 - Number(displayPrice) / mrp) * 100)) : null;
   /** Stacked product layout — matches HTML `.mbar` (always visible below 980px). */
-  const stickyBarVisible = !isOutOfStock && !useProductSplit;
+  const stickyBarVisible = isProductPurchasable(product) && !useProductSplit;
   const stickyFooterExtra = stickyBarVisible ? WEB_PRODUCT_STICKY_BAR_HEIGHT : 0;
 
   const handleSubmitReview = async () => {
@@ -295,6 +318,8 @@ export default function ProductScreen({ route, navigation }) {
           liveRatingAvg={liveRatingAvg}
           reviewCountDisplay={reviewCountDisplay}
           isOutOfStock={isOutOfStock}
+          isComingSoon={isComingSoon}
+          comingSoonNote={comingSoonNote}
           quantity={quantity}
           onAddToCart={handleAddToCart}
           onRemoveFromCart={handleRemoveFromCart}
@@ -358,6 +383,8 @@ export default function ProductScreen({ route, navigation }) {
           liveRatingAvg={liveRatingAvg}
           reviewCountDisplay={reviewCountDisplay}
           isOutOfStock={isOutOfStock}
+          isComingSoon={isComingSoon}
+          comingSoonNote={comingSoonNote}
           quantity={quantity}
           onAddToCart={handleAddToCart}
           onRemoveFromCart={handleRemoveFromCart}
@@ -697,7 +724,7 @@ function createProductStyles(c, shadowPremium, isDark) {
   name: {
     fontSize: typography.h1,
     lineHeight: lineHeight.h1,
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     color: c.textPrimary,
     letterSpacing: Platform.OS === "web" ? -0.55 : -0.42,
     marginTop: 2},
@@ -946,7 +973,7 @@ function createProductStyles(c, shadowPremium, isDark) {
     justifyContent: "center"},
   reviewAvatarText: {
     fontSize: typography.bodySmall,
-    fontFamily: FONT_DISPLAY_SEMI},
+    fontFamily: FONT_BODY_SEMIBOLD},
   reviewItemBody: {
     flex: 1,
     minWidth: 0},

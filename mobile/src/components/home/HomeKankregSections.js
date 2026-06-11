@@ -14,7 +14,8 @@ import {
   homeEditorialInk,
   homeEditorialMuted,
 } from "../../theme/homeEditorial";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { ALCHEMY } from "../../theme/customerAlchemy";
+import { FONT_HEADING, FONT_PRICE } from "../../theme/typographyRoles";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { createKankregEyebrowStyle } from "../../theme/kankregScreenStyles";
 import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
@@ -557,7 +558,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   featureTitle: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: typography.h2 + 4,
     letterSpacing: -0.5,
     lineHeight: typography.h2 + 8,
@@ -589,7 +590,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   editorialH1: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: Platform.OS === "web" ? 52 : 36,
     lineHeight: Platform.OS === "web" ? 50 : 40,
     letterSpacing: -1.2,
@@ -624,7 +625,7 @@ const styles = StyleSheet.create({
     minWidth: 88,
   },
   statN: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_PRICE,
     fontSize: 28,
     letterSpacing: -0.4,
   },
@@ -669,7 +670,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   floatTitle: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 18,
     color: KANKREG_PALETTE.ink,
     marginTop: 2,
@@ -698,7 +699,7 @@ const styles = StyleSheet.create({
     color: KANKREG_PALETTE.inkFaint,
   },
   floatPrice: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_PRICE,
     fontSize: 19,
     color: KANKREG_PALETTE.ink,
   },

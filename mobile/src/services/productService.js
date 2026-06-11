@@ -1,4 +1,5 @@
 import { apiGet, apiPost } from "./apiClient";
+import { parseCatalogBoolean } from "../utils/catalogBoolean";
 import { normalizeHeroSubtitle, normalizeHeroTitle } from "../utils/homeMarketingCopy";
 import {
   normalizeAboutSection,
@@ -17,7 +18,7 @@ let productsCache = {
   promise: null,
 };
 
-function normalizeProduct(raw) {
+export function normalizeProduct(raw) {
   const primaryImage =
     raw.image || (Array.isArray(raw.images) && raw.images.length ? raw.images[0] : "");
 
@@ -114,12 +115,15 @@ function normalizeProduct(raw) {
     homeSection: String(raw.homeSection ?? "").trim() || "Prime Products",
     productType: String(raw.productType ?? raw.category ?? "").trim() || "General",
     showOnHome: raw.showOnHome !== false,
+    isPublished: raw.isPublished !== false,
     homeOrder: Number.isFinite(Number(raw.homeOrder)) ? Number(raw.homeOrder) : 0,
     brand: String(raw.brand ?? "").trim(),
     sku: String(raw.sku ?? "").trim(),
     unit,
     eta: raw.eta ? String(raw.eta).trim() : "",
-    isSpecial: Boolean(raw.isSpecial),
+    isSpecial: parseCatalogBoolean(raw.isSpecial, false),
+    comingSoon: parseCatalogBoolean(raw.comingSoon, false),
+    comingSoonNote: String(raw.comingSoonNote ?? "").trim(),
     inStock: raw.inStock !== false,
     stockQty: Number.isFinite(Number(raw.stockQty)) ? Math.max(0, Number(raw.stockQty)) : 0,
     ratingAverage: Number.isFinite(ratingAvg) ? Math.min(5, Math.max(0, ratingAvg)) : 0,
@@ -194,9 +198,24 @@ export function invalidateProductsCache() {
   };
 }
 
-export async function getProductById(id) {
-  const allProducts = await getProducts();
-  return allProducts.find((item) => item.id === id) || null;
+export async function getProductById(id, { fresh = false } = {}) {
+  const key = String(id || "").trim();
+  if (!key) return null;
+
+  if (!fresh) {
+    const allProducts = await getProducts();
+    const cached = allProducts.find((item) => String(item.id) === key);
+    if (cached) return cached;
+  }
+
+  try {
+    const data = await apiGet(`/products/${encodeURIComponent(key)}`, publicApi);
+    if (!data) return null;
+    return normalizeProduct(data);
+  } catch {
+    const allProducts = await getProducts();
+    return allProducts.find((item) => String(item.id) === key) || null;
+  }
 }
 
 export async function getProductReviews(productId) {

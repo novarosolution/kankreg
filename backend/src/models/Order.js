@@ -148,6 +148,16 @@ const orderSchema = new mongoose.Schema(
       claimedPoints: { type: Number, default: 0, min: 0 },
       claimedAt: { type: Date, default: null },
     },
+    /** Set when inventory was deducted for this order. */
+    stockAdjustedAt: {
+      type: Date,
+      default: null,
+    },
+    /** Set after admin email/WhatsApp alert was sent. */
+    adminNotifiedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

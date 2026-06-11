@@ -2,7 +2,8 @@ import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../context/ThemeContext";
-import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { ALCHEMY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { spacing, typography } from "../../theme/tokens";
 
 /**
@@ -16,7 +17,7 @@ export default function AdminPageHeading({ title, subtitle, right, compact = fal
     <View style={styles.wrap}>
       <View style={styles.row}>
         <View style={styles.textCol}>
-          <Text style={[styles.title, { color: c.textPrimary, fontFamily: FONT_DISPLAY }]}>{title}</Text>
+          <Text style={[styles.title, { color: c.textPrimary, fontFamily: FONT_HEADING }]}>{title}</Text>
           {subtitle && !compact ? (
             <Text style={[styles.subtitle, { color: c.textSecondary }]}>{subtitle}</Text>
           ) : null}

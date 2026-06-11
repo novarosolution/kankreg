@@ -19,6 +19,10 @@ import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon, radius } from "../../theme/tokens";
 import { formatINRWhole } from "../../utils/currency";
+import { SHOP_SCREEN_UI } from "../../content/appContent";
+import ComingSoonProductOverlay from "../product/ComingSoonProductOverlay";
+import { getComingSoonImageBlurStyle } from "../../utils/comingSoonImageStyle";
+import { COMING_SOON_RED } from "../../theme/comingSoonTheme";
 import { getImageUriCandidates, getProductThumbImageUri, prefetchProductHeroImage } from "../../utils/image";
 import ProgressiveProductImage from "../ui/ProgressiveProductImage";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
@@ -113,6 +117,8 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
   onRemoveFromCart,
   quantity = 0,
   isOutOfStock = false,
+  isComingSoon = false,
+  comingSoonNote = "",
   imagePriority = "normal",
 }) {
   const { isDark } = useTheme();
@@ -149,6 +155,9 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
     return Number.isFinite(n) && n > safePrice ? n : null;
   }, [product?.mrp, safePrice]);
 
+  const launchNote = String(comingSoonNote || SHOP_SCREEN_UI.card.comingSoonNoteFallback).trim();
+  const unavailable = isComingSoon || isOutOfStock;
+
   const metaLine = useMemo(() => {
     const parts = [];
     if (product?.category) parts.push(String(product.category));
@@ -157,63 +166,72 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
   }, [product?.category, product?.unit]);
 
   return (
-    <Pressable
-      onPressIn={() => prefetchProductHeroImage(primaryImage)}
-      onPress={onPress}
+    <View
       className={isWeb ? PRODUCT_CARD_CLASS : undefined}
-      style={({ focused }) => [
+      style={[
         editorialStyles.card,
         isDark && editorialStyles.cardDark,
-        focused && isWeb ? editorialStyles.cardFocus : null,
+        isComingSoon && editorialStyles.cardComingSoon,
+        isComingSoon && isDark && editorialStyles.cardComingSoonDark,
       ]}
-      accessibilityRole="button"
-      accessibilityLabel={`Open ${product?.name || "product"}`}
     >
-      <View style={editorialStyles.imageFrame}>
-        {imageUri && imageCandidateIndex < imageUris.length ? (
-          <ProgressiveProductImage
-            uri={imageUri}
-            previewUri={getProductThumbImageUri(primaryImage)}
-            className={isWeb ? PRODUCT_PHOTO_CLASS : undefined}
-            style={editorialStyles.image}
-            contentFit="cover"
-            recyclingKey={`${product?.id || "p"}:${imageUri}`}
-            onError={() => setImageCandidateIndex((idx) => idx + 1)}
-            priority={imagePriority}
-            rounded={12}
-          />
-        ) : (
-          <View style={[editorialStyles.imageFallback, isDark && editorialStyles.imageFallbackDark]}>
-            <Ionicons name="image-outline" size={icon.md} color={muted} />
-          </View>
-        )}
-        {isOutOfStock ? (
-          <View style={editorialStyles.soldOutBadge}>
-            <Text style={editorialStyles.soldOutText}>Sold out</Text>
-          </View>
-        ) : null}
-      </View>
-
-      <View style={editorialStyles.body}>
-        {metaLine ? (
-          <Text style={[editorialStyles.meta, { color: muted }]} numberOfLines={1}>
-            {metaLine}
-          </Text>
-        ) : null}
-        <Text style={[editorialStyles.title, { color: ink }]} numberOfLines={2}>
-          {product?.name || ""}
-        </Text>
-        <View style={editorialStyles.priceRow}>
-          <Text style={[editorialStyles.price, { color: ink }]} numberOfLines={1}>
-            {formatINRWhole(safePrice)}
-          </Text>
-          {listMrp ? (
-            <Text style={[editorialStyles.mrp, { color: muted }]} numberOfLines={1}>
-              {formatINRWhole(listMrp)}
-            </Text>
+      <Pressable
+        onPressIn={() => prefetchProductHeroImage(primaryImage)}
+        onPress={onPress}
+        style={({ focused }) => [editorialStyles.cardPressable, focused && isWeb ? editorialStyles.cardFocus : null]}
+        accessibilityRole="button"
+        accessibilityLabel={`Open ${product?.name || "product"}`}
+      >
+        <View style={editorialStyles.imageFrame}>
+          {imageUri && imageCandidateIndex < imageUris.length ? (
+            <ProgressiveProductImage
+              uri={imageUri}
+              previewUri={getProductThumbImageUri(primaryImage)}
+              className={isWeb ? PRODUCT_PHOTO_CLASS : undefined}
+              style={[editorialStyles.image, isComingSoon && getComingSoonImageBlurStyle()]}
+              contentFit="cover"
+              recyclingKey={`${product?.id || "p"}:${imageUri}`}
+              onError={() => setImageCandidateIndex((idx) => idx + 1)}
+              priority={imagePriority}
+              rounded={12}
+            />
+          ) : (
+            <View style={[editorialStyles.imageFallback, isDark && editorialStyles.imageFallbackDark]}>
+              <Ionicons name="image-outline" size={icon.md} color={muted} />
+            </View>
+          )}
+          {isComingSoon ? (
+            <ComingSoonProductOverlay note={launchNote} compact={false} isDark={isDark} />
+          ) : isOutOfStock ? (
+            <View style={editorialStyles.soldOutBadge}>
+              <Text style={editorialStyles.soldOutText}>Sold out</Text>
+            </View>
           ) : null}
         </View>
 
+        <View style={editorialStyles.bodyTop}>
+          {metaLine ? (
+            <Text style={[editorialStyles.meta, { color: muted }]} numberOfLines={1}>
+              {metaLine}
+            </Text>
+          ) : null}
+          <Text style={[editorialStyles.title, { color: ink }]} numberOfLines={2}>
+            {product?.name || ""}
+          </Text>
+          <View style={editorialStyles.priceRow}>
+            <Text style={[editorialStyles.price, { color: ink }]} numberOfLines={1}>
+              {formatINRWhole(safePrice)}
+            </Text>
+            {listMrp ? (
+              <Text style={[editorialStyles.mrp, { color: muted }]} numberOfLines={1}>
+                {formatINRWhole(listMrp)}
+              </Text>
+            ) : null}
+          </View>
+        </View>
+      </Pressable>
+
+      <View style={editorialStyles.bodyActions}>
         {quantity > 0 ? (
           <View
             style={[editorialStyles.stepper, isDark && editorialStyles.stepperDark]}
@@ -233,7 +251,7 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
             <TouchableOpacity
               onPress={onAddToCart}
               style={editorialStyles.stepBtn}
-              disabled={isOutOfStock}
+              disabled={unavailable}
               accessibilityRole="button"
               accessibilityLabel="Increase quantity"
               hitSlop={8}
@@ -244,23 +262,28 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
         ) : (
           <Pressable
             onPress={onAddToCart}
-            disabled={isOutOfStock}
+            disabled={unavailable}
             style={({ hovered }) => [
               editorialStyles.addBtn,
               isDark && editorialStyles.addBtnDark,
-              isOutOfStock && editorialStyles.addBtnDisabled,
-              hovered && isWeb && !isOutOfStock ? editorialStyles.addBtnHover : null,
+              unavailable && editorialStyles.addBtnDisabled,
+              isComingSoon && editorialStyles.addBtnComingSoon,
+              hovered && isWeb && !unavailable ? editorialStyles.addBtnHover : null,
             ]}
             accessibilityRole="button"
-            accessibilityLabel={`Add ${product?.name || "product"} to cart`}
+            accessibilityLabel={
+              isComingSoon
+                ? `${product?.name || "Product"} coming soon`
+                : `Add ${product?.name || "product"} to cart`
+            }
           >
-            <Text style={[editorialStyles.addBtnText, { color: isOutOfStock ? muted : ink }]}>
-              {isOutOfStock ? "Unavailable" : "Add to cart"}
+            <Text style={[editorialStyles.addBtnText, { color: unavailable ? muted : ink }]}>
+              {isComingSoon ? SHOP_SCREEN_UI.card.comingSoon : isOutOfStock ? "Unavailable" : "Add to cart"}
             </Text>
           </Pressable>
         )}
       </View>
-    </Pressable>
+    </View>
   );
 });
 
@@ -275,6 +298,8 @@ export const HomeCatalogGridCard = memo(function HomeCatalogGridCard({
   onAddToCart,
   onRemoveFromCart,
   isOutOfStock,
+  isComingSoon = false,
+  comingSoonNote = "",
   compact = false,
   variant = "default",
 }) {
@@ -284,6 +309,8 @@ export const HomeCatalogGridCard = memo(function HomeCatalogGridCard({
         product={item}
         imagePriority={idx < 4 ? "high" : "normal"}
         isOutOfStock={isOutOfStock}
+        isComingSoon={isComingSoon}
+        comingSoonNote={comingSoonNote}
         quantity={quantity}
         onPress={() => navigation.navigate("Product", { productId: item.id })}
         onAddToCart={onAddToCart}
@@ -295,6 +322,8 @@ export const HomeCatalogGridCard = memo(function HomeCatalogGridCard({
         compact={compact}
         imagePriority={idx < 4 ? "high" : "normal"}
         isOutOfStock={isOutOfStock}
+        isComingSoon={isComingSoon}
+        comingSoonNote={comingSoonNote}
         product={item}
         onPress={() => navigation.navigate("Product", { productId: item.id })}
         quantity={quantity}
@@ -318,10 +347,23 @@ const editorialStyles = StyleSheet.create({
     ...Platform.select({
       web: {
         boxShadow: "0 8px 22px -18px rgba(25, 20, 15, 0.16)",
-        cursor: "pointer",
       },
       default: {},
     }),
+  },
+  cardPressable: {
+    width: "100%",
+    ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
+  },
+  bodyTop: {
+    paddingHorizontal: HOME_SPACE.md,
+    paddingTop: HOME_SPACE.sm + 2,
+    gap: HOME_SPACE.xs,
+  },
+  bodyActions: {
+    paddingHorizontal: HOME_SPACE.md,
+    paddingBottom: HOME_SPACE.md,
+    paddingTop: HOME_SPACE.xs,
   },
   cardDark: {
     backgroundColor: "#181513",
@@ -330,6 +372,19 @@ const editorialStyles = StyleSheet.create({
       web: { boxShadow: "0 10px 28px -22px rgba(0, 0, 0, 0.38)" },
       default: {},
     }),
+  },
+  cardComingSoon: {
+    borderColor: COMING_SOON_RED.cardBorder,
+    ...Platform.select({
+      web: {
+        boxShadow:
+          "0 18px 44px rgba(127, 29, 29, 0.14), 0 0 0 1px rgba(220, 38, 38, 0.12), inset 0 1px 0 rgba(255,255,255,0.92)",
+      },
+      default: {},
+    }),
+  },
+  cardComingSoonDark: {
+    borderColor: COMING_SOON_RED.cardBorderDark,
   },
   cardFocus: {
     ...Platform.select({
@@ -434,6 +489,11 @@ const editorialStyles = StyleSheet.create({
   },
   addBtnDisabled: {
     opacity: 0.55,
+  },
+  addBtnComingSoon: {
+    backgroundColor: COMING_SOON_RED.mid,
+    borderColor: COMING_SOON_RED.borderStrong,
+    opacity: 1,
   },
   addBtnText: {
     fontFamily: fonts.semibold,

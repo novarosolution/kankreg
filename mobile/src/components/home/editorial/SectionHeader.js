@@ -11,7 +11,7 @@ import {
   homeEditorialMuted,
   homeSectionTitleSize,
 } from "../../../theme/homeEditorial";
-import { FONT_DISPLAY } from "../../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../../theme/typographyRoles";
 import { useKankregLayout } from "../../../theme/kankregBreakpoints";
 import { fonts } from "../../../theme/tokens";
 import { useTheme } from "../../../context/ThemeContext";
@@ -58,7 +58,7 @@ function SectionHeaderBase({
           gap: HOME_SPACE.xs,
         },
         title: {
-          fontFamily: FONT_DISPLAY,
+          fontFamily: FONT_HEADING,
           fontSize: titleSize,
           lineHeight: Math.round(titleSize * HOME_TYPE.sectionTitle.lineHeightRatio),
           letterSpacing: -0.4,
@@ -103,7 +103,12 @@ function SectionHeaderBase({
             />
           ) : null}
           {titleText ? (
-            <Text style={styles.title} numberOfLines={3}>
+            <Text
+              style={styles.title}
+              numberOfLines={3}
+              accessibilityRole={Platform.OS === "web" ? "header" : undefined}
+              {...(Platform.OS === "web" ? { accessibilityLevel: 2 } : null)}
+            >
               {titleText}
             </Text>
           ) : null}

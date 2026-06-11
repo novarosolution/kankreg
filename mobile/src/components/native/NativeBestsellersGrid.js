@@ -6,6 +6,8 @@ import { FIGMA } from "../../theme/figmaApp";
 import { spacing } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
 import NativeProductCard from "./NativeProductCard";
+import { getProductCardFlags } from "../../utils/productAvailability";
+import { SHOP_SCREEN_UI } from "../../content/appContent";
 
 const gridShadow = platformShadow({
   ios: {
@@ -62,19 +64,23 @@ export default function NativeBestsellersGrid({ products, onProductPress, onAddT
         />
       )}
       <View style={styles.grid}>
-        {items.map((item, idx) => (
+        {items.map((item, idx) => {
+          const flags = getProductCardFlags(item, SHOP_SCREEN_UI.card.comingSoonNoteFallback);
+          return (
           <View key={item.id} style={styles.cell}>
             <NativeProductCard
               product={item}
               index={idx}
               category={item.category || item.homeSection}
-              isOutOfStock={item.inStock === false}
+              isOutOfStock={flags.isOutOfStock}
+              isComingSoon={flags.isComingSoon}
+              comingSoonNote={flags.comingSoonNote}
               isFeatured={idx === 0}
               onPress={() => onProductPress?.(item)}
               onAddToCart={() => onAddToCart?.(item)}
             />
           </View>
-        ))}
+        );})}
       </View>
     </View>
   );

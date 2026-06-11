@@ -4,7 +4,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
-import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { ALCHEMY } from "../../theme/customerAlchemy";
+import { FONT_PRICE } from "../../theme/typographyRoles";
 import { useTheme } from "../../context/ThemeContext";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import { platformShadow } from "../../theme/shadowPlatform";
@@ -276,7 +277,7 @@ function createStyles(c, isDark, palette, align, compact) {
       width: "100%",
     },
     value: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_PRICE,
       fontSize: valueSize,
       lineHeight: valueSize + 4,
       letterSpacing: -0.4,

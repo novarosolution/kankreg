@@ -24,7 +24,7 @@ export const HOME_SECTION_GAP = HOME_SPACE.section;
 export const HOME_HEADER_CONTENT_GAP = HOME_SPACE.md;
 
 /**
- * Editorial type scale (web home). Pair with `FONT_DISPLAY` + sans body tokens.
+ * Editorial type scale (web home). Pair with `FONT_HEADING` + sans body tokens.
  * Sizes are px; responsive helpers live on `SectionHeader`.
  */
 export const HOME_TYPE = {

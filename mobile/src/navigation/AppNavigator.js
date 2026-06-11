@@ -5,38 +5,8 @@ import AppStartupScreen from "../components/AppStartupScreen";
 import AuthGateShell from "../components/AuthGateShell";
 import KankregSiteHeader from "../components/kankreg/KankregSiteHeader";
 import PageTransition from "../components/motion/PageTransition";
-import KankregHomeScreen from "../screens/KankregHomeScreen";
-import FindLocationScreen from "../screens/FindLocationScreen";
-import ShopScreen from "../screens/ShopScreen";
-import CheckoutScreen from "../screens/CheckoutScreen";
-import ProductScreen from "../screens/ProductScreen";
-import CartScreen from "../screens/CartScreen";
-import LoginScreen from "../screens/LoginScreen";
-import RegisterScreen from "../screens/RegisterScreen";
-import ProfileScreen from "../screens/ProfileScreen";
-import EditProfileScreen from "../screens/EditProfileScreen";
-import MyOrdersScreen from "../screens/MyOrdersScreen";
-import OrderConfirmedScreen from "../screens/OrderConfirmedScreen";
-import NotificationsScreen from "../screens/NotificationsScreen";
-import SettingsScreen from "../screens/SettingsScreen";
-import RedeemRewardsScreen from "../screens/RedeemRewardsScreen";
-import ManageAddressScreen from "../screens/ManageAddressScreen";
-import SupportScreen from "../screens/SupportScreen";
-import AboutScreen from "../screens/AboutScreen";
-import LegalDocumentScreen from "../screens/LegalDocumentScreen";
-import DeliveryDashboardScreen from "../screens/DeliveryDashboardScreen";
-import AdminDashboardScreen from "../screens/admin/AdminDashboardScreen";
-import AdminProductsScreen from "../screens/admin/AdminProductsScreen";
-import AdminAddProductScreen from "../screens/admin/AdminAddProductScreen";
-import AdminOrdersScreen from "../screens/admin/AdminOrdersScreen";
-import AdminUsersScreen from "../screens/admin/AdminUsersScreen";
-import AdminNotificationsScreen from "../screens/admin/AdminNotificationsScreen";
-import AdminAnalyticsScreen from "../screens/admin/AdminAnalyticsScreen";
-import AdminCouponsScreen from "../screens/admin/AdminCouponsScreen";
-import AdminRewardsScreen from "../screens/admin/AdminRewardsScreen";
-import AdminSupportScreen from "../screens/admin/AdminSupportScreen";
-import AdminHomeViewScreen from "../screens/admin/AdminHomeViewScreen";
-import AdminInventoryScreen from "../screens/admin/AdminInventoryScreen";
+import * as CoreScreens from "./screenRegistryCore";
+import * as LazyScreens from "./lazyScreens";
 import { useAuth } from "../context/AuthContext";
 import { DeliveryLocationProvider } from "../context/DeliveryLocationContext";
 import { useTheme } from "../context/ThemeContext";
@@ -56,16 +26,11 @@ function withPageTransition(Component) {
 function withAuthGuard(Component) {
   return withPageTransition(function AuthGuardedScreen(props) {
     const { isAuthenticated, isAuthLoading } = useAuth();
-    useEffect(() => {
-      if (!isAuthLoading && !isAuthenticated) {
-        props.navigation.replace("Login");
-      }
-    }, [isAuthLoading, isAuthenticated, props.navigation]);
     if (isAuthLoading) {
-      return <AuthGateShell />;
+      return <AuthGateShell navigation={props.navigation} />;
     }
     if (!isAuthenticated) {
-      return <AuthGateShell />;
+      return <AuthGateShell signedOut navigation={props.navigation} />;
     }
     return <Component {...props} />;
   });
@@ -76,65 +41,64 @@ function withRoleGuard(Component, roleCheck) {
     const { isAuthenticated, isAuthLoading, user } = useAuth();
     useEffect(() => {
       if (isAuthLoading) return;
-      if (!isAuthenticated) {
-        props.navigation.replace("Login");
-        return;
-      }
+      if (!isAuthenticated) return;
       if (!roleCheck(user)) {
         props.navigation.replace("Home");
       }
     }, [isAuthLoading, isAuthenticated, user, props.navigation]);
     if (isAuthLoading) {
-      return <AuthGateShell />;
+      return <AuthGateShell navigation={props.navigation} />;
     }
     if (!isAuthenticated) {
-      return <AuthGateShell />;
+      return <AuthGateShell signedOut navigation={props.navigation} />;
     }
     if (!roleCheck(user)) {
-      return <AuthGateShell />;
+      return <AuthGateShell navigation={props.navigation} />;
     }
     return <Component {...props} />;
   });
 }
 
-const WrappedLogin = withPageTransition(LoginScreen);
-const WrappedRegister = withPageTransition(RegisterScreen);
-const WrappedFindLocation = withPageTransition(FindLocationScreen);
-const WrappedHome = withPageTransition(KankregHomeScreen);
-const WrappedShop = withPageTransition(ShopScreen);
-const WrappedProduct = withPageTransition(ProductScreen);
-const WrappedAbout = withPageTransition(AboutScreen);
-const WrappedLegal = withPageTransition(LegalDocumentScreen);
+const WrappedLogin = withPageTransition(CoreScreens.LoginScreen);
+const WrappedRegister = withPageTransition(CoreScreens.RegisterScreen);
+const WrappedFindLocation = withPageTransition(CoreScreens.FindLocationScreen);
+const WrappedHome = withPageTransition(CoreScreens.KankregHomeScreen);
+const WrappedShop = withPageTransition(LazyScreens.ShopScreen);
+const WrappedProduct = withPageTransition(LazyScreens.ProductScreen);
+const WrappedAbout = withPageTransition(LazyScreens.AboutScreen);
+const WrappedLegal = withPageTransition(LazyScreens.LegalDocumentScreen);
 
-const ProtectedCart = withAuthGuard(CartScreen);
-const ProtectedCheckout = withAuthGuard(CheckoutScreen);
-const ProtectedProfile = withAuthGuard(ProfileScreen);
-const ProtectedEditProfile = withAuthGuard(EditProfileScreen);
-const ProtectedMyOrders = withAuthGuard(MyOrdersScreen);
-const ProtectedOrderConfirmed = withAuthGuard(OrderConfirmedScreen);
-const ProtectedNotifications = withAuthGuard(NotificationsScreen);
-const ProtectedSettings = withAuthGuard(SettingsScreen);
-const ProtectedRedeemRewards = withAuthGuard(RedeemRewardsScreen);
-const ProtectedManageAddress = withAuthGuard(ManageAddressScreen);
-const ProtectedSupport = withAuthGuard(SupportScreen);
+const ProtectedCart = withAuthGuard(LazyScreens.CartScreen);
+const ProtectedCheckout = withAuthGuard(LazyScreens.CheckoutScreen);
+const ProtectedProfile = withAuthGuard(LazyScreens.ProfileScreen);
+const ProtectedEditProfile = withAuthGuard(LazyScreens.EditProfileScreen);
+const ProtectedMyOrders = withAuthGuard(LazyScreens.MyOrdersScreen);
+const ProtectedOrderConfirmed = withAuthGuard(LazyScreens.OrderConfirmedScreen);
+const ProtectedNotifications = withAuthGuard(LazyScreens.NotificationsScreen);
+const ProtectedSettings = withAuthGuard(LazyScreens.SettingsScreen);
+const ProtectedRedeemRewards = withAuthGuard(LazyScreens.RedeemRewardsScreen);
+const ProtectedManageAddress = withAuthGuard(LazyScreens.ManageAddressScreen);
+const ProtectedSupport = withAuthGuard(LazyScreens.SupportScreen);
 /** Auth only — role is checked inside the screen after a fresh profile fetch (avoids stale cache + wrong redirect). */
-const ProtectedDeliveryDashboard = withAuthGuard(DeliveryDashboardScreen);
-const ProtectedAdminDashboard = withRoleGuard(AdminDashboardScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminProducts = withRoleGuard(AdminProductsScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminInventory = withRoleGuard(AdminInventoryScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminAddProduct = withRoleGuard(AdminAddProductScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminOrders = withRoleGuard(AdminOrdersScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminUsers = withRoleGuard(AdminUsersScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminNotifications = withRoleGuard(AdminNotificationsScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminAnalytics = withRoleGuard(AdminAnalyticsScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminCoupons = withRoleGuard(AdminCouponsScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminRewards = withRoleGuard(AdminRewardsScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminSupport = withRoleGuard(AdminSupportScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminHomeView = withRoleGuard(AdminHomeViewScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedDeliveryDashboard = withAuthGuard(LazyScreens.DeliveryDashboardScreen);
+const ProtectedAdminDashboard = withRoleGuard(LazyScreens.AdminDashboardScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminProducts = withRoleGuard(LazyScreens.AdminProductsScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminInventory = withRoleGuard(LazyScreens.AdminInventoryScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminAddProduct = withRoleGuard(LazyScreens.AdminAddProductScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminOrders = withRoleGuard(LazyScreens.AdminOrdersScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminOrderDetail = withRoleGuard(LazyScreens.AdminOrderDetailScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminUsers = withRoleGuard(LazyScreens.AdminUsersScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminNotifications = withRoleGuard(LazyScreens.AdminNotificationsScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminAnalytics = withRoleGuard(LazyScreens.AdminAnalyticsScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminCoupons = withRoleGuard(LazyScreens.AdminCouponsScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminRewards = withRoleGuard(LazyScreens.AdminRewardsScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminSupport = withRoleGuard(LazyScreens.AdminSupportScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminHomeView = withRoleGuard(LazyScreens.AdminHomeViewScreen, (user) => Boolean(user?.isAdmin));
 
 export default function AppNavigator({ navigationRef, navReady = false }) {
   const { isAuthLoading } = useAuth();
   const { colors, isDark } = useTheme();
+  const blockStackOnAuth = Platform.OS !== "web" && isAuthLoading;
 
   const screenOptions = useMemo(
     () => ({
@@ -151,7 +115,7 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
     <View style={styles.navRoot}>
       <KankregSiteHeader navigationRef={navigationRef} navReady={navReady} />
       <View style={styles.stackFill}>
-        {isAuthLoading ? (
+        {blockStackOnAuth ? (
           <AppStartupScreen colors={colors} isDark={isDark} useAppFonts footnote="Syncing your session…" />
         ) : (
     <DeliveryLocationProvider>
@@ -224,6 +188,7 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
         <Stack.Screen name="AdminInventory" component={ProtectedAdminInventory} />
         <Stack.Screen name="AdminAddProduct" component={ProtectedAdminAddProduct} />
         <Stack.Screen name="AdminOrders" component={ProtectedAdminOrders} />
+        <Stack.Screen name="AdminOrderDetail" component={ProtectedAdminOrderDetail} />
         <Stack.Screen name="AdminUsers" component={ProtectedAdminUsers} />
         <Stack.Screen name="AdminNotifications" component={ProtectedAdminNotifications} />
         <Stack.Screen name="AdminAnalytics" component={ProtectedAdminAnalytics} />

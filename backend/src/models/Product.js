@@ -127,6 +127,11 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    /** When false, hidden from customer shop/home (admin draft / archived). */
+    isPublished: {
+      type: Boolean,
+      default: true,
+    },
     homeOrder: {
       type: Number,
       default: 0,
@@ -154,6 +159,17 @@ const productSchema = new mongoose.Schema(
     isSpecial: {
       type: Boolean,
       default: false,
+    },
+    /** Visible in catalog but not purchasable — admin launch teaser. */
+    comingSoon: {
+      type: Boolean,
+      default: false,
+    },
+    /** Optional launch line shown on cards & PDP, e.g. "Festive launch · November". */
+    comingSoonNote: {
+      type: String,
+      default: "",
+      trim: true,
     },
     inStock: {
       type: Boolean,

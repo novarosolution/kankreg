@@ -1,25 +1,17 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { FIGMA, figmaCardShell, figmaRowBorder, figmaTextPrimary, figmaTextSecondary } from "../../theme/figmaApp";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
+import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { formatINR } from "../../utils/currency";
+import { CART_UI, fillProductScreen } from "../../content/appContent";
 import { fonts, spacing } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
 import KankregCartCouponStrip from "./KankregCartCouponStrip";
 import KankregCartPayBar from "./KankregCartPayBar";
 
-const cardShadow = platformShadow({
-  web: { boxShadow: "0 8px 24px rgba(61, 42, 18, 0.07)" },
-  ios: {
-    shadowColor: "#3D2A12",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-  },
-  android: { elevation: 3 },
-});
-
-/** Web cart aside / inline summary — figma cart footer card */
+/** Web cart aside — premium order summary with gold accent. */
 export default function KankregCartSummaryCard({
   subtotal,
   discount = 0,
@@ -37,12 +29,31 @@ export default function KankregCartSummaryCard({
   appliedCouponText,
   itemCount = 0,
 }) {
-  const { isDark } = useTheme();
-  const textSecondary = figmaTextSecondary(isDark);
-  const textPrimary = figmaTextPrimary(isDark);
+  const { colors: c, isDark } = useTheme();
 
   return (
-    <View style={[figmaCardShell(isDark), styles.card, cardShadow]}>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: isDark ? c.surface : "#FFFEFA",
+          borderColor: isDark ? c.border : KANKREG_PALETTE.line,
+        },
+        cardShadow,
+      ]}
+    >
+      <View style={[styles.accent, { backgroundColor: isDark ? "rgba(232, 200, 90, 0.55)" : KANKREG_PALETTE.gold }]} />
+      <Text style={[styles.title, { color: isDark ? c.textPrimary : KANKREG_PALETTE.ink }]}>
+        {CART_UI.summaryTitle}
+      </Text>
+      {itemCount > 0 ? (
+        <Text style={styles.itemCount}>
+          {itemCount === 1
+            ? fillProductScreen(CART_UI.itemCount, { count: "1" })
+            : fillProductScreen(CART_UI.itemCountPlural, { count: String(itemCount) })}
+        </Text>
+      ) : null}
+
       {showCoupon ? (
         <KankregCartCouponStrip
           value={couponCode}
@@ -54,13 +65,27 @@ export default function KankregCartSummaryCard({
 
       <View style={styles.lines}>
         <View style={styles.line}>
-          <Text style={[styles.label, textSecondary]}>Subtotal</Text>
-          <Text style={[styles.value, textPrimary]}>{formatINR(subtotal)}</Text>
+          <Text style={[styles.label, { color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft }]}>
+            {CART_UI.stickySubtotalLabel}
+          </Text>
+          <Text style={[styles.value, { color: isDark ? c.textPrimary : KANKREG_PALETTE.ink }]}>
+            {formatINR(subtotal)}
+          </Text>
+        </View>
+        <View style={styles.line}>
+          <Text style={[styles.label, { color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft }]}>
+            {CART_UI.shippingLabel}
+          </Text>
+          <Text style={styles.free}>{CART_UI.shippingFree}</Text>
         </View>
         {platformFee > 0 ? (
           <View style={styles.line}>
-            <Text style={[styles.label, textSecondary]}>Service fee</Text>
-            <Text style={[styles.value, textPrimary]}>{formatINR(platformFee)}</Text>
+            <Text style={[styles.label, { color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft }]}>
+              {CART_UI.serviceFeeLabel}
+            </Text>
+            <Text style={[styles.value, { color: isDark ? c.textPrimary : KANKREG_PALETTE.ink }]}>
+              {formatINR(platformFee)}
+            </Text>
           </View>
         ) : null}
         {discount > 0 ? (
@@ -69,6 +94,13 @@ export default function KankregCartSummaryCard({
             <Text style={[styles.value, styles.discount]}>−{formatINR(discount)}</Text>
           </View>
         ) : null}
+      </View>
+
+      <View style={[styles.trustRow, { borderTopColor: isDark ? c.border : KANKREG_PALETTE.line }]}>
+        <Ionicons name="shield-checkmark-outline" size={13} color={KANKREG_PALETTE.green} />
+        <Text style={[styles.trustText, { color: isDark ? c.textMuted : KANKREG_PALETTE.inkFaint }]}>
+          {CART_UI.trustLine}
+        </Text>
       </View>
 
       <KankregCartPayBar
@@ -80,42 +112,98 @@ export default function KankregCartSummaryCard({
         onPress={onPress}
         disabled={disabled}
         loading={loading}
-        style={[styles.payInline, figmaRowBorder(isDark)]}
+        itemCount={itemCount}
+        style={styles.payInline}
       />
     </View>
   );
 }
 
+const cardShadow = platformShadow({
+  web: { boxShadow: "0 12px 32px rgba(61, 42, 18, 0.08)" },
+  ios: {
+    shadowColor: "#3D2A12",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+  },
+  android: { elevation: 4 },
+});
+
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
-    padding: spacing.md + 2,
+    borderRadius: 18,
+    padding: spacing.md + 4,
     gap: spacing.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
+  },
+  accent: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+  },
+  title: {
+    fontFamily: FONT_HEADING,
+    fontSize: 20,
+    fontWeight: "600",
+    letterSpacing: -0.3,
+    marginTop: 4,
+  },
+  itemCount: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: KANKREG_PALETTE.goldDeep,
+    marginTop: -4,
+    marginBottom: spacing.xs,
   },
   lines: {
-    gap: 4,
+    gap: 6,
     marginTop: spacing.xs,
   },
   line: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
   },
   label: {
     fontFamily: fonts.regular,
-    fontSize: 11,
+    fontSize: 12,
   },
   value: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+  },
+  free: {
+    fontFamily: fonts.bold,
+    fontSize: 12,
+    color: KANKREG_PALETTE.green,
+    letterSpacing: 0.3,
   },
   discount: {
-    color: FIGMA.green,
+    color: KANKREG_PALETTE.green,
+  },
+  trustRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingTop: spacing.sm,
+    marginTop: spacing.xs,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  trustText: {
+    flex: 1,
+    fontFamily: fonts.medium,
+    fontSize: 10,
+    lineHeight: 14,
   },
   payInline: {
     marginTop: spacing.xs,
     paddingHorizontal: 0,
     paddingTop: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: 0,
     backgroundColor: "transparent",
   },
 });

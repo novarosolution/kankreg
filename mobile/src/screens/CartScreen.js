@@ -30,7 +30,8 @@ import { fonts, layout, radius, semanticRadius, spacing, typography } from "../t
 import { formatINR } from "../utils/currency";
 import { BRAND_LOGO_SIZE } from "../constants/brand";
 import BrandLogo from "../components/BrandLogo";
-import { ALCHEMY, FONT_DISPLAY } from "../theme/customerAlchemy";
+import { FONT_HEADING, FONT_BODY_SEMIBOLD, FONT_PRICE } from "../theme/typographyRoles";
+import { ALCHEMY } from "../theme/customerAlchemy";
 import PremiumEmptyState from "../components/ui/PremiumEmptyState";
 import PremiumCard from "../components/ui/PremiumCard";
 import GoldHairline from "../components/ui/GoldHairline";
@@ -63,6 +64,7 @@ import KankregCheckoutForm from "../components/kankreg/KankregCheckoutForm";
 import KankregCheckoutSectionCard from "../components/kankreg/KankregCheckoutSectionCard";
 import KankregCheckoutSteps from "../components/kankreg/KankregCheckoutSteps";
 import { FIGMA } from "../theme/figmaApp";
+import { cartLineKey } from "../utils/productCart";
 
 /** Same required fields as ManageAddressScreen save. */
 function getProfileAddressCompletion(defaultAddress) {
@@ -218,12 +220,12 @@ export default function CartScreen({ navigation, route }) {
             <BrandLogo height={BRAND_LOGO_SIZE.footerCompact} style={styles.loginBrandLogo} />
             <PremiumEmptyState
               iconName="bag-handle-outline"
-              title="Sign in to continue"
-              description="Sign in to use your cart."
-              ctaLabel="Go to login"
+              title={CART_UI.loginTitle}
+              description={CART_UI.loginDescription}
+              ctaLabel={CART_UI.loginCta}
               ctaIconLeft="log-in-outline"
               onCtaPress={() => navigation.navigate("Login")}
-              secondaryCtaLabel="Browse store"
+              secondaryCtaLabel={CART_UI.browseGuestCta}
               onSecondaryCtaPress={() => navigation.navigate("Home")}
             />
           </View>
@@ -234,6 +236,7 @@ export default function CartScreen({ navigation, route }) {
   }
 
   const renderCartItem = (item, index = 0) => {
+    const lineKey = cartLineKey(item);
     const row = (
       <KankregCartRow
         item={item}
@@ -246,13 +249,13 @@ export default function CartScreen({ navigation, route }) {
 
     if (Platform.OS === "web" && !reducedMotion) {
       return (
-        <SectionReveal key={item.id} delay={staggerDelay(index)}>
+        <SectionReveal key={lineKey} delay={staggerDelay(index)}>
           {row}
         </SectionReveal>
       );
     }
 
-    return <React.Fragment key={item.id}>{row}</React.Fragment>;
+    return <React.Fragment key={lineKey}>{row}</React.Fragment>;
   };
 
   const validateAddress = () => {
@@ -396,10 +399,10 @@ export default function CartScreen({ navigation, route }) {
   const payableAmount = Math.max(0, totalAmount + deliveryFee + platformFee - discountAmount);
   const isRazorpayMethod = paymentMethod === "Razorpay";
   const primaryCtaLabel = isCartBagView
-    ? "Checkout →"
+    ? CART_UI.checkoutCtaArrow
     : isRazorpayMethod
-      ? `Pay ${formatINR(payableAmount)}`
-      : "Place order";
+      ? `${CART_UI.payCta} · ${formatINR(payableAmount)}`
+      : CART_UI.placeOrderCta;
 
   const handlePrimaryCta = () => {
     if (isCartBagView) {
@@ -487,6 +490,16 @@ export default function CartScreen({ navigation, route }) {
           </SectionReveal>
         ) : (!kankregWebSplit || !isCheckoutFlow) ? (
           <>
+            <View style={styles.bagHeader}>
+              <View style={styles.bagHeaderTop}>
+                <Text style={styles.itemsSectionLabel}>{CART_UI.itemsSectionLabel}</Text>
+                <Text style={styles.bagSubtotalPreview}>{formatINR(totalAmount)}</Text>
+              </View>
+              <View style={styles.trustStripInline}>
+                <Ionicons name="shield-checkmark-outline" size={14} color={isDark ? c.primaryBright : "#3C6248"} />
+                <Text style={styles.trustStripText}>{CART_UI.trustLine}</Text>
+              </View>
+            </View>
             <View style={[styles.listSection, styles.figmaListSection]}>
               {cartItems.map((item, idx) => renderCartItem(item, idx))}
             </View>
@@ -581,15 +594,15 @@ export default function CartScreen({ navigation, route }) {
           ) : null}
           <View style={styles.summaryInner}>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Subtotal</Text>
+              <Text style={styles.summaryLabel}>{CART_UI.stickySubtotalLabel}</Text>
               <Text style={styles.summaryValue}>{formatINR(totalAmount)}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Shipping</Text>
-              <Text style={styles.shippingFree}>FREE</Text>
+              <Text style={styles.summaryLabel}>{CART_UI.shippingLabel}</Text>
+              <Text style={styles.shippingFree}>{CART_UI.shippingFree}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Estimated taxes</Text>
+              <Text style={styles.summaryLabel}>{CART_UI.serviceFeeLabel}</Text>
               <Text style={styles.summaryValue}>{formatINR(platformFee)}</Text>
             </View>
             {discountAmount > 0 ? (
@@ -599,7 +612,7 @@ export default function CartScreen({ navigation, route }) {
               </View>
             ) : null}
             <View style={[styles.summaryDivider, { backgroundColor: c.border }]} />
-            <Text style={styles.totalAmountLabel}>Total</Text>
+            <Text style={styles.totalAmountLabel}>{CART_UI.totalLabel}</Text>
             <View style={styles.totalAmountRow}>
               <Text style={[styles.totalAmountSerif, { color: isDark ? c.textPrimary : ALCHEMY.brown }]}>{formatINR(payableAmount)}</Text>
               <View style={styles.inrBadge}>
@@ -665,6 +678,7 @@ export default function CartScreen({ navigation, route }) {
           onPress={handlePrimaryCta}
           disabled={cartItems.length === 0}
           loading={isPlacingOrder}
+          itemCount={totalItems}
         />
       ) : null}
       <BottomNavBar />
@@ -775,12 +789,12 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     marginBottom: spacing.xs},
   selectionName: {
     flex: 1,
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_BODY_SEMIBOLD,
     fontSize: typography.h3,
     color: c.textPrimary,
     lineHeight: 26},
   selectionPrice: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_PRICE,
     fontSize: typography.h3,
     color: isDark ? c.textPrimary : ALCHEMY.brown,
     fontVariant: ["tabular-nums"]},
@@ -867,7 +881,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     flex: 1,
     minWidth: 0},
   upsellName: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_BODY_SEMIBOLD,
     fontSize: typography.bodySmall,
     color: c.textPrimary,
     lineHeight: 20},
@@ -889,7 +903,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     marginBottom: spacing.lg,
     alignSelf: "stretch"},
   summarySerifTitle: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 22,
     color: isDark ? c.textPrimary : ALCHEMY.brown,
     marginBottom: spacing.md},
@@ -910,7 +924,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     gap: spacing.sm,
     marginBottom: spacing.md},
   totalAmountSerif: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_PRICE,
     fontSize: 28,
     letterSpacing: -0.3,
     fontVariant: ["tabular-nums"]},
@@ -1212,6 +1226,47 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
   figmaListSection: {
     paddingHorizontal: FIGMA.gutter,
   },
+  bagHeader: {
+    marginHorizontal: FIGMA.gutter,
+    marginBottom: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.xl,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: isDark ? c.border : ALCHEMY.pillInactive,
+    borderTopWidth: 2,
+    borderTopColor: isDark ? c.primaryBorder : ALCHEMY.gold,
+    backgroundColor: isDark ? c.surfaceMuted : "rgba(255, 253, 249, 0.96)",
+    ...shadowPremium,
+  },
+  bagHeaderTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.sm,
+  },
+  itemsSectionLabel: {
+    fontFamily: FONT_HEADING,
+    fontSize: typography.body + 1,
+    color: c.textPrimary,
+    letterSpacing: -0.2,
+  },
+  bagSubtotalPreview: {
+    fontFamily: fonts.bold,
+    fontSize: typography.bodySmall,
+    color: isDark ? c.primaryBright : ALCHEMY.brown,
+  },
+  trustStripInline: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  trustStripText: {
+    flex: 1,
+    fontFamily: fonts.medium,
+    fontSize: typography.caption,
+    color: c.textSecondary,
+    lineHeight: 16,
+  },
   figmaCouponWrap: {
     paddingHorizontal: FIGMA.gutter,
     marginBottom: spacing.md,
@@ -1293,7 +1348,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     marginBottom: spacing.sm},
   emptyTitle: {
     fontSize: typography.h3,
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     color: c.textPrimary,
     textAlign: "center",
     letterSpacing: -0.3},
@@ -1537,7 +1592,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
   totalValue: {
     fontSize: typography.h1,
     color: c.primaryDark,
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_PRICE,
     letterSpacing: -0.4},
   checkoutButton: {
     marginBottom: spacing.lg},
@@ -1558,7 +1613,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     paddingHorizontal: spacing.xl},
   loginPromptTitle: {
     fontSize: typography.h2,
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     color: c.textPrimary,
     textAlign: "center",
     letterSpacing: -0.35},

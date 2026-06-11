@@ -1,12 +1,5 @@
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { Platform } from "react-native";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "./AuthContext";
 import {
   connectLiveSocket,
@@ -33,23 +26,72 @@ export function LiveSocketProvider({ children }) {
       return undefined;
     }
 
-    const sock = connectLiveSocket(token);
-    socketRef.current = sock;
-    if (!sock) {
-      setConnected(false);
-      return undefined;
+    let cancelled = false;
+    let idleId;
+    let timeoutId;
+
+    const connect = () => {
+      if (cancelled) return;
+      const sock = connectLiveSocket(token);
+      socketRef.current = sock;
+      if (!sock) {
+        setConnected(false);
+        return;
+      }
+
+      const onConnect = () => setConnected(true);
+      const onDisconnect = () => setConnected(false);
+
+      sock.on("connect", onConnect);
+      sock.on("disconnect", onDisconnect);
+      setConnected(sock.connected);
+
+      return () => {
+        sock.off("connect", onConnect);
+        sock.off("disconnect", onDisconnect);
+      };
+    };
+
+    let teardownSocket = null;
+
+    if (Platform.OS === "web") {
+      const runConnect = async () => {
+        const sock = await connectLiveSocket(token);
+        if (cancelled) return;
+        socketRef.current = sock;
+        if (!sock) {
+          setConnected(false);
+          return;
+        }
+
+        const onConnect = () => setConnected(true);
+        const onDisconnect = () => setConnected(false);
+
+        sock.on("connect", onConnect);
+        sock.on("disconnect", onDisconnect);
+        setConnected(sock.connected);
+
+        teardownSocket = () => {
+          sock.off("connect", onConnect);
+          sock.off("disconnect", onDisconnect);
+        };
+      };
+      if (typeof requestIdleCallback === "function") {
+        idleId = requestIdleCallback(runConnect, { timeout: 2500 });
+      } else {
+        timeoutId = setTimeout(runConnect, 1200);
+      }
+    } else {
+      teardownSocket = connect();
     }
 
-    const onConnect = () => setConnected(true);
-    const onDisconnect = () => setConnected(false);
-
-    sock.on("connect", onConnect);
-    sock.on("disconnect", onDisconnect);
-    setConnected(sock.connected);
-
     return () => {
-      sock.off("connect", onConnect);
-      sock.off("disconnect", onDisconnect);
+      cancelled = true;
+      if (idleId != null && typeof cancelIdleCallback === "function") {
+        cancelIdleCallback(idleId);
+      }
+      if (timeoutId != null) clearTimeout(timeoutId);
+      teardownSocket?.();
       disconnectLiveSocket();
       socketRef.current = null;
       setConnected(false);

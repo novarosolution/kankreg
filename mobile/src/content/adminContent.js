@@ -22,7 +22,7 @@ export const ADMIN_SCREEN_COPY = {
   },
   orders: {
     title: "Orders",
-    subtitle: "Order queue, fulfillment, and exports",
+    subtitle: "New orders alert via email & WhatsApp — confirm and complete here",
     emptyFilter: "No orders match this filter",
   },
   users: {
@@ -63,6 +63,6 @@ export const ADMIN_SCREEN_COPY = {
   },
   inventory: {
     title: "Inventory",
-    subtitle: "Stock quantities and availability",
+    subtitle: "Stock auto-updates when orders are placed — adjust qty or mark out of stock",
   },
 };

@@ -2,17 +2,16 @@ import React from "react";
 import { Platform, Pressable, StyleSheet } from "react-native";
 import { APP_DISPLAY_NAME, BRAND_LOGO_SIZE } from "../constants/brand";
 import BrandLogo from "./BrandLogo";
+import { safeNavigate } from "../navigation/navigationRef";
 
 /**
  * Tappable logo; navigates Home (stack `navigation` or root `navigationRef`).
  */
 export default function BrandHeaderMark({ navigation, navigationRef, compact = false }) {
   const goHome = () => {
-    if (navigationRef?.isReady?.() && typeof navigationRef.navigate === "function") {
-      navigationRef.navigate("Home");
-      return;
+    if (!safeNavigate("Home") && navigation?.navigate) {
+      navigation.navigate("Home");
     }
-    navigation?.navigate?.("Home");
   };
 
   const size = compact ? BRAND_LOGO_SIZE.headerCompact : BRAND_LOGO_SIZE.headerDefault;

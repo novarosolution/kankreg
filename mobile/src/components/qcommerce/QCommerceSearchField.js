@@ -1,4 +1,4 @@
-import React from "react";
+import React, { forwardRef } from "react";
 import { Platform, Pressable, StyleSheet, TextInput, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
@@ -11,13 +11,17 @@ import { ALCHEMY } from "../../theme/customerAlchemy";
  * Zepto/Blinkit-style pill search: grey fill, search icon, optional clear.
  * `premium` — editorial gold/cream treatment for the home hero.
  */
-export default function QCommerceSearchField({
-  value,
-  onChangeText,
-  placeholder = SEARCH_PLACEHOLDER,
-  onClear,
-  premium = false,
-}) {
+export default forwardRef(function QCommerceSearchField(
+  {
+    value,
+    onChangeText,
+    placeholder = SEARCH_PLACEHOLDER,
+    onClear,
+    premium = false,
+    autoFocus = false,
+  },
+  ref
+) {
   const { colors: c } = useTheme();
   const semantic = getSemanticColors(c);
   return (
@@ -65,6 +69,7 @@ export default function QCommerceSearchField({
         style={styles.searchIcon}
       />
       <TextInput
+        ref={ref}
         style={[styles.input, { color: c.textPrimary, fontFamily: fonts.regular }]}
         placeholder={placeholder}
         placeholderTextColor={c.textMuted}
@@ -73,6 +78,7 @@ export default function QCommerceSearchField({
         returnKeyType="search"
         autoCorrect={false}
         autoCapitalize="none"
+        autoFocus={autoFocus}
         clearButtonMode={Platform.OS === "ios" ? "while-editing" : "never"}
       />
       {value?.trim() && onClear ? (
@@ -82,7 +88,7 @@ export default function QCommerceSearchField({
       ) : null}
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   wrap: {

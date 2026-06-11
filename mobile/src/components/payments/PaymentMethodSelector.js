@@ -8,7 +8,8 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import { PAYMENT_METHODS } from "../../content/appContent";
-import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { ALCHEMY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon, radius, semanticRadius, spacing, typography } from "../../theme/tokens";
 import useReducedMotion from "../../hooks/useReducedMotion";
@@ -275,7 +276,7 @@ function createStyles(c, isDark) {
       color: isDark ? ALCHEMY.goldBright : ALCHEMY.brown,
     },
     cardTitle: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_HEADING,
       fontSize: typography.h3 - 1,
       letterSpacing: -0.2,
       lineHeight: 24,

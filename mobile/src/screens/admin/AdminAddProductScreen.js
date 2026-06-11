@@ -16,6 +16,18 @@ import { useTheme } from "../../context/ThemeContext";
 import { adminGatePanel, adminShellContent, adminTwoColAside, adminTwoColMain, adminTwoColStyle, useAdminCompactLayout } from "../../theme/adminLayout";
 import AdminPanel from "../../components/admin/AdminPanel";
 import AdminAlerts from "../../components/admin/AdminAlerts";
+import AdminBackLink from "../../components/admin/AdminBackLink";
+import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
+import AdminFormSection from "../../components/admin/AdminFormSection";
+import AdminProductFormProgress from "../../components/admin/AdminProductFormProgress";
+import AdminProductPageForm from "../../components/admin/AdminProductPageForm";
+import AdminProductPreviewCard from "../../components/admin/AdminProductPreviewCard";
+import AdminToggleRow from "../../components/admin/AdminToggleRow";
+import {
+  PRODUCT_FORM_TABS,
+  buildFormProgressItems,
+  computeProductFormProgress,
+} from "../../utils/adminProductHelpers";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { radius, spacing } from "../../theme/tokens";
 import { getImageUriCandidates, PRODUCT_HERO_BLURHASH } from "../../utils/image";
@@ -24,9 +36,7 @@ import SectionReveal from "../../components/motion/SectionReveal";
 import PremiumInput from "../../components/ui/PremiumInput";
 import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumChip from "../../components/ui/PremiumChip";
-import PremiumSectionHeader from "../../components/ui/PremiumSectionHeader";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
-import { formatINR } from "../../utils/currency";
 
 function dedupeUrls(urls = []) {
   const seen = new Set();
@@ -76,6 +86,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
   const [homeSection, setHomeSection] = useState(editingProduct?.homeSection || "Prime Products");
   const [productType, setProductType] = useState(editingProduct?.productType || editingProduct?.category || "");
   const [showOnHome, setShowOnHome] = useState(editingProduct?.showOnHome !== false);
+  const [isPublished, setIsPublished] = useState(editingProduct?.isPublished !== false);
   const [homeOrder, setHomeOrder] = useState(
     editingProduct?.homeOrder !== undefined ? String(editingProduct.homeOrder) : ""
   );
@@ -84,6 +95,8 @@ export default function AdminAddProductScreen({ navigation, route }) {
   const [unit, setUnit] = useState(editingProduct?.unit || "");
   const [eta, setEta] = useState(editingProduct?.eta || "");
   const [isSpecial, setIsSpecial] = useState(Boolean(editingProduct?.isSpecial));
+  const [comingSoon, setComingSoon] = useState(Boolean(editingProduct?.comingSoon));
+  const [comingSoonNote, setComingSoonNote] = useState(editingProduct?.comingSoonNote || "");
   const [inStock, setInStock] = useState(editingProduct?.inStock !== false);
   const [stockQty, setStockQty] = useState(
     editingProduct?.stockQty !== undefined ? String(editingProduct.stockQty) : ""
@@ -173,6 +186,153 @@ export default function AdminAddProductScreen({ navigation, route }) {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadMessage, setUploadMessage] = useState("");
+  const [activeTab, setActiveTab] = useState("basics");
+
+  const formProgress = useMemo(
+    () =>
+      computeProductFormProgress({
+        name,
+        price,
+        primaryImage,
+        photoUrls,
+        category,
+        homeSection,
+        productType,
+        isPublished,
+        description,
+        pageEyebrow,
+        richProductPage,
+        trustRows,
+        variantRows,
+        storyTitle,
+        uspRows,
+        nutritionTitle,
+        nutritionRowsText,
+        usageRows,
+      }),
+    [
+      name,
+      price,
+      primaryImage,
+      photoUrls,
+      category,
+      homeSection,
+      productType,
+      isPublished,
+      description,
+      pageEyebrow,
+      richProductPage,
+      trustRows,
+      variantRows,
+      storyTitle,
+      uspRows,
+      nutritionTitle,
+      nutritionRowsText,
+      usageRows,
+    ]
+  );
+
+  const progressItems = useMemo(() => buildFormProgressItems(formProgress), [formProgress]);
+
+  const pageForm = useMemo(
+    () => ({
+      richProductPage,
+      setRichProductPage,
+      pageEyebrow,
+      setPageEyebrow,
+      description,
+      setDescription,
+      deliveryTitle,
+      setDeliveryTitle,
+      deliveryBody,
+      setDeliveryBody,
+      highlightsText,
+      setHighlightsText,
+      trustRows,
+      setTrustRows,
+      ratingAverage,
+      setRatingAverage,
+      reviewCount,
+      setReviewCount,
+      badgeText,
+      setBadgeText,
+      lifestyleImage,
+      setLifestyleImage,
+      variantRows,
+      setVariantRows,
+      storyKick,
+      setStoryKick,
+      storyTitle,
+      setStoryTitle,
+      storyLegend,
+      setStoryLegend,
+      uspRows,
+      setUspRows,
+      processTitle,
+      setProcessTitle,
+      processStepsText,
+      setProcessStepsText,
+      highlightQuote,
+      setHighlightQuote,
+      nutritionKick,
+      setNutritionKick,
+      nutritionTitle,
+      setNutritionTitle,
+      nutritionTableHead,
+      setNutritionTableHead,
+      nutritionTableSub,
+      setNutritionTableSub,
+      nutritionRowsText,
+      setNutritionRowsText,
+      nutritionCardTitle,
+      setNutritionCardTitle,
+      nutritionCardBody,
+      setNutritionCardBody,
+      nutritionCardTagsText,
+      setNutritionCardTagsText,
+      nutritionCardFooter,
+      setNutritionCardFooter,
+      reviewsKick,
+      setReviewsKick,
+      reviewsTitle,
+      setReviewsTitle,
+      usageRows,
+      setUsageRows,
+    }),
+    [
+      richProductPage,
+      pageEyebrow,
+      description,
+      deliveryTitle,
+      deliveryBody,
+      highlightsText,
+      trustRows,
+      ratingAverage,
+      reviewCount,
+      badgeText,
+      lifestyleImage,
+      variantRows,
+      storyKick,
+      storyTitle,
+      storyLegend,
+      uspRows,
+      processTitle,
+      processStepsText,
+      highlightQuote,
+      nutritionKick,
+      nutritionTitle,
+      nutritionTableHead,
+      nutritionTableSub,
+      nutritionRowsText,
+      nutritionCardTitle,
+      nutritionCardBody,
+      nutritionCardTagsText,
+      nutritionCardFooter,
+      reviewsKick,
+      reviewsTitle,
+      usageRows,
+    ]
+  );
 
   useEffect(() => {
     if (!user) return;
@@ -265,12 +425,15 @@ export default function AdminAddProductScreen({ navigation, route }) {
         homeSection: homeSection.trim() || "Prime Products",
         productType: productType.trim() || category.trim() || "General",
         showOnHome,
+        isPublished,
         homeOrder: Number.isFinite(parsedHomeOrder) ? parsedHomeOrder : 0,
         brand: brand.trim(),
         sku: sku.trim(),
         unit: unit.trim(),
         eta: eta.trim(),
         isSpecial,
+        comingSoon,
+        comingSoonNote: comingSoonNote.trim(),
         inStock,
         stockQty: Math.max(0, parsedStockQty)};
 
@@ -374,7 +537,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
       };
 
       if (editingProduct) {
-        await updateAdminProduct(token, editingProduct._id, payload);
+        await updateAdminProduct(token, editingProduct._id || editingProduct.id, payload);
       } else {
         await createAdminProduct(token, payload);
       }
@@ -432,7 +595,11 @@ export default function AdminAddProductScreen({ navigation, route }) {
         navigation={navigation}
         route={route}
         title={editingProduct ? "Edit product" : "Add product"}
-        subtitle="Create a new catalogue item"
+        subtitle={
+          editingProduct
+            ? `Updating ${editingProduct.name || "catalog item"}`
+            : "Basics first — listing & page content are optional tabs"
+        }
         headerRight={
           <>
             <PremiumButton label="Cancel" variant="ghost" size="sm" onPress={() => navigation.goBack()} />
@@ -450,7 +617,33 @@ export default function AdminAddProductScreen({ navigation, route }) {
       <View style={[adminTwoColStyle(compact), styles.panel]}>
         <View style={adminTwoColMain(compact)}>
         <AdminAlerts error={error} onCloseError={() => setError("")} />
-        <AdminPanel title="Product details">
+        <AdminBackLink navigation={navigation} label="All products" target="AdminProducts" style={styles.backLink} />
+        <AdminProductFormProgress
+          items={progressItems}
+          activeKey={activeTab}
+          onSelect={setActiveTab}
+        />
+        {compact ? (
+          <AdminPanel title="Preview" style={styles.compactPreviewPanel}>
+            <AdminProductPreviewCard
+              compact
+              name={name}
+              price={price}
+              mrp={mrp}
+              category={category}
+              primaryImage={primaryImage}
+              ImageComponent={RetryImage}
+              isPublished={isPublished}
+              comingSoon={comingSoon}
+              comingSoonNote={comingSoonNote}
+              showOnHome={showOnHome}
+            />
+          </AdminPanel>
+        ) : null}
+        <AdminFilterTabs style={styles.formTabs} value={activeTab} onChange={setActiveTab} items={PRODUCT_FORM_TABS} />
+
+        {activeTab === "basics" ? (
+        <AdminPanel title="Basics" meta="Required to publish">
         {uploadMessage ? (
           <View style={styles.fieldGap}>
             <PremiumErrorBanner severity="success" message={uploadMessage} onClose={() => setUploadMessage("")} compact />
@@ -480,7 +673,13 @@ export default function AdminAddProductScreen({ navigation, route }) {
           />
         </View>
 
-        <PremiumSectionHeader title="Product photos" compact />
+        <AdminFormSection
+          title="Photos & cover"
+          subtitle="Upload or paste URLs — first photo becomes cover unless you pick another"
+          icon="images-outline"
+          defaultOpen
+          complete={Boolean(primaryImage || photoUrls.length)}
+        >
         <PremiumButton
           label={isUploadingImage ? "Uploading…" : "Upload photo"}
           iconLeft="cloud-upload-outline"
@@ -551,46 +750,17 @@ export default function AdminAddProductScreen({ navigation, route }) {
             </View>
           )}
         />
+        </AdminFormSection>
 
+        <AdminFormSection
+          title="Catalog details"
+          subtitle="Category, brand, SKU, pack size & stock"
+          icon="pricetag-outline"
+          defaultOpen
+          complete={Boolean(category?.trim() && (brand?.trim() || unit?.trim()))}
+        >
         <View style={styles.fieldGap}>
           <PremiumInput label="Category" value={category} onChangeText={setCategory} placeholder="e.g. Dairy" iconLeft="folder-outline" />
-        </View>
-        <View style={styles.fieldGap}>
-          <PremiumInput
-            label="Home section"
-            value={homeSection}
-            onChangeText={setHomeSection}
-            placeholder="e.g. Best Sellers"
-            iconLeft="home-outline"
-          />
-        </View>
-        <View style={styles.fieldGap}>
-          <PremiumInput
-            label="Product type"
-            value={productType}
-            onChangeText={setProductType}
-            placeholder="e.g. Milk, Chips, Juice"
-            iconLeft="pricetags-outline"
-          />
-        </View>
-        <View style={styles.row}>
-          <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput
-              label="Home order"
-              value={homeOrder}
-              onChangeText={setHomeOrder}
-              keyboardType="number-pad"
-              placeholder="0, 1, 2…"
-            />
-          </View>
-          <PremiumChip
-            label={showOnHome ? "Show on Home: ON" : "Show on Home: OFF"}
-            tone="gold"
-            size="sm"
-            selected={showOnHome}
-            onPress={() => setShowOnHome((current) => !current)}
-            style={styles.halfInputChip}
-          />
         </View>
         <View style={styles.categoryHintWrap}>
           <Text style={styles.categoryHintText}>Quick categories:</Text>
@@ -617,7 +787,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
         </View>
         <View style={styles.row}>
           <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput label="Unit" value={unit} onChangeText={setUnit} placeholder="e.g. 1 kg" />
+            <PremiumInput label="Unit / pack size" value={unit} onChangeText={setUnit} placeholder="e.g. 1 kg" />
           </View>
           <View style={[styles.fieldGap, styles.halfInput]}>
             <PremiumInput label="Optional note" value={eta} onChangeText={setEta} placeholder="e.g. batch" />
@@ -628,7 +798,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
             <PremiumInput label="Stock quantity" value={stockQty} onChangeText={setStockQty} keyboardType="number-pad" />
           </View>
           <PremiumChip
-            label={inStock ? "In Stock: ON" : "In Stock: OFF"}
+            label={inStock ? "In stock: ON" : "In stock: OFF"}
             tone="gold"
             size="sm"
             selected={inStock}
@@ -636,429 +806,125 @@ export default function AdminAddProductScreen({ navigation, route }) {
             style={styles.halfInputChip}
           />
         </View>
-        <PremiumChip
-          label={isSpecial ? "Special product: ON" : "Special product: OFF"}
-          tone="gold"
-          size="sm"
-          selected={isSpecial}
-          onPress={() => setIsSpecial((current) => !current)}
-          style={styles.toggleChipFull}
-        />
+        </AdminFormSection>
+        </AdminPanel>
+        ) : null}
 
-        <PremiumSectionHeader
-          title="Product page content"
-          subtitle="All sections below appear on the customer product page when filled. Turn on rich layout to show story, process, and usage blocks."
-          compact
-        />
-        <PremiumChip
-          label={richProductPage ? "Rich layout: ON" : "Rich layout: OFF"}
-          tone="gold"
-          size="sm"
-          selected={richProductPage}
-          onPress={() => setRichProductPage((current) => !current)}
-          style={styles.toggleChipFull}
-        />
-
-        <PremiumSectionHeader title="Hero & purchase" compact />
+        {activeTab === "listing" ? (
+        <AdminPanel title="Store listing" meta="Shop, home & launch">
+        <AdminFormSection
+          title="Placement"
+          subtitle="Where this product appears in the storefront"
+          icon="storefront-outline"
+          defaultOpen
+        >
         <View style={styles.fieldGap}>
           <PremiumInput
-            label="Page eyebrow"
-            value={pageEyebrow}
-            onChangeText={setPageEyebrow}
-            placeholder="e.g. The Benchmark of Purity"
-            helperText="Small label above the product title"
+            label="Home section"
+            value={homeSection}
+            onChangeText={setHomeSection}
+            placeholder="e.g. Best Sellers"
+            iconLeft="home-outline"
           />
         </View>
         <View style={styles.fieldGap}>
           <PremiumInput
-            label="Lead description"
-            value={description}
-            onChangeText={setDescription}
-            multiline
-            numberOfLines={4}
-            placeholder="Short paragraph under the price on the product page"
-            iconLeft="document-text-outline"
+            label="Product type"
+            value={productType}
+            onChangeText={setProductType}
+            placeholder="e.g. Milk, Chips, Juice"
+            iconLeft="pricetags-outline"
           />
         </View>
-        <View style={styles.row}>
-          <View style={[styles.fieldGap, styles.halfInput]}>
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="Home order"
+            value={homeOrder}
+            onChangeText={setHomeOrder}
+            keyboardType="number-pad"
+            placeholder="0, 1, 2…"
+            helperText="Lower numbers appear first on the home grid"
+          />
+        </View>
+        </AdminFormSection>
+
+        <AdminFormSection
+          title="Customer visibility"
+          subtitle="Published products appear in the shop. Home toggle controls the home grid."
+          icon="eye-outline"
+          defaultOpen
+        >
+        <View style={styles.toggleGroup}>
+          <AdminToggleRow
+            title="Published in store"
+            subtitle="Draft products are hidden from customers"
+            value={isPublished}
+            onValueChange={setIsPublished}
+          />
+          <AdminToggleRow
+            title="Show on Home"
+            subtitle="Include in the home page product grid"
+            value={showOnHome}
+            onValueChange={setShowOnHome}
+          />
+          <AdminToggleRow
+            title="Special product"
+            subtitle="Highlight badge on cards (limited offers, bestsellers)"
+            value={isSpecial}
+            onValueChange={setIsSpecial}
+            isLast
+          />
+        </View>
+        </AdminFormSection>
+
+        <AdminFormSection
+          title="Launch visibility"
+          subtitle="Coming soon items appear with a launch banner in shop and home"
+          icon="rocket-outline"
+          complete={comingSoon ? true : false}
+        >
+        <View style={styles.toggleGroup}>
+          <AdminToggleRow
+            title="Coming soon"
+            subtitle="Show launch state instead of buy now"
+            value={comingSoon}
+            onValueChange={setComingSoon}
+            isLast
+          />
+        </View>
+        {comingSoon && !isPublished ? (
+          <View style={styles.fieldGap}>
+            <PremiumErrorBanner
+              severity="warning"
+              message="Turn on Published in store above — draft products are hidden from customers."
+              compact
+            />
+          </View>
+        ) : null}
+        {comingSoon ? (
+          <View style={styles.fieldGap}>
             <PremiumInput
-              label="Delivery title"
-              value={deliveryTitle}
-              onChangeText={setDeliveryTitle}
-              placeholder="e.g. Free delivery"
+              label="Launch note (optional)"
+              value={comingSoonNote}
+              onChangeText={setComingSoonNote}
+              placeholder="e.g. Festive launch · November"
+              helperText="Shown on the red Coming soon overlay, cards, and product page"
+              iconLeft="sparkles-outline"
             />
           </View>
-          <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput
-              label="Delivery note"
-              value={deliveryBody}
-              onChangeText={setDeliveryBody}
-              placeholder="COD, returns, freshness…"
-            />
-          </View>
-        </View>
-        <View style={styles.fieldGap}>
-          <PremiumInput
-            label="Highlights"
-            value={highlightsText}
-            onChangeText={setHighlightsText}
-            placeholder="One checkmark bullet per line"
-            multiline
-            numberOfLines={4}
-          />
-        </View>
+        ) : null}
+        </AdminFormSection>
+        </AdminPanel>
+        ) : null}
 
-        <PremiumSectionHeader title="Trust chips" subtitle="Pill badges under the buy buttons" compact />
-        {trustRows.map((row, idx) => (
-          <View key={`trust-${idx}`} style={styles.blockCard}>
-            <View style={styles.fieldGap}>
-              <PremiumInput
-                label="Ionicons name"
-                value={row.icon}
-                onChangeText={(t) =>
-                  setTrustRows((rows) => rows.map((r, i) => (i === idx ? { ...r, icon: t } : r)))
-                }
-                placeholder="e.g. shield-checkmark-outline"
-                autoCapitalize="none"
-              />
-            </View>
-            <View style={styles.fieldGap}>
-              <PremiumInput
-                label="Label"
-                value={row.label}
-                onChangeText={(t) =>
-                  setTrustRows((rows) => rows.map((r, i) => (i === idx ? { ...r, label: t } : r)))
-                }
-                placeholder="e.g. 100% Pure"
-              />
-            </View>
-            <PremiumButton
-              label="Remove"
-              variant="danger"
-              size="sm"
-              onPress={() => setTrustRows((rows) => rows.filter((_, i) => i !== idx))}
-              style={styles.removeRowBtn}
-            />
-          </View>
-        ))}
-        <PremiumButton
-          label="Add trust chip"
-          iconLeft="add-outline"
-          variant="ghost"
-          size="sm"
-          onPress={() => setTrustRows((rows) => [...rows, { icon: "shield-checkmark-outline", label: "" }])}
-          style={styles.addRowBtn}
-        />
-        <View style={styles.row}>
-          <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput
-              label="Rating avg (0–5)"
-              value={ratingAverage}
-              onChangeText={setRatingAverage}
-              keyboardType="decimal-pad"
-            />
-          </View>
-          <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput
-              label="Review count"
-              value={reviewCount}
-              onChangeText={setReviewCount}
-              keyboardType="number-pad"
-            />
-          </View>
-        </View>
-        <View style={styles.fieldGap}>
-          <PremiumInput label="Hero badge" value={badgeText} onChangeText={setBadgeText} placeholder="e.g. HAND CHURNED" />
-        </View>
-        <View style={styles.fieldGap}>
-          <PremiumInput
-            label="Lifestyle image URL"
-            value={lifestyleImage}
-            onChangeText={setLifestyleImage}
-            autoCapitalize="none"
-            iconLeft="image-outline"
-          />
-        </View>
-
-        <PremiumSectionHeader
-          title="Size / price variants"
-          subtitle="Leave empty for a single price. Optional tag shows on the selected size card (e.g. Best Value)."
-          compact
-        />
-        {variantRows.map((row, idx) => (
-          <View key={`v-${idx}`} style={styles.variantRowWrap}>
-            <View style={styles.row}>
-              <View style={[styles.fieldGap, styles.halfInput]}>
-                <PremiumInput
-                  label="Label"
-                  value={row.label}
-                  onChangeText={(t) =>
-                    setVariantRows((rows) => rows.map((r, i) => (i === idx ? { ...r, label: t } : r)))
-                  }
-                  placeholder="e.g. 500ml"
-                />
-              </View>
-              <View style={[styles.fieldGap, styles.halfInput]}>
-                <PremiumInput
-                  label="Price"
-                  value={row.price}
-                  onChangeText={(t) =>
-                    setVariantRows((rows) => rows.map((r, i) => (i === idx ? { ...r, price: t } : r)))
-                  }
-                  keyboardType="decimal-pad"
-                />
-              </View>
-            </View>
-            <View style={styles.fieldGap}>
-              <PremiumInput
-                label="Tag (optional)"
-                value={row.tag}
-                onChangeText={(t) =>
-                  setVariantRows((rows) => rows.map((r, i) => (i === idx ? { ...r, tag: t } : r)))
-                }
-                placeholder="e.g. Best Value"
-              />
-            </View>
-            <PremiumButton
-              label="Remove variant"
-              variant="danger"
-              size="sm"
-              onPress={() => setVariantRows((rows) => rows.filter((_, i) => i !== idx))}
-              style={styles.removeRowBtn}
-            />
-          </View>
-        ))}
-        <PremiumButton
-          label="Add variant"
-          iconLeft="add-outline"
-          variant="ghost"
-          size="sm"
-          onPress={() => setVariantRows((rows) => [...rows, { label: "", price: "", tag: "" }])}
-          style={styles.addRowBtn}
-        />
-
-        <PremiumSectionHeader title="Story section" subtitle="Full-width block below the hero purchase area" compact />
-        <View style={styles.fieldGap}>
-          <PremiumInput label="Section kick" value={storyKick} onChangeText={setStoryKick} placeholder="e.g. Our Legacy of Purity" />
-        </View>
-        <View style={styles.fieldGap}>
-          <PremiumInput label="Section title" value={storyTitle} onChangeText={setStoryTitle} placeholder="e.g. Crafted the ancient way…" />
-        </View>
-        <View style={styles.fieldGap}>
-          <PremiumInput
-            label="Story body"
-            value={storyLegend}
-            onChangeText={setStoryLegend}
-            multiline
-            numberOfLines={5}
-            placeholder="Longer brand story paragraph"
-          />
-        </View>
-
-        <PremiumSectionHeader title="Feature cards (USPs)" compact />
-        {uspRows.map((row, idx) => (
-          <View key={`usp-${idx}`} style={styles.blockCard}>
-            <View style={styles.fieldGap}>
-              <PremiumInput
-                label="Ionicons name"
-                value={row.icon}
-                onChangeText={(t) =>
-                  setUspRows((rows) => rows.map((r, i) => (i === idx ? { ...r, icon: t } : r)))
-                }
-                placeholder="e.g. flask-outline"
-                autoCapitalize="none"
-              />
-            </View>
-            <View style={styles.fieldGap}>
-              <PremiumInput
-                label="Title"
-                value={row.title}
-                onChangeText={(t) =>
-                  setUspRows((rows) => rows.map((r, i) => (i === idx ? { ...r, title: t } : r)))
-                }
-              />
-            </View>
-            <View style={styles.fieldGap}>
-              <PremiumInput
-                label="Description"
-                value={row.description}
-                onChangeText={(t) =>
-                  setUspRows((rows) => rows.map((r, i) => (i === idx ? { ...r, description: t } : r)))
-                }
-                multiline
-                numberOfLines={3}
-              />
-            </View>
-            <PremiumButton
-              label="Remove"
-              variant="danger"
-              size="sm"
-              onPress={() => setUspRows((rows) => rows.filter((_, i) => i !== idx))}
-              style={styles.removeRowBtn}
-            />
-          </View>
-        ))}
-        <PremiumButton
-          label="Add USP"
-          iconLeft="add-outline"
-          variant="ghost"
-          size="sm"
-          onPress={() => setUspRows((rows) => [...rows, { icon: "flask-outline", title: "", description: "" }])}
-          style={styles.addRowBtn}
-        />
-
-        <PremiumSectionHeader title="Process story" compact />
-        <View style={styles.fieldGap}>
-          <PremiumInput
-            label="Process section title"
-            value={processTitle}
-            onChangeText={setProcessTitle}
-            placeholder="e.g. The Vedic Bilona Method"
-          />
-        </View>
-        <View style={styles.fieldGap}>
-          <PremiumInput
-            label="Process steps"
-            value={processStepsText}
-            onChangeText={setProcessStepsText}
-            placeholder="One per line"
-            multiline
-            numberOfLines={4}
-          />
-        </View>
-        <View style={styles.fieldGap}>
-          <PremiumInput
-            label="Highlight quote"
-            value={highlightQuote}
-            onChangeText={setHighlightQuote}
-            multiline
-            numberOfLines={2}
-          />
-        </View>
-
-        <PremiumSectionHeader title="Nutrition & packaging" compact />
-        <View style={styles.row}>
-          <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput label="Nutrition kick" value={nutritionKick} onChangeText={setNutritionKick} placeholder="Nutrition" />
-          </View>
-          <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput label="Nutrition title" value={nutritionTitle} onChangeText={setNutritionTitle} placeholder="Nutritional Facts" />
-          </View>
-        </View>
-        <View style={styles.row}>
-          <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput label="Table header" value={nutritionTableHead} onChangeText={setNutritionTableHead} placeholder="Per 100 g" />
-          </View>
-          <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput label="Table subhead" value={nutritionTableSub} onChangeText={setNutritionTableSub} placeholder="Approximate values" />
-          </View>
-        </View>
-        <View style={styles.fieldGap}>
-          <PremiumInput
-            label="Nutrition rows"
-            value={nutritionRowsText}
-            onChangeText={setNutritionRowsText}
-            placeholder="Energy|896.22 kcal — one row per line, label|value"
-            multiline
-            numberOfLines={6}
-          />
-        </View>
-        <View style={styles.fieldGap}>
-          <PremiumInput label="Info card title" value={nutritionCardTitle} onChangeText={setNutritionCardTitle} placeholder="From our farm to your table" />
-        </View>
-        <View style={styles.fieldGap}>
-          <PremiumInput
-            label="Info card body"
-            value={nutritionCardBody}
-            onChangeText={setNutritionCardBody}
-            multiline
-            numberOfLines={3}
-            placeholder="Net quantity, storage, best before…"
-          />
-        </View>
-        <View style={styles.fieldGap}>
-          <PremiumInput
-            label="Info card tags"
-            value={nutritionCardTagsText}
-            onChangeText={setNutritionCardTagsText}
-            placeholder="Comma-separated, e.g. Bilona Process, Ethically Sourced"
-          />
-        </View>
-        <View style={styles.fieldGap}>
-          <PremiumInput
-            label="Info card footer"
-            value={nutritionCardFooter}
-            onChangeText={setNutritionCardFooter}
-            placeholder="FSSAI licence, packed by…"
-            multiline
-            numberOfLines={2}
-          />
-        </View>
-
-        <PremiumSectionHeader title="Reviews section headings" compact />
-        <View style={styles.row}>
-          <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput label="Reviews kick" value={reviewsKick} onChangeText={setReviewsKick} placeholder="Customer Reviews" />
-          </View>
-          <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput label="Reviews title" value={reviewsTitle} onChangeText={setReviewsTitle} placeholder="What families are saying" />
-          </View>
-        </View>
-
-        <PremiumSectionHeader title="Usage & rituals" compact />
-        {usageRows.map((row, idx) => (
-          <View key={`use-${idx}`} style={styles.blockCard}>
-            <View style={styles.fieldGap}>
-              <PremiumInput
-                label="Ionicons name"
-                value={row.icon}
-                onChangeText={(t) =>
-                  setUsageRows((rows) => rows.map((r, i) => (i === idx ? { ...r, icon: t } : r)))
-                }
-                autoCapitalize="none"
-              />
-            </View>
-            <View style={styles.fieldGap}>
-              <PremiumInput
-                label="Title"
-                value={row.title}
-                onChangeText={(t) =>
-                  setUsageRows((rows) => rows.map((r, i) => (i === idx ? { ...r, title: t } : r)))
-                }
-              />
-            </View>
-            <View style={styles.fieldGap}>
-              <PremiumInput
-                label="Description"
-                value={row.description}
-                onChangeText={(t) =>
-                  setUsageRows((rows) => rows.map((r, i) => (i === idx ? { ...r, description: t } : r)))
-                }
-                multiline
-                numberOfLines={3}
-              />
-            </View>
-            <PremiumButton
-              label="Remove"
-              variant="danger"
-              size="sm"
-              onPress={() => setUsageRows((rows) => rows.filter((_, i) => i !== idx))}
-              style={styles.removeRowBtn}
-            />
-          </View>
-        ))}
-        <PremiumButton
-          label="Add usage card"
-          iconLeft="add-outline"
-          variant="ghost"
-          size="sm"
-          onPress={() => setUsageRows((rows) => [...rows, { icon: "cafe-outline", title: "", description: "" }])}
-          style={styles.addRowBtn}
-        />
+        {activeTab === "page" ? (
+        <AdminPanel title="Product page" meta="Rich content on the customer PDP">
+        <AdminProductPageForm form={pageForm} fieldStyles={styles} />
+        </AdminPanel>
+        ) : null}
 
         <PremiumButton
-          label={isSaving ? "Saving…" : "Save product"}
+          label={isSaving ? "Saving…" : editingProduct ? "Save changes" : "Publish product"}
           iconLeft="save-outline"
           variant="primary"
           size="lg"
@@ -1066,37 +932,42 @@ export default function AdminAddProductScreen({ navigation, route }) {
           disabled={isSaving}
           onPress={handleSubmit}
           fullWidth
-          style={styles.saveProductBtn}
+          style={[styles.saveProductBtn, compact && styles.saveProductBtnCompact]}
         />
-        </AdminPanel>
         </View>
         {!compact ? (
           <View style={adminTwoColAside(compact)}>
             <AdminPanel title="Store preview">
-              <View style={styles.previewCard}>
-                {primaryImage ? (
-                  <RetryImage sourceUri={primaryImage} style={styles.previewImage} />
-                ) : (
-                  <View style={[styles.previewImage, styles.previewPlaceholder]}>
-                    <Ionicons name="image-outline" size={32} color={c.textMuted} />
-                  </View>
-                )}
-                <Text style={styles.previewName} numberOfLines={2}>
-                  {name.trim() || "Product name"}
-                </Text>
-                <Text style={styles.previewPrice}>
-                  {formatINR(Number(price) || 0)}
-                  {mrp && Number(mrp) > Number(price) ? (
-                    <Text style={styles.previewMrp}> {formatINR(Number(mrp))}</Text>
-                  ) : null}
-                </Text>
-                {category ? <Text style={styles.previewMeta}>{category}</Text> : null}
-                <Text style={styles.previewHint}>Live preview updates as you edit</Text>
-              </View>
+              <AdminProductPreviewCard
+                name={name}
+                price={price}
+                mrp={mrp}
+                category={category}
+                primaryImage={primaryImage}
+                ImageComponent={RetryImage}
+                isPublished={isPublished}
+                comingSoon={comingSoon}
+                comingSoonNote={comingSoonNote}
+                showOnHome={showOnHome}
+              />
             </AdminPanel>
           </View>
         ) : null}
       </View>
+      {compact ? (
+        <View style={styles.stickySave}>
+          <PremiumButton
+            label={isSaving ? "Saving…" : editingProduct ? "Save changes" : "Publish product"}
+            iconLeft="save-outline"
+            variant="primary"
+            size="md"
+            loading={isSaving}
+            disabled={isSaving}
+            onPress={handleSubmit}
+            fullWidth
+          />
+        </View>
+      ) : null}
       </KankregAdminShell>
 </KankregScrollPage>
     </KeyboardAvoidingView>
@@ -1149,6 +1020,39 @@ function createAdminAddProductStyles(c, shadowPremium) {
   gateCta: {
     marginTop: spacing.md,
     alignSelf: "flex-start"},
+  backLink: { marginBottom: spacing.sm },
+  formTabs: { marginBottom: spacing.md },
+  compactPreviewPanel: { marginBottom: spacing.md },
+  toggleGroup: {
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+    backgroundColor: c.surfaceMuted,
+    marginBottom: spacing.sm,
+  },
+  pageHint: {
+    color: c.textMuted,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: spacing.sm,
+  },
+  stickySave: {
+    position: Platform.OS === "web" ? "sticky" : "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingBottom: Platform.OS === "ios" ? spacing.lg : spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+    backgroundColor: c.surface,
+    ...Platform.select({
+      web: { zIndex: 20 },
+      default: {},
+    }),
+  },
   fieldGap: {
     marginBottom: spacing.sm},
   categoryHintWrap: {
@@ -1227,6 +1131,9 @@ function createAdminAddProductStyles(c, shadowPremium) {
     flexShrink: 0},
   saveProductBtn: {
     marginTop: spacing.md},
+  saveProductBtnCompact: {
+    marginBottom: 72,
+  },
   row: {
     flexDirection: "row",
     gap: spacing.sm},
@@ -1277,6 +1184,12 @@ function createAdminAddProductStyles(c, shadowPremium) {
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 1},
+  previewChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
   previewHint: {
     color: c.textMuted,
     fontSize: 11,

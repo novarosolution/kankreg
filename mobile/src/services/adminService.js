@@ -1,10 +1,33 @@
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "./apiClient";
-import { invalidateProductsCache } from "./productService";
+import { invalidateProductsCache, normalizeProduct } from "./productService";
 
 /** @param {string} [_token] Legacy — session token from AuthContext. */
 export const fetchAdminUsers = (_token) => apiGet("/admin/users");
 export const fetchAdminOrders = (_token) => apiGet("/admin/orders");
-export const fetchAdminProducts = (_token) => apiGet("/admin/products");
+
+/** Single order — falls back to list lookup when GET /:id is unavailable (older API). */
+export async function fetchAdminOrder(_token, orderId) {
+  const id = String(orderId || "").trim();
+  if (!id) throw new Error("Order id is required.");
+
+  try {
+    return await apiGet(`/admin/orders/${id}`);
+  } catch (primaryErr) {
+    try {
+      const orders = await fetchAdminOrders(_token);
+      const match = (orders || []).find((o) => String(o._id) === id);
+      if (match) return match;
+    } catch {
+      // List fallback failed — surface original error.
+    }
+    throw primaryErr;
+  }
+}
+export const fetchAdminProducts = async (_token) => {
+  const data = await apiGet("/admin/products");
+  const list = Array.isArray(data) ? data : [];
+  return list.map(normalizeProduct);
+};
 
 export const updateAdminRole = (_token, userId, isAdmin) =>
   apiPatch(`/admin/users/${userId}/role`, { isAdmin });

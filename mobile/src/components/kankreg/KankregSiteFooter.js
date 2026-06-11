@@ -10,7 +10,7 @@ import {
   KANKREG_FOOTER_TAGLINE,
 } from "../../content/appContent";
 import { useAuth } from "../../context/AuthContext";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { fonts, spacing } from "../../theme/tokens";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   },
   newsCopy: { flex: 1, minWidth: 200 },
   newsTitle: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 22,
     fontWeight: "500",
     color: KANKREG_PALETTE.paper,
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   brandText: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 26,
     color: KANKREG_PALETTE.paper,
     textTransform: "lowercase",

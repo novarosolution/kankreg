@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { customerPanel, customerWebStickyTop } from "../../theme/screenLayout";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_HEADING, FONT_BODY_SEMIBOLD, FONT_PRICE } from "../../theme/typographyRoles";
 import { fonts, spacing, typography } from "../../theme/tokens";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   h3: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: typography.h3,
     fontWeight: "500",
     marginBottom: spacing.md,
@@ -82,12 +82,12 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   totalLabel: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_BODY_SEMIBOLD,
     fontSize: typography.body,
     fontWeight: "600",
   },
   totalValue: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_PRICE,
     fontSize: typography.h2,
     fontWeight: "600",
   },

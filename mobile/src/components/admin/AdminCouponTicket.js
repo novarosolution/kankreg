@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { useTheme } from "../../context/ThemeContext";
+import { getAdminChrome } from "../../theme/adminLayout";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import AdminStatusPill from "./AdminStatusPill";
 
 export default function AdminCouponTicket({
@@ -13,6 +14,9 @@ export default function AdminCouponTicket({
   onToggle,
   onPress,
 }) {
+  const { colors: c, isDark } = useTheme();
+  const chrome = useMemo(() => getAdminChrome(c, isDark), [c, isDark]);
+  const styles = useMemo(() => createStyles(chrome), [chrome]);
   const tone = status === "Active" ? "ok" : status === "Expired" ? "cancel" : "pend";
   const Wrap = onPress ? Pressable : View;
   const wrapProps = onPress ? { onPress, accessibilityRole: "button" } : {};
@@ -24,8 +28,8 @@ export default function AdminCouponTicket({
         <Switch
           value={active}
           onValueChange={onToggle}
-          trackColor={{ false: KANKREG_PALETTE.paper2, true: KANKREG_PALETTE.gold }}
-          thumbColor="#fff"
+          trackColor={{ false: chrome.paper, true: chrome.gold }}
+          thumbColor={c.surface}
         />
       </View>
       <Text style={styles.desc}>{description}</Text>
@@ -37,48 +41,50 @@ export default function AdminCouponTicket({
   );
 }
 
-const styles = StyleSheet.create({
-  ticket: {
-    backgroundColor: KANKREG_PALETTE.card,
-    borderWidth: 1,
-    borderColor: KANKREG_PALETTE.line,
-    borderRadius: 14,
-    padding: 16,
-    overflow: "hidden",
-    position: "relative",
-  },
-  top: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  code: {
-    fontFamily: FONT_DISPLAY,
-    fontSize: 18,
-    fontWeight: "600",
-    letterSpacing: 0.4,
-    color: KANKREG_PALETTE.ink,
-  },
-  desc: {
-    fontSize: 12.5,
-    color: KANKREG_PALETTE.inkSoft,
-    marginVertical: 8,
-    lineHeight: 18,
-  },
-  foot: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderTopWidth: 1,
-    borderStyle: "dashed",
-    borderTopColor: KANKREG_PALETTE.line,
-    paddingTop: 10,
-    marginTop: 4,
-  },
-  usage: {
-    fontSize: 11,
-    color: KANKREG_PALETTE.inkFaint,
-    flex: 1,
-    marginRight: 8,
-  },
-});
+function createStyles(chrome) {
+  return StyleSheet.create({
+    ticket: {
+      backgroundColor: chrome.card,
+      borderWidth: 1,
+      borderColor: chrome.line,
+      borderRadius: 14,
+      padding: 16,
+      overflow: "hidden",
+      position: "relative",
+    },
+    top: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    code: {
+      fontFamily: FONT_HEADING,
+      fontSize: 18,
+      fontWeight: "600",
+      letterSpacing: 0.4,
+      color: chrome.ink,
+    },
+    desc: {
+      fontSize: 12.5,
+      color: chrome.inkSoft,
+      marginVertical: 8,
+      lineHeight: 18,
+    },
+    foot: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      borderTopWidth: 1,
+      borderStyle: "dashed",
+      borderTopColor: chrome.line,
+      paddingTop: 10,
+      marginTop: 4,
+    },
+    usage: {
+      fontSize: 11,
+      color: chrome.inkFaint,
+      flex: 1,
+      marginRight: 8,
+    },
+  });
+}

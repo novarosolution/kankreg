@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { getMaxOrderQuantity, isProductPurchasable } from "../utils/productAvailability";
 import { useAuth } from "./AuthContext";
 import { useToastSafe } from "./ToastContext";
 import { fetchMyCart, replaceMyCart } from "../services/userService";
@@ -16,14 +17,27 @@ export function CartProvider({ children }) {
 
   const addToCart = useCallback(
     (product) => {
+      if (!isProductPurchasable(product)) {
+        return;
+      }
       setCartItems((currentItems) => {
         const key = cartLineKey(product);
         const existingItem = currentItems.find((item) => cartLineKey(item) === key);
+        const maxQty = getMaxOrderQuantity(product);
 
         if (existingItem) {
+          const nextQty = existingItem.quantity + 1;
+          if (maxQty > 0 && nextQty > maxQty) {
+            toastInfo(`Only ${maxQty} in stock for this item.`, { title: "Stock limit" });
+            return currentItems;
+          }
           return currentItems.map((item) =>
-            cartLineKey(item) === key ? { ...item, quantity: item.quantity + 1 } : item
+            cartLineKey(item) === key ? { ...item, quantity: nextQty } : item
           );
+        }
+
+        if (maxQty < 1) {
+          return currentItems;
         }
 
         return [...currentItems, { ...product, quantity: 1 }];
@@ -34,7 +48,7 @@ export function CartProvider({ children }) {
         duration: 2200,
       });
     },
-    [toastSuccess]
+    [toastSuccess, toastInfo]
   );
 
   /**

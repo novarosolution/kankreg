@@ -2,7 +2,7 @@ import React from "react";
 import { StyleSheet } from "react-native";
 import WebHtmlVideo from "./WebHtmlVideo";
 
-/** Web brand film — native HTML5 video (expo-video is unreliable inside cinema layout). */
+/** Web brand film — progressive HTML5 video (preview → full via load balancer). */
 export default function CinemaStoryPlayer({ source, muted = true, style }) {
   return (
     <WebHtmlVideo
@@ -13,6 +13,7 @@ export default function CinemaStoryPlayer({ source, muted = true, style }) {
       loop
       fit="cover"
       cinematic
+      progressive
       style={[styles.fill, style]}
     />
   );

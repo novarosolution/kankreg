@@ -2,7 +2,8 @@ import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import PremiumButton from "../ui/PremiumButton";
 import { useTheme } from "../../context/ThemeContext";
-import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { ALCHEMY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { customerPanel } from "../../theme/screenLayout";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
@@ -57,7 +58,7 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: typography.h3,
     fontWeight: "500",
     letterSpacing: -0.3,

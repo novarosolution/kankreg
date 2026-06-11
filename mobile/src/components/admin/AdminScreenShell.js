@@ -1,18 +1,22 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
-import { adminScreenRoot } from "../../theme/adminLayout";
+import { adminScreenRoot, getAdminChrome } from "../../theme/adminLayout";
 
 /**
  * Admin backdrop — warm dot grid on web (kankreg admin design board).
  */
 export default function AdminScreenShell({ children, style }) {
   const { colors: c, isDark } = useTheme();
-  const background = isDark ? c.background : "#d9d0c0";
+  const chrome = useMemo(() => getAdminChrome(c, isDark), [c, isDark]);
+  const dotStyle = useMemo(
+    () => (isDark ? styles.dotGridDark : styles.dotGridLight),
+    [isDark]
+  );
 
   return (
-    <View style={[styles.root, adminScreenRoot({ background }), style]}>
-      {!isDark && Platform.OS === "web" ? <View style={styles.dotGrid} pointerEvents="none" /> : null}
+    <View style={[styles.root, adminScreenRoot({ background: chrome.canvas }), style]}>
+      {Platform.OS === "web" ? <View style={[styles.dotGrid, dotStyle]} pointerEvents="none" /> : null}
       <View style={styles.content}>{children}</View>
     </View>
   );
@@ -30,11 +34,27 @@ const styles = StyleSheet.create({
   },
   dotGrid: {
     ...StyleSheet.absoluteFillObject,
+    ...Platform.select({
+      web: { backgroundSize: "26px 26px" },
+      default: {},
+    }),
+  },
+  dotGridLight: {
     opacity: 0.45,
     ...Platform.select({
       web: {
-        backgroundImage: "radial-gradient(circle at 1px 1px, rgba(25,20,15,0.09) 1px, transparent 0)",
-        backgroundSize: "26px 26px",
+        backgroundImage:
+          "radial-gradient(circle at 1px 1px, rgba(25,20,15,0.09) 1px, transparent 0)",
+      },
+      default: {},
+    }),
+  },
+  dotGridDark: {
+    opacity: 0.35,
+    ...Platform.select({
+      web: {
+        backgroundImage:
+          "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.06) 1px, transparent 0)",
       },
       default: {},
     }),

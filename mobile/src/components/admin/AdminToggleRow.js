@@ -1,9 +1,14 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, Switch, Text, View } from "react-native";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { useTheme } from "../../context/ThemeContext";
+import { getAdminChrome } from "../../theme/adminLayout";
 import { fonts } from "../../theme/tokens";
 
 export default function AdminToggleRow({ title, subtitle, value, onValueChange, isLast }) {
+  const { colors: c, isDark } = useTheme();
+  const chrome = useMemo(() => getAdminChrome(c, isDark), [c, isDark]);
+  const styles = useMemo(() => createStyles(chrome), [chrome]);
+
   return (
     <View style={[styles.row, isLast && styles.rowLast]}>
       <View style={styles.textCol}>
@@ -13,33 +18,35 @@ export default function AdminToggleRow({ title, subtitle, value, onValueChange, 
       <Switch
         value={value}
         onValueChange={onValueChange}
-        trackColor={{ false: KANKREG_PALETTE.paper2, true: KANKREG_PALETTE.gold }}
+        trackColor={{ false: chrome.paper, true: chrome.gold }}
         thumbColor="#fff"
       />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: KANKREG_PALETTE.line,
-  },
-  rowLast: { borderBottomWidth: 0 },
-  textCol: { flex: 1, paddingRight: 12 },
-  title: {
-    fontSize: 13,
-    fontFamily: fonts.semibold,
-    color: KANKREG_PALETTE.ink,
-  },
-  sub: {
-    fontSize: 11,
-    color: KANKREG_PALETTE.inkFaint,
-    marginTop: 2,
-    fontFamily: fonts.regular,
-  },
-});
+function createStyles(chrome) {
+  return StyleSheet.create({
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: chrome.line,
+    },
+    rowLast: { borderBottomWidth: 0 },
+    textCol: { flex: 1, paddingRight: 12 },
+    title: {
+      fontSize: 13,
+      fontFamily: fonts.semibold,
+      color: chrome.ink,
+    },
+    sub: {
+      fontSize: 11,
+      color: chrome.inkFaint,
+      marginTop: 2,
+      fontFamily: fonts.regular,
+    },
+  });
+}

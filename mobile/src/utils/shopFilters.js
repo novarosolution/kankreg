@@ -1,4 +1,5 @@
 import { formatINR } from "./currency";
+import { getShopCatalogProducts, isProductComingSoon } from "./productAvailability";
 
 /** Home / Figma labels → product `category` / `productType` values in the catalog. */
 const CATEGORY_ALIASES = {
@@ -134,6 +135,28 @@ function matchPriceRange(product, minPrice, maxPrice) {
   return true;
 }
 
+/** Case-insensitive name / category / tag match for shop search. */
+export function matchShopSearchQuery(product, query = "") {
+  const q = String(query || "").trim().toLowerCase();
+  if (!q) return true;
+
+  const tags = Array.isArray(product?.tags) ? product.tags : [];
+  const haystack = [
+    product?.name,
+    product?.description,
+    product?.category,
+    product?.productType,
+    product?.sku,
+    ...tags,
+  ]
+    .flatMap((value) => (Array.isArray(value) ? value : [value]))
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return q.split(/\s+/).every((token) => haystack.includes(token));
+}
+
 function getProductSortTime(product) {
   const raw = product?.createdAt ?? product?.updatedAt;
   const ts = raw ? Date.parse(String(raw)) : NaN;
@@ -155,9 +178,15 @@ export function applyShopFilters(
     minPrice = null,
     maxPrice = null,
     sortKey = "featured",
+    searchQuery = "",
   } = {}
 ) {
-  let list = (Array.isArray(products) ? products : []).filter((p) => p.inStock !== false);
+  let list = getShopCatalogProducts(products);
+
+  const trimmedQuery = String(searchQuery || "").trim();
+  if (trimmedQuery) {
+    list = list.filter((p) => matchShopSearchQuery(p, trimmedQuery));
+  }
 
   if (categories.length) {
     list = list.filter((p) => matchShopCategories(p, categories));
@@ -167,6 +196,8 @@ export function applyShopFilters(
     list = list.filter(isProductOnSale);
   } else if (pill === "Premium") {
     list = list.filter(isProductPremium);
+  } else if (pill === "Coming soon") {
+    list = list.filter(isProductComingSoon);
   } else if (pill === "New in") {
     list = [...list].sort((a, b) => getProductSortTime(b) - getProductSortTime(a)).slice(0, 8);
   }
@@ -210,26 +241,7 @@ export function hasActiveShopFilters({
   );
 }
 
-/** Badge count for filter button (excludes sort). */
-/** Products for home catalog — respects `showOnHome` + `homeOrder`, falls back to full in-stock list. */
-export function getHomeCatalogProducts(products = [], { limit } = {}) {
-  const inStock = (Array.isArray(products) ? products : []).filter((p) => p.inStock !== false);
-
-  const sortHome = (a, b) => {
-    const oa = Number(a.homeOrder) || 0;
-    const ob = Number(b.homeOrder) || 0;
-    if (oa !== ob) return oa - ob;
-    return String(a.name || "").localeCompare(String(b.name || ""));
-  };
-
-  let list = inStock.filter((p) => p.showOnHome !== false).sort(sortHome);
-
-  if (!list.length) {
-    list = [...inStock].sort(sortHome);
-  }
-
-  return typeof limit === "number" ? list.slice(0, limit) : list;
-}
+export { getHomeCatalogProducts } from "./productAvailability";
 
 export function countShopFilterBadge({
   pill = "All",

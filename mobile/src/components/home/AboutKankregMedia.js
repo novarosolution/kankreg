@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { HOME_BRAND_PROMO_VIDEO } from "../../constants/marketingAssets";
+import { HOME_BRAND_PROMO_VIDEO } from "../../constants/marketingBrandVideo";
 import CinemaStoryPlayer from "./CinemaStoryPlayer";
 import StoryImageFrame from "./StoryImageFrame";
 import { SectionHeader } from "./editorial";
@@ -13,7 +13,7 @@ import {
   homeEditorialInk,
   homeEditorialMuted,
 } from "../../theme/homeEditorial";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_HEADING, FONT_BODY } from "../../theme/typographyRoles";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { useTheme } from "../../context/ThemeContext";
@@ -21,7 +21,8 @@ import { fonts, icon, radius } from "../../theme/tokens";
 import { normalizeAboutSection } from "../../utils/homeViewMedia";
 import PremiumButton from "../ui/PremiumButton";
 import GoldHairline from "../ui/GoldHairline";
-import { HOME_SCREEN_UI, HOME_STORY_CONTENT } from "../../content/appContent";
+import { HOME_SCREEN_UI } from "../../content/appContent";
+import { GHEE_HOME_CONTENT as HOME_STORY_CONTENT } from "../../content/gheeHomeContent";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 
@@ -738,7 +739,7 @@ const styles = StyleSheet.create({
     borderColor: "#3f3933",
   },
   storyCardTitle: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 33,
     lineHeight: 38,
     letterSpacing: -0.5,
@@ -940,7 +941,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.15,
   },
   pullQuoteTextPhone: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 22,
     lineHeight: 30,
     letterSpacing: -0.2,
@@ -1109,7 +1110,7 @@ const styles = StyleSheet.create({
     gap: 0,
   },
   cinemaCaptionTextSplit: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_BODY,
     fontSize: 20,
     lineHeight: 26,
     color: "#F6ECD7",

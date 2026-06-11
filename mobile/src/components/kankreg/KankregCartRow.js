@@ -1,37 +1,18 @@
-import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Image } from "expo-image";
+import React, { useMemo } from "react";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import {
-  FIGMA,
-  figmaCardShell,
-  figmaDisplayTitle,
-  figmaIconMuted,
-  figmaIconSoft,
-  figmaPrice,
-  figmaRowBorder,
-  figmaTextMuted,
-  figmaTextPrimary,
-} from "../../theme/figmaApp";
 import { useTheme } from "../../context/ThemeContext";
+import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { FONT_BODY_SEMIBOLD, FONT_PRICE } from "../../theme/typographyRoles";
 import { formatINR } from "../../utils/currency";
-import { getImageUriCandidates } from "../../utils/image";
-import { fonts } from "../../theme/tokens";
+import { getProductThumbImageUri } from "../../utils/image";
+import ProgressiveProductImage from "../ui/ProgressiveProductImage";
+import { CART_UI, fillProductScreen } from "../../content/appContent";
+import { fonts, spacing } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
 
-const rowShadow = platformShadow({
-  ios: {
-    shadowColor: "#3D2A12",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-  },
-  android: { elevation: 2 },
-  web: { boxShadow: "0 4px 14px rgba(61, 42, 18, 0.06)" },
-});
-
-/** figmaforkankreg.html cart row — app + web */
+/** Premium cart line — product thumb, qty stepper, line total. */
 export default function KankregCartRow({
   item,
   index = 0,
@@ -39,118 +20,237 @@ export default function KankregCartRow({
   onIncrease,
   onRemove,
 }) {
-  const { isDark } = useTheme();
-  const grad = FIGMA.productTileGradients[index % FIGMA.productTileGradients.length];
-  const imageUri = getImageUriCandidates(item?.image || "")[0] || "";
-  const lineTotal = (Number(item?.price) || 0) * (Number(item?.quantity) || 1);
-  const variant = item?.variantLabel || item?.unit || "";
-  const qty = Number(item?.quantity) || 1;
+  const { colors: c, isDark } = useTheme();
+  const styles = useMemo(() => createStyles(c, isDark), [c, isDark]);
+  const grad = ["#f5ead0", "#ebe2d0", "#e8dcc8"];
+  const unitPrice = Number(item?.price) || 0;
+  const qty = Math.max(1, Number(item?.quantity) || 1);
+  const lineTotal = unitPrice * qty;
+  const variant = String(item?.variantLabel || item?.unit || "").trim();
+  const imageUri = item?.image ? String(item.image) : "";
+  const thumbPreview = getProductThumbImageUri(imageUri);
 
   return (
-    <View style={[figmaCardShell(isDark), styles.row, rowShadow]}>
+    <View style={styles.row}>
+      <View style={styles.accentBar} pointerEvents="none" />
       <View style={styles.thumbWrap}>
         {imageUri ? (
-          <Image source={{ uri: imageUri }} style={styles.thumbImage} contentFit="cover" />
+          <ProgressiveProductImage
+            uri={imageUri}
+            previewUri={thumbPreview}
+            style={styles.thumbImage}
+            contentFit="cover"
+            priority="normal"
+            rounded={12}
+          />
         ) : (
           <LinearGradient colors={grad} style={styles.thumbGrad} />
         )}
       </View>
+
       <View style={styles.body}>
-        <Text style={[figmaDisplayTitle(13, isDark), styles.name]} numberOfLines={2}>
+        <Text style={styles.name} numberOfLines={2}>
           {item?.name}
         </Text>
         {variant ? (
-          <Text style={[styles.variant, figmaTextMuted(isDark)]}>
-            {variant}
-            {qty > 1 ? ` · Qty ${qty}` : ""}
-          </Text>
-        ) : qty > 1 ? (
-          <Text style={[styles.variant, figmaTextMuted(isDark)]}>Qty {qty}</Text>
+          <View style={styles.variantPill}>
+            <Text style={styles.variantText} numberOfLines={1}>
+              {variant}
+            </Text>
+          </View>
         ) : null}
+        <Text style={styles.unitHint}>
+          {fillProductScreen(CART_UI.unitPrice, { price: formatINR(unitPrice) })}
+        </Text>
+
         <View style={styles.qtyRow}>
-          <View style={[styles.qtyPill, figmaRowBorder(isDark)]}>
-            <Pressable onPress={onDecrease} style={styles.qtyHit} hitSlop={6} accessibilityLabel="Decrease quantity">
-              <Ionicons name="remove" size={14} color={figmaIconSoft(isDark)} />
+          <View style={styles.qtyPill}>
+            <Pressable
+              onPress={onDecrease}
+              style={({ pressed }) => [styles.qtyBtn, pressed && styles.qtyBtnPressed]}
+              hitSlop={6}
+              accessibilityLabel="Decrease quantity"
+            >
+              <Ionicons name="remove" size={15} color="#fff" />
             </Pressable>
-            <Text style={[styles.qtyNum, figmaTextPrimary(isDark)]}>{item?.quantity || 1}</Text>
-            <Pressable onPress={onIncrease} style={styles.qtyHit} hitSlop={6} accessibilityLabel="Increase quantity">
-              <Ionicons name="add" size={14} color={figmaIconSoft(isDark)} />
+            <Text style={styles.qtyNum}>{qty}</Text>
+            <Pressable
+              onPress={onIncrease}
+              style={({ pressed }) => [styles.qtyBtn, pressed && styles.qtyBtnPressed]}
+              hitSlop={6}
+              accessibilityLabel="Increase quantity"
+            >
+              <Ionicons name="add" size={15} color="#fff" />
             </Pressable>
           </View>
           {onRemove ? (
-            <Pressable onPress={onRemove} hitSlop={8} accessibilityLabel="Remove item">
-              <Ionicons name="trash-outline" size={15} color={figmaIconMuted(isDark)} />
+            <Pressable
+              onPress={onRemove}
+              style={({ pressed }) => [styles.removeBtn, pressed && { opacity: 0.7 }]}
+              hitSlop={8}
+              accessibilityLabel={CART_UI.removeItem}
+            >
+              <Ionicons name="trash-outline" size={14} color={isDark ? c.textMuted : KANKREG_PALETTE.inkFaint} />
+              <Text style={styles.removeText}>{CART_UI.removeItem}</Text>
             </Pressable>
           ) : null}
         </View>
       </View>
-      <Text style={[figmaPrice(isDark), styles.price]}>{formatINR(lineTotal)}</Text>
+
+      <View style={styles.priceCol}>
+        <Text style={styles.lineTotal}>{formatINR(lineTotal)}</Text>
+      </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 14,
-  },
-  thumbWrap: {
-    width: 60,
-    height: 60,
-    borderRadius: 10,
-    overflow: "hidden",
-    flexShrink: 0,
-  },
-  thumbImage: {
-    width: "100%",
-    height: "100%",
-  },
-  thumbGrad: {
-    flex: 1,
-  },
-  body: {
-    flex: 1,
-    minWidth: 0,
-  },
-  name: {
-    fontWeight: "500",
-    lineHeight: 16,
-  },
-  variant: {
-    fontFamily: fonts.regular,
-    fontSize: 10,
-    marginTop: 2,
-    marginBottom: 6,
-  },
-  qtyRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  qtyPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 999,
-  },
-  qtyHit: {
-    width: 24,
-    height: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  qtyNum: {
-    width: 22,
-    textAlign: "center",
-    fontFamily: fonts.semibold,
-    fontSize: 11,
-  },
-  price: {
-    flexShrink: 0,
-    fontSize: 14,
-  },
-});
+function createStyles(c, isDark) {
+  const cardBg = isDark ? c.surface : "#FFFEFA";
+  const border = isDark ? c.border : KANKREG_PALETTE.line;
+
+  return StyleSheet.create({
+    row: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 12,
+      padding: 12,
+      marginBottom: 12,
+      borderRadius: 16,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: border,
+      backgroundColor: cardBg,
+      overflow: "hidden",
+      ...platformShadow({
+        web: {
+          boxShadow: isDark
+            ? "0 10px 28px rgba(0,0,0,0.22)"
+            : "0 8px 22px rgba(61, 42, 18, 0.07), inset 0 1px 0 rgba(255,255,255,0.92)",
+        },
+        ios: {
+          shadowColor: "#3D2A12",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: isDark ? 0.14 : 0.07,
+          shadowRadius: 12,
+        },
+        android: { elevation: 3 },
+      }),
+    },
+    accentBar: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 2,
+      backgroundColor: isDark ? "rgba(232, 200, 90, 0.55)" : KANKREG_PALETTE.gold,
+    },
+    thumbWrap: {
+      width: 72,
+      height: 72,
+      borderRadius: 12,
+      overflow: "hidden",
+      flexShrink: 0,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: isDark ? "rgba(232, 200, 90, 0.2)" : "rgba(201, 162, 39, 0.22)",
+    },
+    thumbImage: {
+      width: "100%",
+      height: "100%",
+    },
+    thumbGrad: {
+      flex: 1,
+    },
+    body: {
+      flex: 1,
+      minWidth: 0,
+      paddingTop: 2,
+    },
+    name: {
+      fontFamily: FONT_BODY_SEMIBOLD,
+      fontSize: 14,
+      lineHeight: 18,
+      fontWeight: "600",
+      color: isDark ? c.textPrimary : KANKREG_PALETTE.ink,
+      letterSpacing: -0.2,
+    },
+    variantPill: {
+      alignSelf: "flex-start",
+      marginTop: 5,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 999,
+      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(169, 119, 46, 0.08)",
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: isDark ? c.border : "rgba(169, 119, 46, 0.15)",
+    },
+    variantText: {
+      fontFamily: fonts.semibold,
+      fontSize: 10,
+      color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft,
+      letterSpacing: 0.3,
+    },
+    unitHint: {
+      marginTop: 4,
+      fontFamily: fonts.regular,
+      fontSize: 10,
+      color: isDark ? c.textMuted : KANKREG_PALETTE.inkFaint,
+    },
+    qtyRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      marginTop: 10,
+    },
+    qtyPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingHorizontal: 4,
+      paddingVertical: 4,
+      borderRadius: 999,
+      backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(25, 20, 15, 0.04)",
+    },
+    qtyBtn: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor: isDark ? KANKREG_PALETTE.ink : KANKREG_PALETTE.ink,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    qtyBtnPressed: {
+      opacity: 0.85,
+    },
+    qtyNum: {
+      minWidth: 24,
+      textAlign: "center",
+      fontFamily: fonts.bold,
+      fontSize: 13,
+      color: isDark ? c.textPrimary : KANKREG_PALETTE.ink,
+    },
+    removeBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingVertical: 4,
+      paddingHorizontal: 2,
+    },
+    removeText: {
+      fontFamily: fonts.semibold,
+      fontSize: 10,
+      color: isDark ? c.textMuted : KANKREG_PALETTE.inkFaint,
+      letterSpacing: 0.2,
+    },
+    priceCol: {
+      flexShrink: 0,
+      alignItems: "flex-end",
+      paddingTop: 2,
+    },
+    lineTotal: {
+      fontFamily: FONT_PRICE,
+      fontSize: 16,
+      fontWeight: "600",
+      color: isDark ? c.textPrimary : KANKREG_PALETTE.ink,
+      letterSpacing: -0.2,
+    },
+  });
+}

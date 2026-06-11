@@ -3,7 +3,7 @@ import { Platform, StyleSheet, Text, View } from "react-native";
 import { HOME_BRAND_QUOTE } from "../../content/appContent";
 import { useTheme } from "../../context/ThemeContext";
 import { FIGMA, figmaDisplayTitle, figmaRowBorder, figmaSurfaceBg, figmaTextSecondary } from "../../theme/figmaApp";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { fonts, spacing } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
 
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   mark: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 36,
     lineHeight: 36,
     opacity: 0.55,

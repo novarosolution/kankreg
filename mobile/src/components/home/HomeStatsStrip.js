@@ -3,7 +3,8 @@ import { Platform, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { fonts, icon, layout, lineHeight, radius, spacing, typography } from "../../theme/tokens";
-import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { ALCHEMY } from "../../theme/customerAlchemy";
+import { FONT_HEADING, FONT_PRICE } from "../../theme/typographyRoles";
 import { HOME_STATS_STRIP } from "../../content/appContent";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import useInViewport from "../../hooks/useInViewport";
@@ -79,7 +80,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   statValue: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_PRICE,
     fontSize: Platform.OS === "web" ? 30 : 26,
     lineHeight: Platform.OS === "web" ? 36 : 32,
     letterSpacing: -0.4,

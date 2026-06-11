@@ -31,9 +31,9 @@ export default function KankregCustomerPageHeader({
   const isNative = Platform.OS !== "web";
 
   const header = isNative ? (
-    <KankregPageTitle eyebrow={eyebrow} title={title} right={right} compact={compactNative} />
+    <KankregPageTitle eyebrow={eyebrow} title={title} subtitle={subtitle} right={right} compact={compactNative} />
   ) : figmaOnWeb || !isMd ? (
-    <KankregPageTitle eyebrow={webEyebrow(eyebrow)} title={title} right={right} />
+    <KankregPageTitle eyebrow={webEyebrow(eyebrow)} title={title} subtitle={subtitle} right={right} />
   ) : (
     <KankregUnifiedPageHeader
       eyebrow={webEyebrow(eyebrow)}

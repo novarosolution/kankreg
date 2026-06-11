@@ -208,8 +208,11 @@ export default function EditProfileScreen({ navigation }) {
     }
   };
 
-  if (isAuthLoading || !isAuthenticated) {
-    return <AuthGateShell />;
+  if (isAuthLoading) {
+    return <AuthGateShell navigation={navigation} />;
+  }
+  if (!isAuthenticated) {
+    return <AuthGateShell signedOut navigation={navigation} />;
   }
 
   return (

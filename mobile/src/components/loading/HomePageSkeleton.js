@@ -1,13 +1,19 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { FIGMA } from "../../theme/figmaApp";
 import { spacing } from "../../theme/tokens";
+import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import SkeletonBlock from "../ui/SkeletonBlock";
 import useLoadingShell from "./useLoadingShell";
 
 /** Home loading — HTML frame 02 (native + web). */
 export default function HomePageSkeleton({ showHeader = true }) {
   const shell = useLoadingShell();
+  const { width, isMobileWeb } = useKankregLayout();
+  const heroSkeletonHeight =
+    Platform.OS === "web" && isMobileWeb
+      ? Math.min(720, Math.max(420, Math.round(width * 0.62)))
+      : 150;
 
   return (
     <View style={[styles.wrap, shell.wrap]}>
@@ -23,7 +29,7 @@ export default function HomePageSkeleton({ showHeader = true }) {
       ) : null}
 
       <View style={[styles.content, !showHeader && styles.contentFlush]}>
-        <SkeletonBlock width="100%" height={150} rounded="xl" />
+        <SkeletonBlock width="100%" height={heroSkeletonHeight} rounded="xl" />
 
         <View style={styles.sectionHead}>
           <SkeletonBlock width={90} height={14} rounded="sm" />

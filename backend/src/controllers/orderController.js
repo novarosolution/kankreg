@@ -33,6 +33,12 @@ const {
   emitOrderUpdated,
   emitDeliveryPartnerLocation,
 } = require("../realtime/socketHub");
+const {
+  validateOrderStockLines,
+  deductStockForOrderLines,
+  restoreStockForOrderLines,
+} = require("../utils/stock");
+const { notifyAdminNewOrder } = require("../services/orderNotificationService");
 
 function pushOrderLiveUpdate(order) {
   try {
@@ -40,6 +46,22 @@ function pushOrderLiveUpdate(order) {
   } catch {
     // Realtime is best-effort; REST responses still succeed.
   }
+}
+
+/** Deduct stock + notify admin when a Razorpay order is confirmed paid. */
+async function finalizePaidOrder(order) {
+  if (!order.stockAdjustedAt) {
+    try {
+      await deductStockForOrderLines(order.products);
+      order.stockAdjustedAt = new Date();
+    } catch (stockErr) {
+      console.error("[orders] stock deduct after payment failed:", stockErr.message);
+    }
+  }
+  await order.save();
+  notifyAdminNewOrder(order._id).catch((err) => {
+    console.error("[orders] admin notify failed:", err.message);
+  });
 }
 
 const PLATFORM_FEE = 1.2;
@@ -156,6 +178,24 @@ async function createOrder(req, res, next) {
           return res.status(404).json({ message: "One or more products were not found." });
         }
 
+        if (matchedProduct.isPublished === false) {
+          return res.status(400).json({
+            message: `${matchedProduct.name || "Product"} is no longer available in the store.`,
+          });
+        }
+
+        if (matchedProduct.comingSoon) {
+          return res.status(400).json({
+            message: `${matchedProduct.name || "Product"} is not yet available to order.`,
+          });
+        }
+
+        if (!matchedProduct.inStock || Number(matchedProduct.stockQty || 0) <= 0) {
+          return res.status(400).json({
+            message: `${matchedProduct.name || "Product"} is out of stock.`,
+          });
+        }
+
         let line;
         try {
           line = resolveProductLineFromRaw(matchedProduct, rawItem);
@@ -189,6 +229,11 @@ async function createOrder(req, res, next) {
           quantity,
         });
       }
+    }
+
+    const stockCheck = validateOrderStockLines(normalizedItems, productMap);
+    if (!stockCheck.ok) {
+      return res.status(400).json({ message: stockCheck.message });
     }
 
     const itemsTotal = normalizedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -294,6 +339,19 @@ async function createOrder(req, res, next) {
     }
     await order.save();
 
+    if (!isRazorpay) {
+      try {
+        await deductStockForOrderLines(order.products);
+        order.stockAdjustedAt = new Date();
+        await order.save();
+      } catch (stockErr) {
+        await Order.findByIdAndDelete(order._id);
+        return res.status(stockErr.statusCode || 400).json({
+          message: stockErr.message || "Insufficient stock to complete this order.",
+        });
+      }
+    }
+
     if (resolvedCoupon) {
       resolvedCoupon.usedCount = Number(resolvedCoupon.usedCount || 0) + 1;
       await resolvedCoupon.save();
@@ -317,6 +375,13 @@ async function createOrder(req, res, next) {
     }
 
     pushOrderLiveUpdate(populatedOrder);
+
+    if (!isRazorpay) {
+      notifyAdminNewOrder(order._id).catch((err) => {
+        console.error("[orders] admin notify failed:", err.message);
+      });
+    }
+
     res.status(201).json(responsePayload);
   } catch (error) {
     next(error);
@@ -332,6 +397,23 @@ async function getAllOrders(req, res, next) {
       .populate("products.product", "name price image inStock stockQty");
 
     res.json(orders);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getAdminOrderById(req, res, next) {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate("user", "name email")
+      .populate("assignedDeliveryUser", "name email phone")
+      .populate("products.product", "name price image inStock stockQty");
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found." });
+    }
+
+    res.json(order);
   } catch (error) {
     next(error);
   }
@@ -1017,8 +1099,15 @@ async function updateOrderStatus(req, res, next) {
       return res.status(404).json({ message: "Order not found." });
     }
 
+    const previousStatus = order.status;
     order.status = status;
     await order.save();
+
+    if (status === "cancelled" && previousStatus !== "cancelled" && order.stockAdjustedAt) {
+      await restoreStockForOrderLines(order.products);
+      order.stockAdjustedAt = null;
+      await order.save();
+    }
 
     const updated = await Order.findById(order._id)
       .populate("user", "name email")
@@ -1095,7 +1184,7 @@ async function verifyPayment(req, res, next) {
       order.invoice.status = "paid";
       order.invoice.updatedAt = new Date();
     }
-    await order.save();
+    await finalizePaidOrder(order);
 
     const populated = await Order.findById(order._id)
       .populate("user", "name email")
@@ -1164,7 +1253,7 @@ async function razorpayWebhook(req, res, next) {
           order.invoice.status = "paid";
           order.invoice.updatedAt = new Date();
         }
-        await order.save();
+        await finalizePaidOrder(order);
         const populated = await Order.findById(order._id)
           .populate("user", "name email")
           .populate("assignedDeliveryUser", "name email phone")
@@ -1324,6 +1413,7 @@ async function deleteOrder(req, res, next) {
 module.exports = {
   createOrder,
   getAllOrders,
+  getAdminOrderById,
   getMyOrders,
   updateMyDeliveryLocation,
   getMyOrderLiveLocation,

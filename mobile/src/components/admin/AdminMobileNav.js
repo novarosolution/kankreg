@@ -1,11 +1,16 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { useTheme } from "../../context/ThemeContext";
+import { getAdminChrome } from "../../theme/adminLayout";
 import { fonts, spacing } from "../../theme/tokens";
 
 /** Horizontal admin nav for phone / narrow layouts (kankreg.html mobile admin strip). */
 export default function AdminMobileNav({ links, current, onNavigate }) {
+  const { colors: c, isDark } = useTheme();
+  const chrome = useMemo(() => getAdminChrome(c, isDark), [c, isDark]);
+  const styles = useMemo(() => createStyles(chrome), [chrome]);
+
   return (
     <ScrollView
       horizontal
@@ -26,7 +31,7 @@ export default function AdminMobileNav({ links, current, onNavigate }) {
             <Ionicons
               name={link.icon}
               size={14}
-              color={on ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.inkFaint}
+              color={on ? chrome.goldBright : chrome.inkFaint}
             />
             <Text style={[styles.label, on && styles.labelOn]}>{link.label}</Text>
           </Pressable>
@@ -36,39 +41,41 @@ export default function AdminMobileNav({ links, current, onNavigate }) {
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    marginBottom: spacing.sm,
-    marginHorizontal: -4,
-  },
-  row: {
-    flexDirection: "row",
-    gap: 6,
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-  },
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: KANKREG_PALETTE.line,
-    backgroundColor: KANKREG_PALETTE.card,
-  },
-  chipOn: {
-    backgroundColor: "rgba(214,173,91,0.14)",
-    borderColor: "rgba(214,173,91,0.35)",
-  },
-  label: {
-    fontSize: 12,
-    fontFamily: fonts.medium,
-    color: KANKREG_PALETTE.inkSoft,
-  },
-  labelOn: {
-    color: KANKREG_PALETTE.ink,
-    fontFamily: fonts.semibold,
-  },
-});
+function createStyles(chrome) {
+  return StyleSheet.create({
+    wrap: {
+      marginBottom: spacing.sm,
+      marginHorizontal: -4,
+    },
+    row: {
+      flexDirection: "row",
+      gap: 6,
+      paddingHorizontal: 4,
+      paddingVertical: 2,
+    },
+    chip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: chrome.line,
+      backgroundColor: chrome.card,
+    },
+    chipOn: {
+      backgroundColor: chrome.chipOnBg,
+      borderColor: chrome.chipOnBorder,
+    },
+    label: {
+      fontSize: 12,
+      fontFamily: fonts.medium,
+      color: chrome.inkSoft,
+    },
+    labelOn: {
+      color: chrome.ink,
+      fontFamily: fonts.semibold,
+    },
+  });
+}

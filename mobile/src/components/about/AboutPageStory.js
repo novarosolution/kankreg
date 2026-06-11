@@ -2,7 +2,7 @@ import React from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
-import { FONT_DISPLAY, FONT_DISPLAY_ITALIC } from "../../theme/customerAlchemy";
+import { FONT_HEADING, FONT_HEADING_ITALIC } from "../../theme/typographyRoles";
 import { getKankregSurfaces, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { createKankregEyebrowStyle } from "../../theme/kankregScreenStyles";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   },
   pullQuoteText: {
     flex: 1,
-    fontFamily: FONT_DISPLAY_ITALIC,
+    fontFamily: FONT_HEADING_ITALIC,
     fontStyle: "italic",
     fontSize: 22,
     lineHeight: 32,
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   lead: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: Platform.OS === "web" ? 22 : 20,
     lineHeight: 32,
     letterSpacing: -0.2,
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(201,162,39,0.14)",
   },
   blockTitle: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 26,
     lineHeight: 32,
     fontWeight: "400",
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   valuesHeading: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 24,
     marginTop: spacing.xs,
   },
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   galleryHeading: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 24,
     marginTop: spacing.xs,
   },

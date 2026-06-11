@@ -4,7 +4,7 @@
  */
 import { Platform, StyleSheet } from "react-native";
 import { KANKREG_PALETTE } from "./kankregWeb";
-import { FONT_DISPLAY } from "./customerAlchemy";
+import { FONT_HEADING } from "./typographyRoles";
 import { fonts, spacing } from "./tokens";
 
 export const FIGMA = {
@@ -49,7 +49,7 @@ export function figmaEyebrow(isDark = false) {
 
 export function figmaDisplayTitle(size = 22, isDark = false) {
   return {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: size,
     fontWeight: "500",
     letterSpacing: -0.2,
@@ -135,7 +135,7 @@ export function figmaPageBg(isDark = false) {
 
 export function figmaPrice(isDark = false) {
   return {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: fonts.bold,
     fontSize: 14,
     fontWeight: "600",
     color: isDark ? FIGMA.paper : FIGMA.ink,

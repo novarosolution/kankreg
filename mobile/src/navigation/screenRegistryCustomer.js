@@ -1,0 +1,19 @@
+/** Customer-facing screens — safe to eager-load on web home path. */
+export { default as KankregHomeScreen } from "../screens/KankregHomeScreen";
+export { default as FindLocationScreen } from "../screens/FindLocationScreen";
+export { default as ShopScreen } from "../screens/ShopScreen";
+export { default as CheckoutScreen } from "../screens/CheckoutScreen";
+export { default as ProductScreen } from "../screens/ProductScreen";
+export { default as CartScreen } from "../screens/CartScreen";
+export { default as LoginScreen } from "../screens/LoginScreen";
+export { default as RegisterScreen } from "../screens/RegisterScreen";
+export { default as ProfileScreen } from "../screens/ProfileScreen";
+export { default as EditProfileScreen } from "../screens/EditProfileScreen";
+export { default as OrderConfirmedScreen } from "../screens/OrderConfirmedScreen";
+export { default as NotificationsScreen } from "../screens/NotificationsScreen";
+export { default as SettingsScreen } from "../screens/SettingsScreen";
+export { default as RedeemRewardsScreen } from "../screens/RedeemRewardsScreen";
+export { default as ManageAddressScreen } from "../screens/ManageAddressScreen";
+export { default as SupportScreen } from "../screens/SupportScreen";
+export { default as AboutScreen } from "../screens/AboutScreen";
+export { default as LegalDocumentScreen } from "../screens/LegalDocumentScreen";

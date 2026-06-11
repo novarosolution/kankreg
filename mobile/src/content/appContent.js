@@ -1,7 +1,3 @@
-import { buildCommunitySectionDefaults } from "./communityHomeContent";
-import { buildCompareSectionDefaults } from "./compareHomeContent";
-import { buildProcessSectionDefaults } from "./processHomeContent";
-
 /**
  * Central customer-facing copy for KankreG.
  *
@@ -80,47 +76,7 @@ export const HOME_HERO_TITLE_DEFAULT = "Pure Heritage in Every Drop";
 export const HOME_HERO_SUBTITLE_DEFAULT =
   "Slow-churned from the milk of grass-fed cows — golden clarity and aroma rooted in tradition.";
 
-export const HOME_VIEW_DEFAULTS = {
-  heroTitle: HOME_HERO_TITLE_DEFAULT,
-  heroSubtitle: HOME_HERO_SUBTITLE_DEFAULT,
-  primeSectionTitle: "Prime Products",
-  productTypeTitle: "Shop by category",
-  showPrimeSection: true,
-  showHomeSections: true,
-  showProductTypeSections: true,
-  productCardStyle: "compact",
-  shopLocation: {
-    name: "KankreG Shop",
-    line1: "",
-    city: "",
-    state: "",
-    postalCode: "",
-    latitude: null,
-    longitude: null,
-  },
-  heroSlides: [],
-  aboutSection: {
-    enabled: true,
-    eyebrow: "Our story",
-    title: "Craft rooted in tradition",
-    body:
-      "KankreG crafts pure A2 Kankrej cow ghee using the ancestral Bilona method — hand-churned, wood-fired, and bottled in small batches for families who value tradition and taste.",
-    videoUrl: "",
-    videoCaption: "From grass-fed Kankrej cows to golden, grainy ghee.",
-    photos: [],
-  },
-  communitySection: buildCommunitySectionDefaults(),
-  compareSection: buildCompareSectionDefaults(),
-  processSection: buildProcessSectionDefaults(),
-};
-
-/** Premium ghee story blocks after Our Story video — edit in `gheeHomeContent.js`. */
-export { GHEE_HOME_CONTENT as HOME_STORY_CONTENT } from "./gheeHomeContent";
-
-/** Community / Instagram rail after Our Story — edit in `communityHomeContent.js`. */
-export { COMMUNITY_HOME_CONTENT as HOME_COMMUNITY_CONTENT } from "./communityHomeContent";
-
-/** Hero image card (native banner kicker — API `heroTitle` / `heroSubtitle` override when loaded). */
+/** Premium ghee story blocks — import from `gheeHomeContent.js` (not re-exported here to keep bundle lean). */
 export const HOME_HERO_BANNER = {
   kicker: "New season",
   badge: "Bestseller",
@@ -164,15 +120,22 @@ export const HOME_SCREEN_UI = {
     /** Serif display line under the home grid eyebrow. */
     webSectionTitle: "Chosen for your table",
   },
+  comingSoon: {
+    stripEyebrow: "Launching soon",
+    stripTitle: "Next from KankreG",
+    stripBody: "Visible on home and shop with a blurred photo, red veil, and Coming soon label until launch.",
+  },
   timelineVideo: {
     eyebrow: "Behind the craft",
     title: "From pasture to jar",
-    kicker: "Watch the KankreG journey — Bilona ghee, made the ancestral way.",
-    filmLabel: "Brand timeline",
-    filmDuration: "2 min film",
-    loopingLabel: "Always playing",
-    journeyPills: ["Grass-fed herd", "Hand churned", "Bilona craft"],
-    railMeta: "Ancestral process · farm to table",
+    kicker: "",
+    filmLabel: "",
+    filmDuration: "",
+    loopingLabel: "",
+    journeyPills: [],
+    railMeta: "",
+    /** Compact labels for the 6-step strip under the brand film. */
+    processSteps: ["Pasture", "A2 milk", "Curd", "Bilona", "Wood fire", "Jar"],
   },
   ourStory: {
     eyebrow: "Our story",
@@ -662,8 +625,31 @@ export const CART_UI = {
   pageTitle: "Shopping cart",
   checkoutTitle: "Checkout",
   emptyTitle: "Your cart is empty",
-  emptyDescription: "Add items from the shop.",
+  emptyDescription: "Discover heritage ghee, staples, and curated picks — add something you love.",
   browseCta: "Browse shop",
+  itemsSectionLabel: "Your items",
+  summaryTitle: "Order summary",
+  trustLine: "Secure checkout · Free delivery · Easy returns",
+  stickySubtotalLabel: "Subtotal",
+  shippingLabel: "Delivery",
+  shippingFree: "FREE",
+  serviceFeeLabel: "Service fee",
+  totalLabel: "Total",
+  checkoutCta: "Checkout",
+  checkoutCtaArrow: "Checkout →",
+  payCta: "Pay now",
+  placeOrderCta: "Place order",
+  itemCount: "{count} item",
+  itemCountPlural: "{count} items",
+  unitPrice: "{price} each",
+  removeItem: "Remove",
+  couponPlaceholder: "Coupon code",
+  couponApply: "Apply",
+  couponApplied: "Coupon applied",
+  loginTitle: "Sign in to continue",
+  loginDescription: "Access your bag, saved address, and checkout on any device.",
+  loginCta: "Sign in",
+  browseGuestCta: "Continue browsing",
 };
 
 /** Cart — deliver-to panel and profile address prompts. */
@@ -683,11 +669,13 @@ export const SHOP_SCREEN_UI = {
   pageEyebrow: "Catalog",
   pageTitle: "Shop",
   pageTitleWide: "Shop everything",
-  pageSubtitle: "",
-  searchPlaceholder: "Search essentials",
+  pageSubtitle: "Hand-churned Bilona ghee, A2 dairy & curated staples — delivered fresh.",
+  searchPlaceholder: "Search ghee, staples, wellness…",
   refineTitle: "Refine",
   resetFilters: "Reset",
   sortA11y: "Change sort order",
+  filterSort: "Sort by",
+  categoryRailTitle: "Browse by category",
   showingPrefix: "Showing",
   showingOf: "of",
   showingSuffix: "products",
@@ -706,14 +694,38 @@ export const SHOP_SCREEN_UI = {
   filterPrice: "Price",
   priceMin: "₹500",
   priceMax: "₹8,000",
-  collectionPills: ["All", "New in", "On sale", "Premium"],
+  collectionPills: ["All", "New in", "On sale", "Premium", "Coming soon"],
   sortOptions: [
     { key: "featured", label: "Featured" },
     { key: "price-asc", label: "Price ↑" },
     { key: "price-desc", label: "Price ↓" },
     { key: "newest", label: "Newest" },
   ],
-  trustLine: "",
+  hero: {
+    eyebrow: "KankreG catalog",
+    title: "Farm-fresh A2, curated for your kitchen",
+    body: "Browse Bilona ghee, dairy staples, and wellness picks — filter by category, price, or what’s launching next.",
+    totalLabel: "Products",
+    inStockLabel: "In stock",
+    comingSoonLabel: "Coming soon",
+    onSaleLabel: "On sale",
+  },
+  trustLine: "Secure checkout · Authentic A2 · Free delivery over ₹1,499",
+  trustBadges: [
+    { icon: "leaf-outline", label: "Grass-fed A2" },
+    { icon: "flame-outline", label: "Bilona churned" },
+    { icon: "cube-outline", label: "Fresh dispatch" },
+  ],
+  card: {
+    addA11y: "Add to cart",
+    soldOut: "Sold out",
+    comingSoon: "Coming soon",
+    comingSoonNoteFallback: "Launching shortly",
+    comingSoonPreview: "Preview",
+    unitFallback: "1 pc",
+    noImage: "No image",
+    imageUnavailable: "Image unavailable",
+  },
 };
 
 /** Notifications — `NotificationsScreen.js`. */
@@ -948,48 +960,131 @@ export const AUTH_UI = {
 
 /** My Orders — shared copy for app + web (`MyOrdersScreen.js`). */
 export const MY_ORDERS_UI = {
-  pageTitle: "Order tracking",
+  pageTitle: "Your orders",
+  pageSubtitle: "Track, reorder, and download invoices.",
   pageEyebrowActive: "In transit",
-  pageEyebrowDefault: "Orders",
+  pageEyebrowDefault: "Order history",
+  summaryKicker: "Overview",
   emptyTitle: "No orders yet",
-  emptyDescription: "Orders show up here after checkout.",
-  emptyCta: "Browse shop",
+  emptyDescription: "Your orders appear here after checkout with live tracking.",
+  emptyCta: "Start shopping",
   loadingCaption: "Loading orders…",
   refresh: "Refresh",
   orderPrefix: "ORDER",
+  itemsLabel: "items",
+  sectionActive: "Active orders",
+  sectionActiveOverline: "Live",
+  sectionActiveSubtitle: "On the way or being prepared.",
+  sectionHistory: "Past orders",
+  sectionHistoryOverline: "History",
+  sectionHistorySubtitle: "Delivered and cancelled.",
+  detailTitle: "Order breakdown",
+  detailItems: "Items total",
+  detailDelivery: "Delivery",
+  detailPlatform: "Platform fee",
+  detailDiscount: "Discount",
+  detailCoupon: "Coupon",
+  detailPaymentMethod: "Payment method",
+  detailPaymentStatus: "Payment status",
+  detailPaymentId: "Payment ID",
+  detailInvoice: "Invoice no.",
+  detailTotal: "Order total",
+  detailAddress: "Deliver to",
+  callPartner: "Call delivery partner",
+  trackTitle: "Track order",
+  trackCancelledTitle: "Order cancelled",
+  trackCancelledSub: "This order will not be fulfilled.",
   filters: {
     all: "All",
     active: "Active",
     delivered: "Delivered",
     cancelled: "Cancelled",
   },
-  trackSteps: ["Placed", "Packed", "On the way", "Delivered"],
-  etaPrefix: "Arriving in",
-  etaFallback: "Soon",
-  partnerRole: "Delivery partner",
-  partnerOnWay: "On the way",
-  detailsExpand: "Details",
-  detailsCollapse: "Hide",
-  changeAddress: "Address",
-  editAddressTitle: "Update address",
-  saveAddress: "Save",
+  filterIcons: {
+    all: "apps-outline",
+    active: "flash-outline",
+    delivered: "checkmark-done-outline",
+    cancelled: "ban-outline",
+  },
+  icons: {
+    items: "leaf-outline",
+    date: "time-outline",
+    ship: "navigate-outline",
+    statusDelivered: "checkmark-done-circle",
+    statusCancelled: "close-circle",
+    statusPending: "hourglass-outline",
+    call: "call-outline",
+    details: "reader-outline",
+    detailsCollapse: "chevron-up-outline",
+    address: "create-outline",
+    invoice: "download-outline",
+    reward: "sparkles-outline",
+    rewardDone: "sparkles",
+    reorder: "cart-outline",
+    statTotal: "albums-outline",
+    statActive: "pulse-outline",
+    statDelivered: "shield-checkmark-outline",
+    statSpend: "wallet-outline",
+  },
+  partnerOnWay: "On the way to you",
+  detailsExpand: "Breakdown",
+  detailsCollapse: "Close",
+  changeAddress: "Edit",
+  editAddressTitle: "Update delivery address",
+  saveAddress: "Save address",
   savingAddress: "Saving…",
   cancel: "Cancel",
-  reorder: "Reorder",
+  reorder: "Reorder items",
   reorderLoading: "Adding…",
   invoiceDownload: "Invoice",
   invoiceGenerating: "Generating…",
-  invoiceHintWeb: "Save as PDF from print.",
-  itemsPreviewTitle: "Items",
   claimReward: "Claim reward",
   claimRewardLoading: "Claiming…",
   claimedReward: "Claimed",
   loadMore: "Load more",
-  statTotal: "Total",
+  statTotal: "Orders",
   statInFlight: "Active",
   statDelivered: "Delivered",
-  statSpend: "Spend",
+  statSpend: "Total spend",
+  addressFields: {
+    fullName: { label: "Full name", icon: "person-outline", autoCapitalize: "words" },
+    phone: { label: "Phone", icon: "call-outline", keyboardType: "phone-pad" },
+    line1: { label: "Address", icon: "home-outline", autoCapitalize: "sentences" },
+    city: { label: "City", autoCapitalize: "words" },
+    state: { label: "State", autoCapitalize: "words" },
+    postalCode: { label: "Postal code", keyboardType: "number-pad" },
+    country: { label: "Country", autoCapitalize: "words" },
+    note: { label: "Note (optional)", icon: "chatbubble-ellipses-outline" },
+  },
+  addressFieldRows: [
+    ["fullName"],
+    ["phone"],
+    ["line1"],
+    ["city", "state"],
+    ["postalCode", "country"],
+    ["note"],
+  ],
+  /** @deprecated */
+  lineSingular: "line",
+  /** @deprecated */
+  linePlural: "lines",
+  /** @deprecated */
+  itemsMoreLabel: "more items",
+  /** @deprecated */
+  itemsPreviewTitle: "Items",
+  /** @deprecated */
+  invoiceHintWeb: "Save as PDF from print.",
+  /** @deprecated */
+  etaPrefix: "Arriving in",
+  /** @deprecated */
+  etaFallback: "Soon",
+  /** @deprecated */
+  partnerRole: "Delivery partner",
+  /** @deprecated */
+  trackSteps: ["Placed", "Packed", "On the way", "Delivered"],
+  /** @deprecated */
   inFlightTitle: "Active orders",
+  /** @deprecated */
   historyTitle: "History",
   /** @deprecated use emptyDescription */
   emptyDescriptionShort: "Orders show up here after checkout.",
@@ -1008,6 +1103,10 @@ export const PRODUCT_SCREEN = {
   heroImageUnavailable: "No image",
   heroInStock: "In stock",
   heroOutOfStock: "Out of stock",
+  heroComingSoon: "Coming soon",
+  comingSoonTitle: "Coming soon",
+  comingSoonBody: "This item is not available to order yet. Check back for launch updates.",
+  comingSoonNoteFallback: "Launching shortly",
   categoryFallback: "General",
   metaNoRatings: "No ratings",
   metaReadyToShip: "Ready to ship",

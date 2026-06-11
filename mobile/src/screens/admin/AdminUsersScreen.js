@@ -36,8 +36,7 @@ import PremiumChip from "../../components/ui/PremiumChip";
 import AdminPanel from "../../components/admin/AdminPanel";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 import AdminStatusPill from "../../components/admin/AdminStatusPill";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 
 export default function AdminUsersScreen({ navigation, route }) {
   const { colors: c, shadowPremium } = useTheme();
@@ -515,22 +514,22 @@ function createAdminUsersStyles(c, shadowPremium, compact = false) {
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: KANKREG_PALETTE.goldBright,
+    backgroundColor: c.primary,
     alignItems: "center",
     justifyContent: "center",
   },
   userAvText: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_HEADING,
     fontSize: 13,
     color: "#fff",
   },
   userName: {
-    color: KANKREG_PALETTE.ink,
+    color: c.textPrimary,
     fontWeight: "600",
     fontSize: 12.5,
   },
   userEmail: {
-    color: KANKREG_PALETTE.inkFaint,
+    color: c.textMuted,
     fontSize: 11,
   },
   statsGrid: adminStatsGridStyle(compact),

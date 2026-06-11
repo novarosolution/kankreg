@@ -1,11 +1,16 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { useTheme } from "../../context/ThemeContext";
+import { getAdminChrome } from "../../theme/adminLayout";
 import { fonts } from "../../theme/tokens";
 
 export default function AdminCategoryBar({ name, percent }) {
+  const { colors: c, isDark } = useTheme();
+  const chrome = useMemo(() => getAdminChrome(c, isDark), [c, isDark]);
+  const styles = useMemo(() => createStyles(chrome), [chrome]);
   const pct = Math.max(0, Math.min(100, Number(percent) || 0));
+
   return (
     <View style={styles.wrap}>
       <View style={styles.top}>
@@ -14,7 +19,7 @@ export default function AdminCategoryBar({ name, percent }) {
       </View>
       <View style={styles.track}>
         <LinearGradient
-          colors={["#cba24e", "#9c6b27"]}
+          colors={isDark ? ["#e8c85a", "#b8862a"] : ["#cba24e", "#9c6b27"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={[styles.fill, { width: `${pct}%` }]}
@@ -24,31 +29,33 @@ export default function AdminCategoryBar({ name, percent }) {
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { marginVertical: 11 },
-  top: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 5,
-  },
-  name: {
-    fontSize: 12,
-    color: KANKREG_PALETTE.inkSoft,
-    fontFamily: fonts.medium,
-  },
-  pct: {
-    fontSize: 12,
-    color: KANKREG_PALETTE.ink,
-    fontFamily: fonts.semibold,
-  },
-  track: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: KANKREG_PALETTE.paper2,
-    overflow: "hidden",
-  },
-  fill: {
-    height: 6,
-    borderRadius: 3,
-  },
-});
+function createStyles(chrome) {
+  return StyleSheet.create({
+    wrap: { marginVertical: 11 },
+    top: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 5,
+    },
+    name: {
+      fontSize: 12,
+      color: chrome.inkSoft,
+      fontFamily: fonts.medium,
+    },
+    pct: {
+      fontSize: 12,
+      color: chrome.ink,
+      fontFamily: fonts.semibold,
+    },
+    track: {
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: chrome.paper,
+      overflow: "hidden",
+    },
+    fill: {
+      height: 6,
+      borderRadius: 3,
+    },
+  });
+}

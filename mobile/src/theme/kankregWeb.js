@@ -6,7 +6,7 @@
 export const KANKREG_PALETTE = {
   ink: "#19140f",
   inkSoft: "#574d42",
-  inkFaint: "#938778",
+  inkFaint: "#6B5E50",
   paper: "#f5efe4",
   paper2: "#ece3d2",
   card: "#fffdf8",
