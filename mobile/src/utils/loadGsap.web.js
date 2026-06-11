@@ -1,31 +1,19 @@
-/** GSAP loader — sync in dev (Metro HMR), dynamic import in production web builds. */
-let gsapPromise = null;
-let scrollTriggerPromise = null;
+/** GSAP — sync require on web (dynamic import() breaks Metro static export chunks). */
+let scrollTriggerRegistered = false;
 
 export async function getGsap() {
-  if (__DEV__) {
-    // eslint-disable-next-line global-require
-    return require("gsap").gsap;
-  }
-  if (!gsapPromise) {
-    gsapPromise = import("gsap").then((mod) => mod.gsap);
-  }
-  return gsapPromise;
+  // eslint-disable-next-line global-require
+  return require("gsap").gsap;
 }
 
 export async function getScrollTrigger() {
-  if (__DEV__) {
-    // eslint-disable-next-line global-require
-    const gsap = require("gsap").gsap;
-    const stMod = require("gsap/ScrollTrigger");
+  // eslint-disable-next-line global-require
+  const gsap = require("gsap").gsap;
+  // eslint-disable-next-line global-require
+  const stMod = require("gsap/ScrollTrigger");
+  if (!scrollTriggerRegistered) {
     gsap.registerPlugin(stMod.ScrollTrigger);
-    return stMod.ScrollTrigger;
+    scrollTriggerRegistered = true;
   }
-  if (!scrollTriggerPromise) {
-    scrollTriggerPromise = Promise.all([getGsap(), import("gsap/ScrollTrigger")]).then(([gsap, stMod]) => {
-      gsap.registerPlugin(stMod.ScrollTrigger);
-      return stMod.ScrollTrigger;
-    });
-  }
-  return scrollTriggerPromise;
+  return stMod.ScrollTrigger;
 }

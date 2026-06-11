@@ -4,7 +4,6 @@ import { getSocketBaseUrl } from "./apiBase";
 /** @type {import('socket.io-client').Socket | null} */
 let socket = null;
 let activeToken = null;
-let ioFactoryPromise = null;
 
 const eventHandlers = new Map();
 
@@ -40,14 +39,8 @@ function attachSocketListeners(sock) {
 }
 
 async function resolveIo() {
-  if (__DEV__) {
-    // eslint-disable-next-line global-require
-    return require("socket.io-client").io;
-  }
-  if (!ioFactoryPromise) {
-    ioFactoryPromise = import("socket.io-client").then((mod) => mod.io);
-  }
-  return ioFactoryPromise;
+  // eslint-disable-next-line global-require
+  return require("socket.io-client").io;
 }
 
 export function getLiveSocket() {

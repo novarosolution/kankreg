@@ -8,12 +8,32 @@ import * as Device from "expo-device";
 const PRODUCTION_API_URL = "https://kankregserver.onrender.com";
 const DEV_API_PORT = 5001;
 
+function isLocalHostname(host) {
+  const h = String(host || "").toLowerCase();
+  return (
+    h === "localhost" ||
+    h === "127.0.0.1" ||
+    h === "0.0.0.0" ||
+    h === "10.0.2.2" ||
+    /^\d+\.\d+\.\d+\.\d+$/.test(h)
+  );
+}
+
+function isSecureWebContext() {
+  return (
+    Platform.OS === "web" &&
+    typeof window !== "undefined" &&
+    window.location?.protocol === "https:"
+  );
+}
+
 /**
  * Fix common .env mistakes: ":5001", "5001", "localhost" without scheme, etc.
+ * Remote hosts default to https (required when the web app is served over HTTPS).
  */
 function sanitizeConfiguredBase(raw) {
   if (raw == null) return null;
-  const s = String(raw).trim();
+  let s = String(raw).trim();
   if (!s) return null;
 
   if (/^:\d+$/.test(s)) {
@@ -27,10 +47,24 @@ function sanitizeConfiguredBase(raw) {
   }
   if (!/^https?:\/\//i.test(s)) {
     if (/^[\w.-]+(:\d+)?(\/.*)?$/.test(s)) {
-      return `http://${s}`;
+      const host = s.split("/")[0].split(":")[0];
+      const scheme = isLocalHostname(host) ? "http" : "https";
+      s = `${scheme}://${s}`;
     }
   }
-  return s.replace(/\/+$/, "");
+  s = s.replace(/\/+$/, "");
+  return upgradeInsecureRemoteUrl(s);
+}
+
+function upgradeInsecureRemoteUrl(url) {
+  if (!url || !/^http:\/\//i.test(url)) return url;
+  try {
+    const { hostname } = new URL(url);
+    if (isLocalHostname(hostname)) return url;
+    return url.replace(/^http:\/\//i, "https://");
+  } catch {
+    return url;
+  }
 }
 
 function getConfiguredApiUrl() {
@@ -51,17 +85,18 @@ export function getSocketBaseUrl() {
 export function getApiBaseUrl() {
   const configured = getConfiguredApiUrl();
   if (configured) {
-    return configured;
+    return upgradeInsecureRemoteUrl(configured);
   }
 
-  // Only treat as dev when Metro/babel explicitly sets __DEV__ === true.
-  // If __DEV__ is missing (some embedded/minified bundles), default to production API.
   const isDev = typeof __DEV__ !== "undefined" && __DEV__;
   if (!isDev) {
     return PRODUCTION_API_URL;
   }
 
-  // Web: use 127.0.0.1 so we don't hit IPv6 ::1 with no server (broken fetch / 404 from wrong host).
+  if (Platform.OS === "web" && isSecureWebContext()) {
+    return PRODUCTION_API_URL;
+  }
+
   if (Platform.OS === "web" && typeof window !== "undefined") {
     return `http://127.0.0.1:${DEV_API_PORT}`;
   }

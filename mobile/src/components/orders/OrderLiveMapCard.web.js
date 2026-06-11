@@ -1,5 +1,5 @@
-import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
 import { ORDER_LIVE_TRACKING } from "../../content/appContent";
@@ -14,13 +14,7 @@ import PremiumSectionHeader from "../ui/PremiumSectionHeader";
 import { collectOrderMapPoints } from "../../utils/orderMapBounds";
 import { openMapsDirections, STALE_MS } from "./orderLiveMapShared";
 
-const LeafletMapComponent = __DEV__
-  ? // eslint-disable-next-line global-require
-    require("./OrderLiveMapLeaflet.web").default
-  : null;
-const LazyLeafletMap = __DEV__
-  ? LeafletMapComponent
-  : React.lazy(() => import("./OrderLiveMapLeaflet.web"));
+const LeafletMapComponent = require("./OrderLiveMapLeaflet.web").default;
 
 function hasDestinationSummary(dest) {
   if (!dest || typeof dest !== "object") return false;
@@ -217,14 +211,7 @@ export default function OrderLiveMapCard({ orderId }) {
       ) : null}
 
       {showMap ? (
-        <Suspense
-          fallback={
-            <View style={{ height: 256, alignItems: "center", justifyContent: "center" }}>
-              <ActivityIndicator color={c.primary} />
-            </View>
-          }
-        >
-          <LazyLeafletMap
+          <LeafletMapComponent
             plat={plat}
             plng={plng}
             slat={slat}
@@ -241,7 +228,6 @@ export default function OrderLiveMapCard({ orderId }) {
             routePositions={routePositions}
             mapPoints={mapPoints}
           />
-        </Suspense>
       ) : null}
 
       {trackable ? (

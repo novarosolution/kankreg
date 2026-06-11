@@ -115,10 +115,23 @@ export function resolveImageUri(rawUri) {
       return url.toString();
     }
 
-    return url.toString();
+    return upgradeRemoteImageUrl(url.toString());
   } catch {
     return uri;
   }
+}
+
+function upgradeRemoteImageUrl(uri) {
+  if (!uri || !/^http:\/\//i.test(uri)) return uri;
+  try {
+    if (isLocalHost(new URL(uri).hostname)) return uri;
+  } catch {
+    return uri;
+  }
+  if (Platform.OS === "web" && typeof window !== "undefined" && window.location?.protocol === "https:") {
+    return uri.replace(/^http:\/\//i, "https://");
+  }
+  return uri;
 }
 
 export function getImageUriCandidates(rawUri, { width, quality = "auto" } = {}) {
