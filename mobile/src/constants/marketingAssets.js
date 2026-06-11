@@ -11,8 +11,8 @@ export const HOME_HERO_PRODUCT_SLIDE_HEIGHT_PER_WIDTH = 941 / 1672;
 /** Default landscape hero height ratio for web (1535×1024 class assets). */
 export const HOME_HERO_WEB_LANDSCAPE_HEIGHT_PER_WIDTH = 1024 / 1535;
 
-/** Phone hero band height per point of slider width — portrait reference JPEG. */
-export const HOME_HERO_PHONE_SLIDE_HEIGHT_PER_WIDTH = 1537 / 1023;
+/** Phone hero band height per point of slider width — portrait product slide (941×1200). */
+export const HOME_HERO_PHONE_SLIDE_HEIGHT_PER_WIDTH = 1200 / 941;
 
 /**
  * Web home hero only — three PNGs from `img/` (bundled as `hero-slide-13`, `hero-slide-10`, `hero-slide-07`).
@@ -86,56 +86,59 @@ export const HOME_HERO_WEB_SLIDER_SLIDES = [
  * Order: `WhatsApp Iae2026-04-30…`, `WhatsApp Image …18.41.08`, `WhatsApp Image …18.41.09`
  * → `hero-slide-06-wa`, `hero-slide-04-wa`, `hero-slide-05-wa`.
  */
-/** Phone web hero slide 1 — `imgs/hf_20260610_140405_….png` (896×1200). */
+/**
+ * Phone hero slide 1 — `imgs/ChatGPT Image Jun 10, 2026, 04_56_13 PM.png` (product box).
+ * Phone hero slide 2 — `imgs/ChatGPT Image Jun 10, 2026, 05_22_00 PM.png` (glass jar).
+ * Phone hero slide 3 — `imgs/ChatGPT Image Jun 10, 2026, 05_34_22 PM.png` (khichdi + ghee).
+ * Phone hero slide 4 — `imgs/ChatGPT Image Jun 10, 2026, 06_15_51 PM phone.png` (box + jar, baked copy).
+ */
 export const HOME_HERO_PRODUCT_PHONE_SLIDE = {
   key: "phone-hero-product",
-  image: require("../../assets/marketing/hero-slide-kankreg-product-phone.png"),
-  title: HOME_HERO_PRODUCT_SLIDE.title,
-  subtitle: HOME_HERO_PRODUCT_SLIDE.subtitle,
-  cta: HOME_HERO_PRODUCT_SLIDE.cta,
-  action: HOME_HERO_PRODUCT_SLIDE.action,
-  variant: HOME_HERO_PRODUCT_SLIDE.variant,
-  badge: HOME_HERO_PRODUCT_SLIDE.badge,
+  image: require("../../assets/marketing/hero-slide-kankreg-phone-hero.png"),
+  title: "",
+  subtitle: "",
+  cta: "Shop ghee",
+  action: "catalog",
+  variant: "product",
+  badge: "Bilona · Farm to table",
   contentPosition: "center",
-  heightRatio: 1200 / 896,
+  heightRatio: 1200 / 941,
   imageFit: "cover",
   captionAlign: "center",
 };
 
-/** Portrait product slide height ratio (896×1200). */
-export const HOME_HERO_PRODUCT_PHONE_SLIDE_HEIGHT_PER_WIDTH = 1200 / 896;
+/** Portrait product slide height ratio (941×1200 bundled). */
+export const HOME_HERO_PRODUCT_PHONE_SLIDE_HEIGHT_PER_WIDTH = 1200 / 941;
 
 export const HOME_HERO_MOBILE_SLIDER_SLIDES = [
   HOME_HERO_PRODUCT_PHONE_SLIDE,
   {
-    key: "phone-hero-iae",
-    /** Phone slide 2 — `imgs/hf_20260611_044653_….png` (896×1200). */
+    key: "phone-hero-jar",
     image: require("../../assets/marketing/hero-slide-kankreg-phone-02.png"),
-    title: "Pure A2 Kankrej ghee",
-    subtitle: "Hand-churned Bilona ghee — grainy, golden, and honest.",
-    cta: "Shop ghee",
-    action: "catalog",
-    heightRatio: 1200 / 896,
-    imageFit: "cover",
-    captionAlign: "center",
-  },
-  {
-    key: "phone-hero-0808",
-    /** Phone slide 3 — `imgs/hf_20260610_134600_….png` (896×1200). */
-    image: require("../../assets/marketing/hero-slide-kankreg-phone-03.png"),
-    title: "A golden touch on every meal",
-    subtitle:
-      "Pure Bilona ghee over steaming dal-chawal — from grass-fed Kankrej cows to your family table.",
+    title: "",
+    subtitle: "",
     cta: "Shop ghee",
     action: "catalog",
     contentPosition: "center",
-    heightRatio: 1200 / 896,
+    heightRatio: 1200 / 941,
     imageFit: "cover",
     captionAlign: "center",
   },
   {
-    key: "phone-hero-0909",
-    /** Phone slide 4 — `imgs/ChatGPT Image Jun 10, 2026, 06_15_51 PM phone.png` (583×1200). Copy is baked into the artwork. */
+    key: "phone-hero-meal",
+    image: require("../../assets/marketing/hero-slide-kankreg-phone-03.png"),
+    title: "A golden touch on every meal",
+    subtitle:
+      "Pure Bilona ghee over steaming khichdi — from grass-fed Kankrej cows to your family table.",
+    cta: "Shop ghee",
+    action: "catalog",
+    contentPosition: "center",
+    heightRatio: 1200 / 798,
+    imageFit: "cover",
+    captionAlign: "center",
+  },
+  {
+    key: "phone-hero-purity",
     image: require("../../assets/marketing/hero-slide-kankreg-phone-04.png"),
     title: "",
     subtitle: "",
