@@ -1,14 +1,36 @@
 /**
  * Generate web-optimized marketing assets (WebP heroes/process, compressed MP4).
  * Run: `npm run optimize:web`
+ *
+ * CI/Vercel often installs with NODE_ENV=production (no devDependencies).
+ * When `sharp` is unavailable, we skip if committed *-web-* assets already exist.
  */
 const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
-const sharp = require("sharp");
+
+let sharp;
+try {
+  // eslint-disable-next-line global-require, import/no-extraneous-dependencies
+  sharp = require("sharp");
+} catch {
+  sharp = null;
+}
 
 const root = path.join(__dirname, "..");
 const marketingDir = path.join(root, "assets", "marketing");
+
+/** Minimum set of pre-generated web assets checked into the repo for CI skips. */
+const COMMITTED_WEB_ASSET_MARKERS = [
+  "hero-slide-kankreg-phone-hero-web-840.webp",
+  "hero-slide-kankreg-product-wide-web-1200.webp",
+  "home-hero-video-web.mp4",
+  "timeline-brand-film-web.mp4",
+];
+
+function hasCommittedWebAssets() {
+  return COMMITTED_WEB_ASSET_MARKERS.every((name) => fs.existsSync(path.join(marketingDir, name)));
+}
 
 const PHONE_HERO_PNGS = [
   "hero-slide-kankreg-phone-hero.png",
@@ -129,6 +151,20 @@ async function extractVideoPoster(inputName, outputName) {
 async function main() {
   if (!fs.existsSync(marketingDir)) {
     console.error("Missing assets/marketing/");
+    process.exit(1);
+  }
+
+  if (!sharp) {
+    if (hasCommittedWebAssets()) {
+      console.warn(
+        "[optimize:web] sharp not installed (production install?) — using committed web assets."
+      );
+      console.log("Done. Skipped regeneration; *-web-*.webp / *-web.mp4 already in repo.");
+      return;
+    }
+    console.error(
+      "[optimize:web] sharp is required to generate web assets. Run: npm install --include=dev"
+    );
     process.exit(1);
   }
 
