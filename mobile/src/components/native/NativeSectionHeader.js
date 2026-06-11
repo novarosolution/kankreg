@@ -14,11 +14,19 @@ export default function NativeSectionHeader({
   tight = false,
 }) {
   const { isDark } = useTheme();
-  const { isMobileWeb } = useKankregLayout();
+  const { isMobileWeb, pageGutterClamp } = useKankregLayout();
   if (Platform.OS === "web" && !isMobileWeb) return null;
 
+  const gutter = isMobileWeb ? pageGutterClamp : FIGMA.gutter;
+
   return (
-    <View style={[styles.row, tight && styles.rowTight, isMobileWeb && styles.rowMobileWeb]}>
+    <View
+      style={[
+        styles.row,
+        tight && styles.rowTight,
+        { marginHorizontal: gutter },
+      ]}
+    >
       <View style={styles.titleCol}>
         {eyebrow ? <Text style={figmaEyebrow(isDark)}>{eyebrow}</Text> : null}
         <Text style={figmaDisplayTitle(16, isDark)}>{title}</Text>
@@ -39,16 +47,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "space-between",
-    marginHorizontal: FIGMA.gutter,
     marginTop: spacing.md + 6,
     marginBottom: spacing.sm + 4,
     paddingHorizontal: 2,
   },
   rowTight: {
     marginTop: spacing.sm,
-  },
-  rowMobileWeb: {
-    marginHorizontal: 0,
   },
   titleCol: {
     flex: 1,

@@ -65,7 +65,8 @@ const stripShadow = platformShadow({
 
 export default function NativeCategoryRow({ categories, products, onPress }) {
   const { isDark, colors: c } = useTheme();
-  const { isMobileWeb } = useKankregLayout();
+  const { isMobileWeb, pageGutterClamp } = useKankregLayout();
+  const stripGutter = isMobileWeb ? pageGutterClamp : FIGMA.gutter;
   const safeProducts = Array.isArray(products) ? products : [];
   const tiles = useMemo(() => {
     if (Array.isArray(categories) && categories.length) return categories;
@@ -93,7 +94,7 @@ export default function NativeCategoryRow({ categories, products, onPress }) {
     <View
       style={[
         styles.strip,
-        isMobileWeb && styles.stripMobileWeb,
+        { marginHorizontal: stripGutter },
         figmaCardShell(isDark),
         stripShadow,
       ]}
@@ -151,14 +152,9 @@ export default function NativeCategoryRow({ categories, products, onPress }) {
 
 const styles = StyleSheet.create({
   strip: {
-    marginHorizontal: FIGMA.gutter,
     borderRadius: 18,
     paddingVertical: 14,
     marginBottom: spacing.xs,
-  },
-  stripMobileWeb: {
-    marginHorizontal: 0,
-    width: "100%",
   },
   content: {
     paddingHorizontal: 14,

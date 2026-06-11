@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { Platform } from "react-native";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { scheduleScrollTriggerRefresh } from "../utils/scrollTriggerRefresh";
 
 const PRESETS = {
   "fade-up": {
@@ -125,7 +126,7 @@ export default function useGsapReveal({
     });
 
     const refreshId = requestAnimationFrame(() => {
-      ScrollTrigger.refresh();
+      scheduleScrollTriggerRefresh();
       if (isElementInScrollView(target, scroller)) {
         const opacity = Number(gsap.getProperty(target, "opacity"));
         if (!Number.isFinite(opacity) || opacity < 0.2) {
@@ -134,8 +135,16 @@ export default function useGsapReveal({
       }
     });
 
+    const safetyId = setTimeout(() => {
+      const opacity = Number(gsap.getProperty(target, "opacity"));
+      if (!Number.isFinite(opacity) || opacity < 0.85) {
+        revealNow();
+      }
+    }, 1800);
+
     return () => {
       cancelAnimationFrame(refreshId);
+      clearTimeout(safetyId);
       if (tween?.scrollTrigger && typeof tween.scrollTrigger.kill === "function") {
         tween.scrollTrigger.kill();
       }

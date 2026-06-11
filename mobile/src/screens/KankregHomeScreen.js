@@ -14,12 +14,10 @@ import AboutKankregMedia from "../components/home/AboutKankregMedia";
 import HomeTimelineVideoSection from "../components/home/HomeTimelineVideoSection";
 import HomeProcessJourney from "../components/home/HomeProcessJourney";
 import HomeCommunitySection from "../components/home/HomeCommunitySection";
-import HomeGheePremiumWeb from "../components/home/HomeGheePremiumWeb";
-import LazyWhenVisible from "../components/ui/LazyWhenVisible";
 import {
   normalizeAboutSection,
   normalizeCommunitySection,
-  normalizeCompareSection,
+  normalizeProcessSection,
 } from "../utils/homeViewMedia";
 import HomeStatsStrip from "../components/home/HomeStatsStrip";
 import HomeTestimonials from "../components/home/HomeTestimonials";
@@ -82,6 +80,8 @@ const nativeHomeStyles = StyleSheet.create({
     paddingTop: spacing.xs,
     paddingHorizontal: 0,
     gap: spacing.md,
+    width: "100%",
+    maxWidth: "100%",
   },
   bannerWrap: {
     paddingHorizontal: FIGMA.gutter,
@@ -114,9 +114,21 @@ const styles = StyleSheet.create({
     web: {
       paddingHorizontal: 0,
       overflow: "visible",
+      width: "100%",
+      maxWidth: "100%",
+      alignSelf: "stretch",
     },
     default: {},
   }),
+  webHomeScrollClipX: Platform.select({
+    web: { overflowX: "clip", width: "100%", maxWidth: "100%" },
+    default: {},
+  }),
+  webHomeBodyMobile: {
+    width: "100%",
+    maxWidth: "100%",
+    alignSelf: "stretch",
+  },
   webHomeBody: {
     width: "100%",
     maxWidth: 1280,
@@ -319,9 +331,9 @@ export default function KankregHomeScreen({ navigation }) {
             </View>
           ) : null}
 
-          {ready ? (
+          {ready && normalizeProcessSection(homeView?.processSection ?? DEFAULT_HOME_VIEW_CONFIG.processSection).enabled ? (
             <View style={nativeHomeStyles.processWrap}>
-              <HomeProcessJourney />
+              <HomeProcessJourney processSection={homeView?.processSection ?? DEFAULT_HOME_VIEW_CONFIG.processSection} />
             </View>
           ) : null}
 
@@ -332,15 +344,16 @@ export default function KankregHomeScreen({ navigation }) {
   }
 
   const showWebHero = HOME_SCREEN_UI.web?.showWebHero !== false;
-  const showGheePremium = HOME_SCREEN_UI.web?.showGheePremiumSections !== false;
   const showCommunity = HOME_SCREEN_UI.web?.showCommunitySection !== false;
   const showLegacyTrustStrip =
     showHomeExtras && HOME_SCREEN_UI.web?.showTrustStrip && ready && !showWebHero;
   const aboutSection = homeView?.aboutSection ?? DEFAULT_HOME_VIEW_CONFIG.aboutSection;
   const communitySection =
     homeView?.communitySection ?? DEFAULT_HOME_VIEW_CONFIG.communitySection;
-  const compareSection =
-    homeView?.compareSection ?? DEFAULT_HOME_VIEW_CONFIG.compareSection;
+  const processSection =
+    homeView?.processSection ?? DEFAULT_HOME_VIEW_CONFIG.processSection;
+  const showProcessSection =
+    ready && normalizeProcessSection(processSection).enabled;
   const showAboutStory = ready && normalizeAboutSection(aboutSection).enabled;
   const showCommunitySection =
     showCommunity &&
@@ -354,7 +367,8 @@ export default function KankregHomeScreen({ navigation }) {
       <KankregGrainOverlay />
       <KankregScrollPage
         scrollVariant="page"
-        contentContainerStyle={styles.webHomeScroll}
+        flushWebGutter={isMobileWeb}
+        contentContainerStyle={[styles.webHomeScroll, isMobileWeb && styles.webHomeScrollClipX]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={c.primary} />
         }
@@ -366,13 +380,14 @@ export default function KankregHomeScreen({ navigation }) {
         <View
           style={[
             styles.webHomeBody,
+            isMobileWeb && styles.webHomeBodyMobile,
             {
               paddingHorizontal: pageGutterClamp,
               paddingTop: showWebHero ? HOME_SECTION_GAP : HOME_SPACE.lg,
             },
           ]}
         >
-          <KankregPageWrap gap={HOME_SECTION_GAP}>
+          <KankregPageWrap gap={isMobileWeb ? spacing.lg : HOME_SECTION_GAP}>
             {loading ? <HomePageSkeleton /> : null}
 
             {configError && !loading ? (
@@ -472,36 +487,34 @@ export default function KankregHomeScreen({ navigation }) {
               </ScrollFadeUp>
             ) : null}
 
-            {ready ? (
-              <LazyWhenVisible minHeight={560} rootMargin="240px">
-                <ScrollFadeUp index={3}>
-                  <HomeProcessJourney />
-                </ScrollFadeUp>
-              </LazyWhenVisible>
-            ) : null}
+          </KankregPageWrap>
+        </View>
 
+        {showProcessSection ? (
+          <HomeProcessJourney processSection={processSection} />
+        ) : null}
+
+        <View
+          style={[
+            styles.webHomeBody,
+            isMobileWeb && styles.webHomeBodyMobile,
+            webCreamShell,
+            { paddingHorizontal: pageGutterClamp, paddingTop: HOME_SECTION_GAP },
+          ]}
+        >
+          <KankregPageWrap gap={isMobileWeb ? spacing.lg : HOME_SECTION_GAP}>
             {showAboutStory ? (
-              <LazyWhenVisible minHeight={480} rootMargin="400px">
-                <ScrollFadeUp index={4}>
-                  <AboutKankregMedia
-                    aboutSection={aboutSection}
-                    navigation={navigation}
-                    variant="editorial"
-                  />
-                </ScrollFadeUp>
-              </LazyWhenVisible>
+              <ScrollFadeUp index={4}>
+                <AboutKankregMedia
+                  aboutSection={aboutSection}
+                  navigation={navigation}
+                  variant="editorial"
+                />
+              </ScrollFadeUp>
             ) : null}
 
             {showCommunitySection ? (
-              <LazyWhenVisible minHeight={520} rootMargin="360px">
-                <HomeCommunitySection communitySection={communitySection} />
-              </LazyWhenVisible>
-            ) : null}
-
-            {showGheePremium && ready ? (
-              <LazyWhenVisible minHeight={640} rootMargin="360px">
-                <HomeGheePremiumWeb compareSection={compareSection} />
-              </LazyWhenVisible>
+              <HomeCommunitySection communitySection={communitySection} />
             ) : null}
 
             {showHomeExtras && HOME_SCREEN_UI.web?.showStatsStrip && !isMobileWeb && ready ? (

@@ -45,33 +45,164 @@ function normalizeAboutPhoto(photo) {
   };
 }
 
+const { buildAboutPageExtrasDefaults } = require("./aboutDefaults");
+
 const ABOUT_DEFAULTS = {
   enabled: true,
-  eyebrow: "About KankreG",
+  eyebrow: "Our story",
   title: "Craft rooted in tradition",
   body:
-    "KankreG brings slow-made essentials from Indian kitchens to your door — curated quality, live order tracking, and rewards on every purchase.",
+    "KankreG crafts pure A2 Kankrej cow ghee using the ancestral Bilona method — hand-churned, wood-fired, and bottled in small batches for families who value tradition and taste.",
   videoUrl: "",
-  videoCaption: "",
+  videoCaption: "From grass-fed Kankrej cows to golden, grainy ghee.",
   photos: [],
 };
 
+function normalizeHighlight(item, index, fallback) {
+  if (!item || typeof item !== "object") return fallback;
+  return {
+    value: asTrimmedString(item.value, fallback?.value),
+    label: asTrimmedString(item.label, fallback?.label),
+    description: asTrimmedString(item.description, fallback?.description),
+  };
+}
+
+function normalizeSidebarStat(item, index, fallback) {
+  if (!item || typeof item !== "object") return fallback;
+  return {
+    value: asTrimmedString(item.value, fallback?.value),
+    label: asTrimmedString(item.label, fallback?.label),
+  };
+}
+
+function normalizePillar(item, index) {
+  if (!item || typeof item !== "object") return null;
+  const title = asTrimmedString(item.title);
+  if (!title) return null;
+  return {
+    id: asTrimmedString(item.id) || `pillar-${index + 1}`,
+    icon: asTrimmedString(item.icon, "leaf-outline"),
+    title,
+    body: asTrimmedString(item.body),
+    enabled: item.enabled !== false,
+  };
+}
+
+function normalizeCraftStep(item, index) {
+  if (!item || typeof item !== "object") return null;
+  const title = asTrimmedString(item.title);
+  if (!title) return null;
+  return {
+    id: asTrimmedString(item.id) || `craft-${index + 1}`,
+    label: asTrimmedString(item.label, String(index + 1).padStart(2, "0")),
+    title,
+    body: asTrimmedString(item.body),
+  };
+}
+
+function normalizeStorySubsection(section, fallback) {
+  const base = fallback || { eyebrow: "", title: "", body: "" };
+  if (!section || typeof section !== "object") return base;
+  return {
+    eyebrow: asTrimmedString(section.eyebrow, base.eyebrow),
+    title: asTrimmedString(section.title, base.title),
+    body: asTrimmedString(section.body, base.body),
+  };
+}
+
+function normalizeValueItem(item) {
+  if (!item || typeof item !== "object") return null;
+  const title = asTrimmedString(item.title);
+  if (!title) return null;
+  return { title, body: asTrimmedString(item.body) };
+}
+
 /** @param {unknown} about */
 function normalizeAboutSection(about) {
+  const extras = buildAboutPageExtrasDefaults();
   if (!about || typeof about !== "object") {
-    return { ...ABOUT_DEFAULTS, photos: [] };
+    return { ...ABOUT_DEFAULTS, ...extras, photos: [] };
   }
   const photos = Array.isArray(about.photos)
     ? about.photos.map(normalizeAboutPhoto).filter(Boolean)
     : [];
+
+  const highlightsIn = Array.isArray(about.highlights) ? about.highlights : [];
+  const highlights =
+    highlightsIn.length > 0
+      ? highlightsIn
+          .map((item, i) => normalizeHighlight(item, i, extras.highlights[i]))
+          .filter((h) => h?.value)
+      : extras.highlights;
+
+  const statsIn = Array.isArray(about.sidebarStats) ? about.sidebarStats : [];
+  const sidebarStats =
+    statsIn.length > 0
+      ? statsIn
+          .map((item, i) => normalizeSidebarStat(item, i, extras.sidebarStats[i]))
+          .filter((s) => s?.value)
+      : extras.sidebarStats;
+
+  const pillarsIn = Array.isArray(about.pillars) ? about.pillars : [];
+  const pillars =
+    pillarsIn.length > 0
+      ? pillarsIn.map(normalizePillar).filter(Boolean)
+      : extras.pillars;
+
+  const missionIn = about.mission && typeof about.mission === "object" ? about.mission : {};
+  const missionParagraphs = Array.isArray(missionIn.paragraphs)
+    ? missionIn.paragraphs.map((p) => asTrimmedString(p)).filter(Boolean)
+    : extras.mission.paragraphs;
+
+  const craftIn = about.craft && typeof about.craft === "object" ? about.craft : {};
+  const craftStepsIn = Array.isArray(craftIn.steps) ? craftIn.steps : [];
+  const craftSteps =
+    craftStepsIn.length > 0
+      ? craftStepsIn.map(normalizeCraftStep).filter(Boolean)
+      : extras.craft.steps;
+
+  const ctaIn = about.ctaBand && typeof about.ctaBand === "object" ? about.ctaBand : {};
+
+  const valuesIn = Array.isArray(about.values) ? about.values : [];
+  const values =
+    valuesIn.length > 0
+      ? valuesIn.map(normalizeValueItem).filter(Boolean)
+      : extras.values;
+
   return {
     enabled: about.enabled !== false,
     eyebrow: asTrimmedString(about.eyebrow, ABOUT_DEFAULTS.eyebrow),
     title: asTrimmedString(about.title, ABOUT_DEFAULTS.title),
     body: asTrimmedString(about.body, ABOUT_DEFAULTS.body),
     videoUrl: asTrimmedString(about.videoUrl),
-    videoCaption: asTrimmedString(about.videoCaption),
+    videoCaption: asTrimmedString(about.videoCaption, ABOUT_DEFAULTS.videoCaption),
     photos,
+    pageLead: asTrimmedString(about.pageLead, extras.pageLead),
+    pullQuote: asTrimmedString(about.pullQuote, extras.pullQuote),
+    bodyContinued: asTrimmedString(about.bodyContinued, extras.bodyContinued),
+    heritage: normalizeStorySubsection(about.heritage, extras.heritage),
+    bilona: normalizeStorySubsection(about.bilona, extras.bilona),
+    origin: normalizeStorySubsection(about.origin, extras.origin),
+    values,
+    highlights,
+    sidebarStats,
+    mission: {
+      eyebrow: asTrimmedString(missionIn.eyebrow, extras.mission.eyebrow),
+      title: asTrimmedString(missionIn.title, extras.mission.title),
+      paragraphs: missionParagraphs.length ? missionParagraphs : extras.mission.paragraphs,
+    },
+    pillars,
+    craft: {
+      eyebrow: asTrimmedString(craftIn.eyebrow, extras.craft.eyebrow),
+      title: asTrimmedString(craftIn.title, extras.craft.title),
+      steps: craftSteps,
+    },
+    ctaBand: {
+      title: asTrimmedString(ctaIn.title, extras.ctaBand.title),
+      body: asTrimmedString(ctaIn.body, extras.ctaBand.body),
+      ctaLabel: asTrimmedString(ctaIn.ctaLabel, extras.ctaBand.ctaLabel),
+      ctaSecondaryLabel: asTrimmedString(ctaIn.ctaSecondaryLabel, extras.ctaBand.ctaSecondaryLabel),
+    },
   };
 }
 
@@ -175,6 +306,59 @@ function normalizeCommunitySection(section) {
 }
 
 const { COMPARE_SECTION_DEFAULTS } = require("./compareDefaults");
+const { PROCESS_SECTION_DEFAULTS } = require("./processDefaults");
+
+function normalizeImageFit(value) {
+  const fit = asTrimmedString(value).toLowerCase();
+  return fit === "contain" ? "contain" : "cover";
+}
+
+/** @param {unknown} step */
+function normalizeProcessStep(step, index = 0) {
+  if (!step || typeof step !== "object") return null;
+  const id = asTrimmedString(step.id) || `process-${String(index + 1).padStart(2, "0")}`;
+  return {
+    id,
+    order: Number.isFinite(Number(step.order)) ? Number(step.order) : index,
+    enabled: step.enabled !== false,
+    title: asTrimmedString(step.title),
+    description: asTrimmedString(step.description),
+    imageUrl: asTrimmedString(step.imageUrl),
+    imageFit: normalizeImageFit(step.imageFit),
+    imagePosition: asTrimmedString(step.imagePosition, "top center"),
+  };
+}
+
+/** @param {unknown} steps */
+function normalizeProcessSteps(steps) {
+  if (!Array.isArray(steps) || !steps.length) {
+    return PROCESS_SECTION_DEFAULTS.steps.map((item, index) => normalizeProcessStep(item, index));
+  }
+  return steps
+    .map((step, index) => normalizeProcessStep(step, index))
+    .filter(Boolean)
+    .sort((a, b) => a.order - b.order);
+}
+
+/** @param {unknown} section */
+function normalizeProcessSection(section) {
+  if (!section || typeof section !== "object") {
+    return {
+      ...PROCESS_SECTION_DEFAULTS,
+      steps: normalizeProcessSteps([]),
+    };
+  }
+  return {
+    enabled: section.enabled !== false,
+    eyebrow: asTrimmedString(section.eyebrow, PROCESS_SECTION_DEFAULTS.eyebrow),
+    title: asTrimmedString(section.title, PROCESS_SECTION_DEFAULTS.title),
+    subtitle: asTrimmedString(section.subtitle, PROCESS_SECTION_DEFAULTS.subtitle),
+    journeyLabel: asTrimmedString(section.journeyLabel, PROCESS_SECTION_DEFAULTS.journeyLabel),
+    filmLabel: asTrimmedString(section.filmLabel, PROCESS_SECTION_DEFAULTS.filmLabel),
+    openingLine: asTrimmedString(section.openingLine, PROCESS_SECTION_DEFAULTS.openingLine),
+    steps: normalizeProcessSteps(section.steps),
+  };
+}
 
 /** @param {unknown} row */
 function normalizeCompareRow(row, index = 0) {
@@ -219,6 +403,7 @@ function normalizeCompareSection(section) {
     filmLabel: asTrimmedString(section.filmLabel, COMPARE_SECTION_DEFAULTS.filmLabel),
     storyChapter: asTrimmedString(section.storyChapter, COMPARE_SECTION_DEFAULTS.storyChapter),
     openingLine: asTrimmedString(section.openingLine, COMPARE_SECTION_DEFAULTS.openingLine),
+    closingTagline: asTrimmedString(section.closingTagline, COMPARE_SECTION_DEFAULTS.closingTagline),
     oursLabel: asTrimmedString(section.oursLabel, COMPARE_SECTION_DEFAULTS.oursLabel),
     ordinaryLabel: asTrimmedString(section.ordinaryLabel, COMPARE_SECTION_DEFAULTS.ordinaryLabel),
     rows: normalizeCompareRows(section.rows),
@@ -229,10 +414,13 @@ module.exports = {
   ABOUT_DEFAULTS,
   COMMUNITY_SECTION_DEFAULTS,
   COMPARE_SECTION_DEFAULTS,
+  PROCESS_SECTION_DEFAULTS,
   normalizeHeroSlides,
   normalizeAboutSection,
   normalizeCommunitySection,
   normalizeCommunityPosts,
   normalizeCompareSection,
   normalizeCompareRows,
+  normalizeProcessSection,
+  normalizeProcessSteps,
 };

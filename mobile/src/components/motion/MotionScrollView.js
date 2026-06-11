@@ -1,5 +1,6 @@
 import React, { forwardRef, useMemo } from "react";
 import { Platform, ScrollView, StyleSheet } from "react-native";
+import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import Animated, { runOnJS, useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
 import { ScrollOffsetProvider, useScrollOffsetContextValue } from "../../hooks/useScrollOffset";
 
@@ -31,6 +32,7 @@ const MotionScrollView = forwardRef(function MotionScrollView(
   },
   ref,
 ) {
+  const { isMobileWeb } = useKankregLayout();
   const scrollY = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler(
     {
@@ -48,8 +50,9 @@ const MotionScrollView = forwardRef(function MotionScrollView(
 
   const webStyle = useMemo(() => {
     if (Platform.OS !== "web") return null;
-    return [smoothScroll ? styles.webSmooth : null, styles.webContain];
-  }, [smoothScroll]);
+    const useSmooth = smoothScroll && !isMobileWeb;
+    return [useSmooth ? styles.webSmooth : null, styles.webContain];
+  }, [isMobileWeb, smoothScroll]);
 
   const mergedStyle = useMemo(() => {
     if (Platform.OS !== "web") return [styles.fill, style];

@@ -187,7 +187,7 @@ export default function HomeCommunitySection({ communitySection }) {
   const { width, isLg, isMobileWeb, pageGutterClamp } = useKankregLayout();
   const content = resolveCommunityDisplay(communitySection);
   const phoneLayout = width < 720;
-  const bleed = getHomePhoneBleed({ isMobileWeb, pageGutterClamp, width });
+  const bleed = getHomePhoneBleed({ isMobileWeb, pageGutterClamp });
 
   const postCardWidth = useMemo(() => {
     if (phoneLayout) return Math.round(width * 0.86);
@@ -357,11 +357,9 @@ const styles = StyleSheet.create({
     }),
   },
   sectionPhone: {
-    paddingHorizontal: 0,
+    paddingHorizontal: HOME_SPACE.md,
     paddingVertical: HOME_SPACE.lg + 6,
-    borderRadius: 0,
-    borderLeftWidth: 0,
-    borderRightWidth: 0,
+    borderRadius: radius.xl + 6,
   },
   sectionDark: {
     backgroundColor: "rgba(24, 21, 19, 0.68)",

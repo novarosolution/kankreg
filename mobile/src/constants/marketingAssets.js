@@ -1,6 +1,6 @@
 /**
  * Bundled lifestyle / product photography for hero surfaces (Expo Metro `require`).
- * Files under `assets/marketing/` — originals live in project `img/` (sync when adding shots).
+ * Source originals: project `imgs/` → synced to `mobile/assets/marketing/` (resize with sips -Z).
  *
  * Each slide: static copy + CTA; first slide title/subtitle overridden in KankregHomeScreen from admin `homeViewConfig`.
  */
@@ -33,7 +33,7 @@ export const HOME_HERO_PRODUCT_SLIDE = {
   badge: "Bilona · Farm to table",
   contentPosition: "center",
   heightRatio: HOME_HERO_PRODUCT_WIDE_HEIGHT_PER_WIDTH,
-  imageFit: "contain",
+  imageFit: "cover",
   captionAlign: "left",
 };
 
@@ -49,7 +49,7 @@ export const HOME_HERO_WEB_SLIDER_SLIDES = [
     cta: "Shop ghee",
     action: "catalog",
     heightRatio: HOME_HERO_PRODUCT_WIDE_HEIGHT_PER_WIDTH,
-    imageFit: "contain",
+    imageFit: "cover",
     captionAlign: "left",
   },
   {
@@ -63,7 +63,7 @@ export const HOME_HERO_WEB_SLIDER_SLIDES = [
     action: "catalog",
     contentPosition: "center",
     heightRatio: HOME_HERO_PRODUCT_WIDE_HEIGHT_PER_WIDTH,
-    imageFit: "contain",
+    imageFit: "cover",
     captionAlign: "left",
   },
   {
@@ -76,7 +76,7 @@ export const HOME_HERO_WEB_SLIDER_SLIDES = [
     action: "catalog",
     contentPosition: "center",
     heightRatio: HOME_HERO_PRODUCT_WIDE_HEIGHT_PER_WIDTH,
-    imageFit: "contain",
+    imageFit: "cover",
     captionAlign: "center",
   },
 ];
@@ -86,7 +86,7 @@ export const HOME_HERO_WEB_SLIDER_SLIDES = [
  * Order: `WhatsApp Iae2026-04-30…`, `WhatsApp Image …18.41.08`, `WhatsApp Image …18.41.09`
  * → `hero-slide-06-wa`, `hero-slide-04-wa`, `hero-slide-05-wa`.
  */
-/** Phone web hero slide 1 — portrait `imgs/ChatGPT Image Jun 10, 2026, 07_02_57 PM.png` (875×1798). */
+/** Phone web hero slide 1 — `imgs/hf_20260610_140405_….png` (896×1200). */
 export const HOME_HERO_PRODUCT_PHONE_SLIDE = {
   key: "phone-hero-product",
   image: require("../../assets/marketing/hero-slide-kankreg-product-phone.png"),
@@ -97,31 +97,31 @@ export const HOME_HERO_PRODUCT_PHONE_SLIDE = {
   variant: HOME_HERO_PRODUCT_SLIDE.variant,
   badge: HOME_HERO_PRODUCT_SLIDE.badge,
   contentPosition: "center",
-  heightRatio: 1798 / 875,
+  heightRatio: 1200 / 896,
   imageFit: "cover",
   captionAlign: "center",
 };
 
-/** Portrait product slide height ratio (875×1798). */
-export const HOME_HERO_PRODUCT_PHONE_SLIDE_HEIGHT_PER_WIDTH = 1798 / 875;
+/** Portrait product slide height ratio (896×1200). */
+export const HOME_HERO_PRODUCT_PHONE_SLIDE_HEIGHT_PER_WIDTH = 1200 / 896;
 
 export const HOME_HERO_MOBILE_SLIDER_SLIDES = [
   HOME_HERO_PRODUCT_PHONE_SLIDE,
   {
     key: "phone-hero-iae",
-    /** Phone slide 2 — `imgs/ChatGPT Image Jun 10, 2026, 05_22_00 PM.png` (1110×1417). */
+    /** Phone slide 2 — `imgs/hf_20260611_044653_….png` (896×1200). */
     image: require("../../assets/marketing/hero-slide-kankreg-phone-02.png"),
     title: "Pure A2 Kankrej ghee",
     subtitle: "Hand-churned Bilona ghee — grainy, golden, and honest.",
     cta: "Shop ghee",
     action: "catalog",
-    heightRatio: 1417 / 1110,
+    heightRatio: 1200 / 896,
     imageFit: "cover",
     captionAlign: "center",
   },
   {
     key: "phone-hero-0808",
-    /** Phone slide 3 — `imgs/ChatGPT Image Jun 10, 2026, 05_34_22 PM.png` (1023×1537). */
+    /** Phone slide 3 — `imgs/hf_20260610_134600_….png` (896×1200). */
     image: require("../../assets/marketing/hero-slide-kankreg-phone-03.png"),
     title: "A golden touch on every meal",
     subtitle:
@@ -129,20 +129,20 @@ export const HOME_HERO_MOBILE_SLIDER_SLIDES = [
     cta: "Shop ghee",
     action: "catalog",
     contentPosition: "center",
-    heightRatio: 1537 / 1023,
+    heightRatio: 1200 / 896,
     imageFit: "cover",
     captionAlign: "center",
   },
   {
     key: "phone-hero-0909",
-    /** Phone slide 4 — portrait `imgs/ChatGPT Image Jun 10, 2026, 06_15_51 PM phone.png` (498×1024). Copy is baked into the artwork. */
+    /** Phone slide 4 — `imgs/ChatGPT Image Jun 10, 2026, 06_15_51 PM phone.png` (583×1200). Copy is baked into the artwork. */
     image: require("../../assets/marketing/hero-slide-kankreg-phone-04.png"),
     title: "",
     subtitle: "",
     cta: "Shop ghee",
     action: "catalog",
     contentPosition: "center",
-    heightRatio: 1024 / 498,
+    heightRatio: 1200 / 583,
     imageFit: "cover",
     captionAlign: "center",
   },

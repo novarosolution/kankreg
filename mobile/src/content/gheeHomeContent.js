@@ -1,71 +1,17 @@
 import { COMPARE_HOME_CONTENT } from "./compareHomeContent";
+import { PROCESS_HOME_CONTENT } from "./processHomeContent";
 
 /**
  * Premium A2 Kankrej ghee home sections — single source for web home story blocks.
  * Re-exported as `HOME_STORY_CONTENT` from `appContent.js`.
  *
  * Also edit in Admin → Home View: about eyebrow, title, body, video, photos.
- * Process steps (titles, copy, images) are edited here — swap `image` per step.
+ * Process steps are edited in Admin → Home View → Process journey.
  * Compare section (“Ours vs ordinary”) is managed in Admin → Home View → Compare ghee.
  * Static labels (pull quote, gallery eyebrow) live in `HOME_SCREEN_UI.ourStory`.
  */
 export const GHEE_HOME_CONTENT = {
-  process: {
-    eyebrow: "How it's made",
-    title: "Six steps from pasture to jar",
-    subtitle: "No shortcuts. No cream separation. Only curd-churned Bilona ghee.",
-    journeyLabel: "The Bilona journey",
-    steps: [
-      {
-        step: 1,
-        title: "Grass-fed Kankrej cows graze freely",
-        description: "Indigenous desi cows roam open pastures — never force-fed, never rushed.",
-        image: require("../../assets/marketing/ghee-process-step-01-pasture.png"),
-        imageFit: "cover",
-        imagePosition: "top center",
-      },
-      {
-        step: 2,
-        title: "Fresh A2 milk collected daily",
-        description: "Morning milk from healthy Kankrej cows, rich in A2 beta-casein protein.",
-        image: require("../../assets/marketing/ghee-process-step-02-milk.png"),
-        imageFit: "cover",
-        imagePosition: "top center",
-      },
-      {
-        step: 3,
-        title: "Curd set overnight with natural culture",
-        description: "Traditional culture at room temperature — the foundation of true Bilona ghee.",
-        image: require("../../assets/marketing/ghee-process-step-03-curd.png"),
-        imageFit: "cover",
-        imagePosition: "top center",
-      },
-      {
-        step: 4,
-        title: "Hand-churned Bilona into white butter",
-        description: "Makhan separated by hand from curd — not industrial cream.",
-        image: require("../../assets/marketing/ghee-process-step-04-bilona.png"),
-        imageFit: "cover",
-        imagePosition: "top center",
-      },
-      {
-        step: 5,
-        title: "Slow-cooked on a wood fire",
-        description: "Patient wood-fired simmer until water evaporates and aroma deepens.",
-        image: require("../../assets/marketing/ghee-process-step-05-woodfire.png"),
-        imageFit: "cover",
-        imagePosition: "top center",
-      },
-      {
-        step: 6,
-        title: "Golden ghee, glass-bottled",
-        description: "Grainy, aromatic A2 ghee — sealed in glass for freshness and purity.",
-        image: require("../../assets/marketing/ghee-process-step-06-bottled.png"),
-        imageFit: "cover",
-        imagePosition: "top center",
-      },
-    ],
-  },
+  process: PROCESS_HOME_CONTENT,
 
   differentiators: COMPARE_HOME_CONTENT,
 

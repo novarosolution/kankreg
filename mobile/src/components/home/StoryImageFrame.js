@@ -1,12 +1,12 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Image } from "expo-image";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { homeEditorialMuted } from "../../theme/homeEditorial";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { HOME_SPACE, HOME_TYPE } from "../../theme/homeEditorial";
 import { fonts, radius } from "../../theme/tokens";
-import { PRODUCT_HERO_BLURHASH } from "../../utils/image";
 import { resolveImageSource } from "../../utils/mediaSource";
+import { HtmlDiv, HtmlImg, toImageSrc } from "./compareWebDom";
 
 /** Dark letterbox around story photos — pairs with cream page + cinematic video. */
 export const STORY_FRAME_BG = "#0a0908";
@@ -26,20 +26,41 @@ export default function StoryImageFrame({
   isDark = false,
   compact = false,
 }) {
+  const webSrc = useMemo(
+    () => (Platform.OS === "web" ? toImageSrc(source, { width: 960, quality: "auto:good" }) : null),
+    [source]
+  );
+
   if (!source) return null;
 
   return (
     <View style={[styles.wrap, compact && styles.wrapCompact]}>
       <View style={[styles.stage, { aspectRatio }]}>
         <View style={styles.letterbox}>
-          <Image
-            source={resolveImageSource(source)}
-            style={styles.imageFramed}
-            contentFit="cover"
-            contentPosition="center"
-            transition={280}
-            placeholder={{ blurhash: PRODUCT_HERO_BLURHASH }}
-          />
+          {Platform.OS === "web" ? (
+            <HtmlDiv style={StyleSheet.absoluteFillObject}>
+              {webSrc ? (
+                <HtmlImg
+                  src={webSrc}
+                  style={{
+                    ...styles.imageFramed,
+                    objectFit: "cover",
+                    objectPosition: "center",
+                  }}
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : null}
+            </HtmlDiv>
+          ) : (
+            <Image
+              source={resolveImageSource(source)}
+              style={styles.imageFramed}
+              contentFit="cover"
+              contentPosition="center"
+              transition={280}
+            />
+          )}
         </View>
         <View style={styles.frameLineTop} pointerEvents="none" />
         <View style={styles.frameLineBottom} pointerEvents="none" />

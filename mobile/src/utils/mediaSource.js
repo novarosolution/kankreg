@@ -1,6 +1,22 @@
 import { Asset } from "expo-asset";
-import { Image } from "react-native";
-import { resolveImageUri } from "./image";
+import { Image, Platform } from "react-native";
+import { optimizeDisplayImageUrl, resolveImageUri } from "./image";
+
+function isLocalBundledUri(uri) {
+  const value = String(uri || "");
+  return (
+    value.includes("unstable_path=") ||
+    value.startsWith("/assets") ||
+    value.includes("/assets/")
+  );
+}
+
+function deliveryUri(uri) {
+  if (!uri) return "";
+  const normalized = resolveImageUri(uri) || uri;
+  if (Platform.OS !== "web" || isLocalBundledUri(normalized)) return normalized;
+  return optimizeDisplayImageUrl(normalized) || normalized;
+}
 
 function isBundledAsset(value) {
   return (
@@ -14,17 +30,26 @@ function isBundledAsset(value) {
 /** Expo `require()` asset id, bundled asset object, or remote URL → expo-image source. */
 export function resolveImageSource(value) {
   if (value == null || value === "") return null;
-  if (typeof value === "number") return value;
+  if (typeof value === "number") {
+    const asset = Image.resolveAssetSource(value);
+    const uri = asset?.uri ? resolveImageUri(asset.uri) || asset.uri : "";
+    if (!uri) return value;
+    return {
+      uri: deliveryUri(uri),
+      ...(Number.isFinite(asset?.width) ? { width: asset.width } : {}),
+      ...(Number.isFinite(asset?.height) ? { height: asset.height } : {}),
+    };
+  }
   if (isBundledAsset(value)) {
     return {
-      uri: value.uri,
+      uri: deliveryUri(resolveImageUri(value.uri) || value.uri),
       ...(Number.isFinite(value.width) ? { width: value.width } : {}),
       ...(Number.isFinite(value.height) ? { height: value.height } : {}),
     };
   }
   if (typeof value === "string") {
     const uri = resolveImageUri(value);
-    return uri ? { uri } : null;
+    return uri ? { uri: deliveryUri(uri) } : null;
   }
   return null;
 }

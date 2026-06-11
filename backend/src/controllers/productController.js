@@ -349,6 +349,7 @@ async function uploadProductImage(req, res, next) {
     const uploaded = await cloudinary.uploader.upload(uploadSource, {
       folder: "kankreg/products",
       resource_type: "image",
+      transformation: [{ quality: "auto:good", fetch_format: "auto", width: 1600, crop: "limit" }],
     });
 
     res.status(201).json({

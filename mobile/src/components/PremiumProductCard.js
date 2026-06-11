@@ -22,7 +22,7 @@ import { ALCHEMY, FONT_DISPLAY } from "../theme/customerAlchemy";
 import { KANKREG_PALETTE } from "../theme/kankregWeb";
 import { useTheme } from "../context/ThemeContext";
 import { formatINRWhole } from "../utils/currency";
-import { getImageUriCandidates } from "../utils/image";
+import { getImageUriCandidates, prefetchProductHeroImage } from "../utils/image";
 import useReducedMotion from "../hooks/useReducedMotion";
 import useGsapReveal from "../hooks/useGsapReveal";
 import { platformShadow } from "../theme/shadowPlatform";
@@ -59,7 +59,10 @@ function PremiumProductCardBase({
     }
     return "";
   }, [product?.image, product?.images]);
-  const imageUris = useMemo(() => getImageUriCandidates(primaryImage), [primaryImage]);
+  const imageUris = useMemo(
+    () => getImageUriCandidates(primaryImage, { width: 480, quality: "auto:good" }),
+    [primaryImage]
+  );
   const [imageCandidateIndex, setImageCandidateIndex] = useState(0);
   const imageUri = imageUris[imageCandidateIndex] || "";
   const imageFailed = imageUris.length === 0 || imageCandidateIndex >= imageUris.length;
@@ -96,6 +99,7 @@ function PremiumProductCardBase({
   }));
 
   const handlePressIn = () => {
+    prefetchProductHeroImage(primaryImage);
     if (reducedMotion) return;
     cardScale.value = withSpring(0.985, { damping: 18, stiffness: 280 });
     imageScale.value = withSpring(1.02, { damping: 18, stiffness: 280 });

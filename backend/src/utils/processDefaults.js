@@ -1,0 +1,78 @@
+const PROCESS_DEFAULT_STEPS = [
+  {
+    id: "process-01",
+    order: 0,
+    enabled: true,
+    title: "Grass-fed Kankrej cows graze freely",
+    description: "Indigenous desi cows roam open pastures — never force-fed, never rushed.",
+    imageUrl: "",
+    imageFit: "cover",
+    imagePosition: "top center",
+  },
+  {
+    id: "process-02",
+    order: 1,
+    enabled: true,
+    title: "Fresh A2 milk collected daily",
+    description: "Morning milk from healthy Kankrej cows, rich in A2 beta-casein protein.",
+    imageUrl: "",
+    imageFit: "cover",
+    imagePosition: "top center",
+  },
+  {
+    id: "process-03",
+    order: 2,
+    enabled: true,
+    title: "Curd set overnight with natural culture",
+    description: "Traditional culture at room temperature — the foundation of true Bilona ghee.",
+    imageUrl: "",
+    imageFit: "cover",
+    imagePosition: "top center",
+  },
+  {
+    id: "process-04",
+    order: 3,
+    enabled: true,
+    title: "Hand-churned Bilona into white butter",
+    description: "Makhan separated by hand from curd — not industrial cream.",
+    imageUrl: "",
+    imageFit: "cover",
+    imagePosition: "top center",
+  },
+  {
+    id: "process-05",
+    order: 4,
+    enabled: true,
+    title: "Slow-cooked on a wood fire",
+    description: "Patient wood-fired simmer until water evaporates and aroma deepens.",
+    imageUrl: "",
+    imageFit: "cover",
+    imagePosition: "top center",
+  },
+  {
+    id: "process-06",
+    order: 5,
+    enabled: true,
+    title: "Golden ghee, glass-bottled",
+    description: "Grainy, aromatic A2 ghee — sealed in glass for freshness and purity.",
+    imageUrl: "",
+    imageFit: "cover",
+    imagePosition: "top center",
+  },
+];
+
+const PROCESS_SECTION_DEFAULTS = {
+  enabled: true,
+  eyebrow: "How it's made",
+  title: "Six steps from pasture to jar",
+  subtitle: "No shortcuts. No cream separation. Only curd-churned Bilona ghee.",
+  journeyLabel: "The Bilona journey",
+  filmLabel: "Chapter I",
+  openingLine: "From open pasture to golden jar — every step by hand.",
+  steps: PROCESS_DEFAULT_STEPS,
+};
+
+module.exports = {
+  PROCESS_DEFAULT_STEPS,
+  PROCESS_SECTION_DEFAULTS,
+};

@@ -1,3 +1,4 @@
+import { buildAboutPageExtrasDefaults } from "../content/aboutPageContent";
 import {
   buildCommunitySectionDefaults,
   getCommunityPostImageFallback,
@@ -6,6 +7,10 @@ import {
   buildCompareSectionDefaults,
   getCompareRowImageFallback,
 } from "../content/compareHomeContent";
+import {
+  buildProcessSectionDefaults,
+  getProcessStepImageFallback,
+} from "../content/processHomeContent";
 
 function asTrimmedString(value, fallback = "") {
   if (value === undefined || value === null) return fallback;
@@ -82,22 +87,158 @@ export const ABOUT_SECTION_DEFAULTS = {
   photos: [],
 };
 
+function normalizeHighlight(item, index, fallback) {
+  if (!item || typeof item !== "object") return fallback;
+  return {
+    value: asTrimmedString(item.value, fallback?.value),
+    label: asTrimmedString(item.label, fallback?.label),
+    description: asTrimmedString(item.description, fallback?.description),
+  };
+}
+
+function normalizeSidebarStat(item, index, fallback) {
+  if (!item || typeof item !== "object") return fallback;
+  return {
+    value: asTrimmedString(item.value, fallback?.value),
+    label: asTrimmedString(item.label, fallback?.label),
+  };
+}
+
+function normalizePillar(item, index) {
+  if (!item || typeof item !== "object") return null;
+  const title = asTrimmedString(item.title);
+  if (!title) return null;
+  return {
+    id: asTrimmedString(item.id) || `pillar-${index + 1}`,
+    icon: asTrimmedString(item.icon, "leaf-outline"),
+    title,
+    body: asTrimmedString(item.body),
+    enabled: item.enabled !== false,
+  };
+}
+
+function normalizeCraftStep(item, index) {
+  if (!item || typeof item !== "object") return null;
+  const title = asTrimmedString(item.title);
+  if (!title) return null;
+  return {
+    id: asTrimmedString(item.id) || `craft-${index + 1}`,
+    label: asTrimmedString(item.label, String(index + 1).padStart(2, "0")),
+    title,
+    body: asTrimmedString(item.body),
+  };
+}
+
+function normalizeStorySubsection(section, fallback) {
+  const base = fallback || { eyebrow: "", title: "", body: "" };
+  if (!section || typeof section !== "object") return base;
+  return {
+    eyebrow: asTrimmedString(section.eyebrow, base.eyebrow),
+    title: asTrimmedString(section.title, base.title),
+    body: asTrimmedString(section.body, base.body),
+  };
+}
+
+function normalizeValueItem(item) {
+  if (!item || typeof item !== "object") return null;
+  const title = asTrimmedString(item.title);
+  if (!title) return null;
+  return { title, body: asTrimmedString(item.body) };
+}
+
 export function normalizeAboutSection(about) {
+  const extras = buildAboutPageExtrasDefaults();
   if (!about || typeof about !== "object") {
-    return { ...ABOUT_SECTION_DEFAULTS, photos: [] };
+    return { ...ABOUT_SECTION_DEFAULTS, ...extras, photos: [] };
   }
   const photos = Array.isArray(about.photos)
     ? about.photos.map(normalizeAboutPhoto).filter(Boolean)
     : [];
+
+  const highlightsIn = Array.isArray(about.highlights) ? about.highlights : [];
+  const highlights =
+    highlightsIn.length > 0
+      ? highlightsIn
+          .map((item, i) => normalizeHighlight(item, i, extras.highlights[i]))
+          .filter((h) => h?.value)
+      : extras.highlights;
+
+  const statsIn = Array.isArray(about.sidebarStats) ? about.sidebarStats : [];
+  const sidebarStats =
+    statsIn.length > 0
+      ? statsIn
+          .map((item, i) => normalizeSidebarStat(item, i, extras.sidebarStats[i]))
+          .filter((s) => s?.value)
+      : extras.sidebarStats;
+
+  const pillarsIn = Array.isArray(about.pillars) ? about.pillars : [];
+  const pillars =
+    pillarsIn.length > 0
+      ? pillarsIn.map(normalizePillar).filter(Boolean)
+      : extras.pillars;
+
+  const missionIn = about.mission && typeof about.mission === "object" ? about.mission : {};
+  const missionParagraphs = Array.isArray(missionIn.paragraphs)
+    ? missionIn.paragraphs.map((p) => asTrimmedString(p)).filter(Boolean)
+    : extras.mission.paragraphs;
+
+  const craftIn = about.craft && typeof about.craft === "object" ? about.craft : {};
+  const craftStepsIn = Array.isArray(craftIn.steps) ? craftIn.steps : [];
+  const craftSteps =
+    craftStepsIn.length > 0
+      ? craftStepsIn.map(normalizeCraftStep).filter(Boolean)
+      : extras.craft.steps;
+
+  const ctaIn = about.ctaBand && typeof about.ctaBand === "object" ? about.ctaBand : {};
+
+  const valuesIn = Array.isArray(about.values) ? about.values : [];
+  const values =
+    valuesIn.length > 0
+      ? valuesIn.map(normalizeValueItem).filter(Boolean)
+      : extras.values;
+
   return {
     enabled: about.enabled !== false,
     eyebrow: asTrimmedString(about.eyebrow, ABOUT_SECTION_DEFAULTS.eyebrow),
     title: asTrimmedString(about.title, ABOUT_SECTION_DEFAULTS.title),
     body: asTrimmedString(about.body, ABOUT_SECTION_DEFAULTS.body),
     videoUrl: asTrimmedString(about.videoUrl),
-    videoCaption: asTrimmedString(about.videoCaption),
+    videoCaption: asTrimmedString(about.videoCaption, ABOUT_SECTION_DEFAULTS.videoCaption),
     photos,
+    pageLead: asTrimmedString(about.pageLead, extras.pageLead),
+    pullQuote: asTrimmedString(about.pullQuote, extras.pullQuote),
+    bodyContinued: asTrimmedString(about.bodyContinued, extras.bodyContinued),
+    heritage: normalizeStorySubsection(about.heritage, extras.heritage),
+    bilona: normalizeStorySubsection(about.bilona, extras.bilona),
+    origin: normalizeStorySubsection(about.origin, extras.origin),
+    values,
+    highlights,
+    sidebarStats,
+    mission: {
+      eyebrow: asTrimmedString(missionIn.eyebrow, extras.mission.eyebrow),
+      title: asTrimmedString(missionIn.title, extras.mission.title),
+      paragraphs: missionParagraphs.length ? missionParagraphs : extras.mission.paragraphs,
+    },
+    pillars,
+    craft: {
+      eyebrow: asTrimmedString(craftIn.eyebrow, extras.craft.eyebrow),
+      title: asTrimmedString(craftIn.title, extras.craft.title),
+      steps: craftSteps,
+    },
+    ctaBand: {
+      title: asTrimmedString(ctaIn.title, extras.ctaBand.title),
+      body: asTrimmedString(ctaIn.body, extras.ctaBand.body),
+      ctaLabel: asTrimmedString(ctaIn.ctaLabel, extras.ctaBand.ctaLabel),
+      ctaSecondaryLabel: asTrimmedString(ctaIn.ctaSecondaryLabel, extras.ctaBand.ctaSecondaryLabel),
+    },
   };
+}
+
+/** Resolved about content for home + dedicated about page. */
+export function resolveAboutPageDisplay(section) {
+  const normalized = normalizeAboutSection(section);
+  if (!normalized.enabled) return null;
+  return normalized;
 }
 
 export function hasAboutMedia(about) {
@@ -118,6 +259,10 @@ export function newCommunityPostId() {
 
 export function newCompareRowId() {
   return `compare-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+export function newProcessStepId() {
+  return `process-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
 function normalizePostType(value) {
@@ -271,9 +416,85 @@ export function normalizeCompareSection(section) {
     filmLabel: asTrimmedString(section.filmLabel, defaults.filmLabel),
     storyChapter: asTrimmedString(section.storyChapter, defaults.storyChapter),
     openingLine: asTrimmedString(section.openingLine, defaults.openingLine),
+    closingTagline: asTrimmedString(section.closingTagline, defaults.closingTagline),
     oursLabel: asTrimmedString(section.oursLabel, defaults.oursLabel),
     ordinaryLabel: asTrimmedString(section.ordinaryLabel, defaults.ordinaryLabel),
     rows: normalizeCompareRows(section.rows),
+  };
+}
+
+function normalizeImageFit(value) {
+  const fit = asTrimmedString(value).toLowerCase();
+  return fit === "contain" ? "contain" : "cover";
+}
+
+export function normalizeProcessStep(step, index = 0) {
+  if (!step || typeof step !== "object") return null;
+  const id = asTrimmedString(step.id) || `process-${String(index + 1).padStart(2, "0")}`;
+  return {
+    id,
+    order: Number.isFinite(Number(step.order)) ? Number(step.order) : index,
+    enabled: step.enabled !== false,
+    title: asTrimmedString(step.title),
+    description: asTrimmedString(step.description),
+    imageUrl: asTrimmedString(step.imageUrl),
+    imageFit: normalizeImageFit(step.imageFit),
+    imagePosition: asTrimmedString(step.imagePosition, "top center"),
+  };
+}
+
+export function normalizeProcessSteps(steps) {
+  const seed = buildProcessSectionDefaults().steps;
+  if (!Array.isArray(steps) || !steps.length) {
+    return seed.map((item, index) => normalizeProcessStep(item, index)).filter(Boolean);
+  }
+  return steps
+    .map((step, index) => normalizeProcessStep(step, index))
+    .filter(Boolean)
+    .sort((a, b) => a.order - b.order);
+}
+
+export function normalizeProcessSection(section) {
+  const defaults = buildProcessSectionDefaults();
+  if (!section || typeof section !== "object") {
+    return { ...defaults, steps: normalizeProcessSteps([]) };
+  }
+  return {
+    enabled: section.enabled !== false,
+    eyebrow: asTrimmedString(section.eyebrow, defaults.eyebrow),
+    title: asTrimmedString(section.title, defaults.title),
+    subtitle: asTrimmedString(section.subtitle, defaults.subtitle),
+    journeyLabel: asTrimmedString(section.journeyLabel, defaults.journeyLabel),
+    filmLabel: asTrimmedString(section.filmLabel, defaults.filmLabel),
+    openingLine: asTrimmedString(section.openingLine, defaults.openingLine),
+    steps: normalizeProcessSteps(section.steps),
+  };
+}
+
+/** Merge admin process config with bundled marketing fallbacks. */
+export function resolveProcessDisplay(section) {
+  const normalized = normalizeProcessSection(section);
+  if (!normalized.enabled) return null;
+  const steps = normalized.steps
+    .filter((step) => step.enabled && step.title)
+    .map((step, index) => ({
+      id: step.id,
+      step: index + 1,
+      title: step.title,
+      description: step.description,
+      image: step.imageUrl || getProcessStepImageFallback(step.id),
+      imageFit: step.imageFit,
+      imagePosition: step.imagePosition,
+    }));
+  if (!steps.length) return null;
+  return {
+    eyebrow: normalized.eyebrow,
+    title: normalized.title,
+    subtitle: normalized.subtitle,
+    journeyLabel: normalized.journeyLabel,
+    filmLabel: normalized.filmLabel,
+    openingLine: normalized.openingLine,
+    steps,
   };
 }
 
@@ -299,6 +520,7 @@ export function resolveCompareDisplay(section) {
     filmLabel: normalized.filmLabel,
     storyChapter: normalized.storyChapter,
     openingLine: normalized.openingLine,
+    closingTagline: normalized.closingTagline,
     oursLabel: normalized.oursLabel,
     ordinaryLabel: normalized.ordinaryLabel,
     rows,

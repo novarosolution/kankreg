@@ -35,6 +35,7 @@ import {
   normalizeAboutSection,
   normalizeCommunitySection,
   normalizeCompareSection,
+  normalizeProcessSection,
   normalizeHeroSlides,
 } from "../../utils/homeViewMedia";
 
@@ -97,6 +98,7 @@ export default function AdminHomeViewScreen({ navigation, route }) {
   const [aboutSection, setAboutSection] = useState(HOME_VIEW_DEFAULTS.aboutSection);
   const [communitySection, setCommunitySection] = useState(HOME_VIEW_DEFAULTS.communitySection);
   const [compareSection, setCompareSection] = useState(HOME_VIEW_DEFAULTS.compareSection);
+  const [processSection, setProcessSection] = useState(HOME_VIEW_DEFAULTS.processSection);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -130,6 +132,7 @@ export default function AdminHomeViewScreen({ navigation, route }) {
       setAboutSection(normalizeAboutSection(data.aboutSection));
       setCommunitySection(normalizeCommunitySection(data.communitySection));
       setCompareSection(normalizeCompareSection(data.compareSection));
+      setProcessSection(normalizeProcessSection(data.processSection));
     } catch (err) {
       setError(err.message || "Unable to load home view settings.");
     }
@@ -185,6 +188,7 @@ export default function AdminHomeViewScreen({ navigation, route }) {
         aboutSection,
         communitySection,
         compareSection,
+        processSection,
       });
       setSuccess("Storefront settings saved.");
     } catch (err) {
@@ -258,6 +262,8 @@ export default function AdminHomeViewScreen({ navigation, route }) {
               onCommunitySectionChange={setCommunitySection}
               compareSection={compareSection}
               onCompareSectionChange={setCompareSection}
+              processSection={processSection}
+              onProcessSectionChange={setProcessSection}
               onError={setError}
             />
           </Section>

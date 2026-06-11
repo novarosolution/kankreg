@@ -1,29 +1,40 @@
 import { Platform } from "react-native";
+import { FIGMA } from "../theme/figmaApp";
 
-/** Break out of `webHomeBody` gutters so editorial sections span the phone viewport. */
-export function getHomePhoneBleed({ isMobileWeb, pageGutterClamp, width, nativeFullWidth = false }) {
-  const phoneEdge =
-    isMobileWeb || (Platform.OS !== "web" && nativeFullWidth);
+/**
+ * Phone home section insets — matches category/grid gutters (FIGMA.gutter on native).
+ * Mobile web: scroll is flush edge-to-edge; sections use `pageGutterClamp` via body padding (no negative breakout).
+ */
+export function getHomePhoneBleed({ isMobileWeb, pageGutterClamp, nativeFullWidth = false }) {
+  const isNativePhone = Platform.OS !== "web" && nativeFullWidth;
+  const isPhoneWeb = isMobileWeb;
 
-  if (!phoneEdge) {
-    return { outer: {}, inner: {}, railPad: {} };
+  if (!isNativePhone && !isPhoneWeb) {
+    return { outer: {}, inner: {}, railPad: {}, edgePad: 0 };
   }
 
-  const gutter = isMobileWeb ? pageGutterClamp : 0;
-  const edgePad = 16;
+  if (isPhoneWeb) {
+    return {
+      outer: {
+        width: "100%",
+        alignSelf: "stretch",
+        maxWidth: "100%",
+      },
+      inner: {},
+      railPad: {},
+      edgePad: pageGutterClamp,
+    };
+  }
 
+  const edgePad = FIGMA.gutter;
   return {
-    outer: isMobileWeb
-      ? {
-          marginHorizontal: -gutter,
-          width,
-          alignSelf: "center",
-          borderRadius: 0,
-          borderLeftWidth: 0,
-          borderRightWidth: 0,
-        }
-      : { width: "100%" },
-    inner: { paddingHorizontal: edgePad },
+    outer: {
+      marginHorizontal: edgePad,
+      width: "auto",
+      alignSelf: "stretch",
+      maxWidth: "100%",
+    },
+    inner: {},
     railPad: { paddingLeft: edgePad, paddingRight: edgePad },
     edgePad,
   };

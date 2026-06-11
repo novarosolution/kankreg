@@ -3,6 +3,7 @@ import { Platform, View } from "react-native";
 import Animated, { FadeInDown, FadeIn, FadeInRight, ZoomIn } from "react-native-reanimated";
 import useGsapReveal from "../../hooks/useGsapReveal";
 import useReducedMotion from "../../hooks/useReducedMotion";
+import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { motionDuration, staggerDelay } from "../../theme/motion";
 
 /**
@@ -41,6 +42,8 @@ export default function SectionReveal({
   const pointerStyle = pointerEvents ? { pointerEvents } : null;
 
   const reducedMotion = useReducedMotion();
+  const { isMobileWeb } = useKankregLayout();
+  const revealImmediate = immediate || isMobileWeb;
   const computedDelay = useMemo(() => {
     if (typeof delay === "number") return Math.max(0, delay);
     if (typeof index === "number") return staggerDelay(index);
@@ -52,7 +55,7 @@ export default function SectionReveal({
     start,
     delay: computedDelay / 1000,
     reducedMotion,
-    immediate,
+    immediate: revealImmediate,
   });
 
   const setRef = useCallback(

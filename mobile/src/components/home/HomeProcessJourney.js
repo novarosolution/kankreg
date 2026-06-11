@@ -2,7 +2,8 @@ import React, { useMemo } from "react";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
-import { HOME_STORY_CONTENT } from "../../content/appContent";
+import { buildProcessSectionDefaults } from "../../content/processHomeContent";
+import { resolveProcessDisplay } from "../../utils/homeViewMedia";
 import { SectionHeader, ScrollFadeUp } from "./editorial";
 import GoldHairline from "../ui/GoldHairline";
 import { FONT_DISPLAY } from "../../theme/customerAlchemy";
@@ -21,10 +22,12 @@ import { PRODUCT_HERO_BLURHASH } from "../../utils/image";
 import { resolveImageSource } from "../../utils/mediaSource";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 import { getHomePhoneBleed } from "../../utils/homeSectionBleed";
+import HomeProcessJourneyWeb from "./HomeProcessJourney.web";
 
 const PROCESS_IMAGE_ASPECT = 3 / 4;
 const PROCESS_RAIL_CARD_WIDTH = 256;
 const PROCESS_CARD_CLASS = "kankreg-process-step-card";
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
 
 if (Platform.OS === "web") {
   injectWebCssOnce(
@@ -46,7 +49,7 @@ function formatStepNum(step) {
   return String(step).padStart(2, "0");
 }
 
-function ProcessStepCard({ step, isDark, ink, muted, compact = false, totalSteps = 6, phone = false }) {
+function ProcessStepCard({ step, isDark, ink, muted, compact = false, totalSteps = 6, phone = false, roman }) {
   const imageSource = resolveImageSource(step.image);
   const imageFit = step.imageFit === "contain" ? "contain" : "cover";
   const imagePosition = step.imagePosition || "top center";
@@ -84,6 +87,7 @@ function ProcessStepCard({ step, isDark, ink, muted, compact = false, totalSteps
             placeholder={{ blurhash: PRODUCT_HERO_BLURHASH }}
             cachePolicy="memory-disk"
             recyclingKey={`process-${step.step}`}
+            priority={step.step <= 2 ? "high" : "normal"}
           />
         ) : (
           <View style={[styles.image, styles.imageFallback]} />
@@ -95,7 +99,7 @@ function ProcessStepCard({ step, isDark, ink, muted, compact = false, totalSteps
           pointerEvents="none"
         />
         <View style={styles.stepBadge}>
-          <Text style={styles.stepBadgeEyebrow}>Step</Text>
+          <Text style={styles.stepBadgeEyebrow}>{roman || "Step"}</Text>
           <Text style={styles.stepBadgeText}>{formatStepNum(step.step)}</Text>
         </View>
         <View style={styles.imageGoldRule} pointerEvents="none" />
@@ -121,22 +125,18 @@ function ProcessStepCard({ step, isDark, ink, muted, compact = false, totalSteps
   );
 }
 
-/**
- * Immersive Bilona process — image-led steps. All copy + images in `gheeHomeContent.js`.
- */
-export default function HomeProcessJourney() {
+function HomeProcessJourneyNative({ processSection }) {
   const { isDark } = useTheme();
   const { width, isMd, isLg, isMobileWeb, pageGutterClamp } = useKankregLayout();
   const ink = homeEditorialInk(isDark);
   const muted = homeEditorialMuted(isDark);
-  const { process } = HOME_STORY_CONTENT;
-  const totalSteps = process.steps.length;
-  const bleed = getHomePhoneBleed({
-    isMobileWeb,
-    pageGutterClamp,
-    width,
-    nativeFullWidth: true,
-  });
+
+  const process = useMemo(() => {
+    return (
+      resolveProcessDisplay(processSection) ??
+      resolveProcessDisplay(buildProcessSectionDefaults())
+    );
+  }, [processSection]);
 
   const layout = useMemo(() => {
     if (width >= 1080) return { cols: 3, rail: false };
@@ -149,8 +149,6 @@ export default function HomeProcessJourney() {
     return PROCESS_RAIL_CARD_WIDTH;
   }, [width]);
 
-  const railGap = width < 720 ? 12 : HOME_SPACE.md;
-
   const cellStyle = useMemo(() => {
     if (layout.cols === 3) {
       return { width: "31.6%", maxWidth: "31.6%", minWidth: 0 };
@@ -161,118 +159,135 @@ export default function HomeProcessJourney() {
     return { width: "100%", maxWidth: "100%" };
   }, [layout.cols]);
 
+  if (!process) return null;
+
+  const totalSteps = process.steps.length;
+  const bleed = getHomePhoneBleed({
+    isMobileWeb,
+    pageGutterClamp,
+    nativeFullWidth: true,
+  });
+
+  const railGap = width < 720 ? 12 : HOME_SPACE.md;
   const phoneLayout = width < 720;
 
   return (
-      <View
-        nativeID="home-process"
-        style={[
-          styles.section,
-          phoneLayout && styles.sectionPhone,
-          bleed.outer,
-          isDark && styles.sectionDark,
-        ]}
-      >
-        {!phoneLayout ? <View style={styles.sectionFrameTop} pointerEvents="none" /> : null}
-        {!phoneLayout ? (
-          <View style={[styles.sectionFrameInset, isDark && styles.sectionFrameInsetDark]} pointerEvents="none" />
-        ) : null}
-        <LinearGradient
-          colors={
-            isDark
-              ? ["rgba(214, 173, 91, 0.06)", "transparent", "rgba(60, 98, 72, 0.04)"]
-              : ["rgba(214, 173, 91, 0.1)", "transparent", "rgba(60, 98, 72, 0.05)"]
-          }
-          locations={[0, 0.55, 1]}
-          style={styles.sectionWash}
-          pointerEvents="none"
-        />
+    <View
+      nativeID="home-process"
+      style={[
+        styles.section,
+        phoneLayout && styles.sectionPhone,
+        bleed.outer,
+        isDark && styles.sectionDark,
+      ]}
+    >
+      {!phoneLayout ? <View style={styles.sectionFrameTop} pointerEvents="none" /> : null}
+      {!phoneLayout ? (
+        <View style={[styles.sectionFrameInset, isDark && styles.sectionFrameInsetDark]} pointerEvents="none" />
+      ) : null}
+      <LinearGradient
+        colors={
+          isDark
+            ? ["rgba(214, 173, 91, 0.06)", "transparent", "rgba(60, 98, 72, 0.04)"]
+            : ["rgba(214, 173, 91, 0.1)", "transparent", "rgba(60, 98, 72, 0.05)"]
+        }
+        locations={[0, 0.55, 1]}
+        style={styles.sectionWash}
+        pointerEvents="none"
+      />
 
-        <View style={[styles.headerWrap, bleed.inner, isLg && styles.headerWrapDesktop]}>
-          <View style={styles.headerCopy}>
-            <SectionHeader
-              eyebrow={process.eyebrow}
-              title={process.title}
-              kicker={process.subtitle}
-              align={isMd ? "left" : "center"}
-              flush
-            />
-          </View>
-          {isLg ? (
-            <View style={[styles.journeyChip, isDark && styles.journeyChipDark]}>
-              <Text style={[styles.journeyChipEyebrow, { color: KANKREG_PALETTE.gold }]}>
-                {process.journeyLabel}
-              </Text>
-              <Text style={[styles.journeyChipMeta, { color: muted }]}>
-                {totalSteps} handcrafted stages
-              </Text>
-            </View>
-          ) : null}
+      <View style={[styles.headerWrap, bleed.inner, isLg && styles.headerWrapDesktop]}>
+        <View style={styles.headerCopy}>
+          <SectionHeader
+            eyebrow={process.eyebrow}
+            title={process.title}
+            kicker={process.subtitle}
+            align={isMd ? "left" : "center"}
+            flush
+          />
         </View>
-
-        <GoldHairline
-          {...GOLD_HAIRLINE_EDITORIAL.subtle}
-          marginVertical={HOME_SPACE.sm}
-          style={[styles.headerHairline, bleed.inner]}
-        />
-
-        {!isLg ? (
-          <View style={[styles.journeyChipInline, bleed.inner, isDark && styles.journeyChipDark]}>
+        {isLg ? (
+          <View style={[styles.journeyChip, isDark && styles.journeyChipDark]}>
             <Text style={[styles.journeyChipEyebrow, { color: KANKREG_PALETTE.gold }]}>
               {process.journeyLabel}
             </Text>
+            <Text style={[styles.journeyChipMeta, { color: muted }]}>
+              {totalSteps} handcrafted stages
+            </Text>
           </View>
         ) : null}
-
-        {layout.rail ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            decelerationRate={Platform.OS === "ios" ? "fast" : 0.98}
-            snapToInterval={railCardWidth + railGap}
-            snapToAlignment="start"
-            disableIntervalMomentum
-            contentContainerStyle={[styles.railContent, bleed.railPad]}
-            style={[styles.rail, phoneLayout && styles.railPhone]}
-          >
-            {process.steps.map((step, idx) => (
-              <View
-                key={step.step}
-                style={{ width: railCardWidth, marginRight: railGap }}
-              >
-                <ScrollFadeUp index={idx} delay={idx * 70} preset="fade-up">
-                  <ProcessStepCard
-                    step={step}
-                    isDark={isDark}
-                    ink={ink}
-                    muted={muted}
-                    compact
-                    phone={phoneLayout}
-                    totalSteps={totalSteps}
-                  />
-                </ScrollFadeUp>
-              </View>
-            ))}
-          </ScrollView>
-        ) : (
-          <View style={styles.grid}>
-            {process.steps.map((step, idx) => (
-              <View key={step.step} style={[styles.gridCell, cellStyle]}>
-                <ScrollFadeUp index={idx} delay={idx * 70} preset="fade-up" style={styles.gridReveal}>
-                  <ProcessStepCard
-                    step={step}
-                    isDark={isDark}
-                    ink={ink}
-                    muted={muted}
-                    totalSteps={totalSteps}
-                  />
-                </ScrollFadeUp>
-              </View>
-            ))}
-          </View>
-        )}
       </View>
+
+      <GoldHairline
+        {...GOLD_HAIRLINE_EDITORIAL.subtle}
+        marginVertical={HOME_SPACE.sm}
+        style={[styles.headerHairline, bleed.inner]}
+      />
+
+      {!isLg ? (
+        <View style={[styles.journeyChipInline, bleed.inner, isDark && styles.journeyChipDark]}>
+          <Text style={[styles.journeyChipEyebrow, { color: KANKREG_PALETTE.gold }]}>
+            {process.journeyLabel}
+          </Text>
+        </View>
+      ) : null}
+
+      {layout.rail ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          decelerationRate={Platform.OS === "ios" ? "fast" : 0.98}
+          snapToInterval={railCardWidth + railGap}
+          snapToAlignment="start"
+          disableIntervalMomentum
+          contentContainerStyle={[styles.railContent, bleed.railPad]}
+          style={[styles.rail, phoneLayout && styles.railPhone]}
+        >
+          {process.steps.map((step, idx) => (
+            <View key={step.id || step.step} style={{ width: railCardWidth, marginRight: railGap }}>
+              <ScrollFadeUp index={idx} delay={idx * 70} preset="fade-up">
+                <ProcessStepCard
+                  step={step}
+                  isDark={isDark}
+                  ink={ink}
+                  muted={muted}
+                  compact
+                  phone={phoneLayout}
+                  totalSteps={totalSteps}
+                  roman={ROMAN[idx]}
+                />
+              </ScrollFadeUp>
+            </View>
+          ))}
+        </ScrollView>
+      ) : (
+        <View style={styles.grid}>
+          {process.steps.map((step, idx) => (
+            <View key={step.id || step.step} style={[styles.gridCell, cellStyle]}>
+              <ScrollFadeUp index={idx} delay={idx * 70} preset="fade-up" style={styles.gridReveal}>
+                <ProcessStepCard
+                  step={step}
+                  isDark={isDark}
+                  ink={ink}
+                  muted={muted}
+                  totalSteps={totalSteps}
+                  roman={ROMAN[idx]}
+                />
+              </ScrollFadeUp>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
   );
+}
+
+/** Bilona process journey — web cinematic timeline, native card rail/grid. */
+export default function HomeProcessJourney({ processSection }) {
+  if (Platform.OS === "web") {
+    return <HomeProcessJourneyWeb processSection={processSection} />;
+  }
+  return <HomeProcessJourneyNative processSection={processSection} />;
 }
 
 const cardShadow = Platform.select({
@@ -293,7 +308,8 @@ const cardShadow = Platform.select({
 const styles = StyleSheet.create({
   section: {
     width: "100%",
-    paddingVertical: HOME_SPACE.xl + 12,
+    paddingTop: HOME_SPACE.xl + 12,
+    paddingBottom: HOME_SPACE.lg,
     paddingHorizontal: HOME_SPACE.lg + 6,
     borderRadius: radius.xl + 8,
     backgroundColor: KANKREG_CHROME.cream,
@@ -319,9 +335,9 @@ const styles = StyleSheet.create({
     }),
   },
   sectionPhone: {
-    paddingHorizontal: 0,
+    paddingHorizontal: HOME_SPACE.md,
     paddingVertical: HOME_SPACE.lg + 6,
-    borderRadius: 0,
+    borderRadius: radius.xl + 6,
   },
   sectionDark: {
     backgroundColor: "rgba(24, 21, 19, 0.72)",

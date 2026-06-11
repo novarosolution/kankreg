@@ -77,14 +77,22 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
       html {
         scroll-behavior: smooth;
       }
+      @media (max-width: 1080px) {
+        html {
+          scroll-behavior: auto;
+        }
+      }
       html, body {
-        overflow-x: hidden;
-        max-width: 100vw;
+        overflow-x: clip;
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
       }
       #root, [data-expo-root] {
         min-height: 100dvh;
         width: 100%;
-        max-width: 100vw;
+        max-width: 100%;
         overflow-x: clip;
       }
       body {

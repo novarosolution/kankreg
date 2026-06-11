@@ -8,7 +8,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,7 +15,8 @@ import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { useTheme } from "../../context/ThemeContext";
 import { formatINR } from "../../utils/currency";
-import { PRODUCT_HERO_BLURHASH } from "../../utils/image";
+import { getProductThumbImageUri } from "../../utils/image";
+import ProgressiveProductImage from "../ui/ProgressiveProductImage";
 import {
   customerProductScrollPaddingBottom,
   NATIVE_PRODUCT_STICKY_BAR_HEIGHT,
@@ -175,13 +175,13 @@ export default function NativeProductView({
         <View style={styles.heroGoldLineTop} pointerEvents="none" />
         <View style={styles.heroGoldLineBottom} pointerEvents="none" />
         {heroImageUri && !imageFailed ? (
-          <Image
-            source={{ uri: heroImageUri }}
+          <ProgressiveProductImage
+            uri={heroImageUri}
+            previewUri={getProductThumbImageUri(selectedImage || product?.image)}
             style={styles.heroImage}
             contentFit="contain"
-            transition={220}
-            placeholder={{ blurhash: PRODUCT_HERO_BLURHASH }}
-            cachePolicy="memory-disk"
+            priority="high"
+            rounded={0}
           />
         ) : (
           <View style={styles.heroFallback}>
@@ -199,19 +199,29 @@ export default function NativeProductView({
       {galleryImages.length > 1 ? (
         <View style={[styles.galleryDock, { backgroundColor: isDark ? "rgba(28,25,23,0.72)" : "rgba(255,253,248,0.9)" }]}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryRow}>
-            {galleryImages.map((uri) => (
+            {galleryImages.map((uri) => {
+              const thumbUri = getProductThumbImageUri(uri) || uri;
+              const isActive = selectedImage === uri;
+              return (
               <Pressable
                 key={uri}
                 onPress={() => onSelectImage(uri)}
                 style={[
                   styles.thumb,
                   { backgroundColor: isDark ? c.surfaceMuted : KANKREG_PALETTE.paper2 },
-                  selectedImage === uri && styles.thumbOn,
+                  isActive && styles.thumbOn,
                 ]}
               >
-                <Image source={{ uri }} style={styles.thumbImage} contentFit="cover" />
+                <ProgressiveProductImage
+                  uri={thumbUri}
+                  style={styles.thumbImage}
+                  contentFit="cover"
+                  priority={isActive ? "high" : "normal"}
+                  rounded={10}
+                />
               </Pressable>
-            ))}
+            );
+            })}
           </ScrollView>
         </View>
       ) : null}

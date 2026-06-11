@@ -51,13 +51,10 @@ export default function NativeHomeHeroSlider({ navigation, heroSlides = [] }) {
   );
 }
 
-const NATIVE_HERO_INSET = 10;
-
 const styles = StyleSheet.create({
   wrap: {
     width: "100%",
     alignSelf: "stretch",
-    paddingHorizontal: NATIVE_HERO_INSET,
     marginBottom: spacing.xs,
   },
   trustRibbon: {

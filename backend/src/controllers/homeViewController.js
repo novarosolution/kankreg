@@ -4,6 +4,7 @@ const {
   normalizeAboutSection,
   normalizeCommunitySection,
   normalizeCompareSection,
+  normalizeProcessSection,
   normalizeHeroSlides,
 } = require("../utils/homeViewMedia");
 
@@ -69,6 +70,7 @@ function serializeHomeViewConfig(config) {
     aboutSection: normalizeAboutSection(obj.aboutSection),
     communitySection: normalizeCommunitySection(obj.communitySection),
     compareSection: normalizeCompareSection(obj.compareSection),
+    processSection: normalizeProcessSection(obj.processSection),
   };
 }
 
@@ -108,6 +110,7 @@ async function updateAdminHomeViewConfig(req, res, next) {
       aboutSection,
       communitySection,
       compareSection,
+      processSection,
     } = req.body || {};
 
     if (heroTitle !== undefined) config.heroTitle = heroTitle;
@@ -154,6 +157,11 @@ async function updateAdminHomeViewConfig(req, res, next) {
     if (compareSection !== undefined && compareSection && typeof compareSection === "object") {
       config.compareSection = normalizeCompareSection(compareSection);
       config.markModified("compareSection");
+    }
+
+    if (processSection !== undefined && processSection && typeof processSection === "object") {
+      config.processSection = normalizeProcessSection(processSection);
+      config.markModified("processSection");
     }
 
     await config.save();

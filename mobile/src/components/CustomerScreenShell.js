@@ -18,6 +18,7 @@ import {
 import { getSemanticColors } from "../theme/tokens";
 import { useScrollOffsetValue } from "../hooks/useScrollOffset";
 import useReducedMotion from "../hooks/useReducedMotion";
+import { useKankregLayout } from "../theme/kankregBreakpoints";
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -40,6 +41,8 @@ export default function CustomerScreenShell({ children, style, topAccent = true 
   const shellLayout = Platform.OS === "web" ? styles.webShell : null;
   const { colors: c, isDark } = useTheme();
   const reducedMotion = useReducedMotion();
+  const { isMobileWeb } = useKankregLayout();
+  const liteWebChrome = Platform.OS === "web" && (reducedMotion || isMobileWeb);
   const shellColors = getCustomerShellGradient(isDark, c);
   const semantic = getSemanticColors(c);
   const alchemy = getAlchemyPalette(c, isDark);
@@ -50,7 +53,7 @@ export default function CustomerScreenShell({ children, style, topAccent = true 
   const cursorOpacity = useSharedValue(0);
 
   useEffect(() => {
-    if (Platform.OS !== "web" || reducedMotion) return undefined;
+    if (Platform.OS !== "web" || liteWebChrome) return undefined;
     if (typeof globalThis === "undefined" || typeof globalThis.window === "undefined") {
       return undefined;
     }
@@ -83,10 +86,10 @@ export default function CustomerScreenShell({ children, style, topAccent = true 
         win.cancelAnimationFrame(frame);
       }
     };
-  }, [cursorX, cursorY, cursorOpacity, reducedMotion]);
+  }, [cursorX, cursorY, cursorOpacity, liteWebChrome]);
 
   const orbTopStyle = useAnimatedStyle(() => {
-    if (reducedMotion) return {};
+    if (liteWebChrome) return {};
     const ty = interpolate(
       scrollY.value,
       [0, 400],
@@ -103,10 +106,10 @@ export default function CustomerScreenShell({ children, style, topAccent = true 
       transform: [{ translateY: ty }],
       opacity: op,
     };
-  }, [reducedMotion]);
+  }, [liteWebChrome]);
 
   const orbBottomStyle = useAnimatedStyle(() => {
-    if (reducedMotion) return {};
+    if (liteWebChrome) return {};
     const ty = interpolate(
       scrollY.value,
       [0, 400],
@@ -123,7 +126,7 @@ export default function CustomerScreenShell({ children, style, topAccent = true 
       transform: [{ translateY: ty }],
       opacity: op,
     };
-  }, [reducedMotion]);
+  }, [liteWebChrome]);
 
   const cursorStyle = useAnimatedStyle(() => ({
     transform: [
@@ -194,7 +197,7 @@ export default function CustomerScreenShell({ children, style, topAccent = true 
           orbBottomStyle,
         ]}
       />
-      {Platform.OS === "web" && !reducedMotion ? (
+      {Platform.OS === "web" && !liteWebChrome ? (
         <AnimatedView
           style={[
             styles.cursorSpotlight,
@@ -244,11 +247,16 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     position: "relative",
-    overflow: "hidden",
+    ...Platform.select({
+      web: { overflowX: "clip", overflowY: "visible" },
+      default: { overflow: "hidden" },
+    }),
   },
   webShell: {
-    maxWidth: "100vw",
+    width: "100%",
+    maxWidth: "100%",
     minWidth: 0,
+    overflowX: "clip",
   },
   ambientWash: {
     ...StyleSheet.absoluteFillObject,

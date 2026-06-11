@@ -10,7 +10,7 @@ import AdminToggleRow from "./AdminToggleRow";
 import { useTheme } from "../../context/ThemeContext";
 import { uploadAdminMarketingVideo, uploadAdminProductImage } from "../../services/adminService";
 import { fonts, radius, spacing, typography } from "../../theme/tokens";
-import { newCommunityPostId, newCompareRowId, newHeroSlideId } from "../../utils/homeViewMedia";
+import { newCommunityPostId, newCompareRowId, newHeroSlideId, newProcessStepId } from "../../utils/homeViewMedia";
 
 function SlidePreview({ slide, styles }) {
   if (!slide?.url) {
@@ -52,6 +52,8 @@ export default function AdminHomeMediaEditor({
   onCommunitySectionChange,
   compareSection,
   onCompareSectionChange,
+  processSection,
+  onProcessSectionChange,
   onError,
 }) {
   const { colors: c } = useTheme();
@@ -313,6 +315,69 @@ export default function AdminHomeMediaEditor({
     }
   };
 
+  const updateProcess = (patch) => {
+    onProcessSectionChange({ ...processSection, ...patch });
+  };
+
+  const updateProcessStep = (id, patch) => {
+    onProcessSectionChange({
+      ...processSection,
+      steps: (processSection.steps || []).map((step) => (step.id === id ? { ...step, ...patch } : step)),
+    });
+  };
+
+  const removeProcessStep = (id) => {
+    onProcessSectionChange({
+      ...processSection,
+      steps: (processSection.steps || []).filter((step) => step.id !== id),
+    });
+  };
+
+  const moveProcessStep = (id, direction) => {
+    const steps = [...(processSection.steps || [])];
+    const idx = steps.findIndex((step) => step.id === id);
+    if (idx < 0) return;
+    const nextIdx = idx + direction;
+    if (nextIdx < 0 || nextIdx >= steps.length) return;
+    const [item] = steps.splice(idx, 1);
+    steps.splice(nextIdx, 0, item);
+    onProcessSectionChange({
+      ...processSection,
+      steps: steps.map((step, order) => ({ ...step, order })),
+    });
+  };
+
+  const addProcessStep = () => {
+    onProcessSectionChange({
+      ...processSection,
+      steps: [
+        ...(processSection.steps || []),
+        {
+          id: newProcessStepId(),
+          order: (processSection.steps || []).length,
+          enabled: true,
+          title: "",
+          description: "",
+          imageUrl: "",
+          imageFit: "cover",
+          imagePosition: "top center",
+        },
+      ],
+    });
+  };
+
+  const uploadProcessStepImage = async (step) => {
+    try {
+      setUploadingKey(`process-${step.id}`);
+      onError?.("");
+      await pickImage((url) => updateProcessStep(step.id, { imageUrl: url }));
+    } catch (err) {
+      onError?.(err.message || "Upload failed.");
+    } finally {
+      setUploadingKey("");
+    }
+  };
+
   const uploadAboutVideo = async () => {
     try {
       setUploadingKey("about-video");
@@ -391,8 +456,10 @@ export default function AdminHomeMediaEditor({
 
       <PremiumButton label="Add hero slide" variant="outline" iconLeft="add" onPress={addSlide} />
 
-      <Text style={[styles.blockTitle, styles.blockTitleSpaced]}>About KankreG (web)</Text>
-      <Text style={styles.blockHint}>Story, video, and photo gallery below products on home + about page.</Text>
+      <Text style={[styles.blockTitle, styles.blockTitleSpaced]}>About KankreG (home + about page)</Text>
+      <Text style={styles.blockHint}>
+        Story + video on home. About page uses text, photos, and story blocks below (no video).
+      </Text>
 
       <AdminToggleRow
         title="Show about section"
@@ -475,6 +542,302 @@ export default function AdminHomeMediaEditor({
         loading={uploadingKey === "about-photo"}
         disabled={Boolean(uploadingKey)}
         onPress={addAboutPhoto}
+      />
+
+      <Text style={[styles.cardLabel, { color: c.textPrimary, marginTop: spacing.md }]}>About page extras</Text>
+      <PremiumInput
+        label="Page lead (subtitle under title)"
+        value={aboutSection.pageLead || ""}
+        onChangeText={(pageLead) => onAboutSectionChange({ ...aboutSection, pageLead })}
+        multiline
+      />
+      <PremiumInput
+        label="Pull quote"
+        value={aboutSection.pullQuote || ""}
+        onChangeText={(pullQuote) => onAboutSectionChange({ ...aboutSection, pullQuote })}
+        multiline
+        numberOfLines={3}
+      />
+      <PremiumInput
+        label="Body continued"
+        value={aboutSection.bodyContinued || ""}
+        onChangeText={(bodyContinued) => onAboutSectionChange({ ...aboutSection, bodyContinued })}
+        multiline
+        numberOfLines={4}
+      />
+
+      <Text style={[styles.cardLabel, { color: c.textPrimary, marginTop: spacing.md }]}>Heritage (Kankrej breed)</Text>
+      <PremiumInput
+        label="Eyebrow"
+        value={aboutSection.heritage?.eyebrow || ""}
+        onChangeText={(eyebrow) =>
+          onAboutSectionChange({ ...aboutSection, heritage: { ...aboutSection.heritage, eyebrow } })
+        }
+      />
+      <PremiumInput
+        label="Title"
+        value={aboutSection.heritage?.title || ""}
+        onChangeText={(title) =>
+          onAboutSectionChange({ ...aboutSection, heritage: { ...aboutSection.heritage, title } })
+        }
+      />
+      <PremiumInput
+        label="Body"
+        value={aboutSection.heritage?.body || ""}
+        onChangeText={(body) =>
+          onAboutSectionChange({ ...aboutSection, heritage: { ...aboutSection.heritage, body } })
+        }
+        multiline
+        numberOfLines={4}
+      />
+
+      <Text style={[styles.cardLabel, { color: c.textPrimary, marginTop: spacing.sm }]}>Bilona craft</Text>
+      <PremiumInput
+        label="Eyebrow"
+        value={aboutSection.bilona?.eyebrow || ""}
+        onChangeText={(eyebrow) =>
+          onAboutSectionChange({ ...aboutSection, bilona: { ...aboutSection.bilona, eyebrow } })
+        }
+      />
+      <PremiumInput
+        label="Title"
+        value={aboutSection.bilona?.title || ""}
+        onChangeText={(title) =>
+          onAboutSectionChange({ ...aboutSection, bilona: { ...aboutSection.bilona, title } })
+        }
+      />
+      <PremiumInput
+        label="Body"
+        value={aboutSection.bilona?.body || ""}
+        onChangeText={(body) =>
+          onAboutSectionChange({ ...aboutSection, bilona: { ...aboutSection.bilona, body } })
+        }
+        multiline
+        numberOfLines={4}
+      />
+
+      <Text style={[styles.cardLabel, { color: c.textPrimary, marginTop: spacing.sm }]}>Origin story</Text>
+      <PremiumInput
+        label="Eyebrow"
+        value={aboutSection.origin?.eyebrow || ""}
+        onChangeText={(eyebrow) =>
+          onAboutSectionChange({ ...aboutSection, origin: { ...aboutSection.origin, eyebrow } })
+        }
+      />
+      <PremiumInput
+        label="Title"
+        value={aboutSection.origin?.title || ""}
+        onChangeText={(title) =>
+          onAboutSectionChange({ ...aboutSection, origin: { ...aboutSection.origin, title } })
+        }
+      />
+      <PremiumInput
+        label="Body"
+        value={aboutSection.origin?.body || ""}
+        onChangeText={(body) =>
+          onAboutSectionChange({ ...aboutSection, origin: { ...aboutSection.origin, body } })
+        }
+        multiline
+        numberOfLines={4}
+      />
+
+      <Text style={[styles.cardLabel, { color: c.textPrimary, marginTop: spacing.sm }]}>Values</Text>
+      {(aboutSection.values || []).map((item, idx) => (
+        <View key={`value-${idx}`} style={[styles.photoRow, { borderColor: c.border }]}>
+          <View style={styles.photoFields}>
+            <PremiumInput
+              label={`Value ${idx + 1} title`}
+              value={item.title || ""}
+              onChangeText={(title) => {
+                const values = [...(aboutSection.values || [])];
+                values[idx] = { ...values[idx], title };
+                onAboutSectionChange({ ...aboutSection, values });
+              }}
+            />
+            <PremiumInput
+              label="Description"
+              value={item.body || ""}
+              onChangeText={(body) => {
+                const values = [...(aboutSection.values || [])];
+                values[idx] = { ...values[idx], body };
+                onAboutSectionChange({ ...aboutSection, values });
+              }}
+              multiline
+            />
+          </View>
+        </View>
+      ))}
+
+      <Text style={[styles.cardLabel, { color: c.textPrimary, marginTop: spacing.sm }]}>Sidebar stats</Text>
+      {(aboutSection.sidebarStats || []).map((stat, idx) => (
+        <View key={`stat-${idx}`} style={[styles.photoRow, { borderColor: c.border }]}>
+          <View style={styles.photoFields}>
+            <PremiumInput
+              label={`Stat ${idx + 1} value`}
+              value={stat.value || ""}
+              onChangeText={(value) => {
+                const sidebarStats = [...(aboutSection.sidebarStats || [])];
+                sidebarStats[idx] = { ...sidebarStats[idx], value };
+                onAboutSectionChange({ ...aboutSection, sidebarStats });
+              }}
+            />
+            <PremiumInput
+              label="Label"
+              value={stat.label || ""}
+              onChangeText={(label) => {
+                const sidebarStats = [...(aboutSection.sidebarStats || [])];
+                sidebarStats[idx] = { ...sidebarStats[idx], label };
+                onAboutSectionChange({ ...aboutSection, sidebarStats });
+              }}
+            />
+          </View>
+        </View>
+      ))}
+
+      <Text style={[styles.cardLabel, { color: c.textPrimary, marginTop: spacing.sm }]}>Highlights (promise)</Text>
+      {(aboutSection.highlights || []).map((item, idx) => (
+        <View key={`hl-${idx}`} style={[styles.photoRow, { borderColor: c.border }]}>
+          <View style={styles.photoFields}>
+            <PremiumInput
+              label={`Highlight ${idx + 1}`}
+              value={item.value || ""}
+              onChangeText={(value) => {
+                const highlights = [...(aboutSection.highlights || [])];
+                highlights[idx] = { ...highlights[idx], value };
+                onAboutSectionChange({ ...aboutSection, highlights });
+              }}
+            />
+            <PremiumInput
+              label="Label"
+              value={item.label || ""}
+              onChangeText={(label) => {
+                const highlights = [...(aboutSection.highlights || [])];
+                highlights[idx] = { ...highlights[idx], label };
+                onAboutSectionChange({ ...aboutSection, highlights });
+              }}
+            />
+            <PremiumInput
+              label="Description"
+              value={item.description || ""}
+              onChangeText={(description) => {
+                const highlights = [...(aboutSection.highlights || [])];
+                highlights[idx] = { ...highlights[idx], description };
+                onAboutSectionChange({ ...aboutSection, highlights });
+              }}
+              multiline
+            />
+          </View>
+        </View>
+      ))}
+
+      <PremiumInput
+        label="Mission eyebrow"
+        value={aboutSection.mission?.eyebrow || ""}
+        onChangeText={(eyebrow) =>
+          onAboutSectionChange({ ...aboutSection, mission: { ...aboutSection.mission, eyebrow } })
+        }
+      />
+      <PremiumInput
+        label="Mission title"
+        value={aboutSection.mission?.title || ""}
+        onChangeText={(title) =>
+          onAboutSectionChange({ ...aboutSection, mission: { ...aboutSection.mission, title } })
+        }
+      />
+      {(aboutSection.mission?.paragraphs || ["", ""]).map((para, idx) => (
+        <PremiumInput
+          key={`mission-p-${idx}`}
+          label={`Mission paragraph ${idx + 1}`}
+          value={para || ""}
+          onChangeText={(text) => {
+            const paragraphs = [...(aboutSection.mission?.paragraphs || ["", ""])];
+            paragraphs[idx] = text;
+            onAboutSectionChange({ ...aboutSection, mission: { ...aboutSection.mission, paragraphs } });
+          }}
+          multiline
+          numberOfLines={3}
+        />
+      ))}
+
+      <Text style={[styles.cardLabel, { color: c.textPrimary, marginTop: spacing.sm }]}>Craft timeline</Text>
+      <PremiumInput
+        label="Craft eyebrow"
+        value={aboutSection.craft?.eyebrow || ""}
+        onChangeText={(eyebrow) =>
+          onAboutSectionChange({ ...aboutSection, craft: { ...aboutSection.craft, eyebrow } })
+        }
+      />
+      <PremiumInput
+        label="Craft title"
+        value={aboutSection.craft?.title || ""}
+        onChangeText={(title) =>
+          onAboutSectionChange({ ...aboutSection, craft: { ...aboutSection.craft, title } })
+        }
+      />
+      {(aboutSection.craft?.steps || []).map((step, idx) => (
+        <View key={step.id || `craft-${idx}`} style={[styles.photoRow, { borderColor: c.border }]}>
+          <View style={styles.photoFields}>
+            <PremiumInput
+              label={`Step ${idx + 1} number`}
+              value={step.label || ""}
+              onChangeText={(label) => {
+                const steps = [...(aboutSection.craft?.steps || [])];
+                steps[idx] = { ...steps[idx], label };
+                onAboutSectionChange({ ...aboutSection, craft: { ...aboutSection.craft, steps } });
+              }}
+            />
+            <PremiumInput
+              label="Title"
+              value={step.title || ""}
+              onChangeText={(title) => {
+                const steps = [...(aboutSection.craft?.steps || [])];
+                steps[idx] = { ...steps[idx], title };
+                onAboutSectionChange({ ...aboutSection, craft: { ...aboutSection.craft, steps } });
+              }}
+            />
+            <PremiumInput
+              label="Body"
+              value={step.body || ""}
+              onChangeText={(body) => {
+                const steps = [...(aboutSection.craft?.steps || [])];
+                steps[idx] = { ...steps[idx], body };
+                onAboutSectionChange({ ...aboutSection, craft: { ...aboutSection.craft, steps } });
+              }}
+              multiline
+            />
+          </View>
+        </View>
+      ))}
+
+      <Text style={[styles.cardLabel, { color: c.textPrimary, marginTop: spacing.sm }]}>CTA band</Text>
+      <PremiumInput
+        label="CTA title"
+        value={aboutSection.ctaBand?.title || ""}
+        onChangeText={(title) =>
+          onAboutSectionChange({ ...aboutSection, ctaBand: { ...aboutSection.ctaBand, title } })
+        }
+      />
+      <PremiumInput
+        label="CTA body"
+        value={aboutSection.ctaBand?.body || ""}
+        onChangeText={(body) =>
+          onAboutSectionChange({ ...aboutSection, ctaBand: { ...aboutSection.ctaBand, body } })
+        }
+        multiline
+      />
+      <PremiumInput
+        label="Primary button"
+        value={aboutSection.ctaBand?.ctaLabel || ""}
+        onChangeText={(ctaLabel) =>
+          onAboutSectionChange({ ...aboutSection, ctaBand: { ...aboutSection.ctaBand, ctaLabel } })
+        }
+      />
+      <PremiumInput
+        label="Secondary button"
+        value={aboutSection.ctaBand?.ctaSecondaryLabel || ""}
+        onChangeText={(ctaSecondaryLabel) =>
+          onAboutSectionChange({ ...aboutSection, ctaBand: { ...aboutSection.ctaBand, ctaSecondaryLabel } })
+        }
       />
 
       <Text style={[styles.blockTitle, styles.blockTitleSpaced]}>Community / Instagram (web)</Text>
@@ -706,6 +1069,123 @@ export default function AdminHomeMediaEditor({
         />
       </View>
 
+      <Text style={[styles.blockTitle, styles.blockTitleSpaced]}>Process journey (web + native)</Text>
+      <Text style={styles.blockHint}>
+        “Six steps from pasture to jar” — cinematic timeline on web, card rail on native.
+      </Text>
+
+      <AdminToggleRow
+        title="Show process section"
+        subtitle="Bilona journey block after the timeline video"
+        value={processSection.enabled !== false}
+        onValueChange={(enabled) => updateProcess({ enabled })}
+      />
+
+      <PremiumInput
+        label="Eyebrow"
+        value={processSection.eyebrow || ""}
+        onChangeText={(eyebrow) => updateProcess({ eyebrow })}
+      />
+      <PremiumInput
+        label="Section title"
+        value={processSection.title || ""}
+        onChangeText={(title) => updateProcess({ title })}
+      />
+      <PremiumInput
+        label="Subtitle"
+        value={processSection.subtitle || ""}
+        onChangeText={(subtitle) => updateProcess({ subtitle })}
+        multiline
+        numberOfLines={2}
+      />
+      <PremiumInput
+        label="Journey label"
+        value={processSection.journeyLabel || ""}
+        onChangeText={(journeyLabel) => updateProcess({ journeyLabel })}
+        placeholder="The Bilona journey"
+      />
+      <PremiumInput
+        label="Film label"
+        value={processSection.filmLabel || ""}
+        onChangeText={(filmLabel) => updateProcess({ filmLabel })}
+        placeholder="Chapter I"
+      />
+      <PremiumInput
+        label="Opening line"
+        value={processSection.openingLine || ""}
+        onChangeText={(openingLine) => updateProcess({ openingLine })}
+        multiline
+        numberOfLines={2}
+      />
+
+      {(processSection.steps || []).map((step, index) => (
+        <View key={step.id} style={[styles.card, { borderColor: c.border }]}>
+          <View style={styles.cardTop}>
+            {step.imageUrl ? (
+              <Image source={{ uri: step.imageUrl }} style={styles.compareThumb} contentFit="cover" />
+            ) : (
+              <View style={styles.compareThumbEmpty}>
+                <Text style={styles.compareThumbLabel}>Step</Text>
+              </View>
+            )}
+            <View style={styles.cardMeta}>
+              <Text style={[styles.cardLabel, { color: c.textPrimary }]}>Step {index + 1}</Text>
+              <PremiumChip
+                label={step.enabled !== false ? "Visible" : "Hidden"}
+                tone={step.enabled !== false ? "success" : "muted"}
+                compact
+              />
+            </View>
+            <View style={styles.cardActions}>
+              <Pressable onPress={() => moveProcessStep(step.id, -1)} disabled={index === 0}>
+                <Ionicons name="chevron-up" size={20} color={index === 0 ? c.textMuted : c.textPrimary} />
+              </Pressable>
+              <Pressable
+                onPress={() => moveProcessStep(step.id, 1)}
+                disabled={index === (processSection.steps || []).length - 1}
+              >
+                <Ionicons
+                  name="chevron-down"
+                  size={20}
+                  color={index === (processSection.steps || []).length - 1 ? c.textMuted : c.textPrimary}
+                />
+              </Pressable>
+              <Pressable onPress={() => removeProcessStep(step.id)}>
+                <Ionicons name="trash-outline" size={20} color={c.error} />
+              </Pressable>
+            </View>
+          </View>
+          <AdminToggleRow
+            title="Show step"
+            value={step.enabled !== false}
+            onValueChange={(enabled) => updateProcessStep(step.id, { enabled })}
+          />
+          <PremiumInput
+            label="Step title"
+            value={step.title || ""}
+            onChangeText={(title) => updateProcessStep(step.id, { title })}
+          />
+          <PremiumInput
+            label="Description"
+            value={step.description || ""}
+            onChangeText={(description) => updateProcessStep(step.id, { description })}
+            multiline
+            numberOfLines={3}
+          />
+          <PremiumButton
+            label={uploadingKey === `process-${step.id}` ? "Uploading…" : "Upload step image"}
+            variant="outline"
+            iconLeft="cloud-upload-outline"
+            onPress={() => uploadProcessStepImage(step)}
+            disabled={uploadingKey === `process-${step.id}`}
+          />
+        </View>
+      ))}
+
+      <View style={styles.row}>
+        <PremiumButton label="Add step" variant="outline" iconLeft="add" onPress={addProcessStep} />
+      </View>
+
       <Text style={[styles.blockTitle, styles.blockTitleSpaced]}>Compare ghee (web)</Text>
       <Text style={styles.blockHint}>
         “Ours vs ordinary ghee” cinematic compare — story opener, scenes, and side-by-side images.
@@ -747,6 +1227,12 @@ export default function AdminHomeMediaEditor({
         onChangeText={(openingLine) => updateCompare({ openingLine })}
         multiline
         numberOfLines={2}
+      />
+      <PremiumInput
+        label="Closing tagline"
+        value={compareSection.closingTagline || ""}
+        onChangeText={(closingTagline) => updateCompare({ closingTagline })}
+        placeholder="A2 milk · Bilona-churned · open-grazed · hand-poured."
       />
       <PremiumInput
         label="Film label"

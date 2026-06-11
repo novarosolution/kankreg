@@ -4,6 +4,7 @@ import {
   normalizeAboutSection,
   normalizeCommunitySection,
   normalizeCompareSection,
+  normalizeProcessSection,
   normalizeHeroSlides,
 } from "../utils/homeViewMedia";
 
@@ -229,6 +230,7 @@ export const DEFAULT_HOME_VIEW_CONFIG = {
   aboutSection: normalizeAboutSection(null),
   communitySection: normalizeCommunitySection(null),
   compareSection: normalizeCompareSection(null),
+  processSection: normalizeProcessSection(null),
 };
 
 function normalizeHomeViewConfig(data) {
@@ -247,6 +249,7 @@ function normalizeHomeViewConfig(data) {
     aboutSection: normalizeAboutSection(data?.aboutSection),
     communitySection: normalizeCommunitySection(data?.communitySection),
     compareSection: normalizeCompareSection(data?.compareSection),
+    processSection: normalizeProcessSection(data?.processSection),
   };
 }
 

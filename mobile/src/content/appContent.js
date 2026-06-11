@@ -1,5 +1,6 @@
 import { buildCommunitySectionDefaults } from "./communityHomeContent";
 import { buildCompareSectionDefaults } from "./compareHomeContent";
+import { buildProcessSectionDefaults } from "./processHomeContent";
 
 /**
  * Central customer-facing copy for KankreG.
@@ -110,6 +111,7 @@ export const HOME_VIEW_DEFAULTS = {
   },
   communitySection: buildCommunitySectionDefaults(),
   compareSection: buildCompareSectionDefaults(),
+  processSection: buildProcessSectionDefaults(),
 };
 
 /** Premium ghee story blocks after Our Story video — edit in `gheeHomeContent.js`. */
@@ -167,6 +169,10 @@ export const HOME_SCREEN_UI = {
     title: "From pasture to jar",
     kicker: "Watch the KankreG journey — Bilona ghee, made the ancestral way.",
     filmLabel: "Brand timeline",
+    filmDuration: "2 min film",
+    loopingLabel: "Always playing",
+    journeyPills: ["Grass-fed herd", "Hand churned", "Bilona craft"],
+    railMeta: "Ancestral process · farm to table",
   },
   ourStory: {
     eyebrow: "Our story",

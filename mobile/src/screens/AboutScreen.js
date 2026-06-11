@@ -6,16 +6,10 @@ import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 import { KankregPageWrap } from "../components/kankreg/KankregPageChrome";
 import KankregCustomerPageHeader from "../components/kankreg/KankregCustomerPageHeader";
 import SectionReveal from "../components/motion/SectionReveal";
-import {
-  AboutCraftTimeline,
-  AboutCtaBand,
-  AboutMissionBlock,
-  AboutPillarsGrid,
-} from "../components/about/AboutPageSections";
-import { ABOUT_SCREEN_UI } from "../content/appContent";
-import AboutKankregMedia from "../components/home/AboutKankregMedia";
-import { getHomeViewConfig } from "../services/productService";
-import { hasAboutMedia } from "../utils/homeViewMedia";
+import AboutPageLayout from "../components/about/AboutPageLayout";
+import AboutPageStory from "../components/about/AboutPageStory";
+import { DEFAULT_HOME_VIEW_CONFIG, getHomeViewConfig } from "../services/productService";
+import { resolveAboutPageDisplay } from "../utils/homeViewMedia";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
 import { KANKREG_PAGE_SECTION_GAP } from "../theme/kankregScreenStyles";
 import { customerScrollFill } from "../theme/screenLayout";
@@ -23,15 +17,15 @@ import { customerScrollFill } from "../theme/screenLayout";
 export default function AboutScreen({ navigation }) {
   const { isMd, showMobileWebTabBar } = useKankregLayout();
   const craftRef = useRef(null);
-  const copy = ABOUT_SCREEN_UI.header;
-  const isWeb = Platform.OS === "web";
-  const [aboutSection, setAboutSection] = useState(null);
+  const [aboutSection, setAboutSection] = useState(DEFAULT_HOME_VIEW_CONFIG.aboutSection);
 
   useEffect(() => {
     let cancelled = false;
     getHomeViewConfig()
       .then((config) => {
-        if (!cancelled) setAboutSection(config?.aboutSection || null);
+        if (!cancelled && config?.aboutSection) {
+          setAboutSection(config.aboutSection);
+        }
       })
       .catch(() => {});
     return () => {
@@ -39,45 +33,28 @@ export default function AboutScreen({ navigation }) {
     };
   }, []);
 
+  const about = resolveAboutPageDisplay(aboutSection);
+
   return (
     <CustomerScreenShell>
       <KankregScrollPage scrollVariant="page" style={customerScrollFill}>
         <KankregPageWrap style={styles.wrap}>
           <KankregCustomerPageHeader
-            eyebrow={copy.eyebrow}
-            title={copy.title}
-            subtitle={copy.subtitle}
+            eyebrow={about?.eyebrow || "Our story"}
+            title={about?.title || "About KankreG"}
+            subtitle={about?.pageLead || ""}
             navigation={navigation}
             showBack={Platform.OS !== "web" || !isMd}
             index={1}
             showHairline={false}
           />
 
-          {isWeb && aboutSection && hasAboutMedia(aboutSection) ? (
-            <SectionReveal preset="fade-up" delay={60}>
-              <AboutKankregMedia aboutSection={aboutSection} navigation={navigation} showCta={false} compact />
-            </SectionReveal>
-          ) : null}
-
-          {!isWeb ? (
-            <>
-              <SectionReveal preset="fade-up" delay={80}>
-                <AboutMissionBlock />
+          {about ? (
+            <AboutPageLayout about={about} navigation={navigation} craftRef={craftRef}>
+              <SectionReveal preset="fade-up" delay={60}>
+                <AboutPageStory about={about} />
               </SectionReveal>
-              <SectionReveal preset="fade-up" delay={120}>
-                <AboutPillarsGrid />
-              </SectionReveal>
-            </>
-          ) : null}
-
-          <SectionReveal preset="fade-up" delay={200}>
-            <AboutCraftTimeline sectionRef={craftRef} />
-          </SectionReveal>
-
-          {Platform.OS !== "web" ? (
-            <SectionReveal preset="fade-up" delay={280}>
-              <AboutCtaBand navigation={navigation} />
-            </SectionReveal>
+            </AboutPageLayout>
           ) : null}
         </KankregPageWrap>
       </KankregScrollPage>

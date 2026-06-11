@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { Image as RNImage, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import WebHtmlVideo from "./WebHtmlVideo";
 import { HOME_HERO_BANNER } from "../../content/appContent";
 import { FONT_DISPLAY } from "../../theme/customerAlchemy";
@@ -19,13 +19,14 @@ import { platformShadow } from "../../theme/shadowPlatform";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
 import { resolveImageSource } from "../../utils/mediaSource";
-import { PRODUCT_HERO_BLURHASH } from "../../utils/image";
+import { prefetchDisplayImages, resolveBundledModuleSrc, resolveImageUri } from "../../utils/image";
 import useReducedMotion from "../../hooks/useReducedMotion";
-import { useKankregLayout } from "../../theme/kankregBreakpoints";
+import { KANKREG_BP, useKankregLayout } from "../../theme/kankregBreakpoints";
 import {
   HOME_HERO_PHONE_SLIDE_HEIGHT_PER_WIDTH,
   HOME_HERO_PRODUCT_PHONE_SLIDE_HEIGHT_PER_WIDTH,
   HOME_HERO_PRODUCT_SLIDE_HEIGHT_PER_WIDTH,
+  HOME_HERO_PRODUCT_WIDE_HEIGHT_PER_WIDTH,
   HOME_HERO_WEB_LANDSCAPE_HEIGHT_PER_WIDTH,
 } from "../../constants/marketingAssets";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
@@ -34,6 +35,7 @@ const SLIDE_INTERVAL_MS = 7000;
 const KEN_BURNS_CLASS = "kankreg-hero-kenburns";
 const KEN_BURNS_PRODUCT_CLASS = "kankreg-hero-kenburns-product";
 const HERO_PRODUCT_FRAME_CLASS = "kankreg-hero-product-frame";
+const HERO_MEDIA_CLASS = "kankreg-hero-media";
 
 injectWebCssOnce(
   "kankreg-hero-kenburns-keyframes-v2",
@@ -66,6 +68,22 @@ injectWebCssOnce(
 }
 .${HERO_PRODUCT_FRAME_CLASS}::before { top: 0; }
 .${HERO_PRODUCT_FRAME_CLASS}::after { bottom: 0; }
+.${HERO_MEDIA_CLASS} {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 1;
+}
+.${HERO_MEDIA_CLASS} img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+  min-height: 100%;
+  min-width: 100%;
+}
 @media (prefers-reduced-motion: reduce) {
   .${KEN_BURNS_PRODUCT_CLASS} { animation: none !important; transform: none !important; }
 }`
@@ -128,20 +146,48 @@ function HeroProductScrim() {
   return (
     <>
       <LinearGradient
-        colors={["rgba(8,6,4,0.38)", "transparent", "transparent", "rgba(8,6,4,0.2)"]}
+        colors={["rgba(8,6,4,0.22)", "transparent", "transparent", "rgba(8,6,4,0.12)"]}
         locations={[0, 0.35, 0.65, 1]}
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
-        style={StyleSheet.absoluteFillObject}
+        style={[StyleSheet.absoluteFillObject, styles.scrimLayer]}
         pointerEvents="none"
       />
       <LinearGradient
-        colors={["transparent", "transparent", "rgba(8,6,4,0.28)", "rgba(8,6,4,0.72)"]}
+        colors={["transparent", "transparent", "rgba(8,6,4,0.18)", "rgba(8,6,4,0.55)"]}
         locations={[0, 0.45, 0.72, 1]}
-        style={StyleSheet.absoluteFillObject}
+        style={[StyleSheet.absoluteFillObject, styles.scrimLayer]}
         pointerEvents="none"
       />
     </>
+  );
+}
+
+function resolveHeroSlideUri(url) {
+  if (url == null || url === "") return "";
+  if (typeof url === "number") return resolveBundledModuleSrc(url);
+  if (typeof url === "string") return resolveImageUri(url) || url;
+  const resolved = resolveImageSource(url);
+  return resolved?.uri || "";
+}
+
+function HeroSlideImage({ slide, imageFit, contentPosition, kenClass, active }) {
+  const uri = useMemo(() => resolveHeroSlideUri(slide?.url), [slide?.url]);
+
+  if (!uri) return null;
+
+  return (
+    <Image
+      source={{ uri }}
+      className={kenClass}
+      style={styles.heroSlideImage}
+      contentFit={imageFit}
+      contentPosition={contentPosition}
+      transition={active ? 300 : 0}
+      priority={active ? "high" : "normal"}
+      cachePolicy="memory-disk"
+      recyclingKey={String(slide.id || slide.key || uri)}
+    />
   );
 }
 
@@ -211,8 +257,7 @@ function HeroSlideCard({
   isNative = false,
   isMobileWebTop = false,
 }) {
-  const imageSource = resolveImageSource(slide.url);
-  const hasImage = Boolean(imageSource);
+  const hasImage = Boolean(slide?.url) && slide.mediaType !== "video";
   const isProduct = slide.variant === "product";
   const scrimMuted = homeHeroScrimMuted();
   const heroTitleSize = isMobileWebTop
@@ -257,18 +302,13 @@ function HeroSlideCard({
         ) : (
           <View style={[styles.mediaFill, styles.videoPoster]} />
         )
-      ) : imageSource ? (
-        <Image
-          source={imageSource}
-          className={kenClass}
-          style={styles.mediaFill}
-          contentFit={imageFit}
+      ) : hasImage ? (
+        <HeroSlideImage
+          slide={slide}
+          imageFit={imageFit}
           contentPosition={contentPosition}
-          transition={320}
-          placeholder={{ blurhash: PRODUCT_HERO_BLURHASH }}
-          priority={active ? "high" : "normal"}
-          cachePolicy="memory-disk"
-          recyclingKey={slide.id || slide.key}
+          kenClass={kenClass}
+          active={active}
         />
       ) : null}
 
@@ -396,7 +436,7 @@ export default function HeroMediaSlider({
   const reducedMotion = useReducedMotion();
   const isTop = variant === "top";
   const isNative = variant === "native";
-  const isMobileWebTop = isTop && isMobileWeb;
+  const isMobileWebTop = isTop && isMobileWeb && layoutWidth < KANKREG_BP.news;
   const isBanner = isTop || isNative;
 
   const scrollRef = useRef(null);
@@ -424,14 +464,21 @@ export default function HeroMediaSlider({
     const w = slideWidth;
     if (!w) return undefined;
     const natural = Math.round(w * bannerHeightRatio);
-    const viewportCap = Math.round((layoutHeight || 800) * (isMobileWeb ? 0.68 : 0.78));
+    const phoneBand = isNative || isMobileWeb;
+    const viewportCap = Math.round((layoutHeight || 800) * (phoneBand ? 0.84 : 0.78));
 
     if (isNative) {
-      return Math.min(520, Math.max(300, Math.min(natural, viewportCap)));
+      const target = Math.max(natural, Math.round(w * 0.62));
+      return Math.min(680, Math.max(400, Math.min(target, viewportCap)));
     }
     if (isTop) {
-      const maxH = isMobileWeb ? Math.min(580, viewportCap) : Math.min(860, viewportCap);
-      const minH = isMobileWeb ? 340 : isXs ? 320 : 380;
+      if (isMobileWeb) {
+        const maxH = Math.min(720, viewportCap);
+        const minH = Math.max(420, Math.round(w * 0.58));
+        return Math.min(maxH, Math.max(minH, Math.max(natural, minH)));
+      }
+      const maxH = Math.min(720, viewportCap);
+      const minH = Math.max(420, Math.round(w * HOME_HERO_PRODUCT_WIDE_HEIGHT_PER_WIDTH));
       return Math.min(maxH, Math.max(minH, natural));
     }
     return undefined;
@@ -446,16 +493,17 @@ export default function HeroMediaSlider({
   ]);
 
   useEffect(() => {
-    if (Platform.OS !== "web" || !slides.length) return undefined;
-    slides.forEach((slide) => {
-      if (slide.mediaType === "video") return;
-      const resolved = resolveImageSource(slide.url);
-      const uri =
-        resolved && typeof resolved === "object" && resolved.uri
-          ? resolved.uri
-          : typeof slide.url === "number"
-            ? RNImage.resolveAssetSource(slide.url)?.uri
-            : "";
+    if (!slides.length) return undefined;
+    const imageSlides = slides.filter((slide) => slide.mediaType !== "video" && slide.url);
+    if (Platform.OS === "web") {
+      prefetchDisplayImages(
+        imageSlides.map((slide) => slide.url),
+        { eagerCount: Math.min(2, imageSlides.length), width: 1400, quality: "auto:good" }
+      );
+      return undefined;
+    }
+    imageSlides.forEach((slide) => {
+      const uri = resolveHeroSlideUri(slide.url);
       if (uri) Image.prefetch(uri).catch(() => {});
     });
     return undefined;
@@ -503,7 +551,7 @@ export default function HeroMediaSlider({
         isBanner && styles.shellBannerBase,
       ]}
     >
-      {isNative || isMobileWebTop ? <View style={styles.nativeGoldRail} pointerEvents="none" /> : null}
+      {isNative ? <View style={styles.nativeGoldRail} pointerEvents="none" /> : null}
 
       <ScrollView
         ref={scrollRef}
@@ -675,11 +723,15 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   shellTop: {
+    width: "100%",
+    maxWidth: "100%",
+    alignSelf: "stretch",
     aspectRatio: undefined,
     borderRadius: 0,
     borderWidth: 0,
     overflow: "hidden",
     position: "relative",
+    backgroundColor: "#1a1410",
     ...Platform.select({
       web: {
         boxShadow: "0 28px 64px -36px rgba(25,20,15,.32)",
@@ -687,18 +739,26 @@ const styles = StyleSheet.create({
       default: {},
     }),
   },
+  /** Phone web — same flat cinematic band as desktop (reference: full-bleed landscape hero). */
   shellMobileWeb: {
+    width: "100%",
+    maxWidth: "100%",
+    alignSelf: "stretch",
     borderRadius: 0,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(169, 119, 46, 0.2)",
+    borderWidth: 0,
+    overflow: "hidden",
+    backgroundColor: "#1a1410",
     ...Platform.select({
       web: {
-        boxShadow: "0 18px 40px -28px rgba(25, 20, 15, 0.22)",
+        boxShadow: "0 28px 64px -36px rgba(25,20,15,.32)",
       },
       default: {},
     }),
   },
   shellNative: {
+    width: "100%",
+    maxWidth: "100%",
+    alignSelf: "stretch",
     aspectRatio: undefined,
     borderRadius: 24,
     borderWidth: StyleSheet.hairlineWidth,
@@ -791,6 +851,16 @@ const styles = StyleSheet.create({
   mediaFill: {
     ...StyleSheet.absoluteFillObject,
   },
+  heroSlideImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
+    zIndex: 1,
+    backgroundColor: "#2c2620",
+  },
+  scrimLayer: {
+    zIndex: 2,
+  },
   videoPoster: {
     backgroundColor: "rgba(28,25,23,0.35)",
   },
@@ -799,6 +869,7 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     bottom: 56,
+    zIndex: 4,
   },
   slideCaptionBanner: {
     left: 0,

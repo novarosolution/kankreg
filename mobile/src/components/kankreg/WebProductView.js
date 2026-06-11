@@ -8,7 +8,6 @@ import {
   View,
 } from "react-native";
 import Animated from "react-native-reanimated";
-import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -21,6 +20,7 @@ import PremiumButton from "../ui/PremiumButton";
 import PremiumInput from "../ui/PremiumInput";
 import PremiumErrorBanner from "../ui/PremiumErrorBanner";
 import GoldHairline from "../ui/GoldHairline";
+import ProgressiveProductImage from "../ui/ProgressiveProductImage";
 import { useTheme } from "../../context/ThemeContext";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
@@ -34,7 +34,11 @@ import {
 import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 import { formatINR } from "../../utils/currency";
-import { getImageUriCandidates, PRODUCT_HERO_BLURHASH } from "../../utils/image";
+import {
+  getImageUriCandidates,
+  getProductSectionImageUri,
+  getProductThumbImageUri,
+} from "../../utils/image";
 import { PRODUCT_SCREEN, fillProductScreen } from "../../content/appContent";
 import { resolveProductPageContent } from "../../utils/resolveProductPageContent";
 import { fonts, icon as sz, layout, radius, spacing, typography } from "../../theme/tokens";
@@ -171,15 +175,18 @@ function ProductProcessStep({ step, index, isDark, styles }) {
   );
 }
 
-function ThumbImage({ sourceUri, style, fallbackStyle, mutedColor }) {
-  const candidates = useMemo(() => getImageUriCandidates(sourceUri), [sourceUri]);
+function ThumbImage({ sourceUri, style, fallbackStyle, mutedColor, active = false }) {
+  const candidates = useMemo(
+    () => getImageUriCandidates(sourceUri, { width: 220, quality: "auto:good" }),
+    [sourceUri]
+  );
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
     setIndex(0);
   }, [sourceUri]);
 
-  const uri = candidates[index] || "";
+  const uri = candidates[index] || getProductThumbImageUri(sourceUri) || "";
   if (!uri) {
     return (
       <View style={[style, fallbackStyle]}>
@@ -189,11 +196,13 @@ function ThumbImage({ sourceUri, style, fallbackStyle, mutedColor }) {
   }
 
   return (
-    <Image
-      source={{ uri }}
+    <ProgressiveProductImage
+      uri={uri}
       style={style}
       contentFit="cover"
-      cachePolicy="memory-disk"
+      priority={active ? "high" : "normal"}
+      recyclingKey={uri}
+      rounded={8}
       onError={() => setIndex((i) => i + 1)}
     />
   );
@@ -281,7 +290,14 @@ export default function WebProductView({
     navigation.navigate("Shop");
   };
   const usageRituals = Array.isArray(product?.usageRituals) ? product.usageRituals.filter(Boolean) : [];
-  const lifestyleImage = String(product?.lifestyleImage || "").trim();
+  const lifestyleImage = useMemo(() => {
+    const raw = String(product?.lifestyleImage || "").trim();
+    return raw ? getProductSectionImageUri(raw) : "";
+  }, [product?.lifestyleImage]);
+  const heroPreviewUri = useMemo(
+    () => getProductThumbImageUri(selectedImage || product?.image),
+    [selectedImage, product?.image]
+  );
 
   const renderGallery = () => (
     <View style={styles.gallery}>
@@ -290,19 +306,20 @@ export default function WebProductView({
           colors={isDark ? ["#1a1410", "#14100c"] : ["#FFFDF6", "#F2E9D4"]}
           start={{ x: 0.2, y: 0 }}
           end={{ x: 0.8, y: 1 }}
-          style={[styles.heroStage, { minHeight: heroImageHeight }]}
+          style={[styles.heroStage, { height: heroImageHeight }]}
         >
           {heroImageUri && !imageFailed ? (
-            <Animated.View style={[styles.heroAnim, heroFadeStyle]}>
-              <View style={styles.heroImageFrame}>
-                <Image
-                  source={{ uri: heroImageUri }}
-                  style={styles.heroImageInner}
+            <Animated.View style={[styles.heroAnim, heroFadeStyle, { height: heroImageHeight }]}>
+              <View style={[styles.heroImageFrame, { height: heroImageHeight }]}>
+                <ProgressiveProductImage
+                  uri={heroImageUri}
+                  previewUri={heroPreviewUri}
+                  style={[styles.heroImageInner, { height: Math.max(180, heroImageHeight - 32) }]}
                   contentFit="contain"
-                  transition={280}
-                  cachePolicy="memory-disk"
-                  placeholder={{ blurhash: PRODUCT_HERO_BLURHASH }}
+                  priority="high"
+                  recyclingKey={heroImageUri}
                   onError={onHeroImageError}
+                  rounded={14}
                 />
               </View>
             </Animated.View>
@@ -334,6 +351,7 @@ export default function WebProductView({
               >
                 <ThumbImage
                   sourceUri={img}
+                  active={active}
                   style={styles.thumbImage}
                   fallbackStyle={styles.thumbFallback}
                   mutedColor={c.textMuted}
@@ -594,7 +612,13 @@ export default function WebProductView({
             ) : null}
             {lifestyleImage ? (
               <View style={styles.lifestyleWrap}>
-                <Image source={{ uri: lifestyleImage }} style={styles.lifestyleImage} contentFit="cover" cachePolicy="memory-disk" />
+                <ProgressiveProductImage
+                  uri={lifestyleImage}
+                  previewUri={getProductThumbImageUri(product?.lifestyleImage)}
+                  style={styles.lifestyleImage}
+                  contentFit="cover"
+                  rounded={16}
+                />
               </View>
             ) : null}
             {usageRituals.length > 0 ? (
@@ -901,13 +925,15 @@ function createStyles(c, isDark) {
     },
     thumbsRow: {
       flexDirection: "row",
-      gap: 12,
+      flexWrap: "wrap",
+      gap: 10,
       width: "100%",
     },
     thumb: {
-      flex: 1,
-      minWidth: 0,
-      aspectRatio: 1,
+      width: 72,
+      height: 72,
+      flexGrow: 0,
+      flexShrink: 0,
       borderRadius: 13,
       borderWidth: 1,
       borderColor: KANKREG_PALETTE.line,
@@ -940,7 +966,7 @@ function createStyles(c, isDark) {
       borderRadius: 24,
       overflow: "hidden",
       position: "relative",
-      minHeight: 360,
+      minHeight: 240,
       borderWidth: 1,
       borderColor: isDark ? c.border : "#F0E8D7",
       ...platformShadow({
@@ -954,14 +980,13 @@ function createStyles(c, isDark) {
     heroAnim: { width: "100%", height: "100%" },
     heroImageFrame: {
       width: "100%",
-      flex: 1,
-      padding: 22,
+      height: "100%",
+      padding: 16,
       justifyContent: "center",
       alignItems: "center",
     },
     heroImageInner: {
       width: "100%",
-      height: "100%",
       borderRadius: 14,
       backgroundColor: "transparent",
     },
@@ -1565,7 +1590,8 @@ function createStyles(c, isDark) {
     },
     lifestyleImage: {
       width: "100%",
-      height: 280,
+      height: 220,
+      maxHeight: 220,
       backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
     },
     usageWrap: {

@@ -1,5 +1,4 @@
 import React, { memo, useEffect, useMemo, useState } from "react";
-import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import {
   Platform,
@@ -20,7 +19,8 @@ import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon, radius } from "../../theme/tokens";
 import { formatINRWhole } from "../../utils/currency";
-import { getImageUriCandidates } from "../../utils/image";
+import { getImageUriCandidates, getProductThumbImageUri, prefetchProductHeroImage } from "../../utils/image";
+import ProgressiveProductImage from "../ui/ProgressiveProductImage";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 
 const PRODUCT_CARD_CSS_ID = "kankreg-home-product-card";
@@ -128,7 +128,10 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
     return "";
   }, [product?.image, product?.images]);
 
-  const imageUris = useMemo(() => getImageUriCandidates(primaryImage), [primaryImage]);
+  const imageUris = useMemo(
+    () => getImageUriCandidates(primaryImage, { width: isWeb ? 520 : 640, quality: "auto:good" }),
+    [isWeb, primaryImage]
+  );
   const [imageCandidateIndex, setImageCandidateIndex] = useState(0);
   const imageUri = imageUris[imageCandidateIndex] || "";
 
@@ -155,6 +158,7 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
 
   return (
     <Pressable
+      onPressIn={() => prefetchProductHeroImage(primaryImage)}
       onPress={onPress}
       className={isWeb ? PRODUCT_CARD_CLASS : undefined}
       style={({ focused }) => [
@@ -167,16 +171,16 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
     >
       <View style={editorialStyles.imageFrame}>
         {imageUri && imageCandidateIndex < imageUris.length ? (
-          <Image
-            source={{ uri: imageUri }}
+          <ProgressiveProductImage
+            uri={imageUri}
+            previewUri={getProductThumbImageUri(primaryImage)}
             className={isWeb ? PRODUCT_PHOTO_CLASS : undefined}
             style={editorialStyles.image}
             contentFit="cover"
-            contentPosition="center"
-            transition={260}
             recyclingKey={`${product?.id || "p"}:${imageUri}`}
             onError={() => setImageCandidateIndex((idx) => idx + 1)}
             priority={imagePriority}
+            rounded={12}
           />
         ) : (
           <View style={[editorialStyles.imageFallback, isDark && editorialStyles.imageFallbackDark]}>

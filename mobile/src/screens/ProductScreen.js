@@ -17,7 +17,7 @@ import {
 } from "../theme/screenLayout";
 import { fonts, layout, lineHeight, radius, semanticRadius, spacing, typography } from "../theme/tokens";
 import { platformShadow } from "../theme/shadowPlatform";
-import { getImageUriCandidates } from "../utils/image";
+import { getImageUriCandidates, getProductHeroImageUri, prefetchProductGalleryImages } from "../utils/image";
 import { matchesShelfProduct } from "../utils/shelfMatch";
 import { productToCartLine } from "../utils/productCart";
 import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../theme/customerAlchemy";
@@ -103,15 +103,23 @@ export default function ProductScreen({ route, navigation }) {
     return imgs;
   }, [product]);
   const selectedImageUris = useMemo(
-    () => getImageUriCandidates(selectedImage || product?.image),
+    () => getImageUriCandidates(selectedImage || product?.image, { width: 840, quality: "auto:good" }),
     [selectedImage, product?.image]
   );
-  const selectedImageUri = selectedImageUris[imageCandidateIndex] || "";
+  const selectedImageUri =
+    selectedImageUris[imageCandidateIndex] ||
+    getProductHeroImageUri(selectedImage || product?.image) ||
+    "";
   const imageFailed = selectedImageUris.length === 0 || imageCandidateIndex >= selectedImageUris.length;
 
   useEffect(() => {
     setImageCandidateIndex(0);
   }, [selectedImage, product?.image]);
+
+  useEffect(() => {
+    if (!galleryImages.length) return;
+    prefetchProductGalleryImages(galleryImages, { heroCount: Math.min(3, galleryImages.length) });
+  }, [galleryImages]);
 
   useEffect(() => {
     if (!product?.id) return;
@@ -157,11 +165,11 @@ export default function ProductScreen({ route, navigation }) {
 
   const heroImageHeight = useMemo(() => {
     if (Platform.OS === "web") {
-      if (width >= 1080) return Math.min(560, Math.round(width * 0.44));
-      if (width >= 768) return Math.min(480, Math.round(width * 0.52));
-      return Math.min(400, Math.max(280, Math.round(width * 0.68)));
+      if (width >= 1080) return Math.min(420, Math.round(width * 0.34));
+      if (width >= 768) return Math.min(360, Math.round(width * 0.42));
+      return Math.min(300, Math.max(240, Math.round(width * 0.52)));
     }
-    return Math.min(380, Math.max(260, Math.round(width * 0.72)));
+    return Math.min(320, Math.max(220, Math.round(width * 0.55)));
   }, [width]);
 
   if (loading) {

@@ -253,11 +253,18 @@ function StoryPullQuote({ quote, isDark, phone = false }) {
   );
 }
 
-function StoryHighlights({ isDark, layoutWidth, compact = false, pills = false, rail = false }) {
+function StoryHighlights({
+  isDark,
+  layoutWidth,
+  compact = false,
+  pills = false,
+  rail = false,
+  stats: statsProp,
+}) {
   const ink = homeEditorialInk(isDark);
   const muted = homeEditorialMuted(isDark);
   const { highlightsEyebrow, highlightsTitle } = HOME_SCREEN_UI.ourStory;
-  const stats = HOME_STORY_CONTENT.whyKankrej.stats;
+  const stats = statsProp?.length ? statsProp : HOME_STORY_CONTENT.whyKankrej.stats;
 
   if (rail) {
     return (
@@ -354,6 +361,7 @@ function StoryDetailsPanel({
   showCta,
   navigation,
   split = false,
+  hidePills = false,
 }) {
   const ink = homeEditorialInk(isDark);
 
@@ -367,7 +375,7 @@ function StoryDetailsPanel({
       {about.body ? (
         <Text style={[styles.storyCardBody, { color: muted }]}>{about.body}</Text>
       ) : null}
-      {split ? (
+      {split && !hidePills ? (
         <>
           <Text style={[styles.storyCardLabel, { color: muted }]}>{highlightsTitle.toUpperCase()}</Text>
           <StoryHighlights isDark={isDark} layoutWidth={0} pills />
@@ -406,6 +414,7 @@ export default function AboutKankregMedia({
   showCta = true,
   compact = false,
   variant = "default",
+  hideHighlights = false,
 }) {
   const { isDark } = useTheme();
   const { width } = useKankregLayout();
@@ -433,9 +442,14 @@ export default function AboutKankregMedia({
   const hasCopy = Boolean(about.body || (showCta && navigation));
   const showHeader = Boolean(eyebrow || about.title);
 
-  const storyContinued = isEditorial ? HOME_STORY_CONTENT.whyKankrej.body : null;
+  const storyContinued = isEditorial
+    ? about.bodyContinued || HOME_STORY_CONTENT.whyKankrej.body
+    : null;
   const storySplit = isEditorial && Boolean(videoSource) && width >= STORY_SPLIT_MIN_WIDTH;
-  const pullQuote = isEditorial ? HOME_SCREEN_UI.ourStory.pullQuote : null;
+  const pullQuote = isEditorial
+    ? about.pullQuote || HOME_SCREEN_UI.ourStory.pullQuote
+    : null;
+  const highlightStats = isEditorial && about.highlights?.length ? about.highlights : null;
   const splitVideoCaption =
     about.videoCaption?.trim() || HOME_SCREEN_UI.ourStory.videoCaptionFallback || "";
 
@@ -501,6 +515,7 @@ export default function AboutKankregMedia({
         showCta={showCta}
         navigation={navigation}
         split
+        hidePills={hideHighlights}
       />
     ) : null;
 
@@ -542,8 +557,12 @@ export default function AboutKankregMedia({
             <View style={styles.storySplitText}>{detailsPanel}</View>
             <View style={styles.storySplitMedia}>{mediaBlock}</View>
           </View>
-          <GoldHairline {...GOLD_HAIRLINE_EDITORIAL.subtle} marginVertical={HOME_SPACE.md} />
-          <StoryHighlights isDark={isDark} layoutWidth={width} rail={false} />
+          {!hideHighlights ? (
+            <>
+              <GoldHairline {...GOLD_HAIRLINE_EDITORIAL.subtle} marginVertical={HOME_SPACE.md} />
+              <StoryHighlights isDark={isDark} layoutWidth={width} rail={false} stats={highlightStats} />
+            </>
+          ) : null}
         </>
       ) : (
         <>
@@ -557,11 +576,12 @@ export default function AboutKankregMedia({
             </>
           ) : null}
           {copyPanel}
-          {isEditorial && !storySplit ? (
+          {isEditorial && !storySplit && !hideHighlights ? (
             <StoryHighlights
               isDark={isDark}
               layoutWidth={width}
               rail={isStoryPhone}
+              stats={highlightStats}
             />
           ) : null}
         </>

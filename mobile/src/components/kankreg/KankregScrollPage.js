@@ -32,6 +32,8 @@ export default function KankregScrollPage({
   scrollVariant = "page",
   topInsetOwner = "scroll",
   flushNativeGutter = scrollVariant === "page" || scrollVariant === "inner",
+  /** Phone web home: no scroll horizontal gutter — hero/trust span edge-to-edge. */
+  flushWebGutter = false,
   stickyFooterExtra = 0,
   contentContainerStyle,
   style,
@@ -39,7 +41,8 @@ export default function KankregScrollPage({
   ...scrollProps
 }) {
   const insets = useSafeAreaInsets();
-  const { pageGutterClamp, isXs, showMobileWebTabBar } = useKankregLayout();
+  const { pageGutterClamp, isXs, isMobileWeb, showMobileWebTabBar } = useKankregLayout();
+  const skipWebGutter = flushWebGutter && Platform.OS === "web" && isMobileWeb;
   const mobileWebBottomPad =
     Platform.OS === "web" && showMobileWebTabBar ? mobileWebTabBarScrollPadding(insets) : 0;
   const showSiteFooter =
@@ -47,7 +50,8 @@ export default function KankregScrollPage({
     (scrollVariant !== "admin" && scrollVariant !== "auth" && Platform.OS === "web" && !showMobileWebTabBar);
   const pageGap = isXs ? spacing.md : CUSTOMER_INNER_PAGE_GAP;
   const baseStyle = useMemo(() => {
-    const webGutterStyle = Platform.OS === "web" ? { paddingHorizontal: pageGutterClamp } : null;
+    const webGutterStyle =
+      Platform.OS === "web" && !skipWebGutter ? { paddingHorizontal: pageGutterClamp } : null;
     const nativeGutter = flushNativeGutter ? null : { paddingHorizontal: pageGutterClamp };
     const scrollInsets = {
       topInsetOwner,
@@ -73,6 +77,9 @@ export default function KankregScrollPage({
             ]
           : [
               customerPageScrollBase,
+              skipWebGutter
+                ? { width: "100%", maxWidth: "100%", alignSelf: "stretch", paddingHorizontal: 0 }
+                : null,
               webGutterStyle,
               Platform.OS !== "web" && flushNativeGutter ? { paddingHorizontal: 0 } : nativeGutter,
               {
@@ -101,6 +108,7 @@ export default function KankregScrollPage({
     pageGutterClamp,
     scrollVariant,
     showMobileWebTabBar,
+    skipWebGutter,
     stickyFooterExtra,
     topInsetOwner,
   ]);
@@ -141,7 +149,7 @@ export default function KankregScrollPage({
 
   return (
     <MotionScrollView
-      style={[styles.scroll, style]}
+      style={[styles.scroll, isMobileWeb && styles.scrollMobileWeb, style]}
       contentContainerStyle={resolvedContentStyle}
       refreshControl={refreshControl}
       showsVerticalScrollIndicator={false}
@@ -162,4 +170,8 @@ const styles = StyleSheet.create({
       default: {},
     }),
   },
+  scrollMobileWeb: Platform.select({
+    web: { overflowX: "clip", maxWidth: "100%" },
+    default: {},
+  }),
 });

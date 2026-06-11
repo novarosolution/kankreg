@@ -245,13 +245,23 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     ...Platform.select({
-      web: { minHeight: "100dvh", height: "100%" },
+      web: {
+        minHeight: "100dvh",
+        height: "100%",
+        maxWidth: "100%",
+        overflowX: "clip",
+      },
       default: {},
     }),
   },
   stackFill: {
     flex: 1,
     width: "100%",
+    maxWidth: "100%",
     minHeight: 0,
+    ...Platform.select({
+      web: { overflowX: "clip" },
+      default: {},
+    }),
   },
 });

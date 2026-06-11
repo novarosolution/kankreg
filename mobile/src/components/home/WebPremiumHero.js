@@ -15,7 +15,7 @@ import {
   HOME_TYPE,
   homeEditorialMuted,
 } from "../../theme/homeEditorial";
-import { useKankregLayout } from "../../theme/kankregBreakpoints";
+import { KANKREG_BP, useKankregLayout } from "../../theme/kankregBreakpoints";
 import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon } from "../../theme/tokens";
@@ -53,7 +53,8 @@ function TrustRibbonDivider({ isDark }) {
 /** Full-width premium top slider + trust ribbon (web home). */
 export default function WebPremiumHero({ navigation, heroSlides = [] }) {
   const { isDark } = useTheme();
-  const { pageGutterClamp, isXs, isMobileWeb } = useKankregLayout();
+  const { pageGutterClamp, isXs, isMobileWeb, width } = useKankregLayout();
+  const useDesktopHeroSlides = width >= KANKREG_BP.news;
   const muted = homeEditorialMuted(isDark);
   const showDividers = !isXs;
 
@@ -61,11 +62,14 @@ export default function WebPremiumHero({ navigation, heroSlides = [] }) {
     const adminSlides = getActiveHeroSlides(heroSlides);
     if (adminSlides.length) return adminSlides;
     if (Platform.OS === "web") {
-      const pool = isMobileWeb ? HOME_HERO_MOBILE_SLIDER_SLIDES : HOME_HERO_WEB_SLIDER_SLIDES;
+      const pool =
+        isMobileWeb && !useDesktopHeroSlides
+          ? HOME_HERO_MOBILE_SLIDER_SLIDES
+          : HOME_HERO_WEB_SLIDER_SLIDES;
       return mapMarketingSlidesToHero(pool);
     }
     return [];
-  }, [heroSlides, isMobileWeb]);
+  }, [heroSlides, isMobileWeb, useDesktopHeroSlides]);
 
   if (Platform.OS !== "web" || !activeSlides.length) return null;
 
@@ -73,8 +77,26 @@ export default function WebPremiumHero({ navigation, heroSlides = [] }) {
   const showTrust = HOME_SCREEN_UI.web?.showHeroTrustChips !== false;
   const heroEyebrow = HOME_SCREEN_UI.web?.heroEyebrow || "Curated heritage";
 
+  /** Desktop: break out of centered 1280px scroll column. Phone web: scroll has no side gutter. */
+  const fullBleedStyle =
+    Platform.OS === "web"
+      ? isMobileWeb
+        ? {
+            width: "100%",
+            alignSelf: "stretch",
+            maxWidth: "100%",
+          }
+        : {
+            width: "100vw",
+            maxWidth: "100vw",
+            marginLeft: "calc(50% - 50vw)",
+            marginRight: "calc(50% - 50vw)",
+            alignSelf: "center",
+          }
+      : null;
+
   return (
-    <View style={styles.fullBleed}>
+    <View style={[styles.fullBleed, fullBleedStyle]}>
       <HeroMediaSlider
         variant="top"
         slides={activeSlides}
@@ -107,16 +129,7 @@ const styles = StyleSheet.create({
     width: "100%",
     alignSelf: "stretch",
     marginBottom: 0,
-    ...Platform.select({
-      web: {
-        width: "100vw",
-        maxWidth: "100vw",
-        marginLeft: "calc(50% - 50vw)",
-        marginRight: "calc(50% - 50vw)",
-        marginTop: 0,
-      },
-      default: {},
-    }),
+    marginTop: 0,
   },
   trustBand: {
     width: "100%",
