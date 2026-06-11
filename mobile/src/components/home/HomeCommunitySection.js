@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -29,6 +29,7 @@ import { fonts, icon, radius } from "../../theme/tokens";
 import { PRODUCT_HERO_BLURHASH } from "../../utils/image";
 import { resolveImageSource } from "../../utils/mediaSource";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
+import { getHomePhoneBleed } from "../../utils/homeSectionBleed";
 
 const POST_CARD_WIDTH = 252;
 const POST_MEDIA_ASPECT = 4 / 5;
@@ -67,7 +68,7 @@ function CommunityTag({ label, variant, isDark }) {
   );
 }
 
-function CommunityPostCard({ post, isDark, index }) {
+function CommunityPostCard({ post, isDark, index, cardWidth, phone = false }) {
   const ink = homeEditorialInk(isDark);
   const muted = homeEditorialMuted(isDark);
   const isReel = post.type === "reel" || post.type === "recipe";
@@ -78,7 +79,12 @@ function CommunityPostCard({ post, isDark, index }) {
     <ScrollFadeUp index={index} delay={index * 60} preset="fade-up">
       <View
         className={Platform.OS === "web" ? COMMUNITY_CARD_CLASS : undefined}
-        style={[styles.post, isDark && styles.postDark]}
+        style={[
+          styles.post,
+          { width: cardWidth },
+          phone && styles.postPhone,
+          isDark && styles.postDark,
+        ]}
       >
         <LinearGradient
           colors={
@@ -178,8 +184,17 @@ function CommunityPostCard({ post, isDark, index }) {
  */
 export default function HomeCommunitySection({ communitySection }) {
   const { isDark } = useTheme();
-  const { isLg, isMobileWeb } = useKankregLayout();
+  const { width, isLg, isMobileWeb, pageGutterClamp } = useKankregLayout();
   const content = resolveCommunityDisplay(communitySection);
+  const phoneLayout = width < 720;
+  const bleed = getHomePhoneBleed({ isMobileWeb, pageGutterClamp, width });
+
+  const postCardWidth = useMemo(() => {
+    if (phoneLayout) return Math.round(width * 0.86);
+    return POST_CARD_WIDTH;
+  }, [phoneLayout, width]);
+
+  const postGap = phoneLayout ? 12 : POST_GAP;
 
   if (Platform.OS !== "web" || !content) return null;
 
@@ -192,7 +207,15 @@ export default function HomeCommunitySection({ communitySection }) {
 
   return (
     <ScrollFadeUp index={2}>
-      <View nativeID="home-community" style={[styles.section, isDark && styles.sectionDark]}>
+      <View
+        nativeID="home-community"
+        style={[
+          styles.section,
+          phoneLayout && styles.sectionPhone,
+          bleed.outer,
+          isDark && styles.sectionDark,
+        ]}
+      >
         <LinearGradient
           colors={
             isDark
@@ -204,17 +227,23 @@ export default function HomeCommunitySection({ communitySection }) {
           pointerEvents="none"
         />
 
-        <View style={[styles.head, isLg && styles.headDesktop]}>
+        <View style={[styles.head, bleed.inner, isLg && styles.headDesktop]}>
           <View style={styles.headCopy}>
             <SectionHeader
               eyebrow={eyebrow}
               title={title}
               kicker={subtitle}
-              align={isLg ? "left" : "center"}
+              align={isLg ? "left" : phoneLayout ? "left" : "center"}
               flush
             />
           </View>
-          <View style={[styles.instagramCard, isDark && styles.instagramCardDark]}>
+          <View
+            style={[
+              styles.instagramCard,
+              phoneLayout && styles.instagramCardPhone,
+              isDark && styles.instagramCardDark,
+            ]}
+          >
             <View style={styles.instagramIconWrap}>
               <Ionicons name="logo-instagram" size={icon.md} color={KANKREG_PALETTE.gold} />
             </View>
@@ -241,7 +270,7 @@ export default function HomeCommunitySection({ communitySection }) {
           </View>
         </View>
 
-        <View style={styles.railMeta}>
+        <View style={[styles.railMeta, bleed.inner]}>
           <GoldHairline
             {...GOLD_HAIRLINE_EDITORIAL.subtle}
             marginVertical={0}
@@ -261,24 +290,28 @@ export default function HomeCommunitySection({ communitySection }) {
           horizontal
           showsHorizontalScrollIndicator={false}
           decelerationRate={Platform.OS === "ios" ? "fast" : 0.98}
-          snapToInterval={POST_CARD_WIDTH + POST_GAP}
+          snapToInterval={postCardWidth + postGap}
           snapToAlignment="start"
           disableIntervalMomentum
-          contentContainerStyle={[
-            styles.rowContent,
-            isMobileWeb && styles.rowContentMobile,
-          ]}
-          style={styles.row}
+          contentContainerStyle={[styles.rowContent, bleed.railPad]}
+          style={[styles.row, phoneLayout && styles.rowPhone]}
         >
           {posts.map((post, idx) => (
             <View
               key={post.id}
               style={[
                 styles.postWrap,
+                { width: postCardWidth, marginRight: postGap },
                 idx === posts.length - 1 && styles.postWrapLast,
               ]}
             >
-              <CommunityPostCard post={post} isDark={isDark} index={idx} />
+              <CommunityPostCard
+                post={post}
+                isDark={isDark}
+                index={idx}
+                cardWidth={postCardWidth}
+                phone={phoneLayout}
+              />
             </View>
           ))}
         </ScrollView>
@@ -309,21 +342,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: HOME_SPACE.lg + 4,
     borderRadius: radius.xl + 4,
     backgroundColor: KANKREG_CHROME.cream,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(169, 119, 46, 0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(169, 119, 46, 0.18)",
+    borderTopWidth: 3,
+    borderTopColor: "rgba(201, 162, 39, 0.78)",
     overflow: "hidden",
     position: "relative",
     ...Platform.select({
       web: {
         boxShadow:
-          "inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 24px 60px -40px rgba(25, 20, 15, 0.1)",
+          "inset 0 1px 0 rgba(255, 255, 255, 0.92), 0 28px 64px -36px rgba(80, 60, 25, 0.14)",
       },
       default: {},
     }),
   },
+  sectionPhone: {
+    paddingHorizontal: 0,
+    paddingVertical: HOME_SPACE.lg + 6,
+    borderRadius: 0,
+    borderLeftWidth: 0,
+    borderRightWidth: 0,
+  },
   sectionDark: {
-    backgroundColor: "rgba(24, 21, 19, 0.58)",
-    borderColor: "#3f3933",
+    backgroundColor: "rgba(24, 21, 19, 0.68)",
+    borderColor: "rgba(214, 173, 91, 0.14)",
+    borderTopColor: "rgba(214, 173, 91, 0.5)",
   },
   sectionWash: {
     ...StyleSheet.absoluteFillObject,
@@ -357,6 +400,10 @@ const styles = StyleSheet.create({
       web: { backdropFilter: "blur(8px)" },
       default: {},
     }),
+  },
+  instagramCardPhone: {
+    width: "100%",
+    alignSelf: "stretch",
   },
   instagramCardDark: {
     backgroundColor: "rgba(24, 21, 19, 0.55)",
@@ -433,32 +480,38 @@ const styles = StyleSheet.create({
   },
   row: {
     width: "100%",
-    marginHorizontal: -(HOME_SPACE.lg + 4),
     zIndex: 1,
   },
+  rowPhone: {
+    marginHorizontal: 0,
+  },
   rowContent: {
-    paddingHorizontal: HOME_SPACE.lg + 4,
-    paddingBottom: HOME_SPACE.sm,
+    paddingBottom: HOME_SPACE.md,
     paddingTop: HOME_SPACE.xs,
   },
-  rowContentMobile: {
-    paddingBottom: HOME_SPACE.md,
-  },
-  postWrap: {
-    width: POST_CARD_WIDTH,
-    marginRight: POST_GAP,
-  },
+  postWrap: {},
   postWrapLast: {
-    marginRight: HOME_SPACE.xl,
+    marginRight: 16,
   },
   post: {
-    width: POST_CARD_WIDTH,
-    borderRadius: radius.lg + 4,
+    borderRadius: radius.lg + 6,
     overflow: "hidden",
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "rgba(169, 119, 46, 0.16)",
     backgroundColor: KANKREG_PALETTE.card,
     ...postShadow,
+  },
+  postPhone: {
+    borderRadius: radius.xl + 4,
+    borderWidth: 1,
+    borderColor: "rgba(169, 119, 46, 0.22)",
+    ...Platform.select({
+      web: {
+        boxShadow:
+          "inset 0 1px 0 rgba(255, 253, 248, 0.9), 0 8px 28px -10px rgba(80, 60, 25, 0.2)",
+      },
+      default: {},
+    }),
   },
   postDark: {
     backgroundColor: "#181513",

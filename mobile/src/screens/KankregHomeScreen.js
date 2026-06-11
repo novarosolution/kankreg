@@ -99,7 +99,6 @@ const nativeHomeStyles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   processWrap: {
-    paddingHorizontal: FIGMA.gutter,
     marginTop: spacing.sm,
   },
 });
