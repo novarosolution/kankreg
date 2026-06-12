@@ -22,6 +22,12 @@ import { prefetchDisplayImages, getHeroSlideDisplayWidth, getHeroSlideImageUri }
 import useReducedMotion from "../../hooks/useReducedMotion";
 import { KANKREG_BP, useKankregLayout } from "../../theme/kankregBreakpoints";
 import {
+  HOME_HERO_APP_HEIGHT_RATIO,
+  HOME_HERO_APP_MAX_HEIGHT,
+  HOME_HERO_APP_MIN_HEIGHT,
+  HOME_HERO_COMPACT_HEIGHT_RATIO,
+  HOME_HERO_COMPACT_MAX_HEIGHT,
+  HOME_HERO_COMPACT_MIN_HEIGHT,
   HOME_HERO_PHONE_SLIDE_HEIGHT_PER_WIDTH,
   HOME_HERO_PRODUCT_PHONE_SLIDE_HEIGHT_PER_WIDTH,
   HOME_HERO_PRODUCT_SLIDE_HEIGHT_PER_WIDTH,
@@ -118,7 +124,8 @@ function resolveHeroSlideHeightRatio(slide, { isNative, isMobileWeb }) {
   return HOME_HERO_WEB_LANDSCAPE_HEIGHT_PER_WIDTH;
 }
 
-function resolveHeroImageFit(slide, { isTop, isMobileWebTop }) {
+function resolveHeroImageFit(slide, { isTop, isMobileWebTop, isApp = false }) {
+  if (isApp) return "cover";
   if (slide?.imageFit === "contain" || slide?.imageFit === "cover") return slide.imageFit;
   if (isTop && !isMobileWebTop) return "contain";
   return "cover";
@@ -363,17 +370,20 @@ function HeroSlideCard({
   editorialEyebrow,
   layoutWidth,
   isNative = false,
+  isCompact = false,
+  isApp = false,
   isMobileWebTop = false,
   slideLayoutWidth = 960,
 }) {
   const hasImage = Boolean(slide?.url) && slide.mediaType !== "video";
-  const isProduct = slide.variant === "product";
-  const isPhoneBand = isNative || isMobileWebTop;
+  const isProduct = !isCompact && !isApp && slide.variant === "product";
+  const isPhoneBand = isNative || isMobileWebTop || isApp;
   const captionMode =
     slide.captionMode ||
     (slide.title || slide.subtitle ? "overlay" : slide.cta ? "cta-only" : "overlay");
   const captionZone = isPhoneBand ? slide.captionZone || "bottom" : "bottom";
-  const showTextOverlay = captionMode === "overlay" && Boolean(slide.title || slide.subtitle);
+  const showTextOverlay =
+    !isApp && !isCompact && captionMode === "overlay" && Boolean(slide.title || slide.subtitle);
   const phoneCtaOnly = isPhoneBand && captionMode === "baked";
   const scrimMuted = homeHeroScrimMuted();
   const heroTitleSize = isMobileWebTop
@@ -381,7 +391,7 @@ function HeroSlideCard({
     : isProduct && isTop
       ? Math.min(52, homeHeroTitleSize(layoutWidth) + 4)
       : homeHeroTitleSize(layoutWidth);
-  const imageFit = resolveHeroImageFit(slide, { isTop, isMobileWebTop });
+  const imageFit = resolveHeroImageFit(slide, { isTop, isMobileWebTop, isApp });
   const kenBurns =
     imageFit === "cover" && isTop && active && Platform.OS === "web" && !reducedMotion && !isMobileWebTop;
   const kenClass = isProduct && kenBurns ? KEN_BURNS_PRODUCT_CLASS : kenBurns ? KEN_BURNS_CLASS : undefined;
@@ -443,8 +453,8 @@ function HeroSlideCard({
       ) : null}
 
       <HeroBottomScrim
-        editorial={isTop && !isMobileWebTop && !isProduct && slide.layout !== "landscape"}
-        isBanner={isBanner}
+        editorial={!isCompact && !isApp && isTop && !isMobileWebTop && !isProduct && slide.layout !== "landscape"}
+        isBanner={isBanner && !isApp}
         isNative={isNative || isMobileWebTop}
         isProduct={isProduct || (isTop && !isMobileWebTop && slide.layout === "landscape")}
         phoneZone={isPhoneBand ? captionZone : undefined}
@@ -457,6 +467,7 @@ function HeroSlideCard({
             styles.slideCaption,
             isBanner && !isTop && !isNative && styles.slideCaptionBanner,
             isPhoneBand && styles.slideCaptionPhone,
+            isApp && styles.slideCaptionApp,
             isPhoneBand && captionZone === "top" && styles.slideCaptionPhoneTop,
             isPhoneBand && captionZone === "bottom" && styles.slideCaptionPhoneBottom,
             isPhoneBand && phoneCtaOnly && styles.slideCaptionPhoneCtaOnly,
@@ -467,9 +478,14 @@ function HeroSlideCard({
           ]}
           pointerEvents="box-none"
         >
-          {showTextOverlay && isPhoneBand ? (
+          {showTextOverlay && (isPhoneBand || isApp) ? (
             <View style={styles.phoneCaptionStack} pointerEvents="box-none">
-              {(isTop || isNative) && eyebrowLabel && !isMobileWebTop ? (
+              {isApp && editorialEyebrow ? (
+                <Text style={styles.heroEyebrowApp} numberOfLines={1}>
+                  {String(editorialEyebrow).toUpperCase()}
+                </Text>
+              ) : null}
+              {(isTop || isNative) && eyebrowLabel && !isMobileWebTop && !isApp ? (
                 <Text
                   style={[
                     isNative ? styles.heroEyebrowNative : styles.heroEyebrow,
@@ -495,6 +511,7 @@ function HeroSlideCard({
                 <Text
                   style={[
                     styles.slideTitle,
+                    isApp && styles.slideTitleApp,
                     isTop &&
                       !isMobileWebTop && {
                         fontSize: heroTitleSize,
@@ -502,12 +519,12 @@ function HeroSlideCard({
                       },
                     isMobileWebTop && styles.slideTitleMobileWeb,
                     isProduct && isTop && styles.slideTitleProduct,
-                    isBanner && !isTop && !isNative && styles.slideTitleBanner,
-                    isPhoneBand && styles.slideTitlePhone,
+                    isBanner && !isTop && !isNative && !isApp && styles.slideTitleBanner,
+                    isPhoneBand && !isApp && styles.slideTitlePhone,
                     (isBanner || isTop) && !captionLeft && styles.captionTextCenter,
                     captionLeft && styles.captionTextLeft,
                   ]}
-                  numberOfLines={isPhoneBand ? 2 : isMobileWebTop ? 2 : isTop ? 3 : 2}
+                  numberOfLines={isApp ? 2 : isPhoneBand ? 2 : isMobileWebTop ? 2 : isTop ? 3 : 2}
                 >
                   {slide.title}
                 </Text>
@@ -516,17 +533,24 @@ function HeroSlideCard({
                 <Text
                   style={[
                     styles.slideSubtitle,
+                    isApp && styles.slideSubtitleApp,
                     isTop && !isMobileWebTop && styles.slideSubtitleTop,
-                    isBanner && !isTop && !isNative && styles.slideSubtitleBanner,
-                    isPhoneBand && styles.slideSubtitlePhone,
+                    isBanner && !isTop && !isNative && !isApp && styles.slideSubtitleBanner,
+                    isPhoneBand && !isApp && styles.slideSubtitlePhone,
                     isMobileWebTop && styles.slideSubtitleMobileWeb,
                     (isBanner || isTop) && !captionLeft && styles.captionTextCenter,
                     captionLeft && styles.captionTextLeft,
                   ]}
-                  numberOfLines={isPhoneBand ? 3 : isMobileWebTop ? 2 : isTop ? 2 : isBanner ? 3 : 2}
+                  numberOfLines={isApp ? 2 : isPhoneBand ? 3 : isMobileWebTop ? 2 : isTop ? 2 : isBanner ? 3 : 2}
                 >
                   {slide.subtitle}
                 </Text>
+              ) : null}
+              {isApp && slide.cta ? (
+                <View style={styles.appCtaPill} pointerEvents="none">
+                  <Text style={styles.appCtaText}>{slide.cta}</Text>
+                  <Ionicons name="arrow-forward" size={icon.xs - 1} color={KANKREG_PALETTE.goldBright} />
+                </View>
               ) : null}
             </View>
           ) : (
@@ -626,6 +650,7 @@ export default function HeroMediaSlider({
   variant = "card",
   onPress,
   editorialEyebrow = "",
+  cardEmbedded = false,
 }) {
   const { isDark } = useTheme();
   const { isXs, isSm, isMd, isLg, isXl, isMobileWeb, width: layoutWidth, height: layoutHeight } =
@@ -633,8 +658,10 @@ export default function HeroMediaSlider({
   const reducedMotion = useReducedMotion();
   const isTop = variant === "top";
   const isNative = variant === "native";
+  const isCompact = variant === "compact";
+  const isApp = variant === "app";
   const isMobileWebTop = isTop && isMobileWeb && layoutWidth < KANKREG_BP.news;
-  const isBanner = isTop || isNative;
+  const isBanner = isTop || isNative || isCompact || isApp;
 
   const scrollRef = useRef(null);
   const indexRef = useRef(0);
@@ -672,6 +699,20 @@ export default function HeroMediaSlider({
       const target = Math.max(natural, Math.round(w * 0.62));
       return Math.min(680, Math.max(400, Math.min(target, viewportCap)));
     }
+    if (isCompact) {
+      const target = Math.round(w * HOME_HERO_COMPACT_HEIGHT_RATIO);
+      return Math.min(
+        HOME_HERO_COMPACT_MAX_HEIGHT,
+        Math.max(HOME_HERO_COMPACT_MIN_HEIGHT, target)
+      );
+    }
+    if (isApp && Platform.OS !== "web") {
+      const target = Math.round(w * HOME_HERO_APP_HEIGHT_RATIO);
+      return Math.min(
+        HOME_HERO_APP_MAX_HEIGHT,
+        Math.max(HOME_HERO_APP_MIN_HEIGHT, target)
+      );
+    }
     if (isTop) {
       if (isMobileWeb) {
         const maxH = Math.min(720, viewportCap);
@@ -685,6 +726,8 @@ export default function HeroMediaSlider({
     return undefined;
   }, [
     bannerHeightRatio,
+    isApp,
+    isCompact,
     isMobileWeb,
     isNative,
     isTop,
@@ -753,11 +796,22 @@ export default function HeroMediaSlider({
 
   if (!count) return null;
 
-  const showArrows = count > 1 && slideWidth > 0 && (isBanner || Platform.OS === "web");
+  const showArrows =
+    count > 1 && slideWidth > 0 && !isApp && (isBanner || Platform.OS === "web");
   const progress = ((index + 1) / count) * 100;
-  const shellStyle = isTop ? styles.shellTop : isNative ? styles.shellNative : [styles.shellCard, cardShadow];
-  const chromeBottom = isNative || isMobileWebTop ? 12 : isTop ? 20 : 12;
-  const useQuietNav = isTop || isNative;
+  const shellStyle = isApp
+    ? styles.shellApp
+    : isCompact
+      ? styles.shellCompact
+      : isTop
+        ? styles.shellTop
+        : isNative
+          ? styles.shellNative
+          : [styles.shellCard, cardShadow];
+  const chromeBottom = isApp ? 14 : isCompact ? 10 : isNative || isMobileWebTop ? 12 : isTop ? 20 : 12;
+  const useQuietNav = isTop || isNative || isCompact || isApp;
+  const usePhoneChrome = isNative || isMobileWebTop;
+  const useAppChrome = isApp;
 
   return (
     <View
@@ -770,17 +824,20 @@ export default function HeroMediaSlider({
       style={[
         shellStyle,
         isMobileWebTop && styles.shellMobileWeb,
+        cardEmbedded && isApp && styles.shellAppEmbedded,
         isBanner && bannerHeight ? { height: bannerHeight } : null,
         isBanner && styles.shellBannerBase,
       ]}
     >
-      {isNative ? <View style={styles.nativeGoldRail} pointerEvents="none" /> : null}
+      {isNative || (isApp && !cardEmbedded) ? (
+        <View style={styles.nativeGoldRail} pointerEvents="none" />
+      ) : null}
 
       <ScrollView
         ref={scrollRef}
         horizontal
         pagingEnabled={slideWidth > 0}
-        snapToInterval={isNative && slideWidth > 0 ? slideWidth : undefined}
+        snapToInterval={(isNative || isApp) && slideWidth > 0 ? slideWidth : undefined}
         snapToAlignment="start"
         nestedScrollEnabled
         showsHorizontalScrollIndicator={false}
@@ -824,8 +881,10 @@ export default function HeroMediaSlider({
                   isBanner={isBanner}
                   isTop={isTop}
                   isNative={isNative}
+                  isCompact={isCompact}
+                  isApp={isApp}
                   isMobileWebTop={isMobileWebTop}
-                  showCta={isBanner}
+                  showCta={isBanner && !isCompact && !isApp}
                   onCta={onPress}
                   reducedMotion={reducedMotion}
                   editorialEyebrow={editorialEyebrow}
@@ -843,21 +902,39 @@ export default function HeroMediaSlider({
           <HeroNavButton
             direction="prev"
             onPress={() => goTo(index - 1)}
-            style={[styles.navPrev, (isNative || isMobileWebTop) && styles.navPrevNative]}
+            style={[styles.navPrev, usePhoneChrome && styles.navPrevNative]}
             quiet={useQuietNav}
           />
           <HeroNavButton
             direction="next"
             onPress={() => goTo(index + 1)}
-            style={[styles.navNext, (isNative || isMobileWebTop) && styles.navNextNative]}
+            style={[styles.navNext, usePhoneChrome && styles.navNextNative]}
             quiet={useQuietNav}
           />
         </>
       ) : null}
 
-      {count > 1 ? (
+      {count > 1 && useAppChrome ? (
+        <View style={styles.chromeAppMinimal} pointerEvents="box-none">
+          <View style={styles.dotsAppPill}>
+            {slides.map((slide, dotIndex) => (
+              <Pressable
+                key={slide.id}
+                onPress={() => goTo(dotIndex)}
+                hitSlop={8}
+                style={styles.dotAppHit}
+                accessibilityRole="button"
+                accessibilityLabel={`Go to slide ${dotIndex + 1}`}
+                accessibilityState={{ selected: dotIndex === index }}
+              >
+                <View style={[styles.dotApp, dotIndex === index && styles.dotAppActive]} />
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      ) : count > 1 ? (
         <>
-          {isNative || isMobileWebTop ? (
+          {usePhoneChrome ? (
             <LinearGradient
               colors={["transparent", "rgba(8,6,4,0.5)"]}
               style={styles.chromeScrimNative}
@@ -868,7 +945,7 @@ export default function HeroMediaSlider({
             style={[
               styles.chrome,
               isTop && !isMobileWebTop && styles.chromeTop,
-              (isNative || isMobileWebTop) && styles.chromeNative,
+              usePhoneChrome && styles.chromeNative,
               { paddingBottom: chromeBottom },
             ]}
             pointerEvents="box-none"
@@ -877,14 +954,14 @@ export default function HeroMediaSlider({
               style={[
                 styles.progressTrack,
                 isTop && !isMobileWebTop && styles.progressTrackTop,
-                (isNative || isMobileWebTop) && styles.progressTrackNative,
+                usePhoneChrome && styles.progressTrackNative,
               ]}
             >
               <View
                 style={[
                   styles.progressFill,
                   isTop && !isMobileWebTop && styles.progressFillTop,
-                  (isNative || isMobileWebTop) && styles.progressFillNative,
+                  usePhoneChrome && styles.progressFillNative,
                   { width: `${progress}%` },
                 ]}
               />
@@ -894,7 +971,7 @@ export default function HeroMediaSlider({
                 style={[
                   styles.counter,
                   isTop && !isMobileWebTop && styles.counterTop,
-                  (isNative || isMobileWebTop) && styles.counterNative,
+                  usePhoneChrome && styles.counterNative,
                 ]}
                 {...(Platform.OS === "web"
                   ? { accessibilityLiveRegion: "polite", accessibilityLabel: `Slide ${index + 1} of ${count}` }
@@ -904,7 +981,7 @@ export default function HeroMediaSlider({
                 <Text style={styles.counterSep}> / </Text>
                 {String(count).padStart(2, "0")}
               </Text>
-              <View style={[styles.dots, (isNative || isMobileWebTop) && styles.dotsNative]}>
+              <View style={[styles.dots, usePhoneChrome && styles.dotsNative]}>
                 {slides.map((slide, dotIndex) => (
                   <Pressable
                     key={slide.id}
@@ -1012,6 +1089,98 @@ const styles = StyleSheet.create({
       android: { elevation: 8 },
       default: {},
     }),
+  },
+  shellCompact: {
+    width: "100%",
+    maxWidth: "100%",
+    alignSelf: "stretch",
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(169, 119, 46, 0.24)",
+    overflow: "hidden",
+    position: "relative",
+    backgroundColor: "#14110e",
+    ...Platform.select({
+      web: {
+        boxShadow: "0 12px 28px -16px rgba(25,20,15,.28)",
+      },
+      ios: {
+        shadowColor: "#19140f",
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.14,
+        shadowRadius: 16,
+      },
+      android: { elevation: 4 },
+      default: {},
+    }),
+  },
+  shellApp: {
+    width: "100%",
+    maxWidth: "100%",
+    alignSelf: "stretch",
+    borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(201, 162, 39, 0.36)",
+    overflow: "hidden",
+    position: "relative",
+    backgroundColor: "#14110e",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#3D2A12",
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.22,
+        shadowRadius: 22,
+      },
+      android: { elevation: 7 },
+      default: {},
+    }),
+  },
+  shellAppEmbedded: {
+    borderWidth: 0,
+    borderRadius: 0,
+    ...Platform.select({
+      ios: { shadowOpacity: 0, shadowRadius: 0 },
+      android: { elevation: 0 },
+      default: {},
+    }),
+  },
+  chromeAppMinimal: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 5,
+  },
+  dotsAppPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    backgroundColor: "rgba(8, 6, 4, 0.42)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+  dotAppHit: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 2,
+  },
+  dotApp: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "rgba(255,255,255,0.42)",
+  },
+  dotAppActive: {
+    width: 18,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: KANKREG_PALETTE.goldBright,
   },
   nativeGoldRail: {
     position: "absolute",
@@ -1144,6 +1313,74 @@ const styles = StyleSheet.create({
   slideCaptionPhoneBottom: {
     top: undefined,
     bottom: 102,
+  },
+  slideCaptionApp: {
+    left: 0,
+    right: 0,
+    top: undefined,
+    bottom: 56,
+    paddingHorizontal: 16,
+    alignItems: "flex-start",
+    alignSelf: "stretch",
+    width: "100%",
+    gap: 6,
+  },
+  heroEyebrowApp: {
+    fontFamily: fonts.semibold,
+    fontSize: typography.overline - 1,
+    letterSpacing: 2.4,
+    color: KANKREG_PALETTE.goldBright,
+  },
+  slideTitleApp: {
+    fontFamily: FONT_HEADING,
+    fontSize: typography.h3,
+    lineHeight: typography.h3 + 6,
+    color: "#fff",
+    textAlign: "left",
+    width: "100%",
+  },
+  slideSubtitleApp: {
+    fontFamily: fonts.regular,
+    fontSize: typography.bodySmall,
+    lineHeight: typography.bodySmall + 4,
+    color: "rgba(255,255,255,0.9)",
+    textAlign: "left",
+    width: "100%",
+  },
+  appCtaPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 2,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(214, 173, 91, 0.45)",
+    backgroundColor: "rgba(0,0,0,0.28)",
+    alignSelf: "flex-start",
+  },
+  appCtaText: {
+    fontFamily: fonts.semibold,
+    fontSize: typography.caption,
+    color: KANKREG_PALETTE.goldBright,
+  },
+  appBadge: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    zIndex: 4,
+    paddingVertical: 5,
+    paddingHorizontal: 9,
+    borderRadius: 999,
+    backgroundColor: "rgba(0,0,0,0.42)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(214, 173, 91, 0.38)",
+  },
+  appBadgeText: {
+    fontFamily: fonts.semibold,
+    fontSize: typography.caption - 1,
+    color: KANKREG_PALETTE.goldBright,
   },
   slideCaptionPhoneCtaOnly: {
     top: undefined,
@@ -1523,6 +1760,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingTop: 10,
     gap: 9,
+  },
+  chromeApp: {
+    zIndex: 4,
+    paddingHorizontal: 14,
+    paddingTop: 8,
+    gap: 8,
   },
   progressTrackNative: {
     height: 2,

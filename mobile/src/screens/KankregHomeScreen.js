@@ -102,12 +102,6 @@ const nativeHomeStyles = StyleSheet.create({
     marginTop: spacing.xs,
     marginBottom: spacing.xs,
   },
-  filmWrap: {
-    marginTop: spacing.sm,
-  },
-  processWrap: {
-    marginTop: spacing.sm,
-  },
 });
 
 const homeGridStyles = StyleSheet.create({
@@ -358,18 +352,6 @@ export default function KankregHomeScreen({ navigation }) {
                 </View>
               ) : null}
             </>
-          ) : null}
-
-          {ready ? (
-            <View style={nativeHomeStyles.filmWrap}>
-              <WebTimelineSection />
-            </View>
-          ) : null}
-
-          {showProcessSection ? (
-            <View style={nativeHomeStyles.processWrap}>
-              <WebProcessSection processSection={processSection} />
-            </View>
           ) : null}
 
         </KankregScrollPage>

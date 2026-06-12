@@ -11,6 +11,17 @@ export const HOME_HERO_PRODUCT_SLIDE_HEIGHT_PER_WIDTH = 941 / 1672;
 /** Default landscape hero height ratio for web (1535×1024 class assets). */
 export const HOME_HERO_WEB_LANDSCAPE_HEIGHT_PER_WIDTH = 1024 / 1535;
 
+/** Compact home hero band — short carousel above catalog (web fallback only). */
+export const HOME_HERO_COMPACT_HEIGHT_RATIO = 0.34;
+export const HOME_HERO_COMPACT_MAX_HEIGHT = 220;
+export const HOME_HERO_COMPACT_MIN_HEIGHT = 168;
+
+/** Native app home hero — premium band, full copy visible. */
+export const HOME_HERO_APP_HEIGHT_RATIO = 0.56;
+export const HOME_HERO_APP_MAX_HEIGHT = 312;
+export const HOME_HERO_APP_MIN_HEIGHT = 228;
+export const HOME_HERO_APP_MAX_SLIDES = 2;
+
 /** Phone hero band height per point of slider width — portrait product slide (941×1200). */
 export const HOME_HERO_PHONE_SLIDE_HEIGHT_PER_WIDTH = 1200 / 941;
 

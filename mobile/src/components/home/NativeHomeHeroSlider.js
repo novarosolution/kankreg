@@ -1,52 +1,81 @@
 import React, { useMemo } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { HOME_HERO_MOBILE_SLIDER_SLIDES } from "../../constants/marketingAssets";
 import { HOME_SCREEN_UI, HOME_TRUST_STRIP } from "../../content/appContent";
+import { FIGMA } from "../../theme/figmaApp";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon, spacing, typography } from "../../theme/tokens";
-import { getActiveHeroSlides, mapMarketingSlidesToHero } from "../../utils/homeViewMedia";
-import GoldHairline from "../ui/GoldHairline";
+import { platformShadow } from "../../theme/shadowPlatform";
+import { getAppHeroSlides, getAppMarketingHeroSlides } from "../../utils/homeViewMedia";
 import HeroMediaSlider from "./HeroMediaSlider";
 
-/** Premium home banner slider for iOS / Android. */
+const cardShadow = platformShadow({
+  ios: {
+    shadowColor: "#3D2A12",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.14,
+    shadowRadius: 20,
+  },
+  android: { elevation: 5 },
+});
+
+/** Single premium native home slider + trust strip in one card. */
 export default function NativeHomeHeroSlider({ navigation, heroSlides = [] }) {
   const { isDark } = useTheme();
 
   const activeSlides = useMemo(() => {
-    const adminSlides = getActiveHeroSlides(heroSlides);
+    const adminSlides = getAppHeroSlides(heroSlides);
     if (adminSlides.length) return adminSlides;
-    return mapMarketingSlidesToHero(HOME_HERO_MOBILE_SLIDER_SLIDES);
+    return getAppMarketingHeroSlides(HOME_HERO_MOBILE_SLIDER_SLIDES);
   }, [heroSlides]);
 
   if (!activeSlides.length) return null;
 
   const showTrust = HOME_SCREEN_UI.web?.showHeroTrustChips !== false;
+  const openShop = () => navigation.navigate("Shop");
 
   return (
     <View style={styles.wrap}>
-      <HeroMediaSlider
-        variant="native"
-        slides={activeSlides}
-        onPress={() => navigation.navigate("Shop")}
-        editorialEyebrow={HOME_SCREEN_UI.native?.heroEyebrow || HOME_SCREEN_UI.web?.heroEyebrow}
-      />
-      {showTrust ? (
-        <View style={[styles.trustRibbon, isDark && styles.trustRibbonDark]}>
-          {HOME_TRUST_STRIP.map((item) => (
-            <View key={item.key} style={styles.trustItem}>
-              <View style={[styles.trustIconWrap, isDark && styles.trustIconWrapDark]}>
-                <Ionicons name={item.icon} size={icon.xs} color={KANKREG_PALETTE.goldBright} />
+      <Pressable
+        onPress={openShop}
+        style={({ pressed }) => [
+          styles.card,
+          isDark && styles.cardDark,
+          cardShadow,
+          pressed && styles.cardPressed,
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel="Browse featured products"
+      >
+        <View style={styles.goldRail} pointerEvents="none" />
+        <HeroMediaSlider
+          variant="app"
+          cardEmbedded
+          slides={activeSlides}
+          onPress={openShop}
+        />
+        {showTrust ? (
+          <View style={[styles.trustRow, isDark && styles.trustRowDark]}>
+            {HOME_TRUST_STRIP.map((item) => (
+              <View key={item.key} style={styles.trustChip}>
+                <Ionicons
+                  name={item.icon}
+                  size={icon.xs - 1}
+                  color={isDark ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.goldDeep}
+                />
+                <Text
+                  style={[styles.trustText, isDark && styles.trustTextDark]}
+                  numberOfLines={1}
+                >
+                  {item.label}
+                </Text>
               </View>
-              <Text style={[styles.trustText, isDark && styles.trustTextDark]} numberOfLines={1}>
-                {item.label}
-              </Text>
-            </View>
-          ))}
-        </View>
-      ) : null}
-      <GoldHairline marginVertical={spacing.sm} />
+            ))}
+          </View>
+        ) : null}
+      </Pressable>
     </View>
   );
 }
@@ -54,52 +83,62 @@ export default function NativeHomeHeroSlider({ navigation, heroSlides = [] }) {
 const styles = StyleSheet.create({
   wrap: {
     width: "100%",
-    alignSelf: "stretch",
-    marginBottom: spacing.xs,
+    paddingHorizontal: FIGMA.gutter,
+    marginBottom: spacing.sm,
   },
-  trustRibbon: {
+  card: {
+    borderRadius: FIGMA.radiusHero,
+    overflow: "hidden",
+    backgroundColor: "#14110e",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(201, 162, 39, 0.32)",
+  },
+  cardDark: {
+    borderColor: "rgba(214, 173, 91, 0.28)",
+  },
+  cardPressed: {
+    opacity: 0.96,
+  },
+  goldRail: {
+    position: "absolute",
+    top: 0,
+    left: 16,
+    right: 16,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "rgba(214, 173, 91, 0.5)",
+    zIndex: 2,
+  },
+  trustRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: spacing.xs,
-    marginTop: spacing.md,
     paddingVertical: spacing.sm + 2,
-    paddingHorizontal: spacing.md,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,253,248,0.96)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: KANKREG_PALETTE.lineSoft,
+    paddingHorizontal: spacing.sm + 4,
+    backgroundColor: "rgba(255, 253, 248, 0.98)",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(201, 162, 39, 0.16)",
   },
-  trustRibbonDark: {
-    backgroundColor: "rgba(24,21,19,0.94)",
-    borderColor: "rgba(232,200,90,0.14)",
+  trustRowDark: {
+    backgroundColor: "rgba(20, 17, 14, 0.98)",
+    borderTopColor: "rgba(214, 173, 91, 0.14)",
   },
-  trustItem: {
+  trustChip: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 5,
+    gap: 4,
     minWidth: 0,
   },
-  trustIconWrap: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(169, 119, 46, 0.1)",
-  },
-  trustIconWrapDark: {
-    backgroundColor: "rgba(232, 200, 90, 0.12)",
-  },
   trustText: {
+    flexShrink: 1,
     fontFamily: fonts.semibold,
-    fontSize: typography.caption,
+    fontSize: typography.caption - 1,
     color: KANKREG_PALETTE.inkSoft,
-    letterSpacing: 0.15,
+    letterSpacing: 0.05,
   },
   trustTextDark: {
-    color: "rgba(245,239,228,0.78)",
+    color: "rgba(245,239,228,0.82)",
   },
 });

@@ -11,6 +11,7 @@ import {
   buildProcessSectionDefaults,
   getProcessStepImageFallback,
 } from "../content/processHomeContent";
+import { HOME_HERO_APP_MAX_SLIDES } from "../constants/marketingAssets";
 
 function asTrimmedString(value, fallback = "") {
   if (value === undefined || value === null) return fallback;
@@ -48,6 +49,15 @@ export function getActiveHeroSlides(slides) {
   return normalizeHeroSlides(slides).filter((slide) => slide.enabled);
 }
 
+/** Home compact banner — images only, capped slide count (no video rails). */
+export const COMPACT_HERO_MAX_SLIDES = 2;
+
+export function getCompactHeroSlides(slides) {
+  return getActiveHeroSlides(slides)
+    .filter((slide) => slide.mediaType !== "video")
+    .slice(0, COMPACT_HERO_MAX_SLIDES);
+}
+
 /** Map bundled marketing slides → hero slider shape (web fallback). */
 export function mapMarketingSlidesToHero(marketingSlides = []) {
   return marketingSlides.map((slide, index) => ({
@@ -69,6 +79,21 @@ export function mapMarketingSlidesToHero(marketingSlides = []) {
     captionMode: slide.captionMode || "",
     captionZone: slide.captionZone || "",
   }));
+}
+
+export function getCompactMarketingHeroSlides(marketingSlides = []) {
+  return mapMarketingSlidesToHero(marketingSlides).slice(0, COMPACT_HERO_MAX_SLIDES);
+}
+
+/** Native app hero — images only, up to 3 slides. */
+export function getAppHeroSlides(slides) {
+  return getActiveHeroSlides(slides)
+    .filter((slide) => slide.mediaType !== "video")
+    .slice(0, HOME_HERO_APP_MAX_SLIDES);
+}
+
+export function getAppMarketingHeroSlides(marketingSlides = []) {
+  return mapMarketingSlidesToHero(marketingSlides).slice(0, HOME_HERO_APP_MAX_SLIDES);
 }
 
 function normalizeAboutPhoto(photo) {
