@@ -6,9 +6,9 @@ import {
   KANKREG_FOOTER_COLUMNS,
   KANKREG_FOOTER_COPYRIGHT,
   KANKREG_FOOTER_NEWSLETTER,
-  KANKREG_FOOTER_PAYMENTS_LINE,
   KANKREG_FOOTER_TAGLINE,
 } from "../../content/appContent";
+import NovaRoEngineerCredit from "../brand/NovaRoEngineerCredit";
 import { useAuth } from "../../context/AuthContext";
 import { FONT_HEADING } from "../../theme/typographyRoles";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
@@ -118,8 +118,9 @@ export default function KankregSiteFooter() {
 
         <View style={[styles.bottom, isXs && styles.bottomStack]}>
           <Text style={styles.bottomText}>{KANKREG_FOOTER_COPYRIGHT}</Text>
-          <Text style={styles.bottomText}>{KANKREG_FOOTER_PAYMENTS_LINE}</Text>
         </View>
+
+        <NovaRoEngineerCredit variant="ink" align="stretch" />
       </View>
     </View>
   );

@@ -34,13 +34,14 @@ function DisabledSocialButton({ label, iconLeft, style }) {
 export default function AuthSocialButtons({ onSuccess }) {
   const { loginWithApple } = useAuth();
   const { isDark } = useTheme();
-  const { isXs } = useKankregLayout();
+  const { isXs, useAuthSplit } = useKankregLayout();
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const googleLive = isGoogleSignInConfigured();
   const appleLive = isAppleSignInConfigured();
   const showAppleSlot = Platform.OS === "ios" || Platform.OS === "web";
-  const btnStyle = isXs ? styles.btnStack : styles.btn;
+  const stackSocial = isXs || (Platform.OS === "web" && useAuthSplit);
+  const btnStyle = stackSocial ? styles.btnStack : styles.btn;
 
   const runApple = async () => {
     if (!appleLive) return;
@@ -61,7 +62,7 @@ export default function AuthSocialButtons({ onSuccess }) {
   return (
     <View style={styles.wrap}>
       {error ? <PremiumErrorBanner severity="error" message={error} compact /> : null}
-      <View style={[styles.row, isXs && styles.rowStack]}>
+      <View style={[styles.row, stackSocial && styles.rowStack]}>
         {googleLive ? (
           <GoogleSignInButton
             onSuccess={onSuccess}
@@ -72,7 +73,7 @@ export default function AuthSocialButtons({ onSuccess }) {
           />
         ) : (
           <DisabledSocialButton
-            label={`${AUTH_UI.googleLabel} · ${AUTH_UI.socialComingSoon}`}
+            label={AUTH_UI.googleLabel}
             iconLeft="logo-google"
             style={btnStyle}
           />
@@ -92,7 +93,7 @@ export default function AuthSocialButtons({ onSuccess }) {
             />
           ) : (
             <DisabledSocialButton
-              label={`${AUTH_UI.appleLabel} · ${AUTH_UI.socialComingSoon}`}
+              label={AUTH_UI.appleLabel}
               iconLeft="logo-apple"
               style={btnStyle}
             />

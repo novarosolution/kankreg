@@ -6,8 +6,38 @@ import { FONT_HEADING } from "../../theme/typographyRoles";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { fonts, lineHeight, spacing, typography } from "../../theme/tokens";
 import AuthRoutePills from "./AuthRoutePills";
-import GoldHairline from "../ui/GoldHairline";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
+
+function AuthSocialDivider({ label, isDark }) {
+  const lineColor = isDark ? "rgba(232, 200, 90, 0.22)" : "rgba(201, 162, 39, 0.28)";
+  const textColor = isDark ? "#9a8f82" : KANKREG_PALETTE.inkFaint;
+  return (
+    <View style={dividerStyles.row}>
+      <View style={[dividerStyles.line, { backgroundColor: lineColor }]} />
+      <Text style={[dividerStyles.label, { color: textColor }]}>{label}</Text>
+      <View style={[dividerStyles.line, { backgroundColor: lineColor }]} />
+    </View>
+  );
+}
+
+const dividerStyles = StyleSheet.create({
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginVertical: spacing.md,
+  },
+  line: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+  },
+  label: {
+    fontFamily: fonts.semibold,
+    fontSize: typography.caption - 1,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+});
 
 /**
  * kankreg.html `.auth-form` — title, subtitle, route pills, fields slot, social slot, footer links.
@@ -17,6 +47,9 @@ export default function AuthFormShell({
   activeRoute,
   title,
   subtitle,
+  formEyebrow,
+  /** Hero panel already shows eyebrow + marketing copy — form keeps only the action title. */
+  marketingInHero = false,
   children,
   socialSlot,
   footerSlot,
@@ -28,27 +61,39 @@ export default function AuthFormShell({
   const { isDark } = useTheme();
   const { isXs } = useKankregLayout();
   const isNativeApp = Platform.OS !== "web";
+  const resolvedEyebrow =
+    formEyebrow ||
+    (activeRoute === "Login" ? AUTH_UI.loginFormEyebrow : AUTH_UI.registerFormEyebrow);
+  const showFormEyebrow = !isNativeApp && !marketingInHero;
+  const showFormTitle = !isNativeApp && !marketingInHero;
+  const showFormSubtitle = !isNativeApp && Boolean(subtitle) && !marketingInHero;
 
   return (
     <View style={[styles.shell, compact && styles.shellCompact]}>
-      {!isNativeApp ? (
+      {showFormEyebrow ? (
+        <Text style={[styles.formEyebrow, { color: isDark ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.goldDeep }]}>
+          {resolvedEyebrow}
+        </Text>
+      ) : null}
+      {showFormTitle ? (
         <Text
           style={[
             styles.h1,
             isXs && styles.h1Compact,
+            marketingInHero && styles.h1WithHero,
             { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink },
           ]}
         >
           {title}
         </Text>
       ) : null}
-      {!isNativeApp && subtitle ? (
+      {showFormSubtitle ? (
         <Text style={[styles.sub, { color: isDark ? "#c8bdaf" : KANKREG_PALETTE.inkSoft }]}>
           {subtitle}
         </Text>
       ) : null}
-      {!isNativeApp && showRoutePills && navigation ? (
-        <AuthRoutePills navigation={navigation} activeRoute={activeRoute} />
+      {showRoutePills && navigation ? (
+        <AuthRoutePills navigation={navigation} activeRoute={activeRoute} wide={marketingInHero} />
       ) : null}
       <View style={styles.fields}>{children}</View>
       {showForgotPassword ? (
@@ -64,17 +109,11 @@ export default function AuthFormShell({
       ) : null}
       {socialSlot ? (
         <>
-          <Text style={[styles.orDivider, { color: isDark ? "#9a8f82" : KANKREG_PALETTE.inkFaint }]}>
-            {AUTH_UI.socialDivider}
-          </Text>
+          <AuthSocialDivider label={AUTH_UI.socialDivider} isDark={isDark} />
           {socialSlot}
         </>
       ) : null}
       {footerSlot ? <View style={styles.footer}>{footerSlot}</View> : null}
-      <GoldHairline marginVertical={spacing.sm} short />
-      <Text style={[styles.trust, { color: isDark ? "#9a8f82" : KANKREG_PALETTE.inkFaint }]}>
-        {AUTH_UI.trustLine}
-      </Text>
     </View>
   );
 }
@@ -88,6 +127,13 @@ const styles = StyleSheet.create({
   shellCompact: {
     maxWidth: "100%",
   },
+  formEyebrow: {
+    fontFamily: fonts.semibold,
+    fontSize: typography.overline,
+    letterSpacing: 2.4,
+    textTransform: "uppercase",
+    marginBottom: spacing.xs,
+  },
   h1: {
     fontFamily: FONT_HEADING,
     fontWeight: "400",
@@ -99,6 +145,9 @@ const styles = StyleSheet.create({
   h1Compact: {
     fontSize: typography.h2 + 2,
     lineHeight: lineHeight.h2 + 4,
+  },
+  h1WithHero: {
+    marginBottom: spacing.md,
   },
   sub: {
     fontSize: typography.bodySmall,
@@ -118,19 +167,9 @@ const styles = StyleSheet.create({
     fontSize: typography.caption,
     fontFamily: fonts.semibold,
   },
-  orDivider: {
-    textAlign: "center",
-    fontSize: typography.caption,
-    marginVertical: spacing.md,
-  },
   footer: {
     marginTop: spacing.md,
     alignItems: "center",
     gap: spacing.sm,
-  },
-  trust: {
-    fontSize: typography.caption,
-    textAlign: "center",
-    marginTop: spacing.xs,
   },
 });

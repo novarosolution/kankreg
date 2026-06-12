@@ -333,10 +333,10 @@ export function getAuthScrollContent(pageGutter = spacing.md + 2) {
         alignSelf: "center",
         paddingHorizontal: pageGutter,
         paddingTop: spacing.lg,
-        paddingBottom: spacing.xl + 4,
+        paddingBottom: spacing.xxl + 8,
         flexGrow: 1,
         minHeight: `calc(100dvh - ${WEB_CHROME_TOP}px)`,
-        justifyContent: "center",
+        justifyContent: "flex-start",
       },
       default: {
         paddingHorizontal: pageGutter,

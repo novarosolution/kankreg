@@ -1,16 +1,10 @@
 import React, { useEffect, useMemo, useRef } from "react";
-import { Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import Constants from "expo-constants";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { getGsap } from "../utils/loadGsap";
-import {
-  APP_ENGINEER_NAME,
-  APP_ENGINEER_URL,
-  APP_FOOTER_NAV_LINKS,
-  FOOTER_COMPACT,
-  RAZORPAY_PAY_URL,
-} from "../content/appContent";
+import { APP_FOOTER_NAV_LINKS, FOOTER_COMPACT } from "../content/appContent";
+import NovaRoEngineerCredit from "./brand/NovaRoEngineerCredit";
 import { useTheme } from "../context/ThemeContext";
 import { BRAND_LOGO_SIZE, SUPPORT_EMAIL_DISPLAY } from "../constants/brand";
 import { ALCHEMY } from "../theme/customerAlchemy";
@@ -47,9 +41,6 @@ export default function AppFooter({ webTight = false }) {
   const customerCare = String(FOOTER_COMPACT.customerCare || "").trim();
   const supportEmail = String(SUPPORT_EMAIL_DISPLAY || "").trim();
   const supportMeta = String(FOOTER_COMPACT.chatSupport247 || "").trim();
-  const engineerName = String(APP_ENGINEER_NAME || "").trim();
-  const engineerUrl = String(APP_ENGINEER_URL || "").trim();
-  const razorpayUrl = String(RAZORPAY_PAY_URL || "").trim();
   const hasSupportPrimary = Boolean(needHelp && supportEmail);
   const hasSupportSecondary = Boolean(customerCare && supportMeta);
   const navLinks = APP_FOOTER_NAV_LINKS.filter((item) => item?.route && item?.label);
@@ -116,33 +107,7 @@ export default function AppFooter({ webTight = false }) {
         </View>
       ) : null}
 
-      {razorpayUrl ? (
-        <Text style={[styles.engineerLine, { marginTop: hasSupportPrimary || hasSupportSecondary ? spacing.sm : spacing.md }]}>
-          <Text
-            style={styles.engineerLink}
-            onPress={() => Linking.openURL(razorpayUrl)}
-            accessibilityRole="link"
-            accessibilityLabel="Pay with Razorpay"
-          >
-            Pay online — Razorpay
-          </Text>
-        </Text>
-      ) : null}
-
-      {engineerName && engineerUrl ? (
-        <Text style={styles.engineerLine} accessibilityRole="text">
-          App by{" "}
-          <Text
-            style={styles.engineerLink}
-            onPress={() => Linking.openURL(engineerUrl)}
-            accessibilityRole="link"
-            accessibilityLabel={`${engineerName} website`}
-          >
-            {engineerName}
-          </Text>
-        </Text>
-      ) : null}
-      <Text style={styles.copy}>v{Constants.expoConfig?.version ?? "1.0.0"}</Text>
+      <NovaRoEngineerCredit variant={isDark ? "dark" : "light"} compact={webTight} align="stretch" />
     </View>
   );
 }
@@ -277,27 +242,6 @@ function createFooterStyles(c, shadowLift, isDark, semantic, webTight) {
       lineHeight: 19,
       flex: Platform.OS === "web" ? 0 : Platform.OS === "android" ? 0 : 1,
       textAlign: Platform.OS === "ios" ? "right" : "left",
-    },
-    engineerLine: {
-      marginTop: spacing.md,
-      color: c.textMuted,
-      fontSize: typography.overline + 1,
-      fontFamily: fonts.medium,
-      textAlign: "center",
-      width: "100%",
-    },
-    engineerLink: {
-      fontFamily: fonts.bold,
-      color: c.primary,
-      textDecorationLine: Platform.OS === "web" ? "underline" : "none",
-      ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
-    },
-    copy: {
-      marginTop: spacing.xs,
-      color: c.textMuted,
-      fontSize: typography.overline + 1,
-      fontFamily: fonts.semibold,
-      alignSelf: "center",
     },
   });
 }

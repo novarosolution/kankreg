@@ -40,7 +40,7 @@ export default function RegisterScreen({ navigation }) {
   const { useAuthSplit } = useKankregLayout();
   const styles = useMemo(() => createRegisterStyles(), []);
   const insets = useSafeAreaInsets();
-  const showFormSubtitle = Platform.OS === "web" && useAuthSplit;
+  const marketingInHero = Platform.OS === "web";
 
   const handleRegister = async () => {
     const nameErr = validateRegisterName(name);
@@ -88,7 +88,9 @@ export default function RegisterScreen({ navigation }) {
       navigation={navigation}
       activeRoute="Register"
       title={AUTH_UI.registerTitle}
-      subtitle={showFormSubtitle ? AUTH_UI.registerSubtitle : undefined}
+      subtitle={AUTH_UI.registerSubtitle}
+      formEyebrow={AUTH_UI.registerFormEyebrow}
+      marketingInHero={marketingInHero}
       compact={!useAuthSplit}
       socialSlot={<AuthSocialButtons onSuccess={() => resetNavigationAfterAuth(navigation)} />}
       footerSlot={
@@ -174,9 +176,12 @@ export default function RegisterScreen({ navigation }) {
         <KankregScrollPage
           scrollVariant="auth"
           showFooter={false}
+          flushNativeGutter={Platform.OS !== "web"}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={
-            Platform.OS !== "web" ? { paddingBottom: adminScrollPaddingBottom(insets) } : undefined
+            Platform.OS !== "web"
+              ? { flexGrow: 1, paddingBottom: adminScrollPaddingBottom(insets), paddingHorizontal: 0 }
+              : { paddingBottom: spacing.xxl + spacing.lg }
           }
           keyboardShouldPersistTaps="handled"
         >

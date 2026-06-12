@@ -43,7 +43,7 @@ const STATUS_LABELS = {
 };
 
 const STATUS_HINTS = {
-  pending_payment: "Complete Razorpay checkout to confirm your order.",
+  pending_payment: "Complete payment to confirm your order.",
   pending: "We received your order.",
   confirmed: "The store has confirmed your order.",
   preparing: "Your items are being packed.",

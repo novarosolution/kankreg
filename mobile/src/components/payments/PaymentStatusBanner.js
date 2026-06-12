@@ -111,7 +111,7 @@ export default function PaymentStatusBanner({ order, token, user, onRefresh }) {
           <View style={styles.titleCol}>
             <Text style={styles.title}>Payment required</Text>
             <Text style={styles.sub}>
-              Pay {formatINR(order?.totalPrice || 0)} via Razorpay to confirm this order.
+              Pay {formatINR(order?.totalPrice || 0)} online to confirm this order.
             </Text>
           </View>
         </View>

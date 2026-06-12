@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { platformElevation } from "../../theme/platformStyles";
@@ -18,10 +18,11 @@ const pillOnElevated = platformElevation({
 });
 
 /** kankreg.html `.auth-toggle` — navigates between Login and Register routes. */
-export default function AuthRoutePills({ navigation, activeRoute = "Login" }) {
+export default function AuthRoutePills({ navigation, activeRoute = "Login", wide = false }) {
   const { isDark } = useTheme();
-  const { isXs } = useKankregLayout();
+  const { isXs, useAuthSplit } = useKankregLayout();
   const isLogin = activeRoute === "Login";
+  const fullWidth = wide || isXs || (Platform.OS === "web" && useAuthSplit);
 
   const go = (name) => {
     if (name === activeRoute) return;
@@ -32,7 +33,7 @@ export default function AuthRoutePills({ navigation, activeRoute = "Login" }) {
     <View
       style={[
         styles.track,
-        isXs && styles.trackFull,
+        fullWidth && styles.trackFull,
         {
           backgroundColor: isDark ? "rgba(255,255,255,0.06)" : KANKREG_PALETTE.paper2,
         },
@@ -42,7 +43,7 @@ export default function AuthRoutePills({ navigation, activeRoute = "Login" }) {
         onPress={() => go("Login")}
         style={[
           styles.pill,
-          isXs && styles.pillFlex,
+          fullWidth && styles.pillFlex,
           isLogin && (isDark ? styles.pillOnDark : styles.pillOn),
           isLogin && pillOnElevated,
         ]}
@@ -63,7 +64,7 @@ export default function AuthRoutePills({ navigation, activeRoute = "Login" }) {
         onPress={() => go("Register")}
         style={[
           styles.pill,
-          isXs && styles.pillFlex,
+          fullWidth && styles.pillFlex,
           !isLogin && (isDark ? styles.pillOnDark : styles.pillOn),
           !isLogin && pillOnElevated,
         ]}

@@ -3,12 +3,11 @@ import { Linking, Platform, Pressable, StyleSheet, Text, View } from "react-nati
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import {
-  APP_ENGINEER_NAME,
-  APP_ENGINEER_URL,
   HOME_PAGE_FOOTER_COLUMNS,
   HOME_PAGE_FOOTER_META,
   HOME_PAGE_TRUST_BADGES,
 } from "../../content/appContent";
+import NovaRoEngineerCredit from "../brand/NovaRoEngineerCredit";
 import { BRAND_LOGO_SIZE } from "../../constants/brand";
 import { useTheme } from "../../context/ThemeContext";
 import { ALCHEMY } from "../../theme/customerAlchemy";
@@ -25,8 +24,6 @@ export default function HomePageFooter({ colors: c }) {
   const semantic = getSemanticColors(c);
   const styles = useMemo(() => createStyles(c, shadowPremium, isDark, semantic), [c, shadowPremium, isDark, semantic]);
   const footerMeta = String(HOME_PAGE_FOOTER_META || "").trim();
-  const engineerName = String(APP_ENGINEER_NAME || "").trim();
-  const engineerUrl = String(APP_ENGINEER_URL || "").trim();
   const footerColumns = HOME_PAGE_FOOTER_COLUMNS
     .map((col) => ({
       ...col,
@@ -102,19 +99,7 @@ export default function HomePageFooter({ colors: c }) {
         <Text style={styles.copy}>© {new Date().getFullYear()}. All rights reserved.</Text>
         {footerMeta ? <Text style={styles.meta}>{footerMeta}</Text> : null}
       </View>
-      {engineerName && engineerUrl ? (
-        <Text style={styles.engineerLine} accessibilityRole="text">
-          App by{" "}
-          <Text
-            style={styles.engineerLink}
-            onPress={() => Linking.openURL(engineerUrl)}
-            accessibilityRole="link"
-            accessibilityLabel={`${engineerName} website`}
-          >
-            {engineerName}
-          </Text>
-        </Text>
-      ) : null}
+      <NovaRoEngineerCredit variant="ink" align="stretch" />
     </View>
   );
 }

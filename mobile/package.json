@@ -30,7 +30,8 @@
     "icons:generate": "node scripts/generate-app-icons.js",
     "icons:app": "node scripts/generate-app-icons.js",
     "brand:generate": "node scripts/generate-brand-assets.js",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "postinstall": "node scripts/ensure-vector-icons-vendor.js"
   },
   "dependencies": {
     "@expo-google-fonts/fraunces": "^0.4.1",
@@ -38,7 +39,7 @@
     "@expo-google-fonts/inter": "^0.4.2",
     "@expo-google-fonts/playfair-display": "^0.4.2",
     "@expo/metro-runtime": "~5.0.5",
-    "@expo/vector-icons": "^14.1.0",
+    "@expo/vector-icons": "14.1.0",
     "@gorhom/bottom-sheet": "^5.2.14",
     "@howincodes/expo-dynamic-app-icon": "^3.0.2",
     "@mapbox/polyline": "^1.2.1",

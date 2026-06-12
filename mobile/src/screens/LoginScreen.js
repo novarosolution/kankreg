@@ -33,7 +33,7 @@ export default function LoginScreen({ navigation }) {
   const { useAuthSplit } = useKankregLayout();
   const styles = useMemo(() => createLoginStyles(), []);
   const insets = useSafeAreaInsets();
-  const showFormSubtitle = Platform.OS === "web" && useAuthSplit;
+  const marketingInHero = Platform.OS === "web";
 
   const handleLogin = async () => {
     const emailErr = validateLoginEmail(email);
@@ -64,7 +64,9 @@ export default function LoginScreen({ navigation }) {
       navigation={navigation}
       activeRoute="Login"
       title={AUTH_UI.loginTitle}
-      subtitle={showFormSubtitle ? AUTH_UI.loginSubtitle : undefined}
+      subtitle={AUTH_UI.loginSubtitle}
+      formEyebrow={AUTH_UI.loginFormEyebrow}
+      marketingInHero={marketingInHero}
       showForgotPassword
       onForgotPassword={() =>
         showToast({
@@ -123,9 +125,9 @@ export default function LoginScreen({ navigation }) {
         </View>
       ) : null}
       <PremiumButton
-        label={isSubmitting ? "Please wait..." : "Sign in →"}
+        label={isSubmitting ? "Signing in…" : "Sign in"}
         onPress={handleLogin}
-        iconLeft="sparkles-outline"
+        iconLeft="log-in-outline"
         loading={isSubmitting}
         disabled={isSubmitting}
         size="lg"
@@ -141,9 +143,12 @@ export default function LoginScreen({ navigation }) {
         <KankregScrollPage
           scrollVariant="auth"
           showFooter={false}
+          flushNativeGutter={Platform.OS !== "web"}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={
-            Platform.OS !== "web" ? { paddingBottom: adminScrollPaddingBottom(insets) } : undefined
+            Platform.OS !== "web"
+              ? { flexGrow: 1, paddingBottom: adminScrollPaddingBottom(insets), paddingHorizontal: 0 }
+              : { paddingBottom: spacing.xxl + spacing.lg }
           }
           keyboardShouldPersistTaps="handled"
         >

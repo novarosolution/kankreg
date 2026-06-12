@@ -363,7 +363,7 @@ export default function CartScreen({ navigation, route }) {
       }
 
       if (checkout.status === "fallback") {
-        toastSuccess("Finish payment on Razorpay—then check My Orders.", { title: "Almost done" });
+        toastSuccess("Finish payment to confirm your order—then check My Orders.", { title: "Almost done" });
       } else {
         toastSuccess("Resume payment from My Orders within 30 minutes.", { title: "Payment pending" });
       }

@@ -39,6 +39,14 @@ export const SUPPORT_EMAIL_DISPLAY = "support@kankreg.app";
 export const APP_ENGINEER_NAME = "NovaRo Solution";
 export const APP_ENGINEER_URL = "https://novarosolution.com/";
 
+export const APP_ENGINEER_CREDIT = {
+  eyebrow: "Created by",
+  name: APP_ENGINEER_NAME,
+  url: APP_ENGINEER_URL,
+  tagline: "Web · mobile · product engineering",
+  cta: "Visit NovaRo Solution",
+};
+
 /** Razorpay payment page (UPI, cards, wallet) — used as a hosted-page fallback. */
 export const RAZORPAY_PAY_URL = "https://razorpay.me/@chaudharydhirajpadmabhai";
 
@@ -350,7 +358,6 @@ export const HOME_PAGE_FOOTER_COLUMNS = [
       { label: "Support", route: "Support" },
       { label: "Delivery", route: "ManageAddress" },
       { label: "Account", route: "Profile" },
-      { label: "Pay online (Razorpay)", url: RAZORPAY_PAY_URL },
     ],
   },
   {
@@ -451,7 +458,7 @@ export const ABOUT_SCREEN_UI = {
       key: "deliver",
       icon: "bicycle-outline",
       title: "Delivered with care",
-      body: "Live order tracking, secure Razorpay checkout, and support that answers like a neighbour would.",
+      body: "Live order tracking, secure checkout, and support that answers like a neighbour would.",
     },
   ],
   craft: {
@@ -600,7 +607,6 @@ export const KANKREG_FOOTER_COLUMNS = [
 ];
 
 export const KANKREG_FOOTER_COPYRIGHT = "© 2025 kankreg. Crafted in India.";
-export const KANKREG_FOOTER_PAYMENTS_LINE = "Payments secured by Razorpay · Built on Expo + Express";
 
 /** Native header: announce + topbar (no fixed announce on very small native optional). */
 export const KANKREG_ANNOUNCE_COPY = {
@@ -943,12 +949,26 @@ export const LOCATION_BAR = {
 export const AUTH_UI = {
   loginTitle: "Sign in",
   loginSubtitle: "Access your orders, rewards and saved items.",
+  loginFormEyebrow: "Welcome back",
+  loginHeroEyebrow: "KankreG · Premium essentials",
+  loginHeroTitle: "Goods worth\ncoming back for.",
+  loginPerks: [
+    { icon: "gift-outline", label: "Rewards on every order" },
+    { icon: "location-outline", label: "Live order tracking" },
+    { icon: "shield-checkmark-outline", label: "Secure online checkout" },
+  ],
   registerTitle: "Create account",
   registerSubtitle: "Join kankreg — earn rewards on every delivered order.",
+  registerFormEyebrow: "Join kankreg",
+  registerHeroTitle: "Start earning\nfrom your first order.",
+  registerPerks: [
+    { icon: "star-outline", label: "Member rewards & offers" },
+    { icon: "heart-outline", label: "Save favourites & addresses" },
+    { icon: "notifications-outline", label: "Order updates in real time" },
+  ],
   socialDivider: "or continue with",
   forgotPassword: "Forgot password?",
   forgotPasswordStub: "Password reset is coming soon. Contact support if you need help.",
-  trustLine: "Secured checkout · Razorpay · Your data stays private",
   googleLabel: "Google",
   appleLabel: "Apple",
   socialComingSoon: "Coming soon",

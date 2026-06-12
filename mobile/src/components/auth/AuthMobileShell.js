@@ -1,59 +1,64 @@
 import React from "react";
-import { Platform, StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { useTheme } from "../../context/ThemeContext";
-import { FIGMA, figmaBody, figmaDisplayTitle, figmaEyebrow, figmaPageBg, figmaTextMuted } from "../../theme/figmaApp";
-import { spacing } from "../../theme/tokens";
+import { FIGMA, figmaPageBg } from "../../theme/figmaApp";
+import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { radius, spacing } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
+import AuthHeroPanel from "./AuthHeroPanel";
 
 const cardShadow = platformShadow({
   ios: {
     shadowColor: "#3D2A12",
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 18,
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 22,
   },
-  android: { elevation: 8 },
+  android: { elevation: 10 },
 });
 
-/**
- * figmaforkankreg.html auth — gradient hero top + sheet form sliding up.
- */
-export default function AuthMobileShell({ children, artTitle, artSubtitle, eyebrow, mode = "login" }) {
+/** Native + narrow web auth — stacked hero (in flow) + form sheet (no overlapping clip). */
+export default function AuthMobileShell({ children, artTitle, artSubtitle, mode = "login" }) {
   const { isDark } = useTheme();
-  const { isXs } = useKankregLayout();
-  const isLogin = mode === "login";
+  const { isXs, useAuthSplit } = useKankregLayout();
+  const isWeb = Platform.OS === "web";
 
-  if (Platform.OS === "web") {
+  if (isWeb && useAuthSplit) {
     return <View style={styles.webFallback}>{children}</View>;
   }
 
   return (
     <View style={styles.root}>
-      <LinearGradient
-        colors={["#ead9b2", "#b6985c", "#2a241e"]}
-        locations={[0, 0.55, 1]}
-        start={{ x: 0.25, y: 0 }}
-        end={{ x: 0.75, y: 1 }}
-        style={styles.heroGrad}
-      />
-      <View style={styles.heroIcon} pointerEvents="none">
-        <Ionicons
-          name={isLogin ? "flame-outline" : "leaf-outline"}
-          size={isXs ? 56 : 72}
-          color="rgba(255,255,255,0.28)"
+      <View style={[styles.heroBlock, isXs && styles.heroBlockCompact]}>
+        <LinearGradient
+          colors={["#f3e6c8", "#c9a227", "#2a241e", "#1a1714"]}
+          locations={[0, 0.45, 0.78, 1]}
+          start={{ x: 0.2, y: 0 }}
+          end={{ x: 0.8, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
         />
+        <View style={styles.heroInner}>
+          <AuthHeroPanel
+            mode={mode}
+            artTitle={artTitle}
+            artSubtitle={artSubtitle}
+            compact={isXs}
+            showPerks={!isXs}
+            variant="onDark"
+          />
+        </View>
       </View>
-      <View style={[styles.sheet, cardShadow, { backgroundColor: figmaPageBg(isDark) }]}>
-        <Text style={figmaEyebrow(isDark)}>{eyebrow || (isLogin ? "Welcome back" : "Join kankreg")}</Text>
-        <Text style={[figmaDisplayTitle(26, isDark), styles.sheetTitle]}>
-          {artTitle || (isLogin ? "Sign in" : "Create account")}
-        </Text>
-        {artSubtitle ? (
-          <Text style={[figmaBody(11.5, isDark), styles.sheetSub, figmaTextMuted(isDark)]}>{artSubtitle}</Text>
-        ) : null}
+      <View
+        style={[
+          styles.sheet,
+          isWeb && styles.sheetWeb,
+          cardShadow,
+          { backgroundColor: figmaPageBg(isDark) },
+        ]}
+      >
+        <View style={styles.sheetAccent} />
         {children}
       </View>
     </View>
@@ -65,41 +70,53 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   root: {
-    flex: 1,
     width: "100%",
+    flexGrow: 1,
   },
-  heroGrad: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "40%",
+  heroBlock: {
+    position: "relative",
+    overflow: "hidden",
+    paddingBottom: spacing.lg + 4,
   },
-  heroIcon: {
-    position: "absolute",
-    top: "12%",
-    left: 0,
-    right: 0,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: "30%",
+  heroBlockCompact: {
+    paddingBottom: spacing.md + 4,
+  },
+  heroInner: {
+    paddingTop: spacing.xl + 8,
+    paddingHorizontal: spacing.lg + 4,
+    paddingBottom: spacing.sm,
   },
   sheet: {
-    flex: 1,
-    marginTop: "34%",
-    borderTopLeftRadius: FIGMA.radiusSheet,
-    borderTopRightRadius: FIGMA.radiusSheet,
-    paddingHorizontal: 22,
-    paddingTop: spacing.lg,
+    marginTop: -spacing.lg,
+    borderTopLeftRadius: FIGMA.radiusSheet + 4,
+    borderTopRightRadius: FIGMA.radiusSheet + 4,
+    paddingHorizontal: spacing.lg + 2,
+    paddingTop: spacing.lg + 6,
     paddingBottom: spacing.xl,
-    zIndex: 2,
   },
-  sheetTitle: {
-    marginTop: 4,
-    marginBottom: 4,
-    fontWeight: "400",
+  sheetWeb: {
+    width: "100%",
+    maxWidth: 468,
+    alignSelf: "center",
+    marginTop: -spacing.md,
+    borderRadius: radius.xl,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: KANKREG_PALETTE.line,
+    ...Platform.select({
+      web: {
+        boxShadow: "0 18px 48px rgba(61, 42, 18, 0.12)",
+      },
+      default: {},
+    }),
   },
-  sheetSub: {
-    marginBottom: spacing.md,
+  sheetAccent: {
+    position: "absolute",
+    top: 0,
+    left: "20%",
+    right: "20%",
+    height: 3,
+    borderBottomLeftRadius: 3,
+    borderBottomRightRadius: 3,
+    backgroundColor: "rgba(201, 162, 39, 0.65)",
   },
 });
