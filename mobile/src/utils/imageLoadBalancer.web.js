@@ -60,32 +60,3 @@ export function preloadImage(src, priority = ImageLoadPriority.NORMAL) {
     priority
   );
 }
-
-/** Preload video via hidden element — shares the same concurrency queue as images. */
-export function preloadVideo(src, priority = ImageLoadPriority.NORMAL) {
-  if (!src || typeof window === "undefined") return Promise.resolve("");
-  return scheduleImageLoad(
-    () =>
-      new Promise((resolve, reject) => {
-        const video = document.createElement("video");
-        video.preload = "auto";
-        video.muted = true;
-        video.playsInline = true;
-        const cleanup = () => {
-          video.removeAttribute("src");
-          video.load();
-        };
-        video.oncanplaythrough = () => {
-          resolve(src);
-          cleanup();
-        };
-        video.onerror = () => {
-          reject(new Error(`Failed to load ${src}`));
-          cleanup();
-        };
-        video.src = src;
-        video.load();
-      }),
-    priority
-  );
-}

@@ -19,7 +19,7 @@ export const COMMUNITY_HOME_CONTENT = {
       id: "reel-golden-pour",
       type: "reel",
       tag: "Reel",
-      image: require("../../assets/marketing/hero-slide-05-wa.jpeg"),
+      image: require("../../assets/marketing/hero-slide-05-wa-web-504.webp"),
       views: "12.3k",
       likes: "1.2k",
       author: {
@@ -33,7 +33,7 @@ export const COMMUNITY_HOME_CONTENT = {
       id: "customer-ramesh",
       type: "customer",
       tag: "Customer",
-      image: require("../../assets/marketing/hero-slide-04-wa.jpeg"),
+      image: require("../../assets/marketing/hero-slide-04-wa-web-504.webp"),
       quote: "Tastes just like my grandmother's homemade ghee.",
       likes: "340",
       author: {
@@ -47,7 +47,7 @@ export const COMMUNITY_HOME_CONTENT = {
       id: "reel-herd",
       type: "reel",
       tag: "Reel",
-      image: require("../../assets/marketing/hero-slide-06-wa.jpeg"),
+      image: require("../../assets/marketing/hero-slide-06-wa-web-504.webp"),
       views: "8.1k",
       likes: "980",
       author: {
@@ -61,7 +61,7 @@ export const COMMUNITY_HOME_CONTENT = {
       id: "reel-recipe",
       type: "reel",
       tag: "Recipe",
-      image: require("../../assets/marketing/hero-slide-1.jpg"),
+      image: require("../../assets/marketing/hero-slide-1-web-504.webp"),
       views: "5.6k",
       likes: "742",
       author: {
@@ -75,7 +75,7 @@ export const COMMUNITY_HOME_CONTENT = {
       id: "customer-priya",
       type: "customer",
       tag: "Customer",
-      image: require("../../assets/marketing/hero-slide-2.jpg"),
+      image: require("../../assets/marketing/hero-slide-2-web-504.webp"),
       quote: "Pure aroma, real Bilona ghee. We've switched for good.",
       likes: "512",
       author: {
@@ -90,11 +90,11 @@ export const COMMUNITY_HOME_CONTENT = {
 
 /** Bundled marketing shots keyed by post id — used when admin has not uploaded an image. */
 export const COMMUNITY_POST_IMAGE_FALLBACKS = {
-  "reel-golden-pour": require("../../assets/marketing/hero-slide-05-wa.jpeg"),
-  "customer-ramesh": require("../../assets/marketing/hero-slide-04-wa.jpeg"),
-  "reel-herd": require("../../assets/marketing/hero-slide-06-wa.jpeg"),
-  "reel-recipe": require("../../assets/marketing/hero-slide-1.jpg"),
-  "customer-priya": require("../../assets/marketing/hero-slide-2.jpg"),
+  "reel-golden-pour": require("../../assets/marketing/hero-slide-05-wa-web-504.webp"),
+  "customer-ramesh": require("../../assets/marketing/hero-slide-04-wa-web-504.webp"),
+  "reel-herd": require("../../assets/marketing/hero-slide-06-wa-web-504.webp"),
+  "reel-recipe": require("../../assets/marketing/hero-slide-1-web-504.webp"),
+  "customer-priya": require("../../assets/marketing/hero-slide-2-web-504.webp"),
 };
 
 const FALLBACK_POST_ORDER = COMMUNITY_HOME_CONTENT.posts.map((post) => post.id);

@@ -23,7 +23,7 @@ import { SHOP_SCREEN_UI } from "../../content/appContent";
 import ComingSoonProductOverlay from "../product/ComingSoonProductOverlay";
 import { getComingSoonImageBlurStyle } from "../../utils/comingSoonImageStyle";
 import { COMING_SOON_RED } from "../../theme/comingSoonTheme";
-import { getImageUriCandidates, getProductThumbImageUri, prefetchProductHeroImage } from "../../utils/image";
+import { getImageUriCandidates, getProductCardImageUri, getProductThumbImageUri, prefetchProductHeroImage } from "../../utils/image";
 import ProgressiveProductImage from "../ui/ProgressiveProductImage";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 
@@ -135,7 +135,10 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
   }, [product?.image, product?.images]);
 
   const imageUris = useMemo(
-    () => getImageUriCandidates(primaryImage, { width: isWeb ? 520 : 640, quality: "auto:good" }),
+    () =>
+      isWeb
+        ? getImageUriCandidates(primaryImage, { width: 440, quality: "auto:good" })
+        : [getProductCardImageUri(primaryImage, { isWeb: false })].filter(Boolean),
     [isWeb, primaryImage]
   );
   const [imageCandidateIndex, setImageCandidateIndex] = useState(0);

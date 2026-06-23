@@ -2,8 +2,7 @@ import React, { useMemo, useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { HOME_BRAND_PROMO_VIDEO } from "../../constants/marketingBrandVideo";
-import CinemaStoryPlayer from "./CinemaStoryPlayer";
+import { HOME_BRAND_PROMO_POSTER } from "../../constants/marketingAssets";
 import StoryImageFrame from "./StoryImageFrame";
 import { SectionHeader } from "./editorial";
 import {
@@ -123,116 +122,6 @@ if (Platform.OS === "web") {
     transform: none !important;
   }
 }`
-  );
-}
-
-/** Native / narrow fallback reel height */
-function cinemaReelStyle(layoutWidth, isStoryPhone) {
-  if (Platform.OS === "web") {
-    if (isStoryPhone) {
-      return { height: STORY_VIDEO_HEIGHT_PHONE, maxHeight: STORY_VIDEO_HEIGHT_PHONE };
-    }
-    return { height: STORY_VIDEO_HEIGHT };
-  }
-  if (layoutWidth >= 560) {
-    return { height: isStoryPhone ? STORY_VIDEO_HEIGHT_PHONE : STORY_VIDEO_HEIGHT };
-  }
-  return { aspectRatio: 16 / 10, maxHeight: STORY_VIDEO_HEIGHT_PHONE };
-}
-
-function CinematicStoryVideo({
-  source,
-  caption,
-  isDark,
-  layoutWidth,
-  filmLabel,
-  split = false,
-  showCaption = true,
-  isStoryPhone = false,
-}) {
-  const [muted, setMuted] = useState(true);
-  const reducedMotion = useReducedMotion();
-  const reelStyle = cinemaReelStyle(layoutWidth, isStoryPhone);
-  const useWebCssReel = Platform.OS === "web";
-
-  return (
-    <View
-      style={[
-        styles.cinemaWrap,
-        !isStoryPhone && !split && styles.cinemaWrapDesktop,
-        split && styles.cinemaWrapSplit,
-        split && styles.cinemaWrapSplitFill,
-        isStoryPhone && styles.cinemaWrapPhone,
-        isDark ? styles.cinemaWrapDark : styles.cinemaWrapLight,
-      ]}
-    >
-      <View
-        className={useWebCssReel ? CINEMA_REEL_CLASS : undefined}
-        style={[styles.cinemaReel, split && styles.cinemaReelSplit, reelStyle]}
-      >
-        <View
-          className={useWebCssReel ? CINEMA_STAGE_CLASS : undefined}
-          style={styles.cinemaStage}
-        >
-          <CinemaStoryPlayer
-            source={source}
-            muted={muted}
-            style={useWebCssReel ? styles.cinemaVideoBg : styles.cinemaVideoFill}
-          />
-        </View>
-        {!useWebCssReel ? (
-          <>
-            <LinearGradient
-              colors={["rgba(8,6,4,0.32)", "transparent", "transparent", "rgba(8,6,4,0.32)"]}
-              locations={[0, 0.12, 0.88, 1]}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={styles.cinemaSideVignette}
-              pointerEvents="none"
-            />
-            <LinearGradient
-              colors={["transparent", "rgba(8, 6, 4, 0.15)", "rgba(8, 6, 4, 0.78)"]}
-              locations={[0.5, 0.82, 1]}
-              style={styles.cinemaBottomScrim}
-              pointerEvents="none"
-            />
-          </>
-        ) : null}
-        <View style={styles.cinemaFrameLineTop} pointerEvents="none" />
-        <View style={styles.cinemaFrameLineBottom} pointerEvents="none" />
-        <View style={[styles.cinemaChrome, split && styles.cinemaChromeSplit]} pointerEvents="box-none">
-          {filmLabel ? (
-            <View style={styles.filmBadge} pointerEvents="none">
-              <View style={styles.filmBadgeDot} />
-              <Text style={styles.filmBadgeText}>{filmLabel}</Text>
-            </View>
-          ) : null}
-          <Pressable
-            onPress={() => setMuted((m) => !m)}
-            style={({ hovered, focused }) => [
-              styles.cinemaChip,
-              hovered && Platform.OS === "web" ? styles.cinemaChipHover : null,
-              focused && Platform.OS === "web" ? styles.cinemaChipFocus : null,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={muted ? "Unmute video" : "Mute video"}
-          >
-            <Ionicons name={muted ? "volume-mute" : "volume-high"} size={icon.sm} color="#fff" />
-          </Pressable>
-        </View>
-        {showCaption && caption ? (
-          <View style={[styles.cinemaCaption, split && styles.cinemaCaptionSplit]} pointerEvents="none">
-            {!split ? <View style={styles.cinemaCaptionRule} /> : null}
-            <Text
-              style={[styles.cinemaCaptionText, split && styles.cinemaCaptionTextSplit]}
-              numberOfLines={2}
-            >
-              {caption}
-            </Text>
-          </View>
-        ) : null}
-      </View>
-    </View>
   );
 }
 
@@ -424,16 +313,18 @@ export default function AboutKankregMedia({
   const isStoryPhone = isEditorial && width < STORY_SPLIT_MIN_WIDTH;
   const { kicker: storyKicker } = HOME_SCREEN_UI.ourStory;
 
-  const videoSource = useMemo(() => {
-    if (about.videoUrl) return about.videoUrl;
-    if (!compact) return HOME_BRAND_PROMO_VIDEO;
+  const storyImage = useMemo(() => {
+    if (about.photos.length) return about.photos[0];
+    if (!compact) {
+      return {
+        url: HOME_BRAND_PROMO_POSTER,
+        caption: about.videoCaption?.trim() || HOME_SCREEN_UI.ourStory.videoCaptionFallback || "",
+      };
+    }
     return null;
-  }, [about.videoUrl, compact]);
+  }, [about.photos, about.videoCaption, compact]);
 
-  const leadPhoto = useMemo(() => {
-    if (videoSource || !about.photos.length) return null;
-    return about.photos[0];
-  }, [videoSource, about.photos]);
+  const leadPhoto = storyImage;
 
   const muted = homeEditorialMuted(isDark);
 
@@ -446,14 +337,11 @@ export default function AboutKankregMedia({
   const storyContinued = isEditorial
     ? about.bodyContinued || HOME_STORY_CONTENT.whyKankrej.body
     : null;
-  const storySplit = isEditorial && Boolean(videoSource) && width >= STORY_SPLIT_MIN_WIDTH;
+  const storySplit = isEditorial && Boolean(storyImage) && width >= STORY_SPLIT_MIN_WIDTH;
   const pullQuote = isEditorial
     ? about.pullQuote || HOME_SCREEN_UI.ourStory.pullQuote
     : null;
   const highlightStats = isEditorial && about.highlights?.length ? about.highlights : null;
-  const splitVideoCaption =
-    about.videoCaption?.trim() || HOME_SCREEN_UI.ourStory.videoCaptionFallback || "";
-
   const copyPanel =
     !storySplit && (hasCopy || storyContinued) ? (
       <View style={[styles.copyPanel, isEditorial && styles.copyPanelEditorial]}>
@@ -491,18 +379,7 @@ export default function AboutKankregMedia({
       </View>
     ) : null;
 
-  const mediaBlock = videoSource ? (
-    <CinematicStoryVideo
-      source={videoSource}
-      caption={storySplit ? splitVideoCaption : about.videoCaption}
-      isDark={isDark}
-      layoutWidth={width}
-      filmLabel={isEditorial ? HOME_SCREEN_UI.ourStory.filmLabel : null}
-      split={storySplit}
-      showCaption={storySplit ? Boolean(splitVideoCaption) : !isStoryPhone}
-      isStoryPhone={isStoryPhone}
-    />
-  ) : leadPhoto ? (
+  const mediaBlock = leadPhoto ? (
     <AboutStoryPhoto photo={leadPhoto} isDark={isDark} layoutWidth={width} isEditorial={isEditorial} />
   ) : null;
 
@@ -568,7 +445,7 @@ export default function AboutKankregMedia({
       ) : (
         <>
           {mediaBlock}
-          {isEditorial && videoSource ? (
+          {isEditorial && storyImage ? (
             <>
               {!isStoryPhone ? (
                 <GoldHairline {...GOLD_HAIRLINE_EDITORIAL.subtle} marginVertical={HOME_SPACE.sm} />

@@ -9,16 +9,19 @@ export function scheduleImageLoad(run) {
   return Promise.resolve().then(run);
 }
 
+/** Native: prefetch via expo-image disk cache when available. */
 export function preloadImage(src) {
-  return scheduleImageLoad(
-    () =>
-      new Promise((resolve, reject) => {
+  return scheduleImageLoad(() => {
+    if (!src) return Promise.resolve();
+    try {
+      const { Image } = require("expo-image");
+      return Image.prefetch(src).catch(() => {
         const { Image: RNImage } = require("react-native");
-        RNImage.prefetch(src).then(resolve).catch(reject);
-      })
-  );
-}
-
-export function preloadVideo(src) {
-  return preloadImage(src);
+        return RNImage.prefetch(src);
+      });
+    } catch {
+      const { Image: RNImage } = require("react-native");
+      return RNImage.prefetch(src);
+    }
+  });
 }

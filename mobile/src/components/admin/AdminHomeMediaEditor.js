@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Image } from "expo-image";
-import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import PremiumButton from "../ui/PremiumButton";
@@ -8,7 +7,7 @@ import PremiumChip from "../ui/PremiumChip";
 import PremiumInput from "../ui/PremiumInput";
 import AdminToggleRow from "./AdminToggleRow";
 import { useTheme } from "../../context/ThemeContext";
-import { uploadAdminMarketingVideo, uploadAdminProductImage } from "../../services/adminService";
+import { pickAndUploadAdminImage, formatUploadSize } from "../../utils/adminImagePicker";
 import { fonts, radius, spacing, typography } from "../../theme/tokens";
 import { newCommunityPostId, newCompareRowId, newHeroSlideId, newProcessStepId } from "../../utils/homeViewMedia";
 
@@ -16,15 +15,7 @@ function SlidePreview({ slide, styles }) {
   if (!slide?.url) {
     return (
       <View style={styles.previewEmpty}>
-        <Ionicons name={slide?.mediaType === "video" ? "videocam-outline" : "image-outline"} size={28} color="#9a8b7c" />
-      </View>
-    );
-  }
-  if (slide.mediaType === "video") {
-    return (
-      <View style={styles.previewEmpty}>
-        <Ionicons name="play-circle" size={34} color="#c9a227" />
-        <Text style={styles.previewVideoLabel}>Video uploaded</Text>
+        <Ionicons name="image-outline" size={28} color="#9a8b7c" />
       </View>
     );
   }
@@ -59,58 +50,31 @@ export default function AdminHomeMediaEditor({
   const { colors: c } = useTheme();
   const styles = createStyles(c);
   const [uploadingKey, setUploadingKey] = useState("");
+  const [uploadNote, setUploadNote] = useState("");
 
-  const pickImage = async (onUrl) => {
-    if (Platform.OS !== "web") {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        onError?.("Media library permission is required.");
-        return;
-      }
+  const uploadImage = async (purpose, onUrl, key) => {
+    try {
+      setUploadingKey(key);
+      setUploadNote("");
+      onError?.("");
+      const uploaded = await pickAndUploadAdminImage(token, { purpose, allowsEditing: true });
+      if (!uploaded?.url) return;
+      onUrl(uploaded.url);
+      const sizeLabel = formatUploadSize(uploaded.bytes);
+      setUploadNote(
+        sizeLabel
+          ? `Optimized ${purpose} image saved (${sizeLabel}${uploaded.width ? ` · ${uploaded.width}px wide` : ""}).`
+          : "Image optimized and saved."
+      );
+    } catch (err) {
+      onError?.(err.message || "Upload failed.");
+    } finally {
+      setUploadingKey("");
     }
-    const picked = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      quality: 0.55,
-      base64: true,
-    });
-    if (picked.canceled) return;
-    const asset = picked.assets?.[0];
-    if (!asset?.base64) {
-      onError?.("Could not read image.");
-      return;
-    }
-    const uploaded = await uploadAdminProductImage(token, {
-      imageBase64: asset.base64,
-      mimeType: asset.mimeType || "image/jpeg",
-    });
-    onUrl(uploaded.url);
   };
 
-  const pickVideo = async (onUrl) => {
-    if (Platform.OS !== "web") {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        onError?.("Media library permission is required.");
-        return;
-      }
-    }
-    const picked = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["videos"],
-      allowsEditing: false,
-      base64: true,
-    });
-    if (picked.canceled) return;
-    const asset = picked.assets?.[0];
-    if (!asset?.base64) {
-      onError?.("Could not read video. Try a shorter clip.");
-      return;
-    }
-    const uploaded = await uploadAdminMarketingVideo(token, {
-      videoBase64: asset.base64,
-      mimeType: asset.mimeType || "video/mp4",
-    });
-    onUrl(uploaded.url);
+  const uploadForSlide = async (slide) => {
+    await uploadImage("hero", (url) => updateSlide(slide.id, { url, mediaType: "image" }), slide.id);
   };
 
   const updateSlide = (id, patch) => {
@@ -149,37 +113,17 @@ export default function AdminHomeMediaEditor({
     ]);
   };
 
-  const uploadForSlide = async (slide, mediaType) => {
-    try {
-      setUploadingKey(slide.id);
-      onError?.("");
-      if (mediaType === "video") {
-        await pickVideo((url) => updateSlide(slide.id, { url, mediaType: "video" }));
-      } else {
-        await pickImage((url) => updateSlide(slide.id, { url, mediaType: "image" }));
-      }
-    } catch (err) {
-      onError?.(err.message || "Upload failed.");
-    } finally {
-      setUploadingKey("");
-    }
-  };
-
   const addAboutPhoto = async () => {
-    try {
-      setUploadingKey("about-photo");
-      onError?.("");
-      await pickImage((url) => {
+    await uploadImage(
+      "about",
+      (url) => {
         onAboutSectionChange({
           ...aboutSection,
           photos: [...(aboutSection.photos || []), { url, caption: "" }],
         });
-      });
-    } catch (err) {
-      onError?.(err.message || "Upload failed.");
-    } finally {
-      setUploadingKey("");
-    }
+      },
+      "about-photo"
+    );
   };
 
   const updateCommunity = (patch) => {
@@ -241,15 +185,11 @@ export default function AdminHomeMediaEditor({
   };
 
   const uploadCommunityPostImage = async (post) => {
-    try {
-      setUploadingKey(post.id);
-      onError?.("");
-      await pickImage((url) => updateCommunityPost(post.id, { imageUrl: url }));
-    } catch (err) {
-      onError?.(err.message || "Upload failed.");
-    } finally {
-      setUploadingKey("");
-    }
+    await uploadImage(
+      "community",
+      (url) => updateCommunityPost(post.id, { imageUrl: url }),
+      post.id
+    );
   };
 
   const updateCompare = (patch) => {
@@ -304,15 +244,11 @@ export default function AdminHomeMediaEditor({
   };
 
   const uploadCompareImage = async (row, field) => {
-    try {
-      setUploadingKey(`${row.id}-${field}`);
-      onError?.("");
-      await pickImage((url) => updateCompareRow(row.id, { [field]: url }));
-    } catch (err) {
-      onError?.(err.message || "Upload failed.");
-    } finally {
-      setUploadingKey("");
-    }
+    await uploadImage(
+      "compare",
+      (url) => updateCompareRow(row.id, { [field]: url }),
+      `${row.id}-${field}`
+    );
   };
 
   const updateProcess = (patch) => {
@@ -367,33 +303,21 @@ export default function AdminHomeMediaEditor({
   };
 
   const uploadProcessStepImage = async (step) => {
-    try {
-      setUploadingKey(`process-${step.id}`);
-      onError?.("");
-      await pickImage((url) => updateProcessStep(step.id, { imageUrl: url }));
-    } catch (err) {
-      onError?.(err.message || "Upload failed.");
-    } finally {
-      setUploadingKey("");
-    }
-  };
-
-  const uploadAboutVideo = async () => {
-    try {
-      setUploadingKey("about-video");
-      onError?.("");
-      await pickVideo((url) => onAboutSectionChange({ ...aboutSection, videoUrl: url }));
-    } catch (err) {
-      onError?.(err.message || "Upload failed.");
-    } finally {
-      setUploadingKey("");
-    }
+    await uploadImage(
+      "process",
+      (url) => updateProcessStep(step.id, { imageUrl: url }),
+      `process-${step.id}`
+    );
   };
 
   return (
     <View style={styles.wrap}>
+      <Text style={styles.optimizeNote}>
+        All uploads are automatically resized and compressed for fast loading on web and app.
+      </Text>
+      {uploadNote ? <Text style={styles.uploadNote}>{uploadNote}</Text> : null}
       <Text style={styles.blockTitle}>Hero slider (web)</Text>
-      <Text style={styles.blockHint}>Images or short videos shown in the home hero carousel.</Text>
+      <Text style={styles.blockHint}>Product photos shown in the home hero carousel (images only).</Text>
 
       {heroSlides.map((slide, index) => (
         <View key={slide.id} style={[styles.card, { borderColor: c.border }]}>
@@ -403,22 +327,13 @@ export default function AdminHomeMediaEditor({
               <Text style={[styles.cardLabel, { color: c.textPrimary }]}>Slide {index + 1}</Text>
               <View style={styles.row}>
                 <PremiumButton
-                  label="Photo"
+                  label="Upload photo"
                   size="sm"
                   variant="secondary"
                   iconLeft="image-outline"
                   loading={uploadingKey === slide.id}
                   disabled={Boolean(uploadingKey)}
-                  onPress={() => uploadForSlide(slide, "image")}
-                />
-                <PremiumButton
-                  label="Video"
-                  size="sm"
-                  variant="secondary"
-                  iconLeft="videocam-outline"
-                  loading={uploadingKey === slide.id}
-                  disabled={Boolean(uploadingKey)}
-                  onPress={() => uploadForSlide(slide, "video")}
+                  onPress={() => uploadForSlide(slide)}
                 />
               </View>
               <View style={styles.row}>
@@ -458,7 +373,7 @@ export default function AdminHomeMediaEditor({
 
       <Text style={[styles.blockTitle, styles.blockTitleSpaced]}>About KankreG (home + about page)</Text>
       <Text style={styles.blockHint}>
-        Story + video on home. About page uses text, photos, and story blocks below (no video).
+        Story photos and copy on home. About page uses text, photos, and story blocks below.
       </Text>
 
       <AdminToggleRow
@@ -484,29 +399,6 @@ export default function AdminHomeMediaEditor({
         onChangeText={(body) => onAboutSectionChange({ ...aboutSection, body })}
         multiline
         numberOfLines={4}
-      />
-
-      <View style={styles.row}>
-        <PremiumButton
-          label={aboutSection.videoUrl ? "Replace video" : "Upload video"}
-          variant="secondary"
-          iconLeft="videocam-outline"
-          loading={uploadingKey === "about-video"}
-          disabled={Boolean(uploadingKey)}
-          onPress={uploadAboutVideo}
-        />
-        {aboutSection.videoUrl ? (
-          <PremiumButton
-            label="Remove video"
-            variant="ghost"
-            onPress={() => onAboutSectionChange({ ...aboutSection, videoUrl: "", videoCaption: "" })}
-          />
-        ) : null}
-      </View>
-      <PremiumInput
-        label="Video caption"
-        value={aboutSection.videoCaption || ""}
-        onChangeText={(videoCaption) => onAboutSectionChange({ ...aboutSection, videoCaption })}
       />
 
       <Text style={[styles.cardLabel, { color: c.textPrimary, marginTop: spacing.sm }]}>Photo gallery</Text>
@@ -842,7 +734,7 @@ export default function AdminHomeMediaEditor({
 
       <Text style={[styles.blockTitle, styles.blockTitleSpaced]}>Community / Instagram (web)</Text>
       <Text style={styles.blockHint}>
-        “Loved by families, shared every day” rail after the Our Story video — reels and customer posts.
+        “Loved by families, shared every day” rail after the Our Story section — reels and customer posts.
       </Text>
 
       <AdminToggleRow
@@ -1076,7 +968,7 @@ export default function AdminHomeMediaEditor({
 
       <AdminToggleRow
         title="Show process section"
-        subtitle="Bilona journey block after the timeline video"
+        subtitle="Bilona journey block after the timeline banner"
         value={processSection.enabled !== false}
         onValueChange={(enabled) => updateProcess({ enabled })}
       />
@@ -1350,6 +1242,19 @@ function createStyles(c) {
   return StyleSheet.create({
     wrap: {
       gap: spacing.sm,
+    },
+    optimizeNote: {
+      fontFamily: fonts.medium,
+      fontSize: typography.caption,
+      lineHeight: 18,
+      color: c.textSecondary,
+      marginBottom: spacing.xs,
+    },
+    uploadNote: {
+      fontFamily: fonts.semibold,
+      fontSize: typography.caption,
+      color: c.primary,
+      marginBottom: spacing.xs,
     },
     blockTitle: {
       fontFamily: fonts.extrabold,

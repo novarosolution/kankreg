@@ -12,7 +12,7 @@ import {
 } from "../../theme/figmaApp";
 import { useTheme } from "../../context/ThemeContext";
 import { formatINR } from "../../utils/currency";
-import { getImageUriCandidates, prefetchProductHeroImage } from "../../utils/image";
+import { getProductCardImageUri, prefetchProductHeroImage } from "../../utils/image";
 import { SHOP_SCREEN_UI } from "../../content/appContent";
 import { fonts } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
@@ -46,7 +46,7 @@ export default function NativeProductCard({
   const grad = getProductTileGradient(index, isDark);
   const imageUri = useMemo(() => {
     const src = product?.image || product?.images?.[0] || "";
-    return getImageUriCandidates(src, { width: 480, quality: "auto:good" })[0] || "";
+    return getProductCardImageUri(src, { isWeb: false });
   }, [product?.image, product?.images]);
 
   const listMrp = useMemo(() => {
@@ -92,6 +92,9 @@ export default function NativeProductCard({
             source={{ uri: imageUri }}
             style={[styles.image, isComingSoon && getComingSoonImageBlurStyle()]}
             contentFit="contain"
+            cachePolicy="memory-disk"
+            recyclingKey={String(product?.id || imageUri)}
+            transition={160}
           />
         ) : null}
         <View style={styles.floor} />

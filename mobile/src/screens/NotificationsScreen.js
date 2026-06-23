@@ -20,11 +20,14 @@ import {
   markMyNotificationRead,
   unarchiveMyNotification} from "../services/userService";
 import {
+  peekMyNotificationsCache,
+  revalidateMyNotifications,
+} from "../utils/screenDataCache";
+import {
   customerPanel,
   customerScrollFill} from "../theme/screenLayout";
 import { ALCHEMY } from "../theme/customerAlchemy";
 import { fonts, radius, spacing, typography } from "../theme/tokens";
-import { ListCardsSkeleton } from "../components/loading";
 import PremiumEmptyState from "../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
 import PremiumChip from "../components/ui/PremiumChip";
@@ -80,11 +83,15 @@ export default function NotificationsScreen({ navigation }) {
     () => createNotificationsStyles(c, shadowPremium, shadowLift, isDark, { isCompactWeb }),
     [c, shadowPremium, shadowLift, isDark, isCompactWeb]
   );
-    const { isAuthenticated, token, isAuthLoading } = useAuth();
-  const [loading, setLoading] = useState(true);
+    const { isAuthenticated, token, user, isAuthLoading } = useAuth();
+  const userKey = useMemo(
+    () => String(user?._id || user?.id || token || ""),
+    [user, token]
+  );
+  const [loading, setLoading] = useState(() => !peekMyNotificationsCache(userKey)?.length);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState(() => peekMyNotificationsCache(userKey) || []);
   const [filter, setFilter] = useState("all");
   const activeNotifications = useMemo(
     () => notifications.filter((n) => !n.isArchived),
@@ -122,25 +129,19 @@ export default function NotificationsScreen({ navigation }) {
 
   const loadNotifications = useCallback(async (opts = {}) => {
     const { silent } = opts;
-    const startedAt = Date.now();
     try {
-      if (!silent) setLoading(true);
+      if (!silent && !peekMyNotificationsCache(userKey)?.length) setLoading(true);
       setError("");
-      const data = await fetchMyNotificationsIncludingArchived(token);
+      const data = await revalidateMyNotifications(userKey, () =>
+        fetchMyNotificationsIncludingArchived(token)
+      );
       setNotifications(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message || "Unable to load notifications.");
     } finally {
-      if (!silent) {
-        const elapsed = Date.now() - startedAt;
-        const minimumLoaderMs = 320;
-        if (elapsed < minimumLoaderMs) {
-          await new Promise((resolve) => setTimeout(resolve, minimumLoaderMs - elapsed));
-        }
-        setLoading(false);
-      }
+      if (!silent) setLoading(false);
     }
-  }, [token]);
+  }, [token, userKey]);
 
   const onPullRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -153,8 +154,13 @@ export default function NotificationsScreen({ navigation }) {
 
   useEffect(() => {
     if (isAuthLoading || !isAuthenticated) return;
-    loadNotifications();
-  }, [isAuthLoading, isAuthenticated, loadNotifications]);
+    const cached = peekMyNotificationsCache(userKey);
+    if (cached?.length) {
+      setNotifications(cached);
+      setLoading(false);
+    }
+    loadNotifications({ silent: Boolean(cached?.length) });
+  }, [isAuthLoading, isAuthenticated, loadNotifications, userKey]);
 
   const { on: onLiveEvent } = useLiveSocket();
   useEffect(() => {
@@ -251,8 +257,15 @@ export default function NotificationsScreen({ navigation }) {
         </View>
         </SectionReveal>
 
-        {loading ? (
-          <ListCardsSkeleton cardCount={4} chipWidths={[72, 92]} style={styles.loaderWrap} />
+        {loading && !notifications.length ? (
+          <View style={styles.loaderWrap}>
+            <PremiumEmptyState
+              iconName="hourglass-outline"
+              title="Loading notifications"
+              description="Fetching your updates…"
+              compact
+            />
+          </View>
         ) : notifications.length === 0 ? (
           <View style={styles.panel}>
             <PremiumEmptyState

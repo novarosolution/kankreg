@@ -28,6 +28,9 @@ mobile/dist-export-web-check
 .tmp-export-verify
 .tmp-*
 
+# Large design reference assets (not bundled in app)
+mobile/reference/
+
 # Logs & OS
 npm-debug.log*
 yarn-debug.log*

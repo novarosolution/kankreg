@@ -1,4 +1,3 @@
-import { Asset } from "expo-asset";
 import { Image, Platform } from "react-native";
 import { optimizeDisplayImageUrl, resolveImageUri } from "./image";
 
@@ -50,43 +49,6 @@ export function resolveImageSource(value) {
   if (typeof value === "string") {
     const uri = resolveImageUri(value);
     return uri ? { uri: deliveryUri(uri) } : null;
-  }
-  return null;
-}
-
-/** Expo `require()` asset id or remote URL → string for <video> / players. */
-export function resolveVideoUri(value) {
-  if (value == null || value === "") return "";
-  if (typeof value === "string") {
-    const uri = resolveImageUri(value) || value;
-    return uri;
-  }
-  if (isBundledAsset(value)) {
-    return resolveImageUri(value.uri) || value.uri;
-  }
-  if (typeof value === "number") {
-    const resolved = Image.resolveAssetSource(value);
-    const uri = resolved?.uri || "";
-    if (uri) return resolveImageUri(uri) || uri;
-    try {
-      const asset = Asset.fromModule(value);
-      const fromAsset = asset.uri || asset.localUri || "";
-      return fromAsset ? resolveImageUri(fromAsset) || fromAsset : "";
-    } catch {
-      return "";
-    }
-  }
-  return "";
-}
-
-/** Normalize any media value → `expo-video` `VideoSource` (require id, uri string, or null). */
-export function toVideoPlayerSource(value) {
-  if (value == null || value === "") return null;
-  if (typeof value === "number") return value;
-  if (isBundledAsset(value)) return resolveImageUri(value.uri) || value.uri;
-  if (typeof value === "string") {
-    const uri = resolveImageUri(value);
-    return uri || value;
   }
   return null;
 }

@@ -6,7 +6,7 @@ import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 
 import CustomerScreenShell from "../components/CustomerScreenShell";
 import BottomNavBar from "../components/BottomNavBar";
-import { getProductById, getProductReviews, getProducts, submitProductReview } from "../services/productService";
+import { getProductById, getProductReviews, getProducts, peekProductById, peekProductsCache, submitProductReview } from "../services/productService";
 import useReducedMotion from "../hooks/useReducedMotion";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
@@ -34,7 +34,6 @@ import {
 import PremiumEmptyState from "../components/ui/PremiumEmptyState";
 import KankregBuyBar from "../components/kankreg/KankregBuyBar";
 import WebProductView from "../components/kankreg/WebProductView";
-import { ProductPageSkeleton } from "../components/loading";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
 import NativeProductView from "../components/native/NativeProductView";
 
@@ -45,18 +44,22 @@ export default function ProductScreen({ route, navigation }) {
   const { addToCart, removeFromCart, getItemQuantity } = useCart();
   const { isAuthenticated, token } = useAuth();
   const { width, useProductSplit } = useKankregLayout();
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const cachedProduct = useMemo(() => peekProductById(productId), [productId]);
+  const [product, setProduct] = useState(() => cachedProduct);
+  const [loading, setLoading] = useState(() => !cachedProduct);
   const [error, setError] = useState("");
-  const [selectedImage, setSelectedImage] = useState("");
+  const [selectedImage, setSelectedImage] = useState(() => cachedProduct?.image || "");
   const [imageCandidateIndex, setImageCandidateIndex] = useState(0);
-  const [selectedVariantLabel, setSelectedVariantLabel] = useState("");
+  const [selectedVariantLabel, setSelectedVariantLabel] = useState(() => {
+    const vars = Array.isArray(cachedProduct?.variants) ? cachedProduct.variants : [];
+    return vars[0]?.label ? String(vars[0].label) : "";
+  });
   const [reviews, setReviews] = useState([]);
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewBusy, setReviewBusy] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState("");
-  const [catalog, setCatalog] = useState([]);
+  const [catalog, setCatalog] = useState(() => peekProductsCache() || []);
   const reducedMotion = useReducedMotion();
   const heroFade = useSharedValue(1);
 
@@ -103,8 +106,22 @@ export default function ProductScreen({ route, navigation }) {
   );
 
   useEffect(() => {
-    loadProduct({ fresh: true });
-  }, [loadProduct]);
+    const next = peekProductById(productId);
+    if (next) {
+      setProduct(next);
+      setLoading(false);
+      setSelectedImage(next.image || "");
+      const vars = Array.isArray(next.variants) ? next.variants : [];
+      setSelectedVariantLabel(vars[0]?.label ? String(vars[0].label) : "");
+    } else if (productId) {
+      setProduct(null);
+      setLoading(true);
+    }
+  }, [productId]);
+
+  useEffect(() => {
+    loadProduct({ fresh: true, silent: Boolean(cachedProduct) });
+  }, [loadProduct, cachedProduct]);
 
   useFocusEffect(
     useCallback(() => {
@@ -193,10 +210,16 @@ export default function ProductScreen({ route, navigation }) {
     return Math.min(320, Math.max(220, Math.round(width * 0.55)));
   }, [width]);
 
-  if (loading) {
+  if (!product && loading) {
     return (
       <CustomerScreenShell style={styles.screen}>
-        <ProductPageSkeleton showBuyBar={Platform.OS !== "web"} />
+        <View style={styles.centered}>
+          <PremiumEmptyState
+            iconName="hourglass-outline"
+            title="Loading product"
+            description={PRODUCT_SCREEN.loadingCaption}
+          />
+        </View>
         {Platform.OS === "web" ? <BottomNavBar /> : null}
       </CustomerScreenShell>
     );

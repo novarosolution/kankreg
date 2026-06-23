@@ -1,31 +1,31 @@
 /**
- * “Ours vs ordinary ghee” — admin API shape + bundled image fallbacks.
- * Edit defaults in Admin → Home View → Compare section.
+ * “Ours vs ordinary ghee” — admin API shape + small bundled image fallbacks only.
+ * Large legacy PNGs removed to shrink the app bundle.
  */
 export const COMPARE_ROW_IMAGE_FALLBACKS = {
   "compare-milk": {
-    ours: require("../../assets/marketing/hero-slide-04-wa.jpeg"),
-    ordinary: require("../../assets/marketing/hero-slide-08.png"),
+    ours: require("../../assets/marketing/hero-slide-04-wa-web-504.webp"),
+    ordinary: null,
   },
   "compare-method": {
-    ours: require("../../assets/marketing/hero-slide-1.jpg"),
-    ordinary: require("../../assets/marketing/hero-slide-3.jpg"),
+    ours: require("../../assets/marketing/hero-slide-1-web-504.webp"),
+    ordinary: null,
   },
   "compare-feed": {
-    ours: require("../../assets/marketing/hero-slide-06-wa.jpeg"),
-    ordinary: require("../../assets/marketing/hero-slide-09.png"),
+    ours: require("../../assets/marketing/hero-slide-06-wa-web-504.webp"),
+    ordinary: null,
   },
   "compare-cooking": {
-    ours: require("../../assets/marketing/hero-slide-2.jpg"),
-    ordinary: require("../../assets/marketing/hero-slide-10.png"),
+    ours: require("../../assets/marketing/hero-slide-2-web-504.webp"),
+    ordinary: null,
   },
   "compare-purity": {
-    ours: require("../../assets/marketing/hero-slide-05-wa.jpeg"),
-    ordinary: require("../../assets/marketing/hero-slide-11.png"),
+    ours: require("../../assets/marketing/hero-slide-05-wa-web-504.webp"),
+    ordinary: null,
   },
   "compare-packaging": {
-    ours: require("../../assets/marketing/hero-slide-05-wa.jpeg"),
-    ordinary: require("../../assets/marketing/hero-slide-12.png"),
+    ours: require("../../assets/marketing/hero-slide-05-wa-web-504.webp"),
+    ordinary: null,
   },
 };
 

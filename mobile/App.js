@@ -37,6 +37,7 @@ import useAppIconSync from "./src/hooks/useAppIconSync";
 import AppStartupScreen from "./src/components/AppStartupScreen";
 import AppNavigator from "./src/navigation/AppNavigator";
 import { applyWebPremiumChrome, injectWebDocumentMeta, webRootStyle } from "./src/theme/web";
+import { warmProductsCache, warmHomeViewCache } from "./src/services/productService";
 
 const STARTUP_WELCOME_KEY = "@kankreg_startup_welcome_shown";
 
@@ -191,9 +192,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (Platform.OS === "web") {
-      injectWebDocumentMeta();
-    }
+    warmProductsCache();
+    warmHomeViewCache();
   }, []);
 
   useEffect(() => {

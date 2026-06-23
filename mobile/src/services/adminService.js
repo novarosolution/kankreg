@@ -66,11 +66,12 @@ export const createAdminProduct = async (_token, payload) => {
   return result;
 };
 
-export const uploadAdminProductImage = (_token, { imageBase64, mimeType }) =>
-  apiPost("/admin/uploads/image", { imageBase64, mimeType });
+export const uploadAdminImage = (_token, { imageBase64, mimeType, purpose = "product" }) =>
+  apiPost("/admin/uploads/image", { imageBase64, mimeType, purpose });
 
-export const uploadAdminMarketingVideo = (_token, { videoBase64, mimeType }) =>
-  apiPost("/admin/uploads/video", { videoBase64, mimeType });
+/** @deprecated Use uploadAdminImage with purpose instead. */
+export const uploadAdminProductImage = (_token, payload) =>
+  uploadAdminImage(_token, { ...payload, purpose: payload?.purpose || "product" });
 
 export const fetchAdminNotifications = (_token) => apiGet("/admin/notifications");
 

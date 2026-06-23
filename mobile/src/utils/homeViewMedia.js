@@ -46,7 +46,9 @@ export function normalizeHeroSlides(slides) {
 }
 
 export function getActiveHeroSlides(slides) {
-  return normalizeHeroSlides(slides).filter((slide) => slide.enabled);
+  return normalizeHeroSlides(slides).filter(
+    (slide) => slide.enabled && slide.mediaType !== "video"
+  );
 }
 
 /** Home compact banner — images only, capped slide count (no video rails). */

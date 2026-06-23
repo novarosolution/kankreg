@@ -5,7 +5,6 @@ const {
   updateProduct,
   deleteProduct,
   uploadProductImage,
-  uploadMarketingVideo,
 } = require("../controllers/productController");
 const {
   getAllOrders,
@@ -55,7 +54,6 @@ router.post("/products", createProduct);
 router.put("/products/:id", updateProduct);
 router.delete("/products/:id", deleteProduct);
 router.post("/uploads/image", uploadProductImage);
-router.post("/uploads/video", uploadMarketingVideo);
 
 router.get("/orders", getAllOrders);
 router.get("/orders/:id", getAdminOrderById);

@@ -5,6 +5,7 @@ import { appleAuthRequest, googleAuthRequest, loginRequest, registerRequest } fr
 import { fetchUserProfile } from "../services/userService";
 import { registerForPushNotifications } from "../services/pushNotificationService";
 import { configureApiClient, onSessionExpiredEvent } from "../services/apiClient";
+import { clearUserScreenCaches } from "../utils/screenDataCache";
 
 const AuthContext = createContext(undefined);
 const AUTH_STORAGE_KEY = "@kankreg_auth";
@@ -233,6 +234,7 @@ export function AuthProvider({ children }) {
   );
 
   const logout = useCallback(async () => {
+    clearUserScreenCaches();
     await clearSession();
     setSessionExpired(false);
   }, [clearSession]);

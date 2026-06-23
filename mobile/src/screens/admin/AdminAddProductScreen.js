@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ADMIN_GATE } from "../../content/adminContent";
 import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
-import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
 import AdminScreenShell from "../../components/admin/AdminScreenShell";
@@ -11,7 +10,8 @@ import { useAuth } from "../../context/AuthContext";
 import {
   createAdminProduct,
   updateAdminProduct,
-  uploadAdminProductImage} from "../../services/adminService";
+} from "../../services/adminService";
+import { pickAndUploadAdminImage } from "../../utils/adminImagePicker";
 import { useTheme } from "../../context/ThemeContext";
 import { adminGatePanel, adminShellContent, adminTwoColAside, adminTwoColMain, adminTwoColStyle, useAdminCompactLayout } from "../../theme/adminLayout";
 import AdminPanel from "../../components/admin/AdminPanel";
@@ -349,37 +349,16 @@ export default function AdminAddProductScreen({ navigation, route }) {
     try {
       setError("");
       setUploadMessage("");
-      if (Platform.OS !== "web") {
-        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (!permission.granted) {
-          setError("Media library permission is required to upload photos.");
-          return;
-        }
-      }
-
-      const picked = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"],
-        allowsEditing: true,
-        quality: 0.5,
-        base64: true});
-
-      if (picked.canceled) {
-        return;
-      }
-
-      const asset = picked.assets?.[0];
-      if (!asset?.base64) {
-        setError("Could not read image. Please try another photo.");
-        return;
-      }
-
       setIsUploadingImage(true);
-      const uploaded = await uploadAdminProductImage(token, {
-        imageBase64: asset.base64,
-        mimeType: asset.mimeType || "image/jpeg"});
+      const uploaded = await pickAndUploadAdminImage(token, {
+        purpose: "product",
+        allowsEditing: true,
+      });
+      if (!uploaded?.url) return;
 
       addPhotoUrl(uploaded.url);
-      setUploadMessage("Photo uploaded successfully.");
+      const kb = uploaded.bytes ? ` (${Math.round(uploaded.bytes / 1024)} KB)` : "";
+      setUploadMessage(`Photo uploaded and optimized${kb}.`);
     } catch (err) {
       setError(err.message || "Unable to upload photo.");
     } finally {

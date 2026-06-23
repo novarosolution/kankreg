@@ -16,6 +16,12 @@ import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../context/ToastContext";
 import { resetNavigationToHome } from "../navigation/resetToHome";
 import { fetchMyNotifications, fetchMyOrders } from "../services/userService";
+import {
+  peekMyNotificationsCache,
+  peekMyOrdersCache,
+  revalidateMyNotifications,
+  revalidateMyOrders,
+} from "../utils/screenDataCache";
 import { customerScrollFill } from "../theme/screenLayout";
 import { KANKREG_PAGE_SECTION_GAP } from "../theme/kankregScreenStyles";
 import { ALCHEMY } from "../theme/customerAlchemy";
@@ -52,60 +58,72 @@ function membershipTag(points, deliveredCount) {
   return `${tier} member · ${points.toLocaleString("en-IN")} pts`;
 }
 
+function profileCacheKey(user, token) {
+  return String(user?._id || user?.id || token || "");
+}
+
 export default function ProfileScreen({ navigation }) {
   const { colors: c, isDark } = useTheme();
   const { isAuthenticated, token, user, logout, isAuthLoading, refreshProfile } = useAuth();
   const { toastInfo } = useToast();
   const profileStyles = useMemo(() => createProfileStyles(c, isDark), [c, isDark]);
+  const userKey = useMemo(() => profileCacheKey(user, token), [user, token]);
 
-  const [loading, setLoading] = useState(true);
-  const [orders, setOrders] = useState([]);
-  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(
+    () => !user && !peekMyOrdersCache(profileCacheKey(user, token))?.length
+  );
+  const [orders, setOrders] = useState(() => peekMyOrdersCache(profileCacheKey(user, token)) || []);
+  const [notifications, setNotifications] = useState(
+    () => peekMyNotificationsCache(profileCacheKey(user, token)) || []
+  );
   const [error, setError] = useState("");
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
-  const [defaultAddress, setDefaultAddress] = useState(null);
+  const [name, setName] = useState(() => user?.name || "");
+  const [phone, setPhone] = useState(() => user?.phone || "");
+  const [avatarUrl, setAvatarUrl] = useState(() => (user?.avatar || "").trim());
+  const [defaultAddress, setDefaultAddress] = useState(() => user?.defaultAddress || null);
   const [refreshing, setRefreshing] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const loadProfile = useCallback(
     async ({ silent } = {}) => {
-      const startedAt = Date.now();
       try {
-        if (!silent) setLoading(true);
+        if (!silent && !user && !peekMyOrdersCache(userKey)?.length) setLoading(true);
         setError("");
         const [profile, myOrders, myNotifications] = await Promise.all([
           refreshProfile(),
-          fetchMyOrders(token),
-          fetchMyNotifications(token),
+          revalidateMyOrders(userKey, () => fetchMyOrders(token)),
+          revalidateMyNotifications(userKey, () => fetchMyNotifications(token)),
         ]);
         setName(profile.name || "");
         setPhone(profile.phone || "");
         setAvatarUrl((profile.avatar || "").trim());
         setDefaultAddress(profile.defaultAddress || null);
-        setOrders(myOrders);
-        setNotifications(myNotifications);
+        setOrders(Array.isArray(myOrders) ? myOrders : []);
+        setNotifications(Array.isArray(myNotifications) ? myNotifications : []);
       } catch (err) {
         setError(err.message || "Unable to load profile data.");
       } finally {
-        if (!silent) {
-          const elapsed = Date.now() - startedAt;
-          const minimumSkeletonMs = 360;
-          if (elapsed < minimumSkeletonMs) {
-            await new Promise((resolve) => setTimeout(resolve, minimumSkeletonMs - elapsed));
-          }
-        }
         if (!silent) setLoading(false);
       }
     },
-    [refreshProfile, token]
+    [refreshProfile, token, user, userKey]
   );
 
   useEffect(() => {
     if (isAuthLoading || !isAuthenticated) return;
-    loadProfile();
-  }, [isAuthLoading, isAuthenticated, loadProfile]);
+    if (user) {
+      setName(user.name || "");
+      setPhone(user.phone || "");
+      setAvatarUrl((user.avatar || "").trim());
+      setDefaultAddress(user.defaultAddress || null);
+      setLoading(false);
+    }
+    const cachedOrders = peekMyOrdersCache(userKey);
+    const cachedNotifications = peekMyNotificationsCache(userKey);
+    if (cachedOrders?.length) setOrders(cachedOrders);
+    if (cachedNotifications?.length) setNotifications(cachedNotifications);
+    loadProfile({ silent: Boolean(user || cachedOrders?.length) });
+  }, [isAuthLoading, isAuthenticated, loadProfile, user, userKey]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -292,7 +310,7 @@ export default function ProfileScreen({ navigation }) {
           />
         }
       >
-        {loading ? (
+        {loading && !user ? (
           <ProfileSkeleton styles={profileStyles} />
         ) : isNativeApp ? (
           <View style={profileStyles.nativeWrap}>

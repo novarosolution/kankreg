@@ -23,6 +23,10 @@ import {
   updateMyOrderAddressRequest} from "../services/orderService";
 import { fetchMyOrders } from "../services/userService";
 import {
+  peekMyOrdersCache,
+  revalidateMyOrders,
+} from "../utils/screenDataCache";
+import {
   customerPanel,
   customerScrollFill} from "../theme/screenLayout";
 import { getKankregChromeTop } from "../components/kankreg/KankregSiteHeader";
@@ -695,13 +699,17 @@ export default function MyOrdersScreen({ navigation, route }) {
   );
   const [filter, setFilter] = useState("all");
   const { isAuthenticated, token, user, isAuthLoading, refreshProfile } = useAuth();
+  const userKey = useMemo(
+    () => String(user?._id || user?.id || token || ""),
+    [user, token]
+  );
   const { refreshCartFromServer } = useCart();
   const { seedOrderStatuses } = useOrderCelebration();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !peekMyOrdersCache(userKey)?.length);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState(() => peekMyOrdersCache(userKey) || []);
   const [reorderingOrderId, setReorderingOrderId] = useState("");
   const [claimingRewardOrderId, setClaimingRewardOrderId] = useState("");
   const [expandedOrderId, setExpandedOrderId] = useState("");
@@ -729,9 +737,9 @@ export default function MyOrdersScreen({ navigation, route }) {
   const loadOrders = useCallback(async (opts = {}) => {
     const { silent } = opts;
     try {
-      if (!silent) setLoading(true);
+      if (!silent && !peekMyOrdersCache(userKey)?.length) setLoading(true);
       setError("");
-      const data = await fetchMyOrders(token);
+      const data = await revalidateMyOrders(userKey, () => fetchMyOrders(token));
       const list = Array.isArray(data) ? data : [];
       setOrders(list);
       seedOrderStatuses(list);
@@ -740,7 +748,7 @@ export default function MyOrdersScreen({ navigation, route }) {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [token, seedOrderStatuses]);
+  }, [token, userKey, seedOrderStatuses]);
 
   const onPullRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -753,8 +761,13 @@ export default function MyOrdersScreen({ navigation, route }) {
 
   useEffect(() => {
     if (isAuthLoading || !isAuthenticated) return;
-    loadOrders();
-  }, [isAuthLoading, isAuthenticated, loadOrders]);
+    const cached = peekMyOrdersCache(userKey);
+    if (cached?.length) {
+      setOrders(cached);
+      setLoading(false);
+    }
+    loadOrders({ silent: Boolean(cached?.length) });
+  }, [isAuthLoading, isAuthenticated, loadOrders, userKey]);
 
   const { on: onLiveEvent } = useLiveSocket();
   useEffect(() => {
@@ -1050,7 +1063,7 @@ export default function MyOrdersScreen({ navigation, route }) {
           </SectionReveal>
         ) : null}
 
-        {loading ? (
+        {loading && !orders.length ? (
           <View style={styles.loaderWrap}>
             <View style={styles.loadingStatsRow}>
               <SkeletonBlock width={isPhoneCompact ? "48%" : "24%"} height={84} rounded="xl" />

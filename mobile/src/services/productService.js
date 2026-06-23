@@ -11,12 +11,72 @@ import {
 
 const publicApi = { auth: false };
 
-const PRODUCTS_CACHE_TTL_MS = 60 * 1000;
+const PRODUCTS_CACHE_TTL_MS = 5 * 60 * 1000;
 let productsCache = {
   data: null,
   fetchedAt: 0,
   promise: null,
 };
+
+function storeProducts(list) {
+  const normalized = Array.isArray(list) ? list.map(normalizeProduct) : [];
+  productsCache = {
+    data: normalized,
+    fetchedAt: Date.now(),
+    promise: null,
+  };
+  return normalized;
+}
+
+async function fetchProductsFromApi() {
+  const data = await apiGet("/products", publicApi);
+  const list = Array.isArray(data) ? data : [];
+  return storeProducts(list);
+}
+
+/** Instant catalog for first paint — no network wait. */
+export function peekProductsCache() {
+  return productsCache.data;
+}
+
+/** Refresh catalog in background; optional callback when newer data arrives. */
+export function revalidateProductsInBackground(onUpdated) {
+  const now = Date.now();
+  if (productsCache.data && now - productsCache.fetchedAt < PRODUCTS_CACHE_TTL_MS) {
+    return Promise.resolve(productsCache.data);
+  }
+  if (productsCache.promise) {
+    return productsCache.promise.then((data) => {
+      if (onUpdated && data) onUpdated(data);
+      return data;
+    });
+  }
+  productsCache.promise = fetchProductsFromApi()
+    .then((data) => {
+      if (onUpdated) onUpdated(data);
+      return data;
+    })
+    .catch((error) => {
+      productsCache.promise = null;
+      throw error;
+    })
+    .finally(() => {
+      productsCache.promise = null;
+    });
+  return productsCache.promise;
+}
+
+/** Warm catalog during app boot (fire-and-forget). */
+export function warmProductsCache() {
+  revalidateProductsInBackground().catch(() => {});
+}
+
+/** Find one product from the warm catalog cache. */
+export function peekProductById(productId) {
+  const id = String(productId || "").trim();
+  if (!id || !productsCache.data) return null;
+  return productsCache.data.find((item) => String(item.id) === id) || null;
+}
 
 export function normalizeProduct(raw) {
   const primaryImage =
@@ -170,24 +230,17 @@ export async function getProducts() {
     return productsCache.promise;
   }
 
-  productsCache.promise = (async () => {
-    const data = await apiGet("/products", publicApi);
-    const list = Array.isArray(data) ? data : [];
-    const normalized = list.map(normalizeProduct);
-    productsCache = {
-      data: normalized,
-      fetchedAt: Date.now(),
-      promise: null,
-    };
-    return normalized;
-  })();
+  productsCache.promise = fetchProductsFromApi()
+    .catch((error) => {
+      productsCache.promise = null;
+      if (productsCache.data) return productsCache.data;
+      throw error;
+    })
+    .finally(() => {
+      productsCache.promise = null;
+    });
 
-  try {
-    return await productsCache.promise;
-  } catch (error) {
-    productsCache.promise = null;
-    throw error;
-  }
+  return productsCache.promise;
 }
 
 export function invalidateProductsCache() {
@@ -272,12 +325,64 @@ function normalizeHomeViewConfig(data) {
   };
 }
 
-/** Customer home config from MongoDB — always returns usable defaults when API is unavailable. */
-export async function getHomeViewConfig() {
+let homeViewCache = {
+  data: null,
+  fetchedAt: 0,
+  promise: null,
+};
+
+export function peekHomeViewCache() {
+  return homeViewCache.data || { ...DEFAULT_HOME_VIEW_CONFIG };
+}
+
+export function warmHomeViewCache() {
+  revalidateHomeViewInBackground().catch(() => {});
+}
+
+export function revalidateHomeViewInBackground(onUpdated) {
+  const now = Date.now();
+  if (homeViewCache.data && now - homeViewCache.fetchedAt < PRODUCTS_CACHE_TTL_MS) {
+    return Promise.resolve(homeViewCache.data);
+  }
+  if (homeViewCache.promise) {
+    return homeViewCache.promise.then((data) => {
+      if (onUpdated) onUpdated(data);
+      return data;
+    });
+  }
+  homeViewCache.promise = fetchHomeViewFromApi()
+    .then((data) => {
+      if (onUpdated) onUpdated(data);
+      return data;
+    })
+    .catch(() => homeViewCache.data || { ...DEFAULT_HOME_VIEW_CONFIG })
+    .finally(() => {
+      homeViewCache.promise = null;
+    });
+  return homeViewCache.promise;
+}
+
+async function fetchHomeViewFromApi() {
   try {
     const data = await apiGet("/home-view", publicApi);
-    return normalizeHomeViewConfig(data);
+    const normalized = normalizeHomeViewConfig(data);
+    homeViewCache = { data: normalized, fetchedAt: Date.now(), promise: null };
+    return normalized;
   } catch {
-    return { ...DEFAULT_HOME_VIEW_CONFIG };
+    const fallback = { ...DEFAULT_HOME_VIEW_CONFIG };
+    homeViewCache = { data: fallback, fetchedAt: Date.now(), promise: null };
+    return fallback;
   }
+}
+
+/** Customer home config from MongoDB — cached for instant home paint. */
+export async function getHomeViewConfig() {
+  const now = Date.now();
+  if (homeViewCache.data && now - homeViewCache.fetchedAt < PRODUCTS_CACHE_TTL_MS) {
+    return homeViewCache.data;
+  }
+  if (homeViewCache.promise) {
+    return homeViewCache.promise;
+  }
+  return revalidateHomeViewInBackground();
 }

@@ -24,10 +24,6 @@ const marketingDir = path.join(root, "assets", "marketing");
 const COMMITTED_WEB_ASSET_MARKERS = [
   "hero-slide-kankreg-phone-hero-web-840.webp",
   "hero-slide-kankreg-product-wide-web-1200.webp",
-  "home-hero-video-web.mp4",
-  "timeline-brand-film-web.mp4",
-  "home-hero-video-preview.mp4",
-  "timeline-brand-film-preview.mp4",
   "home-hero-video-poster.webp",
   "timeline-brand-film-poster.webp",
 ];
@@ -78,12 +74,12 @@ const PROCESS_PNGS = [
   "ghee-process-step-06-bottled.png",
 ];
 
-const COMMUNITY_JPEGS = [
-  "hero-slide-05-wa.jpeg",
-  "hero-slide-04-wa.jpeg",
-  "hero-slide-06-wa.jpeg",
-  "hero-slide-1.jpg",
-  "hero-slide-2.jpg",
+const COMMUNITY_WEBP_SOURCES = [
+  "hero-slide-05-wa-web-504.webp",
+  "hero-slide-04-wa-web-504.webp",
+  "hero-slide-06-wa-web-504.webp",
+  "hero-slide-1-web-504.webp",
+  "hero-slide-2-web-504.webp",
 ];
 
 async function toWebp(inputName, outputName, maxWidth, quality = 80) {
@@ -199,7 +195,7 @@ async function main() {
       console.warn(
         "[optimize:web] sharp not installed (production install?) — using committed web assets."
       );
-      console.log("Done. Skipped regeneration; *-web-*.webp / *-web.mp4 already in repo.");
+      console.log("Done. Skipped regeneration; committed *-web-*.webp assets already in repo.");
       return;
     }
     console.error(
@@ -223,10 +219,22 @@ async function main() {
     await toWebp(name, `${base}-web-720.webp`, 720, 78);
   }
 
-  for (const name of COMMUNITY_JPEGS) {
-    const base = name.replace(/\.(jpe?g|jpg)$/i, "");
-    await toWebp(name, `${base}-web-504.webp`, 504, 76);
-    await toWebp(name, `${base}-preview-48.webp`, 48, 42);
+  for (const name of COMMUNITY_WEBP_SOURCES) {
+    const base = name.replace(/-web-504\.webp$/i, "");
+    const previewName = `${base}-preview-48.webp`;
+    if (!fs.existsSync(path.join(marketingDir, name))) {
+      console.warn(`[skip] missing ${name}`);
+      continue;
+    }
+    if (fs.existsSync(path.join(marketingDir, previewName))) {
+      console.log(`[preview] ${previewName} up to date`);
+      continue;
+    }
+    await sharp(path.join(marketingDir, name))
+      .resize(48, null, { withoutEnlargement: true, fit: "inside" })
+      .webp({ quality: 42, effort: 4 })
+      .toFile(path.join(marketingDir, previewName));
+    console.log(`[preview] ${previewName}`);
   }
 
   // LQIP previews for hero + process web assets (tiny blur-up placeholders).
@@ -240,21 +248,7 @@ async function main() {
     await toWebp(name, `${base}-preview-48.webp`, 48, 42);
   }
 
-  compressVideo("timeline-brand-film.mp4", "timeline-brand-film-web.mp4", "960:-2", 26);
-  compressVideo("home-hero-video.mp4", "home-hero-video-web.mp4", "1080:-2", 26);
-  compressVideoPreview("timeline-brand-film.mp4", "timeline-brand-film-preview.mp4");
-  compressVideoPreview("home-hero-video.mp4", "home-hero-video-preview.mp4");
-  await extractVideoPoster("timeline-brand-film.mp4", "timeline-brand-film-poster.webp");
-  await extractVideoPoster("home-hero-video.mp4", "home-hero-video-poster.webp");
-
-  if (!hasFfmpeg() && !hasCommittedWebAssets()) {
-    console.error(
-      "[optimize:web] ffmpeg unavailable and committed video assets missing. Run `npm run optimize:web` locally."
-    );
-    process.exit(1);
-  }
-
-  console.log("\nDone. Web bundles should use *-web-*.webp / *-web.mp4 via .web.js constants.");
+  console.log("\nDone. Web bundles should use *-web-*.webp via marketing constants.");
 }
 
 main().catch((err) => {

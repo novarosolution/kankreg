@@ -24,7 +24,7 @@ import { KANKREG_PALETTE } from "../theme/kankregWeb";
 import { useTheme } from "../context/ThemeContext";
 import { fonts, getSemanticColors, icon, radius, spacing, typography } from "../theme/tokens";
 import { formatINRWhole } from "../utils/currency";
-import { getImageUriCandidates, prefetchProductHeroImage } from "../utils/image";
+import { getImageUriCandidates, getProductCardImageUri, prefetchProductHeroImage } from "../utils/image";
 import { getComingSoonImageBlurStyle } from "../utils/comingSoonImageStyle";
 import ComingSoonProductOverlay from "./product/ComingSoonProductOverlay";
 import { COMING_SOON_RED } from "../theme/comingSoonTheme";
@@ -76,10 +76,13 @@ function PremiumProductCardBase({
     }
     return "";
   }, [product?.image, product?.images]);
-  const imageUris = useMemo(
-    () => getImageUriCandidates(primaryImage, { width: 480, quality: "auto:good" }),
-    [primaryImage]
-  );
+  const imageUris = useMemo(() => {
+    if (Platform.OS === "web") {
+      return getImageUriCandidates(primaryImage, { width: 440, quality: "auto:good" });
+    }
+    const uri = getProductCardImageUri(primaryImage, { isWeb: false });
+    return uri ? [uri] : [];
+  }, [primaryImage]);
   const [imageCandidateIndex, setImageCandidateIndex] = useState(0);
   const imageUri = imageUris[imageCandidateIndex] || "";
   const imageFailed = imageUris.length === 0 || imageCandidateIndex >= imageUris.length;
@@ -241,7 +244,8 @@ function PremiumProductCardBase({
                     source={{ uri: imageUri }}
                     style={[styles.image, isComingSoon && getComingSoonImageBlurStyle()]}
                     contentFit="contain"
-                    transition={260}
+                    cachePolicy="memory-disk"
+                    transition={200}
                     recyclingKey={`${product?.id || "p"}:${imageUri}`}
                     onError={handleImageError}
                     priority={imagePriority}

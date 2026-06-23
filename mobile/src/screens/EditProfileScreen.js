@@ -3,7 +3,7 @@ import { ActivityIndicator, Keyboard, Platform, StyleSheet, Text, View } from "r
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import * as ImagePicker from "expo-image-picker";
+import { pickAdminImage } from "../utils/adminImagePicker";
 import { useFocusEffect } from "@react-navigation/native";
 import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 
@@ -37,24 +37,23 @@ export default function EditProfileScreen({ navigation }) {
   const reducedMotion = useReducedMotion();
   const isNativeApp = Platform.OS !== "web";
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !user);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [hasAddress, setHasAddress] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState("");
+  const [name, setName] = useState(() => user?.name || "");
+  const [phone, setPhone] = useState(() => user?.phone || "");
+  const [hasAddress, setHasAddress] = useState(() => Boolean(user?.defaultAddress?.line1));
+  const [avatarUrl, setAvatarUrl] = useState(() => (user?.avatar || "").trim());
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({ name: "", phone: "" });
   const [showStickySave, setShowStickySave] = useState(false);
   const stickyStateRef = useRef({ name: "", phone: "", saving: false });
 
-  const load = useCallback(async () => {
+  const load = useCallback(async ({ silent } = {}) => {
     if (!token) return;
-    const startedAt = Date.now();
     try {
-      setLoading(true);
+      if (!silent && !user) setLoading(true);
       setError("");
       const profile = await fetchUserProfile(token);
       setName(profile.name || "");
@@ -64,14 +63,9 @@ export default function EditProfileScreen({ navigation }) {
     } catch (err) {
       setError(err.message || "Unable to load profile.");
     } finally {
-      const elapsed = Date.now() - startedAt;
-      const minimumLoaderMs = 320;
-      if (elapsed < minimumLoaderMs) {
-        await new Promise((resolve) => setTimeout(resolve, minimumLoaderMs - elapsed));
-      }
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  }, [token]);
+  }, [token, user]);
 
   useFocusEffect(
     useCallback(() => {
@@ -81,7 +75,7 @@ export default function EditProfileScreen({ navigation }) {
         return;
       }
       if (token) {
-        load();
+        load({ silent: Boolean(user) });
       }
     }, [isAuthLoading, isAuthenticated, token, load, navigation])
   );
@@ -152,35 +146,18 @@ export default function EditProfileScreen({ navigation }) {
     try {
       setError("");
       setSuccess("");
-      if (Platform.OS !== "web") {
-        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (!permission.granted) {
-          setError("Photo library access is needed to set your profile picture.");
-          return;
-        }
-      }
-
-      const picked = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"],
+      const picked = await pickAdminImage({
+        purpose: "avatar",
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.65,
-        base64: true});
-
-      if (picked.canceled) {
-        return;
-      }
-
-      const asset = picked.assets?.[0];
-      if (!asset?.base64) {
-        setError("Could not read that photo. Try another image.");
-        return;
-      }
+      });
+      if (!picked) return;
 
       setAvatarUploading(true);
       const updated = await uploadUserAvatar(token, {
-        imageBase64: asset.base64,
-        mimeType: asset.mimeType || "image/jpeg"});
+        imageBase64: picked.base64,
+        mimeType: picked.mimeType,
+      });
       setAvatarUrl((updated.avatar || "").trim());
       await updateStoredUser(updated);
       setSuccess("Photo updated.");
@@ -231,7 +208,7 @@ export default function EditProfileScreen({ navigation }) {
           showHairline={!isNativeApp}
         />
 
-        {loading ? (
+        {loading && !user ? (
           <View style={styles.loaderWrap}>
             <View style={styles.loadingAvatarRow}>
               <SkeletonBlock width={92} height={92} rounded="lg" />

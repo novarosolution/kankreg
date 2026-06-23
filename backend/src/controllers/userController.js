@@ -1,7 +1,10 @@
 const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
 const { resolveProductLineFromRaw } = require("../utils/productLine");
-const cloudinary = require("../config/cloudinary");
+const {
+  uploadOptimizedImage,
+  isPayloadTooLarge,
+} = require("../utils/cloudinaryImageUpload");
 const Product = require("../models/Product");
 const User = require("../models/User");
 const generateTokenModule = require("../utils/generateToken");
@@ -251,22 +254,10 @@ async function updateProfile(req, res, next) {
 async function uploadUserAvatar(req, res, next) {
   try {
     const { imageBase64, mimeType } = req.body || {};
-
-    if (!imageBase64 || typeof imageBase64 !== "string") {
-      return res.status(400).json({ message: "imageBase64 is required." });
-    }
-
-    const hasDataPrefix = imageBase64.startsWith("data:image/");
-    const safeMime = typeof mimeType === "string" && mimeType.startsWith("image/")
-      ? mimeType
-      : "image/jpeg";
-    const uploadSource = hasDataPrefix
-      ? imageBase64
-      : `data:${safeMime};base64,${imageBase64}`;
-
-    const uploaded = await cloudinary.uploader.upload(uploadSource, {
-      folder: "kankreg/avatars",
-      resource_type: "image",
+    const uploaded = await uploadOptimizedImage({
+      imageBase64,
+      mimeType,
+      purpose: "avatar",
     });
 
     const user = await User.findById(req.user._id);
@@ -274,12 +265,15 @@ async function uploadUserAvatar(req, res, next) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    user.avatar = uploaded.secure_url;
+    user.avatar = uploaded.url;
     await user.save();
 
     res.json(serializePublicUser(user));
   } catch (error) {
-    if (error?.http_code === 413 || String(error?.message || "").toLowerCase().includes("file size")) {
+    if (error.statusCode === 400) {
+      return res.status(400).json({ message: error.message });
+    }
+    if (isPayloadTooLarge(error)) {
       return res.status(413).json({
         message: "Image is too large. Please choose a smaller photo.",
       });

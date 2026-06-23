@@ -159,24 +159,32 @@ export function getImageUriCandidates(rawUri, { width, quality = "auto" } = {}) 
   );
 }
 
+/** Product grid card — smaller delivery for faster first paint. */
+export function getProductCardImageUri(rawUri, { isWeb = false } = {}) {
+  return getImageUriCandidates(rawUri, {
+    width: isWeb ? 360 : 280,
+    quality: "auto:eco",
+  })[0] || "";
+}
+
 /** Product PDP — main hero (smaller delivery size, faster load). */
 export function getProductHeroImageUri(rawUri) {
-  return getImageUriCandidates(rawUri, { width: 840, quality: "auto:good" })[0] || "";
+  return getImageUriCandidates(rawUri, { width: 720, quality: "auto:good" })[0] || "";
 }
 
 /** Product PDP — gallery thumb strip. */
 export function getProductThumbImageUri(rawUri) {
-  return getImageUriCandidates(rawUri, { width: 220, quality: "auto:good" })[0] || "";
+  return getImageUriCandidates(rawUri, { width: 180, quality: "auto:eco" })[0] || "";
 }
 
 /** Product PDP — lifestyle / story supporting image. */
 export function getProductSectionImageUri(rawUri) {
-  return getImageUriCandidates(rawUri, { width: 720, quality: "auto:good" })[0] || "";
+  return getImageUriCandidates(rawUri, { width: 560, quality: "auto:good" })[0] || "";
 }
 
 /** Max delivery width for home hero slider (web). */
-export const HERO_SLIDE_DESKTOP_MAX_WIDTH = 1280;
-export const HERO_SLIDE_MOBILE_MAX_WIDTH = 840;
+export const HERO_SLIDE_DESKTOP_MAX_WIDTH = 1080;
+export const HERO_SLIDE_MOBILE_MAX_WIDTH = 720;
 
 /** CSS layout width → capped pixel width for hero `<img>` (respects DPR, never 4K). */
 export function getHeroSlideDisplayWidth(layoutWidth = 960, { isMobileWeb = false } = {}) {
@@ -200,12 +208,16 @@ function preferWebHeroBundlerVariant(uri, width) {
   if (!isBundled) return value;
 
   const mobile = width <= HERO_SLIDE_MOBILE_MAX_WIDTH;
-  const targetSuffix = mobile ? "-web-840.webp" : "-web-1200.webp";
+  const targetSuffix =
+    width <= 520 ? "-web-504.webp" : mobile ? "-web-840.webp" : "-web-1200.webp";
 
-  if (value.includes("-web-1200.webp") && mobile) {
-    return value.replace("-web-1200.webp", "-web-840.webp");
+  if (value.includes("-web-1200.webp") && targetSuffix !== "-web-1200.webp") {
+    return value.replace("-web-1200.webp", targetSuffix);
   }
-  if (value.includes("-web-840.webp") && !mobile) {
+  if (value.includes("-web-840.webp") && targetSuffix === "-web-504.webp") {
+    return value.replace("-web-840.webp", "-web-504.webp");
+  }
+  if (value.includes("-web-840.webp") && !mobile && targetSuffix === "-web-1200.webp") {
     return value.replace("-web-840.webp", "-web-1200.webp");
   }
   if (/\.(png|jpe?g)(\?|$)/i.test(value)) {

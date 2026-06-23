@@ -3,7 +3,6 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import WebHtmlVideo from "./WebHtmlVideo";
 import { HOME_HERO_BANNER } from "../../content/appContent";
 import { FONT_HEADING } from "../../theme/typographyRoles";
 import {
@@ -415,21 +414,8 @@ function HeroSlideCard({
           style={StyleSheet.absoluteFillObject}
         />
       )}
-      {slide.mediaType === "video" && Platform.OS === "web" ? (
-        active ? (
-          <WebHtmlVideo
-            source={slide.url}
-            active
-            layoutWidth={layoutWidth}
-            isMobileWeb={isMobileWebTop}
-            muted
-            loop
-            fit={isTop && layoutWidth >= 1080 ? "contain" : "cover"}
-            style={styles.mediaFill}
-          />
-        ) : (
-          <View style={[styles.mediaFill, styles.videoPoster]} />
-        )
+      {slide.mediaType === "video" ? (
+        <View style={[styles.mediaFill, styles.videoPoster]} />
       ) : hasImage && shouldLoadImage ? (
         <HeroSlideImage
           slide={slide}

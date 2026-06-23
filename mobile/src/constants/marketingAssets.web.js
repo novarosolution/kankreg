@@ -129,4 +129,6 @@ export const HOME_HERO_MOBILE_SLIDER_SLIDES = [
   },
 ];
 
-export const AUTH_AMBIENT_IMAGE = require("../../assets/marketing/hero-slide-04-wa.jpeg");
+export const AUTH_AMBIENT_IMAGE = require("../../assets/marketing/hero-slide-04-wa-web-504.webp");
+
+export const HOME_BRAND_PROMO_POSTER = require("../../assets/marketing/home-hero-video-poster.webp");

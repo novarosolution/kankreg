@@ -18,7 +18,7 @@ import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 import PremiumEmptyState from "../components/ui/PremiumEmptyState";
 import { useCart } from "../context/CartContext";
 import { useTheme } from "../context/ThemeContext";
-import { getProducts, invalidateProductsCache } from "../services/productService";
+import { getProducts, peekProductsCache, revalidateProductsInBackground } from "../services/productService";
 import { KANKREG_PALETTE } from "../theme/kankregWeb";
 import { KANKREG_PAGE_SECTION_GAP } from "../theme/kankregScreenStyles";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
@@ -27,7 +27,7 @@ import { getProductCardFlags } from "../utils/productAvailability";
 import KankregFilterChips from "../components/kankreg/KankregFilterChips";
 import KankregAnimatedSection from "../components/kankreg/KankregAnimatedSection";
 import CatalogGridReveal from "../components/kankreg/CatalogGridReveal";
-import { ShopCatalogSkeleton } from "../components/loading";
+import { prefetchShopPageImages } from "../utils/pageContentReady";
 import SectionReveal from "../components/motion/SectionReveal";
 import { customerPanel } from "../theme/screenLayout";
 import { fonts, spacing, typography } from "../theme/tokens";
@@ -104,8 +104,7 @@ export default function ShopScreen({ navigation, route }) {
     [c, shadowPremium, isDark, shopTheme]
   );
   const { addToCart, removeFromCart, getItemQuantity } = useCart();
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState(() => peekProductsCache() || []);
   const [refreshing, setRefreshing] = useState(false);
   const [categories, setCategories] = useState(() => {
     const seed = route.params?.category;
@@ -126,14 +125,14 @@ export default function ShopScreen({ navigation, route }) {
 
   const load = useCallback(async (pull = false) => {
     if (pull) setRefreshing(true);
-    else setLoading(true);
     try {
-      const list = await getProducts();
-      setProducts(Array.isArray(list) ? list : []);
+      const list = await getProducts().catch(() => peekProductsCache() || []);
+      const nextProducts = Array.isArray(list) ? list : [];
+      setProducts(nextProducts);
+      prefetchShopPageImages(nextProducts);
     } catch {
-      setProducts([]);
+      if (!peekProductsCache()?.length) setProducts([]);
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   }, []);
@@ -145,12 +144,9 @@ export default function ShopScreen({ navigation, route }) {
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
-      invalidateProductsCache();
-      getProducts()
-        .then((list) => {
-          if (!cancelled) setProducts(Array.isArray(list) ? list : []);
-        })
-        .catch(() => {});
+      revalidateProductsInBackground((list) => {
+        if (!cancelled && Array.isArray(list)) setProducts(list);
+      }).catch(() => {});
       return () => {
         cancelled = true;
       };
@@ -414,9 +410,7 @@ export default function ShopScreen({ navigation, route }) {
             </View>
             <ShopNativeMetaLine filtered={filtered.length} total={products.length} />
           </View>
-          {loading ? (
-            <ShopCatalogSkeleton count={6} />
-          ) : filtered.length ? (
+          {filtered.length ? (
             <View style={nativeShopGrid.grid}>
               {filtered.map((item, idx) => {
                 const flags = getProductCardFlags(item, SHOP_SCREEN_UI.card.comingSoonNoteFallback);
@@ -565,9 +559,7 @@ export default function ShopScreen({ navigation, route }) {
                 </KankregAnimatedSection>
               )}
 
-              {loading ? (
-                <ShopCatalogSkeleton count={8} />
-              ) : filtered.length === 0 ? (
+              {filtered.length === 0 ? (
                 <SectionReveal index={3} preset="fade-in" immediate>
                   <PremiumEmptyState
                     compact

@@ -1,5 +1,9 @@
 const Product = require("../models/Product");
 const cloudinary = require("../config/cloudinary");
+const {
+  uploadOptimizedImage,
+  isPayloadTooLarge,
+} = require("../utils/cloudinaryImageUpload");
 
 function sanitizeVariants(raw) {
   if (!Array.isArray(raw)) return [];
@@ -357,67 +361,17 @@ async function deleteProduct(req, res, next) {
 
 async function uploadProductImage(req, res, next) {
   try {
-    const { imageBase64, mimeType } = req.body || {};
+    const { imageBase64, mimeType, purpose } = req.body || {};
+    const uploaded = await uploadOptimizedImage({ imageBase64, mimeType, purpose: purpose || "product" });
 
-    if (!imageBase64 || typeof imageBase64 !== "string") {
-      return res.status(400).json({ message: "imageBase64 is required." });
-    }
-
-    const hasDataPrefix = imageBase64.startsWith("data:image/");
-    const safeMime = typeof mimeType === "string" && mimeType.startsWith("image/")
-      ? mimeType
-      : "image/jpeg";
-    const uploadSource = hasDataPrefix
-      ? imageBase64
-      : `data:${safeMime};base64,${imageBase64}`;
-
-    const uploaded = await cloudinary.uploader.upload(uploadSource, {
-      folder: "kankreg/products",
-      resource_type: "image",
-      transformation: [{ quality: "auto:good", fetch_format: "auto", width: 1600, crop: "limit" }],
-    });
-
-    res.status(201).json({
-      url: uploaded.secure_url,
-      publicId: uploaded.public_id,
-    });
+    res.status(201).json(uploaded);
   } catch (error) {
-    if (error?.http_code === 413 || String(error?.message || "").toLowerCase().includes("file size")) {
+    if (error.statusCode === 400) {
+      return res.status(400).json({ message: error.message });
+    }
+    if (isPayloadTooLarge(error)) {
       return res.status(413).json({
         message: "Image is too large. Please choose a smaller photo.",
-      });
-    }
-    next(error);
-  }
-}
-
-async function uploadMarketingVideo(req, res, next) {
-  try {
-    const { videoBase64, mimeType } = req.body || {};
-
-    if (!videoBase64 || typeof videoBase64 !== "string") {
-      return res.status(400).json({ message: "videoBase64 is required." });
-    }
-
-    const hasDataPrefix = videoBase64.startsWith("data:video/");
-    const safeMime =
-      typeof mimeType === "string" && mimeType.startsWith("video/") ? mimeType : "video/mp4";
-    const uploadSource = hasDataPrefix ? videoBase64 : `data:${safeMime};base64,${videoBase64}`;
-
-    const uploaded = await cloudinary.uploader.upload(uploadSource, {
-      folder: "kankreg/marketing",
-      resource_type: "video",
-      transformation: [{ width: 1280, crop: "limit", quality: "auto:good" }],
-    });
-
-    res.status(201).json({
-      url: uploaded.secure_url,
-      publicId: uploaded.public_id,
-    });
-  } catch (error) {
-    if (error?.http_code === 413 || String(error?.message || "").toLowerCase().includes("file size")) {
-      return res.status(413).json({
-        message: "Video is too large. Please choose a shorter clip or smaller file.",
       });
     }
     next(error);
@@ -501,7 +455,6 @@ module.exports = {
   updateProduct,
   deleteProduct,
   uploadProductImage,
-  uploadMarketingVideo,
   getProductReviews,
   createOrUpdateProductReview,
 };

@@ -11,17 +11,21 @@ import {
 } from "../components/home/HomeKankregSections";
 import WebPremiumHero from "../components/home/WebPremiumHero";
 import {
-  WebTimelineSection,
   WebProcessSection,
   WebAboutSection,
   WebCommunitySection,
 } from "../components/home/homeWebSections";
 import DeferredMount from "../components/ui/DeferredMount";
+import { HOME_HERO_MOBILE_SLIDER_SLIDES } from "../constants/marketingAssets";
 import {
+  getActiveHeroSlides,
+  getAppHeroSlides,
+  getAppMarketingHeroSlides,
   normalizeAboutSection,
   normalizeCommunitySection,
   resolveProcessDisplay,
 } from "../utils/homeViewMedia";
+import { prefetchHomePageImages } from "../utils/pageContentReady";
 import { buildProcessSectionDefaults } from "../content/processHomeContent";
 import HomeStatsStrip from "../components/home/HomeStatsStrip";
 import HomeTestimonials from "../components/home/HomeTestimonials";
@@ -38,7 +42,7 @@ import { KANKREG_CHROME } from "../theme/kankregWeb";
 import { HOME_SECTION_GAP, HOME_SPACE } from "../theme/homeEditorial";
 import { useCart } from "../context/CartContext";
 import { useTheme } from "../context/ThemeContext";
-import { DEFAULT_HOME_VIEW_CONFIG, getHomeViewConfig, getProducts, invalidateProductsCache } from "../services/productService";
+import { DEFAULT_HOME_VIEW_CONFIG, getHomeViewConfig, getProducts, peekHomeViewCache, peekProductsCache, revalidateHomeViewInBackground, revalidateProductsInBackground } from "../services/productService";
 import { getHomeCatalogProducts, getShopCatalogProducts } from "../utils/productAvailability";
 import { HOME_SCREEN_UI, SHOP_SCREEN_UI } from "../content/appContent";
 import { getProductCardFlags } from "../utils/productAvailability";
@@ -50,7 +54,6 @@ import NativeHomeHeroSlider from "../components/home/NativeHomeHeroSlider";
 import NativeSectionHeader from "../components/native/NativeSectionHeader";
 import NativeCategoryRow from "../components/native/NativeCategoryRow";
 import NativeBestsellersGrid from "../components/native/NativeBestsellersGrid";
-import { HomePageSkeleton } from "../components/loading";
 import { FIGMA } from "../theme/figmaApp";
 import { useAuth } from "../context/AuthContext";
 import { fetchMyNotifications } from "../services/userService";
@@ -161,10 +164,9 @@ export default function KankregHomeScreen({ navigation }) {
   const { catalogCardCompact: layoutCompact, isMobileWeb, pageGutterClamp } = useKankregLayout();
   const { addToCart, removeFromCart, getItemQuantity } = useCart();
   const { isAuthenticated, token } = useAuth();
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState(() => peekProductsCache() || []);
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
-  const [homeView, setHomeView] = useState(DEFAULT_HOME_VIEW_CONFIG);
-  const [loading, setLoading] = useState(true);
+  const [homeView, setHomeView] = useState(() => peekHomeViewCache());
   const [configError, setConfigError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const { displayLabel } = useDeliveryLocation();
@@ -172,24 +174,32 @@ export default function KankregHomeScreen({ navigation }) {
 
   const load = useCallback(async (pull = false) => {
     if (pull) setRefreshing(true);
-    else setLoading(true);
     setConfigError("");
     try {
       const [list, config] = await Promise.all([
-        getProducts().catch(() => []),
-        getHomeViewConfig().catch(() => null),
+        getProducts().catch(() => peekProductsCache() || []),
+        getHomeViewConfig().catch(() => peekHomeViewCache()),
       ]);
-      setProducts(Array.isArray(list) ? list : []);
-      setHomeView(config || DEFAULT_HOME_VIEW_CONFIG);
-      if (!Array.isArray(list) || !list.length) {
+      const nextProducts = Array.isArray(list) ? list : [];
+      const nextConfig = config || peekHomeViewCache();
+      const catalog = getHomeCatalogProducts(nextProducts);
+      const heroSlides =
+        Platform.OS === "web"
+          ? getActiveHeroSlides(nextConfig?.heroSlides)
+          : getAppHeroSlides(nextConfig?.heroSlides).length
+            ? getAppHeroSlides(nextConfig?.heroSlides)
+            : getAppMarketingHeroSlides(HOME_HERO_MOBILE_SLIDER_SLIDES);
+      setProducts(nextProducts);
+      setHomeView(nextConfig);
+      prefetchHomePageImages({ products: catalog, heroSlides });
+      if (!nextProducts.length) {
         setConfigError("Could not load products. Check your connection and try again.");
       }
     } catch {
-      setProducts([]);
-      setHomeView(DEFAULT_HOME_VIEW_CONFIG);
+      if (!peekProductsCache()?.length) setProducts([]);
+      setHomeView(peekHomeViewCache());
       setConfigError("Could not load the store. Try again when the server is online.");
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   }, []);
@@ -201,12 +211,12 @@ export default function KankregHomeScreen({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
-      invalidateProductsCache();
-      getProducts()
-        .then((list) => {
-          if (!cancelled) setProducts(Array.isArray(list) ? list : []);
-        })
-        .catch(() => {});
+      revalidateProductsInBackground((list) => {
+        if (!cancelled && Array.isArray(list)) setProducts(list);
+      }).catch(() => {});
+      revalidateHomeViewInBackground((config) => {
+        if (!cancelled && config) setHomeView(config);
+      }).catch(() => {});
       return () => {
         cancelled = true;
       };
@@ -245,7 +255,7 @@ export default function KankregHomeScreen({ navigation }) {
   const featuredProduct = homeCatalog[0] || products[0];
 
   useEffect(() => {
-    if (Platform.OS !== "web" || loading || isMobileWeb) return undefined;
+    if (Platform.OS !== "web" || isMobileWeb) return undefined;
     let cancelled = false;
     getScrollTrigger()
       .then((ScrollTrigger) => {
@@ -255,7 +265,7 @@ export default function KankregHomeScreen({ navigation }) {
     return () => {
       cancelled = true;
     };
-  }, [loading, homeCatalog.length, isMobileWeb]);
+  }, [homeCatalog.length, isMobileWeb]);
   const handleAdd = (p) => addToCart(productToCartLine(p));
   const handleRemove = (id) => removeFromCart(id);
 
@@ -263,7 +273,7 @@ export default function KankregHomeScreen({ navigation }) {
   const showPrime = homeView?.showPrimeSection !== false;
   const showCategories = homeView?.showProductTypeSections !== false;
   const showHomeExtras = homeView?.showHomeSections !== false;
-  const ready = !loading;
+  const ready = true;
   const processSection = homeView?.processSection ?? DEFAULT_HOME_VIEW_CONFIG.processSection;
   const showProcessSection = useMemo(() => {
     if (!ready || !showHomeExtras) return false;
@@ -297,7 +307,7 @@ export default function KankregHomeScreen({ navigation }) {
             <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={c.primary} />
           }
         >
-          {configError && !loading ? (
+          {configError ? (
             <View style={nativeHomeStyles.bannerWrap}>
               <PremiumErrorBanner
                 severity="error"
@@ -310,49 +320,47 @@ export default function KankregHomeScreen({ navigation }) {
 
           <NativeHomeHeroSlider navigation={navigation} heroSlides={homeView?.heroSlides} />
 
-          {loading ? <HomePageSkeleton showHeader={false} /> : null}
-
-          {showCategories && ready ? (
-            <>
-              <NativeSectionHeader
-                title={HOME_SCREEN_UI.categories.title}
-                actionLabel={HOME_SCREEN_UI.categories.action}
-                onAction={() => navigation.navigate("Shop")}
-                tight
-              />
-              <NativeCategoryRow
-                products={shopCatalog}
-                onPress={(label) => navigation.navigate("Shop", { category: label })}
-              />
-            </>
-          ) : null}
-
-          {showPrime && ready ? (
-            <>
-              <NativeSectionHeader
-                title={primeTitle}
-                actionLabel={HOME_SCREEN_UI.bestsellers.action}
-                onAction={() => navigation.navigate("Shop")}
-              />
-              {homeCatalog.length ? (
-                <NativeBestsellersGrid
-                  products={homeCatalog}
-                  onProductPress={(item) => navigation.navigate("Product", { productId: item.id })}
-                  onAddToCart={handleAdd}
-                />
-              ) : ready ? (
-                <View style={nativeHomeStyles.emptyWrap}>
-                  <PremiumEmptyState
-                    iconName="bag-outline"
-                    title={HOME_SCREEN_UI.empty.productsTitle}
-                    description={HOME_SCREEN_UI.empty.productsDescription}
-                    ctaLabel={HOME_SCREEN_UI.empty.productsCta}
-                    onCtaPress={() => navigation.navigate("Shop")}
+              {showCategories ? (
+                <>
+                  <NativeSectionHeader
+                    title={HOME_SCREEN_UI.categories.title}
+                    actionLabel={HOME_SCREEN_UI.categories.action}
+                    onAction={() => navigation.navigate("Shop")}
+                    tight
                   />
-                </View>
+                  <NativeCategoryRow
+                    products={shopCatalog}
+                    onPress={(label) => navigation.navigate("Shop", { category: label })}
+                  />
+                </>
               ) : null}
-            </>
-          ) : null}
+
+              {showPrime ? (
+                <>
+                  <NativeSectionHeader
+                    title={primeTitle}
+                    actionLabel={HOME_SCREEN_UI.bestsellers.action}
+                    onAction={() => navigation.navigate("Shop")}
+                  />
+                  {homeCatalog.length ? (
+                    <NativeBestsellersGrid
+                      products={homeCatalog}
+                      onProductPress={(item) => navigation.navigate("Product", { productId: item.id })}
+                      onAddToCart={handleAdd}
+                    />
+                  ) : (
+                    <View style={nativeHomeStyles.emptyWrap}>
+                      <PremiumEmptyState
+                        iconName="bag-outline"
+                        title={HOME_SCREEN_UI.empty.productsTitle}
+                        description={HOME_SCREEN_UI.empty.productsDescription}
+                        ctaLabel={HOME_SCREEN_UI.empty.productsCta}
+                        onCtaPress={() => navigation.navigate("Shop")}
+                      />
+                    </View>
+                  )}
+                </>
+              ) : null}
 
         </KankregScrollPage>
         <BottomNavBar />
@@ -401,9 +409,7 @@ export default function KankregHomeScreen({ navigation }) {
           ]}
         >
           <KankregPageWrap gap={isMobileWeb ? spacing.lg : HOME_SECTION_GAP}>
-            {loading ? <HomePageSkeleton /> : null}
-
-            {configError && !loading ? (
+            {configError ? (
               <PremiumErrorBanner
                 severity="error"
                 message={configError}
@@ -496,14 +502,6 @@ export default function KankregHomeScreen({ navigation }) {
                     )}
                   </View>
                 </View>
-              </ScrollFadeUp>
-            ) : null}
-
-            {ready ? (
-              <ScrollFadeUp index={2}>
-                <DeferredMount minHeight={320} rootMargin="320px 0px">
-                  <WebTimelineSection />
-                </DeferredMount>
               </ScrollFadeUp>
             ) : null}
 
