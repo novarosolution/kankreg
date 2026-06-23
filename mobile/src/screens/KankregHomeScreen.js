@@ -395,7 +395,11 @@ export default function KankregHomeScreen({ navigation }) {
         }
       >
         {showWebHero ? (
-          <WebPremiumHero navigation={navigation} heroSlides={homeView?.heroSlides} />
+          isMobileWeb ? (
+            <NativeHomeHeroSlider navigation={navigation} heroSlides={homeView?.heroSlides} />
+          ) : (
+            <WebPremiumHero navigation={navigation} heroSlides={homeView?.heroSlides} />
+          )
         ) : null}
 
         <View

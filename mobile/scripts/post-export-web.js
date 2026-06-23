@@ -72,17 +72,16 @@ if (fs.existsSync(indexHtml)) {
     }
     const shellTag = [
       "<style id=\"kankreg-lcp-shell-style\">",
-      "#kankreg-lcp-shell{position:fixed;top:110px;left:0;width:100%;height:clamp(420px,62vw,720px);object-fit:cover;object-position:center;display:block;background:#1a1410;z-index:0;pointer-events:none;}",
-      "#root{position:relative;z-index:1;background:transparent;}",
+      "#root{position:relative;z-index:1;}",
       "</style>",
-      `<img id="kankreg-lcp-shell" src="${heroHref}" alt="KankreG premium A2 ghee" fetchpriority="high" decoding="async" width="840" height="1070" />`,
     ].join("");
     html = html.replace(
-      /<style id="kankreg-lcp-shell-style">[\s\S]*?<\/style>\s*<img id="kankreg-lcp-shell"[^>]*>\s*/gi,
+      /<style id="kankreg-lcp-shell-style">[\s\S]*?<\/style>\s*(<img id="kankreg-lcp-shell"[^>]*>\s*)?/gi,
       ""
     );
-    html = html.replace("<div id=\"root\"></div>", `${shellTag}\n    <div id="root"></div>`);
-    console.log("[post-export-web] injected LCP hero shell image");
+    if (!html.includes("kankreg-lcp-shell-style")) {
+      html = html.replace("<div id=\"root\"></div>", `${shellTag}\n    <div id="root"></div>`);
+    }
   }
 
   if (!html.includes('lang="en"')) {

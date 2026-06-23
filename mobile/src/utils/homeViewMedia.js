@@ -11,7 +11,7 @@ import {
   buildProcessSectionDefaults,
   getProcessStepImageFallback,
 } from "../content/processHomeContent";
-import { HOME_HERO_APP_MAX_SLIDES } from "../constants/marketingAssets";
+import { HOME_HERO_APP_MAX_SLIDES, HOME_HERO_MOBILE_SLIDER_SLIDES } from "../constants/marketingAssets";
 
 function asTrimmedString(value, fallback = "") {
   if (value === undefined || value === null) return fallback;
@@ -89,9 +89,11 @@ export function getCompactMarketingHeroSlides(marketingSlides = []) {
 
 /** Native app hero — images only, up to 3 slides. */
 export function getAppHeroSlides(slides) {
-  return getActiveHeroSlides(slides)
+  const active = getActiveHeroSlides(slides)
     .filter((slide) => slide.mediaType !== "video")
     .slice(0, HOME_HERO_APP_MAX_SLIDES);
+  if (active.length) return active;
+  return getAppMarketingHeroSlides(HOME_HERO_MOBILE_SLIDER_SLIDES);
 }
 
 export function getAppMarketingHeroSlides(marketingSlides = []) {

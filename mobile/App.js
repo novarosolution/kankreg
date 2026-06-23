@@ -197,16 +197,6 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (Platform.OS === "web" && typeof document !== "undefined") {
-      const shell = document.getElementById("kankreg-lcp-shell");
-      if (shell) {
-        shell.style.pointerEvents = "none";
-        shell.style.zIndex = "0";
-      }
-    }
-  }, []);
-
-  useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync().catch(() => {});
     }

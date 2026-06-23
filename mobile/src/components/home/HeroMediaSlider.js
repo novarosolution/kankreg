@@ -17,7 +17,8 @@ import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { platformShadow } from "../../theme/shadowPlatform";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
-import { prefetchDisplayImages, getHeroSlideDisplayWidth, getHeroSlideImageUri } from "../../utils/image";
+import { prefetchDisplayImages, getHeroSlideDisplayWidth, getHeroSlideImageUri, PRODUCT_HERO_BLURHASH } from "../../utils/image";
+import { resolveImageSource } from "../../utils/mediaSource";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import { KANKREG_BP, useKankregLayout } from "../../theme/kankregBreakpoints";
 import {
@@ -35,7 +36,6 @@ import {
 } from "../../constants/marketingAssets";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 import ProgressiveImage from "../ui/ProgressiveImage";
-import { hasLcpShell, setLcpShellVisible } from "../../utils/lcpShell";
 
 const SLIDE_INTERVAL_MS = 7000;
 const KEN_BURNS_CLASS = "kankreg-hero-kenburns";
@@ -188,6 +188,11 @@ function HeroSlideImage({
     () => getHeroSlideImageUri(slide?.url, { layoutWidth: slideLayoutWidth, isMobileWeb }),
     [isMobileWeb, slideLayoutWidth, slide?.url]
   );
+  const nativeSource = useMemo(() => {
+    if (typeof slide?.url === "number") return resolveImageSource(slide.url);
+    if (uri) return { uri };
+    return null;
+  }, [slide?.url, uri]);
   const label =
     slide?.accessibilityLabel ||
     slide?.title ||
@@ -195,12 +200,7 @@ function HeroSlideImage({
     slide?.caption ||
     "Hero slide";
 
-  if (!uri) return null;
-
-  // Exported HTML shell already painted the LCP hero — skip duplicate img until slide changes.
-  if (useNativeLcp && Platform.OS === "web" && hasLcpShell()) {
-    return <View style={styles.heroSlideImage} accessibilityLabel={label} />;
-  }
+  if (!uri && !nativeSource) return null;
 
   if (useNativeLcp && Platform.OS === "web") {
     return (
@@ -240,7 +240,7 @@ function HeroSlideImage({
 
   return (
     <Image
-      source={{ uri }}
+      source={nativeSource}
       className={kenClass}
       style={styles.heroSlideImage}
       contentFit={imageFit}
@@ -248,7 +248,8 @@ function HeroSlideImage({
       transition={active ? 300 : 0}
       priority={active ? "high" : "normal"}
       cachePolicy="memory-disk"
-      recyclingKey={String(slide.id || slide.key || uri)}
+      placeholder={{ blurhash: PRODUCT_HERO_BLURHASH }}
+      recyclingKey={String(slide.id || slide.key || uri || slide.url)}
       accessibilityLabel={label}
     />
   );
@@ -414,9 +415,7 @@ function HeroSlideCard({
           style={StyleSheet.absoluteFillObject}
         />
       )}
-      {slide.mediaType === "video" ? (
-        <View style={[styles.mediaFill, styles.videoPoster]} />
-      ) : hasImage && shouldLoadImage ? (
+        {slide.mediaType === "video" ? null : hasImage && shouldLoadImage ? (
         <HeroSlideImage
           slide={slide}
           imageFit={imageFit}
@@ -769,12 +768,6 @@ export default function HeroMediaSlider({
   }, [pageWidth]);
 
   useEffect(() => {
-    if (!isMobileWebTop || Platform.OS !== "web") return undefined;
-    setLcpShellVisible(index === 0);
-    return undefined;
-  }, [index, isMobileWebTop]);
-
-  useEffect(() => {
     if (reducedMotion || count <= 1 || slideWidth <= 0) return undefined;
     const timer = setInterval(() => goTo(indexRef.current + 1), SLIDE_INTERVAL_MS);
     return () => clearInterval(timer);
@@ -813,6 +806,9 @@ export default function HeroMediaSlider({
         cardEmbedded && isApp && styles.shellAppEmbedded,
         isBanner && bannerHeight ? { height: bannerHeight } : null,
         isBanner && styles.shellBannerBase,
+        isBanner && !bannerHeight && (isApp || isNative || isMobileWebTop)
+          ? { minHeight: isApp ? HOME_HERO_APP_MIN_HEIGHT : 420 }
+          : null,
       ]}
     >
       {isNative || (isApp && !cardEmbedded) ? (
