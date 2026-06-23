@@ -109,18 +109,25 @@ const cardShadow = platformShadow({
   android: { elevation: 10 },
 });
 
-function resolveHeroSlideHeightRatio(slide, { isNative, isMobileWeb }) {
+function resolveHeroSlideHeightRatio(slide, { isNative, isMobileWeb, isApp }) {
+  const phoneBand = isNative || isMobileWeb || isApp;
   if (slide?.heightRatio > 0) return slide.heightRatio;
   if (slide?.variant === "product") {
-    return isNative || isMobileWeb
+    return phoneBand
       ? HOME_HERO_PRODUCT_PHONE_SLIDE_HEIGHT_PER_WIDTH
       : HOME_HERO_PRODUCT_SLIDE_HEIGHT_PER_WIDTH;
   }
-  if (isNative || isMobileWeb) {
+  if (phoneBand) {
     if (slide?.layout === "landscape") return HOME_HERO_WEB_LANDSCAPE_HEIGHT_PER_WIDTH;
     return HOME_HERO_PHONE_SLIDE_HEIGHT_PER_WIDTH;
   }
   return HOME_HERO_WEB_LANDSCAPE_HEIGHT_PER_WIDTH;
+}
+
+function shouldLoadHeroSlide(slideIndex, activeIndex, { isApp, isNative, isMobileWebTop }) {
+  if (isApp || isNative) return Math.abs(slideIndex - activeIndex) <= 1;
+  if (isMobileWebTop) return slideIndex === activeIndex || Math.abs(slideIndex - activeIndex) === 1;
+  return true;
 }
 
 function resolveHeroImageFit(slide, { isTop, isMobileWebTop, isApp = false }) {
@@ -179,14 +186,21 @@ function HeroSlideImage({
   useNativeLcp = false,
   slideLayoutWidth = 960,
   isMobileWeb = false,
+  isPhoneSlider = false,
 }) {
-  const deliveryWidth = useMemo(
-    () => getHeroSlideDisplayWidth(slideLayoutWidth, { isMobileWeb }),
-    [isMobileWeb, slideLayoutWidth]
-  );
+  const deliveryWidth = useMemo(() => {
+    const base = getHeroSlideDisplayWidth(slideLayoutWidth, { isMobileWeb });
+    return isPhoneSlider ? Math.min(base, 720) : base;
+  }, [isMobileWeb, isPhoneSlider, slideLayoutWidth]);
+  const imageQuality = active ? "auto:good" : "auto:eco";
   const uri = useMemo(
-    () => getHeroSlideImageUri(slide?.url, { layoutWidth: slideLayoutWidth, isMobileWeb }),
-    [isMobileWeb, slideLayoutWidth, slide?.url]
+    () =>
+      getHeroSlideImageUri(slide?.url, {
+        layoutWidth: slideLayoutWidth,
+        isMobileWeb,
+        quality: imageQuality,
+      }),
+    [imageQuality, isMobileWeb, slideLayoutWidth, slide?.url]
   );
   const nativeSource = useMemo(() => {
     if (typeof slide?.url === "number") return resolveImageSource(slide.url);
@@ -212,7 +226,7 @@ function HeroSlideImage({
         contentPosition={contentPosition || "center"}
         priority="high"
         width={deliveryWidth}
-        quality="auto:good"
+        quality={imageQuality}
         showSkeleton={false}
         recyclingKey={String(slide.id || slide.key || uri)}
       />
@@ -229,9 +243,9 @@ function HeroSlideImage({
         style={styles.heroSlideImage}
         contentFit={imageFit}
         contentPosition={contentPosition || "center"}
-        priority={active ? "high" : "normal"}
+        priority={active ? "high" : "low"}
         width={deliveryWidth}
-        quality="auto:good"
+        quality={imageQuality}
         showSkeleton={false}
         recyclingKey={String(slide.id || slide.key || uri)}
       />
@@ -425,6 +439,7 @@ function HeroSlideCard({
           useNativeLcp={isMobileWebTop && active}
           slideLayoutWidth={slideLayoutWidth}
           isMobileWeb={isMobileWebTop}
+          isPhoneSlider={isPhoneBand}
         />
       ) : hasImage ? (
         <View style={[styles.mediaFill, styles.videoPoster]} />
@@ -646,6 +661,7 @@ export default function HeroMediaSlider({
   const isCompact = variant === "compact";
   const isApp = variant === "app";
   const isMobileWebTop = isTop && isMobileWeb && layoutWidth < KANKREG_BP.news;
+  const isPhoneSlider = isApp || isNative || isMobileWebTop;
   const isBanner = isTop || isNative || isCompact || isApp;
 
   const scrollRef = useRef(null);
@@ -666,12 +682,12 @@ export default function HeroMediaSlider({
   /** Stable height across slides — avoids blank bands when auto-rotating between aspect ratios. */
   const bannerHeightRatio = useMemo(() => {
     if (!slides.length) {
-      return resolveHeroSlideHeightRatio(activeSlide, { isNative, isMobileWeb });
+      return resolveHeroSlideHeightRatio(activeSlide, { isNative, isMobileWeb, isApp });
     }
     return Math.max(
-      ...slides.map((slide) => resolveHeroSlideHeightRatio(slide, { isNative, isMobileWeb }))
+      ...slides.map((slide) => resolveHeroSlideHeightRatio(slide, { isNative, isMobileWeb, isApp }))
     );
-  }, [activeSlide, isMobileWeb, isNative, slides]);
+  }, [activeSlide, isApp, isMobileWeb, isNative, slides]);
 
   const bannerHeight = useMemo(() => {
     const w = slideWidth;
@@ -691,7 +707,7 @@ export default function HeroMediaSlider({
         Math.max(HOME_HERO_COMPACT_MIN_HEIGHT, target)
       );
     }
-    if (isApp && Platform.OS !== "web") {
+    if (isApp) {
       const target = Math.round(w * HOME_HERO_APP_HEIGHT_RATIO);
       return Math.min(
         HOME_HERO_APP_MAX_HEIGHT,
@@ -724,33 +740,74 @@ export default function HeroMediaSlider({
   useEffect(() => {
     if (!slides.length) return undefined;
     const imageSlides = slides.filter((slide) => slide.mediaType !== "video" && slide.url);
+    const warmSlides = isPhoneSlider ? imageSlides.slice(0, 2) : imageSlides;
     if (Platform.OS === "web") {
-      const eagerCount = isMobileWeb ? 1 : Math.min(2, imageSlides.length);
+      const eagerCount = isPhoneSlider ? 1 : isMobileWeb ? 1 : Math.min(2, warmSlides.length);
       prefetchDisplayImages(
-        imageSlides.map((slide) =>
+        warmSlides.map((slide) =>
           getHeroSlideImageUri(slide.url, {
             layoutWidth: slideWidth || layoutWidth,
             isMobileWeb: isMobileWebTop || isMobileWeb,
+            quality: "auto:eco",
           })
         ),
         {
           eagerCount,
           width: heroImageWidth,
-          quality: "auto:good",
-          warmupAll: !isMobileWeb,
+          quality: "auto:eco",
+          warmupAll: !isPhoneSlider && !isMobileWeb,
         }
       );
       return undefined;
     }
-    imageSlides.forEach((slide) => {
+    warmSlides.forEach((slide) => {
       const uri = getHeroSlideImageUri(slide.url, {
         layoutWidth: slideWidth || layoutWidth,
         isMobileWeb: isMobileWebTop || isMobileWeb,
+        quality: "auto:eco",
       });
       if (uri) Image.prefetch(uri).catch(() => {});
     });
     return undefined;
-  }, [heroImageWidth, isMobileWeb, isMobileWebTop, layoutWidth, slideWidth, slides]);
+  }, [heroImageWidth, isMobileWeb, isMobileWebTop, isPhoneSlider, layoutWidth, slideWidth, slides]);
+
+  useEffect(() => {
+    if (!isPhoneSlider || count <= 1) return undefined;
+    const neighbors = [index - 1, index + 1]
+      .map((i) => ((i % count) + count) % count)
+      .filter((i) => i !== index);
+    neighbors.forEach((slideIndex) => {
+      const slide = slides[slideIndex];
+      if (!slide?.url || slide.mediaType === "video") return;
+      const uri = getHeroSlideImageUri(slide.url, {
+        layoutWidth: slideWidth || layoutWidth,
+        isMobileWeb: isMobileWebTop || isMobileWeb,
+        quality: "auto:eco",
+      });
+      if (!uri) return;
+      if (Platform.OS === "web") {
+        prefetchDisplayImages([uri], {
+          eagerCount: 1,
+          width: heroImageWidth,
+          quality: "auto:eco",
+          warmupAll: false,
+        });
+      } else {
+        Image.prefetch(uri).catch(() => {});
+      }
+    });
+    return undefined;
+  }, [
+    count,
+    heroImageWidth,
+    index,
+    isMobileWeb,
+    isMobileWebTop,
+    isPhoneSlider,
+    layoutWidth,
+    slideWidth,
+    slides,
+  ]);
 
   const goTo = useCallback(
     (next) => {
@@ -822,6 +879,7 @@ export default function HeroMediaSlider({
         snapToInterval={(isNative || isApp) && slideWidth > 0 ? slideWidth : undefined}
         snapToAlignment="start"
         nestedScrollEnabled
+        removeClippedSubviews={Platform.OS === "android"}
         showsHorizontalScrollIndicator={false}
         scrollEventThrottle={16}
         decelerationRate={Platform.OS === "ios" ? "fast" : 0.98}
@@ -842,10 +900,12 @@ export default function HeroMediaSlider({
         contentContainerStyle={slideWidth > 0 ? { width: slideWidth * count } : undefined}
       >
         {slides.map((slide, slideIndex) => {
-          const PageWrap = isTop ? View : Pressable;
-          const pageWrapProps = isTop
-            ? { style: styles.pagePress }
-            : { onPress, style: styles.pagePress, accessibilityRole: "button" };
+          const swipeableBand = isApp || isNative;
+          const PageWrap = isTop || swipeableBand ? View : Pressable;
+          const pageWrapProps =
+            isTop || swipeableBand
+              ? { style: styles.pagePress }
+              : { onPress, style: styles.pagePress, accessibilityRole: "button" };
 
           return (
             <View
@@ -856,9 +916,11 @@ export default function HeroMediaSlider({
                 <HeroSlideCard
                   slide={slide}
                   active={slideIndex === index}
-                  shouldLoadImage={
-                    !isMobileWebTop || slideIndex === index || Math.abs(slideIndex - index) === 1
-                  }
+                  shouldLoadImage={shouldLoadHeroSlide(slideIndex, index, {
+                    isApp,
+                    isNative,
+                    isMobileWebTop,
+                  })}
                   isDark={isDark}
                   isBanner={isBanner}
                   isTop={isTop}

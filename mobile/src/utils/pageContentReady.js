@@ -1,5 +1,5 @@
 import { Image as RNImage, Platform } from "react-native";
-import { getProductThumbImageUri, prefetchDisplayImages } from "./image";
+import { getProductThumbImageUri, getHeroSlideImageUri, prefetchDisplayImages } from "./image";
 
 function resolveAssetUri(source) {
   if (!source) return "";
@@ -61,7 +61,14 @@ export function prefetchHomePageImages({ products = [], heroSlides = [] } = {}) 
   const productUris = products
     .slice(0, 6)
     .map((p) => getProductThumbImageUri(p?.image || p?.images?.[0]));
-  const heroUris = heroSlides.slice(0, 2).map((slide) => resolveAssetUri(slide?.url));
+  const heroUris = heroSlides
+    .slice(0, 2)
+    .map((slide) =>
+      slide?.url
+        ? getHeroSlideImageUri(slide.url, { layoutWidth: 390, isMobileWeb: true, quality: "auto:eco" })
+        : ""
+    )
+    .filter(Boolean);
   prefetchImageSources([...heroUris, ...productUris], { max: 8 }).catch(() => {});
 }
 

@@ -16,11 +16,6 @@ import {
   HankenGrotesk_700Bold,
   HankenGrotesk_800ExtraBold,
 } from "@expo-google-fonts/hanken-grotesk";
-import {
-  Fraunces_600SemiBold,
-  Fraunces_700Bold,
-  Fraunces_400Regular_Italic,
-} from "@expo-google-fonts/fraunces";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { isRunningInExpoGo } from "expo";
@@ -163,9 +158,6 @@ export default function App() {
           HankenGrotesk_600SemiBold,
           HankenGrotesk_700Bold,
           HankenGrotesk_800ExtraBold,
-          Fraunces_600SemiBold,
-          Fraunces_700Bold,
-          Fraunces_400Regular_Italic,
         };
   const [fontsLoaded] = useFonts(fontMap);
   const [bootFootnote, setBootFootnote] = useState("Preparing your boutique…");

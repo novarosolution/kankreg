@@ -183,12 +183,13 @@ export default function KankregHomeScreen({ navigation }) {
       const nextProducts = Array.isArray(list) ? list : [];
       const nextConfig = config || peekHomeViewCache();
       const catalog = getHomeCatalogProducts(nextProducts);
+      const phoneHeroSlides = getAppHeroSlides(nextConfig?.heroSlides).length
+        ? getAppHeroSlides(nextConfig?.heroSlides)
+        : getAppMarketingHeroSlides(HOME_HERO_MOBILE_SLIDER_SLIDES);
       const heroSlides =
-        Platform.OS === "web"
+        Platform.OS === "web" && !isMobileWeb
           ? getActiveHeroSlides(nextConfig?.heroSlides)
-          : getAppHeroSlides(nextConfig?.heroSlides).length
-            ? getAppHeroSlides(nextConfig?.heroSlides)
-            : getAppMarketingHeroSlides(HOME_HERO_MOBILE_SLIDER_SLIDES);
+          : phoneHeroSlides;
       setProducts(nextProducts);
       setHomeView(nextConfig);
       prefetchHomePageImages({ products: catalog, heroSlides });
@@ -202,7 +203,7 @@ export default function KankregHomeScreen({ navigation }) {
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [isMobileWeb]);
 
   useEffect(() => {
     load();

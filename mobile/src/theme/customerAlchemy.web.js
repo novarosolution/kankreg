@@ -1,6 +1,5 @@
 /**
- * Web display typography — CIENUR (CDN). Body stays Hanken Grotesk.
- * Native uses Fraunces via `customerAlchemy.js`.
+ * Web display typography — Hanken Grotesk (normal sans, matches body).
  */
 export {
   ALCHEMY,

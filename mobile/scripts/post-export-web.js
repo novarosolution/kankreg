@@ -47,8 +47,6 @@ if (fs.existsSync(indexHtml)) {
   html = html.replace(/<link[^>]+leafletWeb[^>]*>\s*/gi, "");
 
   const headInject = [
-    '<link rel="preconnect" href="https://fonts.cdnfonts.com" crossorigin />',
-    '<link rel="stylesheet" href="https://fonts.cdnfonts.com/css/cienur" data-kankreg="cienur-font" />',
     '<meta name="description" content="KankreG — premium A2 ghee and artisan pantry goods, delivered fresh to your door." />',
     '<meta name="theme-color" content="#FDF9F0" />',
     '<meta name="color-scheme" content="light dark" />',

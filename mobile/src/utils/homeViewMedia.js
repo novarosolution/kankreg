@@ -87,13 +87,18 @@ export function getCompactMarketingHeroSlides(marketingSlides = []) {
   return mapMarketingSlidesToHero(marketingSlides).slice(0, COMPACT_HERO_MAX_SLIDES);
 }
 
-/** Native app hero — images only, up to 3 slides. */
-export function getAppHeroSlides(slides) {
-  const active = getActiveHeroSlides(slides)
+/** Phone home hero — admin slides or bundled marketing fallbacks (native + mobile web). */
+export function resolvePhoneHeroSlides(heroSlides = []) {
+  const active = getActiveHeroSlides(heroSlides)
     .filter((slide) => slide.mediaType !== "video")
     .slice(0, HOME_HERO_APP_MAX_SLIDES);
   if (active.length) return active;
   return getAppMarketingHeroSlides(HOME_HERO_MOBILE_SLIDER_SLIDES);
+}
+
+/** Native app hero — images only, up to 4 slides. */
+export function getAppHeroSlides(slides) {
+  return resolvePhoneHeroSlides(slides);
 }
 
 export function getAppMarketingHeroSlides(marketingSlides = []) {

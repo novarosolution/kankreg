@@ -20,7 +20,7 @@ export const HOME_HERO_COMPACT_MIN_HEIGHT = 168;
 export const HOME_HERO_APP_HEIGHT_RATIO = 0.56;
 export const HOME_HERO_APP_MAX_HEIGHT = 312;
 export const HOME_HERO_APP_MIN_HEIGHT = 228;
-export const HOME_HERO_APP_MAX_SLIDES = 2;
+export const HOME_HERO_APP_MAX_SLIDES = 4;
 
 /** Phone hero band height per point of slider width — portrait product slide (941×1200). */
 export const HOME_HERO_PHONE_SLIDE_HEIGHT_PER_WIDTH = 1200 / 941;

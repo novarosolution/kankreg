@@ -178,7 +178,7 @@ function buildInvoiceHtml(order) {
             position: absolute;
             right: 32px;
             bottom: 36px;
-            font-family: "CIENUR", Georgia, serif;
+            font-family: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
             font-size: 90px;
             font-weight: 800;
             color: rgba(138, 90, 18, 0.05);
@@ -200,7 +200,7 @@ function buildInvoiceHtml(order) {
           }
           .brandCol { max-width: 58%; }
           .wordmark {
-            font-family: "CIENUR", Georgia, serif;
+            font-family: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
             font-size: 36px;
             line-height: 1;
             font-weight: 800;
@@ -277,7 +277,7 @@ function buildInvoiceHtml(order) {
             color: var(--brown-ink);
           }
           .invoiceCard .invNumber {
-            font-family: "CIENUR", Georgia, serif;
+            font-family: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
             font-size: 18px;
             font-weight: 800;
             letter-spacing: -0.3px;
@@ -336,7 +336,7 @@ function buildInvoiceHtml(order) {
             margin-bottom: 8px;
           }
           .metaCard .heading {
-            font-family: "CIENUR", Georgia, serif;
+            font-family: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
             font-size: 16px;
             font-weight: 800;
             color: var(--brown-ink);
@@ -352,7 +352,7 @@ function buildInvoiceHtml(order) {
           .metaCard .line.muted { color: var(--muted); }
 
           .sectionTitle {
-            font-family: "CIENUR", Georgia, serif;
+            font-family: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
             font-size: 17px;
             font-weight: 800;
             color: var(--brown-ink);
@@ -468,7 +468,7 @@ function buildInvoiceHtml(order) {
             border-top: 1.5px dashed var(--line-strong);
           }
           .totals .ttRow.grand .key {
-            font-family: "CIENUR", Georgia, serif;
+            font-family: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
             font-weight: 800;
             font-size: 14px;
             color: var(--brown-ink);
@@ -512,7 +512,7 @@ function buildInvoiceHtml(order) {
             font-family: "Inter", sans-serif;
           }
           .footer .thanks {
-            font-family: "CIENUR", Georgia, serif;
+            font-family: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
             font-size: 16px;
             font-weight: 800;
             color: var(--brown-ink);

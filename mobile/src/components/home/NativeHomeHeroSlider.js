@@ -1,14 +1,13 @@
 import React, { useMemo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { HOME_HERO_MOBILE_SLIDER_SLIDES } from "../../constants/marketingAssets";
 import { HOME_SCREEN_UI, HOME_TRUST_STRIP } from "../../content/appContent";
 import { FIGMA } from "../../theme/figmaApp";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon, spacing, typography } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
-import { getAppHeroSlides, getAppMarketingHeroSlides } from "../../utils/homeViewMedia";
+import { getAppHeroSlides } from "../../utils/homeViewMedia";
 import HeroMediaSlider from "./HeroMediaSlider";
 
 const cardShadow = platformShadow({
@@ -25,11 +24,7 @@ const cardShadow = platformShadow({
 export default function NativeHomeHeroSlider({ navigation, heroSlides = [] }) {
   const { isDark } = useTheme();
 
-  const activeSlides = useMemo(() => {
-    const adminSlides = getAppHeroSlides(heroSlides);
-    if (adminSlides.length) return adminSlides;
-    return getAppMarketingHeroSlides(HOME_HERO_MOBILE_SLIDER_SLIDES);
-  }, [heroSlides]);
+  const activeSlides = useMemo(() => getAppHeroSlides(heroSlides), [heroSlides]);
 
   if (!activeSlides.length) return null;
 
@@ -38,17 +33,7 @@ export default function NativeHomeHeroSlider({ navigation, heroSlides = [] }) {
 
   return (
     <View style={styles.wrap}>
-      <Pressable
-        onPress={openShop}
-        style={({ pressed }) => [
-          styles.card,
-          isDark && styles.cardDark,
-          cardShadow,
-          pressed && styles.cardPressed,
-        ]}
-        accessibilityRole="button"
-        accessibilityLabel="Browse featured products"
-      >
+      <View style={[styles.card, isDark && styles.cardDark, cardShadow]}>
         <View style={styles.goldRail} pointerEvents="none" />
         <HeroMediaSlider
           variant="app"
@@ -75,7 +60,7 @@ export default function NativeHomeHeroSlider({ navigation, heroSlides = [] }) {
             ))}
           </View>
         ) : null}
-      </Pressable>
+      </View>
     </View>
   );
 }
@@ -95,9 +80,6 @@ const styles = StyleSheet.create({
   },
   cardDark: {
     borderColor: "rgba(214, 173, 91, 0.28)",
-  },
-  cardPressed: {
-    opacity: 0.96,
   },
   goldRail: {
     position: "absolute",

@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 import { ALCHEMY } from "./customerAlchemy";
 import { KANKREG_CHROME } from "./kankregWeb";
-import { WEB_DISPLAY_FONT, WEB_DISPLAY_FONT_CDN } from "./webFonts";
+import { WEB_DISPLAY_FONT_STACK } from "./webFonts";
 
 /** Fixed top bar height on web (kankreg.html `.topbar` ≈ 76px). */
 export const WEB_HEADER_HEIGHT = 76;
@@ -38,30 +38,13 @@ export const webRootStyle = Platform.select({
 let premiumChromeInjected = false;
 let displayFontInjected = false;
 
-/** Load CIENUR display face for web headings (dev + static export). */
+/** Web headings use the same Hanken Grotesk stack as body (Expo font loader). */
 export function injectWebDisplayFont() {
   if (Platform.OS !== "web" || typeof document === "undefined" || displayFontInjected) return;
   displayFontInjected = true;
-
-  const head = document.head;
-  if (!head) return;
-
-  if (!document.querySelector('link[data-kankreg="cienur-font"]')) {
-    const preconnect = document.createElement("link");
-    preconnect.rel = "preconnect";
-    preconnect.href = "https://fonts.cdnfonts.com";
-    preconnect.crossOrigin = "anonymous";
-    head.appendChild(preconnect);
-
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = WEB_DISPLAY_FONT_CDN;
-    link.setAttribute("data-kankreg", "cienur-font");
-    head.appendChild(link);
-  }
 }
 
-/** Web-only: description, theme-color, lang, and CIENUR display font. */
+/** Web-only: description, theme-color, lang. */
 export function injectWebDocumentMeta() {
   if (Platform.OS !== "web" || typeof document === "undefined") return;
 
@@ -226,7 +209,8 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
       }
       [data-kankreg-display="true"],
       h1, h2, h3 {
-        font-family: '${WEB_DISPLAY_FONT}', Georgia, 'Times New Roman', serif;
+        font-family: ${WEB_DISPLAY_FONT_STACK};
+        font-style: normal;
       }
     `;
     document.head.appendChild(style);
