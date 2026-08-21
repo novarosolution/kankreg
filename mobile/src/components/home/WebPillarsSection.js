@@ -14,7 +14,7 @@ import {
 import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { useTheme } from "../../context/ThemeContext";
-import { fonts, icon, radius } from "../../theme/tokens";
+import { fonts, radius } from "../../theme/tokens";
 import { getHomePhoneBleed } from "../../utils/homeSectionBleed";
 
 function PillarCard({ pillar, isDark, ink, muted, index }) {
@@ -24,7 +24,7 @@ function PillarCard({ pillar, isDark, ink, muted, index }) {
         <View style={[styles.iconBadge, isDark && styles.iconBadgeDark]}>
           <Ionicons
             name={pillar.icon}
-            size={icon.sm + 2}
+            size={32}
             color={isDark ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.gold}
           />
         </View>
@@ -80,10 +80,12 @@ export default function WebPillarsSection({ aboutSection }) {
         <SectionHeader
           eyebrow={about.mission.eyebrow}
           title={about.mission.title}
-          kicker={introParagraph}
           align="center"
           flush
         />
+        {introParagraph ? (
+          <Text style={[styles.introText, { color: muted }]}>{introParagraph}</Text>
+        ) : null}
       </View>
 
       <GoldHairline
@@ -134,7 +136,7 @@ const styles = StyleSheet.create({
     paddingBottom: HOME_SPACE.xl + 8,
     paddingHorizontal: HOME_SPACE.lg + 6,
     borderRadius: radius.xl + 10,
-    backgroundColor: KANKREG_CHROME.cream,
+    backgroundColor: KANKREG_CHROME.sectionGoldWash,
     borderWidth: 1,
     borderColor: "rgba(169, 119, 46, 0.18)",
     borderTopWidth: 3,
@@ -150,7 +152,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl + 6,
   },
   sectionDark: {
-    backgroundColor: "rgba(24, 21, 19, 0.74)",
+    backgroundColor: KANKREG_CHROME.sectionGoldWashDark,
     borderColor: "rgba(214, 173, 91, 0.22)",
     borderTopColor: "rgba(214, 173, 91, 0.5)",
   },
@@ -185,19 +187,16 @@ const styles = StyleSheet.create({
     borderColor: "rgba(214, 173, 91, 0.12)",
   },
   iconBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(214, 173, 91, 0.14)",
-    borderWidth: 1,
-    borderColor: "rgba(214, 173, 91, 0.24)",
-    marginBottom: 2,
+    backgroundColor: "rgba(214, 173, 91, 0.1)",
+    marginBottom: 4,
   },
   iconBadgeDark: {
-    backgroundColor: "rgba(214, 173, 91, 0.16)",
-    borderColor: "rgba(214, 173, 91, 0.28)",
+    backgroundColor: "rgba(214, 173, 91, 0.14)",
   },
   cardTitle: {
     fontFamily: fonts.semibold,
@@ -217,5 +216,14 @@ const styles = StyleSheet.create({
     maxWidth: 640,
     alignSelf: "center",
     zIndex: 1,
+  },
+  introText: {
+    textAlign: "center",
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    lineHeight: 23,
+    maxWidth: 560,
+    alignSelf: "center",
+    marginTop: HOME_SPACE.xs,
   },
 });

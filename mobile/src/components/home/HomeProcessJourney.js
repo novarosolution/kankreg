@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     paddingBottom: HOME_SPACE.xl + 8,
     paddingHorizontal: HOME_SPACE.lg + 6,
     borderRadius: radius.xl + 10,
-    backgroundColor: KANKREG_CHROME.cream,
+    backgroundColor: KANKREG_CHROME.sectionGoldWash,
     borderWidth: 1,
     borderColor: "rgba(169, 119, 46, 0.2)",
     borderTopWidth: 3,
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl + 6,
   },
   sectionDark: {
-    backgroundColor: "rgba(24, 21, 19, 0.74)",
+    backgroundColor: KANKREG_CHROME.sectionGoldWashDark,
     borderColor: "rgba(214, 173, 91, 0.16)",
     borderTopColor: "rgba(214, 173, 91, 0.55)",
   },

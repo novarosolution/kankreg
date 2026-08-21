@@ -29,6 +29,12 @@ export const KANKREG_CHROME = {
   buttonAccent: "#A67C37",
   buttonAccentHover: "#B88A45",
   onAccent: "#FFFFFF",
+  /** Home "chapter" section tints — gives adjacent editorial sections a soft
+   *  distinct wash instead of every section reading as the same flat cream card. */
+  sectionGoldWash: "#FBF2DE",
+  sectionGoldWashDark: "rgba(30, 24, 16, 0.78)",
+  sectionGreenWash: "#F0F4EA",
+  sectionGreenWashDark: "rgba(18, 23, 19, 0.78)",
 };
 
 /** Display radius from HTML --r */

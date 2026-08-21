@@ -1367,13 +1367,28 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     alignSelf: "stretch",
     width: "100%",
-    gap: 6,
+    gap: 12,
   },
   heroEyebrowApp: {
     fontFamily: fonts.semibold,
     fontSize: typography.overline - 1,
     letterSpacing: 2.4,
     color: KANKREG_PALETTE.goldBright,
+    ...Platform.select({
+      ios: {
+        textShadowColor: "rgba(0,0,0,0.5)",
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 6,
+      },
+      android: {
+        textShadowColor: "rgba(0,0,0,0.55)",
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 4,
+      },
+      default: {
+        textShadow: "0 1px 10px rgba(0,0,0,0.55)",
+      },
+    }),
   },
   slideTitleApp: {
     fontFamily: FONT_HEADING,
@@ -1382,14 +1397,44 @@ const styles = StyleSheet.create({
     color: "#fff",
     textAlign: "left",
     width: "100%",
+    ...Platform.select({
+      ios: {
+        textShadowColor: "rgba(0,0,0,0.45)",
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 10,
+      },
+      android: {
+        textShadowColor: "rgba(0,0,0,0.5)",
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 6,
+      },
+      default: {
+        textShadow: "0 2px 16px rgba(0,0,0,0.55)",
+      },
+    }),
   },
   slideSubtitleApp: {
     fontFamily: fonts.regular,
     fontSize: typography.bodySmall,
     lineHeight: typography.bodySmall + 4,
-    color: "rgba(255,255,255,0.9)",
+    color: "rgba(255,255,255,0.94)",
     textAlign: "left",
     width: "100%",
+    ...Platform.select({
+      ios: {
+        textShadowColor: "rgba(0,0,0,0.4)",
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 8,
+      },
+      android: {
+        textShadowColor: "rgba(0,0,0,0.48)",
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 4,
+      },
+      default: {
+        textShadow: "0 1px 12px rgba(0,0,0,0.6)",
+      },
+    }),
   },
   appCtaPill: {
     flexDirection: "row",
@@ -1434,7 +1479,7 @@ const styles = StyleSheet.create({
   phoneCaptionStack: {
     width: "100%",
     alignItems: "center",
-    gap: 6,
+    gap: 8,
     paddingVertical: 2,
   },
   slideCaptionTop: {
@@ -1482,12 +1527,20 @@ const styles = StyleSheet.create({
     letterSpacing: 1.3,
     textAlign: "center",
     textTransform: "uppercase",
+    ...Platform.select({
+      web: { textShadow: "0 1px 10px rgba(0,0,0,0.55)" },
+      default: {},
+    }),
   },
   slideTitleMobileWeb: {
     fontSize: 26,
     lineHeight: 30,
     letterSpacing: -0.45,
     textAlign: "center",
+    ...Platform.select({
+      web: { textShadow: "0 2px 16px rgba(0,0,0,0.55)" },
+      default: {},
+    }),
   },
   slideSubtitleMobileWeb: {
     fontSize: 14,
@@ -1495,7 +1548,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
     maxWidth: 300,
     textAlign: "center",
-    color: "rgba(245,239,228,0.9)",
+    color: "rgba(245,239,228,0.94)",
+    ...Platform.select({
+      web: { textShadow: "0 1px 12px rgba(0,0,0,0.6)" },
+      default: {},
+    }),
   },
   heroEyebrow: {
     fontFamily: fonts.semibold,
@@ -1751,18 +1808,23 @@ const styles = StyleSheet.create({
   navBtnQuiet: {
     position: "absolute",
     top: "50%",
-    marginTop: -18,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    marginTop: -21,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(8,6,4,0.26)",
+    backgroundColor: "rgba(8,6,4,0.4)",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.14)",
+    borderColor: "rgba(255,255,255,0.22)",
     zIndex: 4,
     ...Platform.select({
-      web: { cursor: "pointer", backdropFilter: "blur(6px)" },
+      web: {
+        cursor: "pointer",
+        backdropFilter: "blur(8px)",
+        boxShadow: "0 6px 18px -8px rgba(0,0,0,0.45)",
+        transition: "background-color 0.2s ease, transform 0.2s ease, border-color 0.2s ease",
+      },
       default: {},
     }),
   },
@@ -1770,7 +1832,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(8,6,4,0.58)",
   },
   navBtnQuietHover: {
-    backgroundColor: "rgba(8,6,4,0.38)",
+    backgroundColor: "rgba(8,6,4,0.56)",
+    borderColor: "rgba(255,255,255,0.34)",
+    ...Platform.select({ web: { transform: [{ scale: 1.06 }] }, default: {} }),
   },
   navBtnFocus: {
     ...Platform.select({
@@ -1829,14 +1893,18 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   dotNative: {
-    width: 7,
-    height: 7,
+    width: 8,
+    height: 8,
     borderRadius: 4,
-    backgroundColor: "rgba(255,255,255,0.34)",
+    backgroundColor: "rgba(255,255,255,0.42)",
+    ...Platform.select({
+      web: { boxShadow: "0 1px 3px rgba(0,0,0,0.3)" },
+      default: {},
+    }),
   },
   dotNativeActive: {
     width: 30,
-    height: 7,
+    height: 8,
     borderRadius: 4,
     backgroundColor: KANKREG_PALETTE.goldBright,
   },
@@ -1860,8 +1928,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   progressTrackTop: {
-    height: 1,
-    backgroundColor: "rgba(255,255,255,0.16)",
+    height: 2,
+    backgroundColor: "rgba(255,255,255,0.2)",
   },
   progressFill: {
     height: "100%",
@@ -1926,16 +1994,22 @@ const styles = StyleSheet.create({
     backgroundColor: KANKREG_PALETTE.goldBright,
   },
   dotTop: {
-    width: 7,
-    height: 7,
+    width: 8,
+    height: 8,
     borderRadius: 4,
-    backgroundColor: "rgba(255,255,255,0.34)",
-    ...Platform.select({ web: { cursor: "pointer", transition: "width 0.2s ease, background-color 0.2s ease" } }),
+    backgroundColor: "rgba(255,255,255,0.42)",
+    ...Platform.select({
+      web: {
+        cursor: "pointer",
+        transition: "width 0.2s ease, background-color 0.2s ease",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+      },
+    }),
   },
   dotTopActive: {
-    width: 26,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: KANKREG_CHROME.buttonAccent,
+    width: 28,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: KANKREG_PALETTE.goldBright,
   },
 });

@@ -44,6 +44,12 @@ export default function KankregSiteFooter() {
 
   return (
     <View style={styles.shell}>
+      <LinearGradient
+        colors={["rgba(214, 173, 91, 0.1)", "transparent"]}
+        locations={[0, 1]}
+        style={styles.topGlow}
+        pointerEvents="none"
+      />
       <View style={[styles.inner, { paddingHorizontal: pageGutterClamp }]}>
         {showNewsletter ? (
         <View style={[styles.news, stackFooterNewsletter && styles.newsStack]}>
@@ -133,6 +139,15 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "web" ? "clamp(44px, 6vw, 64px)" : 44,
     paddingBottom: 32,
     width: "100%",
+    position: "relative",
+    overflow: "hidden",
+  },
+  topGlow: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 220,
   },
   inner: {
     maxWidth: 1280,
