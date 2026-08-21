@@ -5,20 +5,20 @@ import { scheduleScrollTriggerRefresh } from "../utils/scrollTriggerRefresh";
 
 const PRESETS = {
   "fade-up": {
-    from: { y: 28, opacity: 0 },
-    to: { y: 0, opacity: 1, duration: 0.58, ease: "power2.out" },
+    from: { y: 32, opacity: 0 },
+    to: { y: 0, opacity: 1, duration: 0.68, ease: "power3.out" },
   },
   "fade-in": {
-    from: { y: 8, opacity: 0 },
-    to: { y: 0, opacity: 1, duration: 0.5, ease: "power2.out" },
+    from: { y: 10, opacity: 0 },
+    to: { y: 0, opacity: 1, duration: 0.56, ease: "power3.out" },
   },
   "scale-in": {
     from: { scale: 0.96, y: 18, opacity: 0 },
-    to: { scale: 1, y: 0, opacity: 1, duration: 0.6, ease: "power3.out" },
+    to: { scale: 1, y: 0, opacity: 1, duration: 0.66, ease: "power3.out" },
   },
   "slide-right": {
     from: { x: -32, opacity: 0 },
-    to: { x: 0, opacity: 1, duration: 0.55, ease: "power2.out" },
+    to: { x: 0, opacity: 1, duration: 0.6, ease: "power3.out" },
   },
 };
 

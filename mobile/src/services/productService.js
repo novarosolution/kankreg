@@ -43,6 +43,11 @@ export function peekProductsCache() {
 export function revalidateProductsInBackground(onUpdated) {
   const now = Date.now();
   if (productsCache.data && now - productsCache.fetchedAt < PRODUCTS_CACHE_TTL_MS) {
+    /** Still deliver cached data to the caller: a screen whose own initial fetch
+     *  failed (backend briefly down) relies on this callback to recover once another
+     *  screen has successfully filled the cache — skipping it left Home stuck on
+     *  "No products yet" while Shop showed the full catalog. */
+    if (onUpdated) onUpdated(productsCache.data);
     return Promise.resolve(productsCache.data);
   }
   if (productsCache.promise) {
@@ -342,6 +347,8 @@ export function warmHomeViewCache() {
 export function revalidateHomeViewInBackground(onUpdated) {
   const now = Date.now();
   if (homeViewCache.data && now - homeViewCache.fetchedAt < PRODUCTS_CACHE_TTL_MS) {
+    /** Same recovery contract as revalidateProductsInBackground — always deliver. */
+    if (onUpdated) onUpdated(homeViewCache.data);
     return Promise.resolve(homeViewCache.data);
   }
   if (homeViewCache.promise) {
@@ -370,7 +377,9 @@ async function fetchHomeViewFromApi() {
     return normalized;
   } catch {
     const fallback = { ...DEFAULT_HOME_VIEW_CONFIG };
-    homeViewCache = { data: fallback, fetchedAt: Date.now(), promise: null };
+    /** fetchedAt: 0 — a failed fetch must not count as fresh for the TTL window,
+     *  otherwise admin hero slides/config stay hidden for 5 minutes after one blip. */
+    homeViewCache = { data: fallback, fetchedAt: 0, promise: null };
     return fallback;
   }
 }

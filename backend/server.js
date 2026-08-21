@@ -66,6 +66,9 @@ app.options(/.*/, cors(corsOptions));
 app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
+/** Local dev only — serves bundled marketing photography for seeded product images until Cloudinary is configured. */
+app.use("/media/marketing", express.static(path.join(__dirname, "../mobile/assets/marketing")));
+
 app.get("/", (req, res) => {
   res.json({ message: "E-commerce API is running", ok: true });
 });

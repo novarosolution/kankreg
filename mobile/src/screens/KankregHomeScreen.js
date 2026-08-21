@@ -12,8 +12,10 @@ import {
 import WebPremiumHero from "../components/home/WebPremiumHero";
 import {
   WebProcessSection,
-  WebAboutSection,
   WebCommunitySection,
+  WebCompareSection,
+  WebPillarsSection,
+  WebHomeCtaBand,
 } from "../components/home/homeWebSections";
 import DeferredMount from "../components/ui/DeferredMount";
 import { HOME_HERO_MOBILE_SLIDER_SLIDES } from "../constants/marketingAssets";
@@ -23,6 +25,7 @@ import {
   getAppMarketingHeroSlides,
   normalizeAboutSection,
   normalizeCommunitySection,
+  normalizeCompareSection,
   resolveProcessDisplay,
 } from "../utils/homeViewMedia";
 import { prefetchHomePageImages } from "../utils/pageContentReady";
@@ -39,7 +42,8 @@ import PremiumEmptyState from "../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
 import { KANKREG_CHROME } from "../theme/kankregWeb";
-import { HOME_SECTION_GAP, HOME_SPACE } from "../theme/homeEditorial";
+import { GOLD_HAIRLINE_EDITORIAL, HOME_SECTION_GAP, HOME_SPACE } from "../theme/homeEditorial";
+import GoldHairline from "../components/ui/GoldHairline";
 import { useCart } from "../context/CartContext";
 import { useTheme } from "../context/ThemeContext";
 import { DEFAULT_HOME_VIEW_CONFIG, getHomeViewConfig, getProducts, peekHomeViewCache, peekProductsCache, revalidateHomeViewInBackground, revalidateProductsInBackground } from "../services/productService";
@@ -141,6 +145,15 @@ const styles = StyleSheet.create({
   webSection: {
     width: "100%",
   },
+  webSectionPremium: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 28,
+    padding: HOME_SPACE.lg,
+    ...Platform.select({
+      web: { boxShadow: "0 22px 46px -42px rgba(61, 42, 18, 0.45)" },
+      default: {},
+    }),
+  },
 });
 
 function HomeQuote({ isDark }) {
@@ -175,9 +188,13 @@ export default function KankregHomeScreen({ navigation }) {
   const load = useCallback(async (pull = false) => {
     if (pull) setRefreshing(true);
     setConfigError("");
+    let productsFetchFailed = false;
     try {
       const [list, config] = await Promise.all([
-        getProducts().catch(() => peekProductsCache() || []),
+        getProducts().catch(() => {
+          productsFetchFailed = true;
+          return peekProductsCache() || [];
+        }),
         getHomeViewConfig().catch(() => peekHomeViewCache()),
       ]);
       const nextProducts = Array.isArray(list) ? list : [];
@@ -193,7 +210,8 @@ export default function KankregHomeScreen({ navigation }) {
       setProducts(nextProducts);
       setHomeView(nextConfig);
       prefetchHomePageImages({ products: catalog, heroSlides });
-      if (!nextProducts.length) {
+      /** Empty catalog is a valid state (handled by the empty-state view below) — only surface an error when the fetch itself failed. */
+      if (productsFetchFailed && !nextProducts.length) {
         setConfigError("Could not load products. Check your connection and try again.");
       }
     } catch {
@@ -249,6 +267,17 @@ export default function KankregHomeScreen({ navigation }) {
 
   const shopCatalog = useMemo(() => getShopCatalogProducts(products), [products]);
   const homeCatalog = useMemo(() => getHomeCatalogProducts(products), [products]);
+  /** NativeCategoryRow falls back to 4 generic tiles when the catalog has no categories yet,
+   *  and hides itself entirely when there's exactly one — mirror that here so the "Categories"
+   *  section header never renders above an empty/collapsed row. */
+  const catalogCategoryCount = useMemo(
+    () =>
+      new Set(
+        shopCatalog.map((p) => String(p.category || p.productType || "").trim()).filter(Boolean)
+      ).size,
+    [shopCatalog]
+  );
+  const showCategoryStrip = catalogCategoryCount !== 1;
   const comingSoonOnHome = useMemo(
     () => homeCatalog.filter((p) => getProductCardFlags(p).isComingSoon),
     [homeCatalog]
@@ -321,7 +350,7 @@ export default function KankregHomeScreen({ navigation }) {
 
           <NativeHomeHeroSlider navigation={navigation} heroSlides={homeView?.heroSlides} />
 
-              {showCategories ? (
+              {showCategories && showCategoryStrip ? (
                 <>
                   <NativeSectionHeader
                     title={HOME_SCREEN_UI.categories.title}
@@ -376,11 +405,17 @@ export default function KankregHomeScreen({ navigation }) {
   const aboutSection = homeView?.aboutSection ?? DEFAULT_HOME_VIEW_CONFIG.aboutSection;
   const communitySection =
     homeView?.communitySection ?? DEFAULT_HOME_VIEW_CONFIG.communitySection;
-  const showAboutStory = ready && normalizeAboutSection(aboutSection).enabled;
+  const compareSection = homeView?.compareSection ?? DEFAULT_HOME_VIEW_CONFIG.compareSection;
+  const normalizedAbout = normalizeAboutSection(aboutSection);
+  const showMissionSection =
+    ready && normalizedAbout.enabled && normalizedAbout.pillars.some((p) => p.enabled);
   const showCommunitySection =
     showCommunity &&
     ready &&
     normalizeCommunitySection(communitySection).enabled;
+  const showCompareSection = ready && normalizeCompareSection(compareSection).enabled;
+  const showCtaBand =
+    ready && normalizedAbout.enabled && Boolean(normalizedAbout.ctaBand?.title);
   const webCreamShell =
     Platform.OS === "web" && !isDark ? { backgroundColor: KANKREG_CHROME.cream } : null;
 
@@ -432,18 +467,20 @@ export default function KankregHomeScreen({ navigation }) {
             {showCategories && ready ? (
               <ScrollFadeUp index={0}>
                 {isMobileWeb ? (
-                  <>
-                    <NativeSectionHeader
-                      title={HOME_SCREEN_UI.categories.title}
-                      actionLabel={HOME_SCREEN_UI.categories.action}
-                      onAction={() => navigation.navigate("Shop")}
-                      tight
-                    />
-                    <NativeCategoryRow
-                      products={shopCatalog}
-                      onPress={(label) => navigation.navigate("Shop", { category: label })}
-                    />
-                  </>
+                  showCategoryStrip ? (
+                    <>
+                      <NativeSectionHeader
+                        title={HOME_SCREEN_UI.categories.title}
+                        actionLabel={HOME_SCREEN_UI.categories.action}
+                        onAction={() => navigation.navigate("Shop")}
+                        tight
+                      />
+                      <NativeCategoryRow
+                        products={shopCatalog}
+                        onPress={(label) => navigation.navigate("Shop", { category: label })}
+                      />
+                    </>
+                  ) : null
                 ) : (
                   <HomeCategoryCards
                     products={shopCatalog}
@@ -457,7 +494,17 @@ export default function KankregHomeScreen({ navigation }) {
 
             {showPrime && ready ? (
               <ScrollFadeUp index={1}>
-                <View style={styles.webSection} nativeID="home-bestsellers">
+                <View
+                  style={[
+                    styles.webSection,
+                    styles.webSectionPremium,
+                    {
+                      backgroundColor: isDark ? "rgba(255,255,255,0.025)" : "rgba(255,253,248,0.7)",
+                      borderColor: isDark ? "rgba(232,200,90,0.14)" : "rgba(169,119,46,0.14)",
+                    },
+                  ]}
+                  nativeID="home-bestsellers"
+                >
                   <SectionHeader
                     eyebrow={primeTitle}
                     title={HOME_SCREEN_UI.bestsellers.webSectionTitle}
@@ -510,10 +557,24 @@ export default function KankregHomeScreen({ navigation }) {
               </ScrollFadeUp>
             ) : null}
 
+            {showPrime && ready && showProcessSection ? (
+              <GoldHairline {...GOLD_HAIRLINE_EDITORIAL.subtle} />
+            ) : null}
+
             {showProcessSection ? (
               <ScrollFadeUp index={3} immediate>
                 <WebProcessSection processSection={processSection} />
               </ScrollFadeUp>
+            ) : null}
+
+            {showProcessSection && showCompareSection ? (
+              <GoldHairline {...GOLD_HAIRLINE_EDITORIAL.subtle} />
+            ) : null}
+
+            {showCompareSection ? (
+              <DeferredMount minHeight={360} rootMargin="280px 0px">
+                <WebCompareSection compareSection={compareSection} />
+              </DeferredMount>
             ) : null}
 
           </KankregPageWrap>
@@ -528,14 +589,10 @@ export default function KankregHomeScreen({ navigation }) {
           ]}
         >
           <KankregPageWrap gap={isMobileWeb ? spacing.lg : HOME_SECTION_GAP}>
-            {showAboutStory ? (
+            {showMissionSection ? (
               <ScrollFadeUp index={4}>
-                <DeferredMount minHeight={400} rootMargin="280px 0px">
-                  <WebAboutSection
-                    aboutSection={aboutSection}
-                    navigation={navigation}
-                    variant="editorial"
-                  />
+                <DeferredMount minHeight={360} rootMargin="280px 0px">
+                  <WebPillarsSection aboutSection={aboutSection} />
                 </DeferredMount>
               </ScrollFadeUp>
             ) : null}
@@ -543,6 +600,12 @@ export default function KankregHomeScreen({ navigation }) {
             {showCommunitySection ? (
               <DeferredMount minHeight={280} rootMargin="240px 0px">
                 <WebCommunitySection communitySection={communitySection} />
+              </DeferredMount>
+            ) : null}
+
+            {showCtaBand ? (
+              <DeferredMount minHeight={280} rootMargin="240px 0px">
+                <WebHomeCtaBand aboutSection={aboutSection} navigation={navigation} />
               </DeferredMount>
             ) : null}
 

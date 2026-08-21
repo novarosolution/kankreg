@@ -20,17 +20,28 @@ import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon } from "../../theme/tokens";
 import HeroMediaSlider from "./HeroMediaSlider";
+import HeroParallax from "../motion/HeroParallax";
 
-function TrustRibbonItem({ item, muted, compact = false }) {
+function TrustRibbonItem({ item, muted, compact = false, isDark }) {
   return (
     <View style={[styles.trustItem, compact && styles.trustItemCompact]}>
-      <Ionicons
-        name={item.icon}
-        size={compact ? icon.xs : icon.micro}
-        color={muted}
-        style={styles.trustIcon}
-      />
-      <Text style={[styles.trustText, { color: muted }]} numberOfLines={1}>
+      <View
+        style={[
+          styles.trustIconBadge,
+          compact && styles.trustIconBadgeCompact,
+          isDark && styles.trustIconBadgeDark,
+        ]}
+      >
+        <Ionicons
+          name={item.icon}
+          size={compact ? icon.xs : icon.sm}
+          color={isDark ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.gold}
+        />
+      </View>
+      <Text
+        style={[styles.trustText, compact && styles.trustTextCompact, { color: muted }]}
+        numberOfLines={compact ? 2 : 1}
+      >
         {item.label.toUpperCase()}
       </Text>
     </View>
@@ -97,12 +108,23 @@ export default function WebPremiumHero({ navigation, heroSlides = [] }) {
 
   return (
     <View style={[styles.fullBleed, fullBleedStyle]}>
-      <HeroMediaSlider
-        variant="top"
-        slides={activeSlides}
-        onPress={openShop}
-        editorialEyebrow={heroEyebrow}
-      />
+      {isMobileWeb ? (
+        <HeroMediaSlider
+          variant="top"
+          slides={activeSlides}
+          onPress={openShop}
+          editorialEyebrow={heroEyebrow}
+        />
+      ) : (
+        <HeroParallax strength="subtle" maxScroll={420} dim={false}>
+          <HeroMediaSlider
+            variant="top"
+            slides={activeSlides}
+            onPress={openShop}
+            editorialEyebrow={heroEyebrow}
+          />
+        </HeroParallax>
+      )}
 
       {showTrust ? (
         <View style={[styles.trustBand, isDark && styles.trustBandDark]}>
@@ -112,7 +134,7 @@ export default function WebPremiumHero({ navigation, heroSlides = [] }) {
               {HOME_TRUST_STRIP.map((item, index) => (
                 <React.Fragment key={item.key}>
                   {showDividers && index > 0 && !isMobileWeb ? <TrustRibbonDivider isDark={isDark} /> : null}
-                  <TrustRibbonItem item={item} muted={muted} compact={isMobileWeb} />
+                  <TrustRibbonItem item={item} muted={muted} compact={isMobileWeb} isDark={isDark} />
                 </React.Fragment>
               ))}
             </View>
@@ -135,9 +157,17 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     backgroundColor: KANKREG_CHROME.cream,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(169, 119, 46, 0.16)",
+    ...Platform.select({
+      web: { boxShadow: "0 16px 32px -30px rgba(54, 38, 18, 0.48)" },
+      default: {},
+    }),
   },
   trustBandDark: {
     backgroundColor: "rgba(24, 21, 19, 0.28)",
+    borderColor: "rgba(232, 200, 90, 0.16)",
   },
   trustBandInner: {
     width: "100%",
@@ -157,7 +187,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     columnGap: HOME_SPACE.md,
     rowGap: HOME_SPACE.sm,
-    paddingVertical: HOME_SPACE.xs,
+    paddingVertical: HOME_SPACE.sm,
   },
   trustRibbonMobile: {
     flexWrap: "nowrap",
@@ -170,7 +200,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    paddingHorizontal: HOME_SPACE.xs,
+    paddingHorizontal: HOME_SPACE.sm,
     minWidth: 0,
   },
   trustItemCompact: {
@@ -178,8 +208,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
     gap: 4,
   },
-  trustIcon: {
-    opacity: 0.88,
+  trustIconBadge: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(214, 173, 91, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(214, 173, 91, 0.22)",
+  },
+  trustIconBadgeCompact: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  trustIconBadgeDark: {
+    backgroundColor: "rgba(214, 173, 91, 0.14)",
+    borderColor: "rgba(214, 173, 91, 0.28)",
   },
   trustText: {
     fontFamily: fonts.semibold,
@@ -187,6 +233,9 @@ const styles = StyleSheet.create({
     lineHeight: HOME_TYPE.eyebrow + 4,
     letterSpacing: HOME_EYEBROW_LETTER_SPACING,
     textAlign: "center",
+  },
+  trustTextCompact: {
+    letterSpacing: HOME_EYEBROW_LETTER_SPACING * 0.6,
   },
   trustDivider: {
     width: StyleSheet.hairlineWidth,

@@ -193,7 +193,7 @@ function PremiumProductCardBase({
           onPressOut={handlePressOut}
           onHoverIn={handleHoverIn}
           onHoverOut={handleHoverOut}
-          accessibilityRole="button"
+          accessibilityRole="link"
           accessibilityLabel={accessibilityLabel}
           style={({ pressed }) => [styles.press, pressed ? { opacity: 0.985 } : null]}
         >
@@ -728,6 +728,10 @@ function createStyles(c, isDark, compact = false) {
     },
     footer: {
       flexDirection: "row",
+      /** Safety net: if a card is too narrow to fit both the price and the
+       *  quantity stepper on one line, drop the stepper to its own line
+       *  instead of crushing the price text down to an unreadable width. */
+      flexWrap: "wrap",
       alignItems: "center",
       justifyContent: "space-between",
       gap: spacing.sm,
@@ -736,7 +740,7 @@ function createStyles(c, isDark, compact = false) {
     },
     footerCopy: {
       flex: 1,
-      minWidth: 0,
+      minWidth: 64,
       justifyContent: "center",
     },
     price: {
@@ -829,13 +833,13 @@ function createStyles(c, isDark, compact = false) {
       justifyContent: "space-between",
       borderRadius: radius.pill,
       borderWidth: 1.25,
-      paddingHorizontal: 6,
-      height: 44,
-      width: compact ? 92 : 96,
+      paddingHorizontal: 4,
+      height: 40,
+      width: compact ? 76 : 80,
     },
     stepBtn: {
-      width: 36,
-      height: 36,
+      width: 28,
+      height: 28,
       alignItems: "center",
       justifyContent: "center",
       borderRadius: radius.pill,

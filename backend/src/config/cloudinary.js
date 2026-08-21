@@ -19,8 +19,9 @@ if (cloudName && apiKey && apiSecret) {
     api_secret: decodeURIComponent(parsed.password || ""),
   });
 } else {
-  throw new Error(
-    "Cloudinary config missing. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET (or CLOUDINARY_URL)."
+  /** Missing config shouldn't crash the whole API — only image-upload routes need Cloudinary. */
+  console.warn(
+    "[cloudinary] Config missing (CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET or CLOUDINARY_URL). Image uploads will fail until set."
   );
 }
 

@@ -155,7 +155,7 @@ function ProductPullQuote({ quote, isDark, styles }) {
   const ink = homeEditorialInk(isDark);
   return (
     <View style={[styles.pullQuote, isDark && styles.pullQuoteDark]}>
-      <Text style={[styles.pullQuoteGlyph, { color: KANKREG_PALETTE.gold }]}>"</Text>
+      <Text style={[styles.pullQuoteGlyph, { color: KANKREG_PALETTE.gold }]}>{"“"}</Text>
       <Text style={[styles.pullQuoteText, { color: ink }]}>{quote}</Text>
       <GoldHairline {...GOLD_HAIRLINE_EDITORIAL.subtle} marginVertical={HOME_SPACE.sm} />
     </View>
@@ -284,6 +284,16 @@ export default function WebProductView({
   } = pageContent;
 
 
+  /** Hooks must precede the platform early-return below (rules-of-hooks). */
+  const lifestyleImage = useMemo(() => {
+    const raw = String(product?.lifestyleImage || "").trim();
+    return raw ? getProductSectionImageUri(raw) : "";
+  }, [product?.lifestyleImage]);
+  const heroPreviewUri = useMemo(
+    () => getProductThumbImageUri(selectedImage || product?.image),
+    [selectedImage, product?.image]
+  );
+
   if (Platform.OS !== "web") return null;
 
   const inCart = quantity > 0;
@@ -297,14 +307,6 @@ export default function WebProductView({
     navigation.navigate("Shop");
   };
   const usageRituals = Array.isArray(product?.usageRituals) ? product.usageRituals.filter(Boolean) : [];
-  const lifestyleImage = useMemo(() => {
-    const raw = String(product?.lifestyleImage || "").trim();
-    return raw ? getProductSectionImageUri(raw) : "";
-  }, [product?.lifestyleImage]);
-  const heroPreviewUri = useMemo(
-    () => getProductThumbImageUri(selectedImage || product?.image),
-    [selectedImage, product?.image]
-  );
 
   const renderGallery = () => (
     <View style={styles.gallery}>
@@ -767,7 +769,7 @@ export default function WebProductView({
                 <View key={`${r._id || idx}`} style={[styles.revCard, isDark && styles.revCardDark]}>
                   {renderStarRow(rt, 14)}
                   <Text style={[styles.revQuote, { color: isDark ? "#d8cdb8" : KANKREG_PALETTE.inkSoft }]}>
-                    "{comment || PRODUCT_SCREEN.reviewNoWrittenNote}"
+                    {`“${comment || PRODUCT_SCREEN.reviewNoWrittenNote}”`}
                   </Text>
                   <Text style={[styles.revWho, { color: muted }]}>{name}</Text>
                 </View>
@@ -1092,7 +1094,7 @@ function createStyles(c, isDark) {
     rateBold: {
       fontFamily: fonts.bold,
       fontSize: 14,
-      color: KANKREG_PALETTE.ink,
+      color: isDark ? "#f5efe4" : KANKREG_PALETTE.ink,
     },
     rateMuted: {
       fontFamily: fonts.medium,
@@ -1217,7 +1219,8 @@ function createStyles(c, isDark) {
       fontFamily: FONT_BODY_SEMIBOLD,
       fontSize: 17,
       fontWeight: "600",
-      color: KANKREG_PALETTE.ink,
+      /** Fixed dark ink was unreadable on the dark card background in dark mode. */
+      color: isDark ? "#f5efe4" : KANKREG_PALETTE.ink,
     },
     sizeLabelActive: {
       color: KANKREG_PALETTE.green,

@@ -1,5 +1,6 @@
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   Platform,
   Pressable,
@@ -160,6 +161,7 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
 
   const launchNote = String(comingSoonNote || SHOP_SCREEN_UI.card.comingSoonNoteFallback).trim();
   const unavailable = isComingSoon || isOutOfStock;
+  const isActionable = !unavailable;
 
   const metaLine = useMemo(() => {
     const parts = [];
@@ -182,7 +184,7 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
         onPressIn={() => prefetchProductHeroImage(primaryImage)}
         onPress={onPress}
         style={({ focused }) => [editorialStyles.cardPressable, focused && isWeb ? editorialStyles.cardFocus : null]}
-        accessibilityRole="button"
+        accessibilityRole="link"
         accessibilityLabel={`Open ${product?.name || "product"}`}
       >
         <View style={editorialStyles.imageFrame}>
@@ -230,6 +232,13 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
                 {formatINRWhole(listMrp)}
               </Text>
             ) : null}
+            {listMrp ? (
+              <View style={[editorialStyles.savePill, isDark && editorialStyles.savePillDark]}>
+                <Text style={[editorialStyles.saveText, isDark && editorialStyles.saveTextDark]} numberOfLines={1}>
+                  Save {formatINRWhole(listMrp - safePrice)}
+                </Text>
+              </View>
+            ) : null}
           </View>
         </View>
       </Pressable>
@@ -268,10 +277,15 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
             disabled={unavailable}
             style={({ hovered }) => [
               editorialStyles.addBtn,
+              isActionable && editorialStyles.addBtnActionable,
               isDark && editorialStyles.addBtnDark,
               unavailable && editorialStyles.addBtnDisabled,
               isComingSoon && editorialStyles.addBtnComingSoon,
-              hovered && isWeb && !unavailable ? editorialStyles.addBtnHover : null,
+              hovered && isWeb && !unavailable
+                ? isActionable
+                  ? editorialStyles.addBtnActionableHover
+                  : editorialStyles.addBtnHover
+                : null,
             ]}
             accessibilityRole="button"
             accessibilityLabel={
@@ -280,7 +294,23 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
                 : `Add ${product?.name || "product"} to cart`
             }
           >
-            <Text style={[editorialStyles.addBtnText, { color: unavailable ? muted : ink }]}>
+            {isActionable ? (
+              <LinearGradient
+                colors={["#cba24e", KANKREG_PALETTE.gold, KANKREG_PALETTE.goldDeep]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+            ) : null}
+            {isActionable ? (
+              <Ionicons name="bag-add-outline" size={13} color="#FFFFFF" style={editorialStyles.addBtnIcon} />
+            ) : null}
+            <Text
+              style={[
+                editorialStyles.addBtnText,
+                { color: isActionable ? "#FFFFFF" : unavailable ? muted : ink },
+              ]}
+            >
               {isComingSoon ? SHOP_SCREEN_UI.card.comingSoon : isOutOfStock ? "Unavailable" : "Add to cart"}
             </Text>
           </Pressable>
@@ -473,15 +503,38 @@ const editorialStyles = StyleSheet.create({
     fontSize: HOME_TYPE.kicker - 1,
     textDecorationLine: "line-through",
   },
+  savePill: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(60, 98, 72, 0.1)",
+  },
+  savePillDark: {
+    backgroundColor: "rgba(134, 239, 172, 0.14)",
+  },
+  saveText: {
+    fontFamily: fonts.bold,
+    fontSize: 10,
+    letterSpacing: 0.2,
+    color: KANKREG_PALETTE.green,
+  },
+  saveTextDark: {
+    color: "#86EFAC",
+  },
   addBtn: {
     marginTop: HOME_SPACE.xs,
     alignSelf: "stretch",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 4,
     paddingVertical: 10,
-    paddingHorizontal: HOME_SPACE.sm,
+    paddingHorizontal: HOME_SPACE.xs,
     borderRadius: radius.pill,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: KANKREG_PALETTE.line,
     alignItems: "center",
+    position: "relative",
+    overflow: "hidden",
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
   addBtnDark: {
@@ -489,6 +542,23 @@ const editorialStyles = StyleSheet.create({
   },
   addBtnHover: {
     borderColor: KANKREG_PALETTE.gold,
+  },
+  addBtnActionable: {
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    ...Platform.select({
+      web: { boxShadow: "0 8px 20px -12px rgba(138, 95, 34, 0.55)" },
+      default: {},
+    }),
+  },
+  addBtnActionableHover: {
+    borderColor: "rgba(255, 255, 255, 0.5)",
+    ...Platform.select({
+      web: { boxShadow: "0 10px 24px -12px rgba(138, 95, 34, 0.7)" },
+      default: {},
+    }),
+  },
+  addBtnIcon: {
+    marginTop: -1,
   },
   addBtnDisabled: {
     opacity: 0.55,
@@ -502,6 +572,7 @@ const editorialStyles = StyleSheet.create({
     fontFamily: fonts.semibold,
     fontSize: HOME_TYPE.kicker - 1,
     letterSpacing: 0.15,
+    flexShrink: 1,
   },
   stepper: {
     marginTop: HOME_SPACE.xs,

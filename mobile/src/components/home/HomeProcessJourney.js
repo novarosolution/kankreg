@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { buildProcessSectionDefaults } from "../../content/processHomeContent";
 import { resolveProcessDisplay } from "../../utils/homeViewMedia";
@@ -46,9 +47,16 @@ if (Platform.OS === "web") {
 .${PROCESS_PHOTO_CLASS} {
   object-fit: contain !important;
   object-position: center center !important;
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+.${PROCESS_CARD_CLASS}:hover .${PROCESS_PHOTO_CLASS} img,
+.${PROCESS_CARD_CLASS}:hover .${PROCESS_PHOTO_CLASS} {
+  transform: scale(1.05);
 }
 @media (prefers-reduced-motion: reduce) {
   .${PROCESS_CARD_CLASS}:hover { transform: none !important; }
+  .${PROCESS_CARD_CLASS}:hover .${PROCESS_PHOTO_CLASS} img,
+  .${PROCESS_CARD_CLASS}:hover .${PROCESS_PHOTO_CLASS} { transform: none !important; }
 }`
   );
 }
@@ -225,7 +233,17 @@ export default function HomeProcessJourney({ processSection }) {
         />
         {process.journeyLabel ? (
           <View style={[styles.journeyChip, isDark && styles.journeyChipDark]}>
-            <Text style={[styles.journeyLabel, { color: KANKREG_PALETTE.gold }]}>
+            <Ionicons
+              name="compass-outline"
+              size={13}
+              color={isDark ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.gold}
+            />
+            <Text
+              style={[
+                styles.journeyLabel,
+                { color: isDark ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.gold },
+              ]}
+            >
               {process.journeyLabel.toUpperCase()}
             </Text>
           </View>
@@ -325,20 +343,25 @@ const styles = StyleSheet.create({
   },
   journeyChip: {
     marginTop: HOME_SPACE.xs,
-    paddingVertical: HOME_SPACE.xs + 2,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    paddingVertical: HOME_SPACE.xs + 3,
     paddingHorizontal: HOME_SPACE.md + 2,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: "rgba(169, 119, 46, 0.22)",
-    backgroundColor: "rgba(255, 253, 248, 0.88)",
+    borderColor: "rgba(169, 119, 46, 0.28)",
+    backgroundColor: "rgba(214, 173, 91, 0.08)",
     ...Platform.select({
-      web: { boxShadow: "0 1px 2px rgba(60, 45, 20, 0.04)" },
+      web: {
+        boxShadow: "inset 0 1px 0 rgba(255, 253, 248, 0.5), 0 1px 2px rgba(60, 45, 20, 0.04)",
+      },
       default: {},
     }),
   },
   journeyChipDark: {
-    backgroundColor: "rgba(24, 21, 19, 0.55)",
-    borderColor: "rgba(214, 173, 91, 0.2)",
+    backgroundColor: "rgba(214, 173, 91, 0.1)",
+    borderColor: "rgba(214, 173, 91, 0.3)",
   },
   journeyLabel: {
     fontFamily: fonts.semibold,
@@ -424,18 +447,18 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: HOME_SPACE.sm + 2,
     bottom: HOME_SPACE.sm + 2,
-    minWidth: 40,
-    height: 40,
+    minWidth: 44,
+    height: 44,
     paddingHorizontal: 10,
-    borderRadius: 20,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: KANKREG_PALETTE.green,
-    borderWidth: 1.5,
-    borderColor: "rgba(244, 213, 150, 0.55)",
+    borderWidth: 2,
+    borderColor: "rgba(244, 213, 150, 0.68)",
     ...Platform.select({
       web: {
-        boxShadow: "0 4px 12px rgba(27, 48, 34, 0.35)",
+        boxShadow: "0 6px 16px rgba(27, 48, 34, 0.4), inset 0 1px 0 rgba(244, 213, 150, 0.3)",
       },
       ios: {
         shadowColor: "#1b3022",
@@ -448,11 +471,11 @@ const styles = StyleSheet.create({
     }),
   },
   stepBadgeText: {
-    fontFamily: fonts.bold,
-    fontSize: 14,
-    lineHeight: 17,
-    color: "#F5EFE4",
-    letterSpacing: 0.5,
+    fontFamily: FONT_HEADING,
+    fontSize: 17,
+    lineHeight: 20,
+    color: "#F8EFDC",
+    letterSpacing: 0.2,
   },
   cardBody: {
     paddingHorizontal: HOME_SPACE.md + 2,

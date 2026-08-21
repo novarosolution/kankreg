@@ -140,13 +140,17 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
         <Text style={[styles.brand, { color: palette.brand }]}>kankreg</Text>
       </View>
       <Text style={styles.badge}>ADMIN CONSOLE</Text>
-      {NAV_GROUPS.map((group) => (
-        <View key={group.key}>
-          <Text style={[styles.grp, { color: palette.groupLabel }]}>{group.label}</Text>
-          {group.links.map((link) => renderLink(link))}
-        </View>
-      ))}
-      <View style={styles.sideSpacer} />
+      {/* Scrolls independently — on short viewports the nav groups + profile footer
+          used to overflow the fixed-height sidebar with no way to reach the bottom
+          items (Support, Notify) or the profile card at all. */}
+      <ScrollView style={styles.sideNavScroll} showsVerticalScrollIndicator={false}>
+        {NAV_GROUPS.map((group) => (
+          <View key={group.key}>
+            <Text style={[styles.grp, { color: palette.groupLabel }]}>{group.label}</Text>
+            {group.links.map((link) => renderLink(link))}
+          </View>
+        ))}
+      </ScrollView>
       <View style={[styles.me, { borderTopColor: palette.meBorder }]}>
         <View style={styles.meAv}>
           <Text style={styles.meAvText}>{adminInitial}</Text>
@@ -168,9 +172,22 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
       <Text style={styles.brandRowLabel} numberOfLines={1}>
         kankreg
       </Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sideScrollContent}>
-        {FLAT_LINKS.map((link) => renderLink(link, true))}
-      </ScrollView>
+      <View style={styles.sideScrollWrap}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sideScrollContent}>
+          {FLAT_LINKS.map((link) => renderLink(link, true))}
+        </ScrollView>
+        {/* Fade hint — the strip clips items (e.g. "Users") off-screen with no other
+            sign it's scrollable; this makes that discoverable. */}
+        {Platform.OS === "web" ? (
+          <View
+            pointerEvents="none"
+            style={[
+              styles.sideScrollFade,
+              { background: `linear-gradient(90deg, transparent, ${palette.sideBg})` },
+            ]}
+          />
+        ) : null}
+      </View>
     </View>
   ) : null;
 
@@ -254,8 +271,11 @@ const styles = StyleSheet.create({
     paddingVertical: 22,
     paddingHorizontal: 14,
     flexDirection: "column",
-    minHeight: Platform.OS === "web" ? 680 : undefined,
+    /** Matches `shell`'s own height so the ScrollView below always has a real bound to
+     *  scroll within — a fixed minHeight here previously fought this on short viewports. */
+    ...Platform.select({ web: { height: "72vh" }, default: { flex: 1 } }),
   },
+  sideNavScroll: { flex: 1 },
   sideSpacer: { flex: 1, minHeight: 12 },
   sideRow: { width: "100%", paddingVertical: 14 },
   topNavStrip: {
@@ -264,11 +284,23 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 8,
   },
+  sideScrollWrap: {
+    flex: 1,
+    minWidth: 0,
+    position: "relative",
+  },
   sideScrollContent: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 6,
     gap: 4,
+  },
+  sideScrollFade: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    right: 0,
+    width: 28,
   },
   brandRow: {
     flexDirection: "row",

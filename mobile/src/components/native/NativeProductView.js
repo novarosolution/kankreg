@@ -410,7 +410,7 @@ export default function NativeProductView({
           {product?.highlightQuote ? (
             <View style={[styles.pullQuote, isDark && styles.pullQuoteDark]}>
               <Text style={[styles.pullQuoteText, { color: isDark ? c.textPrimary : KANKREG_PALETTE.ink }]}>
-                "{product.highlightQuote}"
+                {`“${product.highlightQuote}”`}
               </Text>
             </View>
           ) : null}

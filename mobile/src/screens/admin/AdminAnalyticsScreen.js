@@ -331,29 +331,25 @@ export default function AdminAnalyticsScreen({ navigation, route }) {
             style={{ marginBottom: spacing.md }}
           />
           <AdminKpiGrid compact={compactAdmin}>
+            {/* No period-over-period comparison data from the API yet — showing a
+                fabricated "▲ X%" here would misrepresent real performance (this used
+                to hardcode "▲12%" etc. even at zero orders/revenue). Add real deltas
+                once the backend returns a previous-period baseline to compare against. */}
             <AdminKpiCard
               label="Visitors"
               value={String(analytics.totals?.users || 0)}
-              delta="12%"
-              deltaUp
             />
             <AdminKpiCard
               label="Orders"
               value={String(analytics.totals?.orders || 0)}
-              delta="9%"
-              deltaUp
             />
             <AdminKpiCard
               label="Revenue"
               value={formatINR(analytics.revenue?.total || 0)}
-              delta="18%"
-              deltaUp
             />
             <AdminKpiCard
               label="Avg. order"
               value={formatINR(Math.round(analytics.revenue?.averageOrderValue || 0))}
-              delta="4%"
-              deltaUp
             />
           </AdminKpiGrid>
         </>

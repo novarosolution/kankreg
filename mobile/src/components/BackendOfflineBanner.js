@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
     ...Platform.select({
-      web: { maxWidth: 520, alignSelf: "center", left: "50%", right: "auto", marginLeft: -260 },
+      web: { maxWidth: 520, width: "100%", alignSelf: "center" },
       default: {},
     }),
   },

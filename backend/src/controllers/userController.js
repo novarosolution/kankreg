@@ -71,6 +71,7 @@ function serializePublicUser(user) {
     cartItems: user.cartItems || [],
     avatar: user.avatar || "",
     rewardPoints: Number(user.rewardPoints || 0),
+    createdAt: user.createdAt,
   };
 }
 

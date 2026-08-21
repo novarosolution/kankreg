@@ -397,7 +397,7 @@ function HeroSlideCard({
     (slide.title || slide.subtitle ? "overlay" : slide.cta ? "cta-only" : "overlay");
   const captionZone = isPhoneBand ? slide.captionZone || "bottom" : "bottom";
   const showTextOverlay =
-    !isApp && !isCompact && captionMode === "overlay" && Boolean(slide.title || slide.subtitle);
+    !isCompact && captionMode === "overlay" && Boolean(slide.title || slide.subtitle);
   const phoneCtaOnly = isPhoneBand && captionMode === "baked";
   const scrimMuted = homeHeroScrimMuted();
   const heroTitleSize = isMobileWebTop
@@ -1651,16 +1651,17 @@ const styles = StyleSheet.create({
   },
   ctaPillGold: {
     marginTop: HOME_SPACE.md,
-    paddingVertical: 12,
-    paddingHorizontal: 22,
+    paddingVertical: 14,
+    paddingHorizontal: 26,
     borderRadius: radius.pill,
     backgroundColor: KANKREG_CHROME.buttonAccent,
-    borderWidth: 0,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.34)",
     ...Platform.select({
       web: {
         cursor: "pointer",
         transition: "transform 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease",
-        boxShadow: "0 10px 28px -12px rgba(25,20,15,.45)",
+        boxShadow: "0 14px 30px -14px rgba(25,20,15,.52), inset 0 1px 0 rgba(255,255,255,.18)",
       },
       default: {},
     }),
@@ -1725,7 +1726,7 @@ const styles = StyleSheet.create({
   },
   ctaTextGold: {
     fontFamily: fonts.semibold,
-    fontSize: HOME_TYPE.kicker,
+    fontSize: HOME_TYPE.kicker + 1,
     color: KANKREG_CHROME.onAccent,
     letterSpacing: 0.3,
   },
@@ -1925,15 +1926,15 @@ const styles = StyleSheet.create({
     backgroundColor: KANKREG_PALETTE.goldBright,
   },
   dotTop: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: "rgba(255,255,255,0.28)",
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: "rgba(255,255,255,0.34)",
     ...Platform.select({ web: { cursor: "pointer", transition: "width 0.2s ease, background-color 0.2s ease" } }),
   },
   dotTopActive: {
-    width: 20,
-    height: 3,
+    width: 26,
+    height: 4,
     borderRadius: 2,
     backgroundColor: KANKREG_CHROME.buttonAccent,
   },

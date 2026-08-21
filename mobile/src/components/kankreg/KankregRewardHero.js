@@ -8,7 +8,10 @@ import { fonts, spacing } from "../../theme/tokens";
 /** kankreg.html `.reward-hero` */
 export default function KankregRewardHero({ points = 0, tierHint }) {
   const { isXs } = useKankregLayout();
-  const pct = Math.min(100, Math.round((points % 3000) / 30) || 68);
+  /** `|| 68` previously replaced a genuine 0-point balance (every new account) with a
+   *  fabricated "68% to Gold" — 0 is falsy in JS but is the correct, common value here. */
+  const safePoints = Number.isFinite(points) ? points : 0;
+  const pct = Math.min(100, Math.round((safePoints % 3000) / 30));
 
   return (
     <View style={[styles.hero, isXs && styles.heroStack]}>

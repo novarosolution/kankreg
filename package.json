@@ -4,7 +4,7 @@
   "private": true,
   "description": "KankreG monorepo — mobile app (Expo) + backend API (Express)",
   "scripts": {
-    "install:all": "npm install --prefix mobile && npm install --prefix backend",
+    "install:all": "npm install --prefix mobile && npm install --prefix backend && npm install --prefix landing",
     "mobile:start": "npm run start --prefix mobile",
     "mobile:start:clean": "npm run start:clean --prefix mobile",
     "web": "npm run web --prefix mobile",

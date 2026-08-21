@@ -197,6 +197,10 @@ export function HomeCategoryCards({ products = [], onBrowse, onOpenShop, product
     );
   }
 
+  /** A single category card has nothing to compare against — skip the section rather than
+   *  show one tile in a grid sized for several. */
+  if (categories.length === 1) return null;
+
   const sectionTitle = productTypeTitle || HOME_SCREEN_UI.categories.webTitleFallback;
 
   return (

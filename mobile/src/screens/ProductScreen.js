@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
@@ -123,12 +123,20 @@ export default function ProductScreen({ route, navigation }) {
     loadProduct({ fresh: true, silent: Boolean(cachedProduct) });
   }, [loadProduct, cachedProduct]);
 
+  /** Read via ref (not a dep) — `loadProduct` itself calls `setProduct`, so depending on
+   *  `product` directly re-creates this callback on every load and re-triggers
+   *  `useFocusEffect` forever (was firing hundreds of requests/sec). */
+  const productRef = useRef(product);
+  useEffect(() => {
+    productRef.current = product;
+  }, [product]);
+
   useFocusEffect(
     useCallback(() => {
       if (!productId) return undefined;
-      loadProduct({ fresh: true, silent: Boolean(product) });
+      loadProduct({ fresh: true, silent: Boolean(productRef.current) });
       return undefined;
-    }, [productId, loadProduct, product])
+    }, [productId, loadProduct])
   );
 
   // Reveal motion now lives on `SectionReveal` blocks below; this effect was a bespoke

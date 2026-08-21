@@ -22,6 +22,7 @@ import { buildKankregNavItems, routeMatchesNav } from "./kankregNav";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { KANKREG_HEADER } from "../../content/appContent";
 import { safeNavigate } from "../../navigation/navigationRef";
+import usePageScrollElevation from "../../hooks/usePageScrollElevation";
 export const KANKREG_HEADER_BODY_HEIGHT = WEB_HEADER_HEIGHT;
 export const KANKREG_ANNOUNCE_HEIGHT = WEB_ANNOUNCE_HEIGHT;
 export { getKankregChromeTop } from "../../theme/kankregChrome";
@@ -37,6 +38,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
   const { colors: c, isDark } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [currentRouteName, setCurrentRouteName] = useState(null);
+  const scrolled = usePageScrollElevation(10);
 
   useEffect(() => {
     if (!navReady || !navigationRef?.addListener || !navigationRef?.isReady?.()) {
@@ -108,6 +110,11 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
       paddingTop: Platform.OS === "web" ? 0 : insets.top,
       minHeight: isNative ? nativeHeaderHeight : WEB_HEADER_HEIGHT,
     },
+    Platform.OS === "web" && scrolled
+      ? isDark
+        ? styles.topbarScrolledDark
+        : styles.topbarScrolledLight
+      : null,
   ];
 
   return (
@@ -281,12 +288,37 @@ const styles = StyleSheet.create({
     minHeight: WEB_HEADER_HEIGHT,
     justifyContent: "center",
     ...Platform.select({
-      web: { backgroundColor: KANKREG_CHROME.topbarBg },
+      web: {
+        backgroundColor: KANKREG_CHROME.topbarBg,
+        transition: "background-color 240ms ease, box-shadow 240ms ease, backdrop-filter 240ms ease",
+      },
       default: {},
     }),
   },
   topbarNative: {
     minHeight: NATIVE_HEADER_HEIGHT,
+  },
+  topbarScrolledLight: {
+    ...Platform.select({
+      web: {
+        backgroundColor: "rgba(255, 253, 248, 0.88)",
+        backdropFilter: "blur(14px) saturate(1.4)",
+        WebkitBackdropFilter: "blur(14px) saturate(1.4)",
+        boxShadow: "0 12px 30px -20px rgba(25, 20, 15, 0.3)",
+      },
+      default: {},
+    }),
+  },
+  topbarScrolledDark: {
+    ...Platform.select({
+      web: {
+        backgroundColor: "rgba(18, 15, 13, 0.86)",
+        backdropFilter: "blur(14px) saturate(1.4)",
+        WebkitBackdropFilter: "blur(14px) saturate(1.4)",
+        boxShadow: "0 12px 30px -20px rgba(0, 0, 0, 0.55)",
+      },
+      default: {},
+    }),
   },
   wrap: {
     flexDirection: "row",

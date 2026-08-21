@@ -125,11 +125,11 @@ export default function KankregBuyBar({
           )}
         </View>
         {quantity > 0 && onRemoveFromCart ? (
-          <View style={styles.stepper}>
+          <View style={[styles.stepper, isDark && styles.stepperDark]}>
             <Pressable onPress={onRemoveFromCart} style={styles.stepBtn} accessibilityLabel="Decrease quantity">
               <Ionicons name="remove" size={icon.sm} color="#fff" />
             </Pressable>
-            <Text style={styles.stepCount}>{quantity}</Text>
+            <Text style={[styles.stepCount, figmaTextPrimary(isDark)]}>{quantity}</Text>
             <Pressable onPress={onAddToCart} style={styles.stepBtn} accessibilityLabel="Increase quantity">
               <Ionicons name="add" size={icon.sm} color="#fff" />
             </Pressable>
@@ -221,6 +221,9 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "rgba(25,20,15,0.05)",
     flexShrink: 0,
+  },
+  stepperDark: {
+    backgroundColor: "rgba(245,239,228,0.08)",
   },
   stepBtn: {
     width: 32,

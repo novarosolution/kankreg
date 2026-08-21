@@ -220,6 +220,8 @@ function preferWebHeroBundlerVariant(uri, width) {
     return value.replace("-web-840.webp", "-web-504.webp");
   }
   if (value.includes("-web-840.webp") && !mobile && targetSuffix === "-web-1200.webp") {
+    // Phone hero bundles only ship -web-840; do not upscale to a missing -web-1200 file.
+    if (/phone(-|hero)/i.test(value)) return value;
     return value.replace("-web-840.webp", "-web-1200.webp");
   }
   if (/\.(png|jpe?g)(\?|$)/i.test(value)) {

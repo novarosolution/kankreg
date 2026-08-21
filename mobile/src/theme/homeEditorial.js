@@ -13,8 +13,10 @@ export const HOME_SPACE = {
   md: spacing.md,
   lg: spacing.lg,
   xl: spacing.xl,
-  /** Gap between major home blocks inside `KankregPageWrap`. */
-  section: spacing.xxl,
+  /** Gap between major home blocks inside `KankregPageWrap`.
+   *  Deliberately larger than the shared `spacing.xxl` token — home sections read as
+   *  distinct editorial "chapters" and want more air than a typical form/list gap. */
+  section: 72,
 };
 
 /** Single source: vertical gap between web home sections (categories → grid → story). */
@@ -28,8 +30,8 @@ export const HOME_HEADER_CONTENT_GAP = HOME_SPACE.md;
  * Sizes are px; responsive helpers live on `SectionHeader`.
  */
 export const HOME_TYPE = {
-  hero: { min: 40, max: 64, lineHeightRatio: 1.05 },
-  sectionTitle: { min: 26, max: 34, lineHeightRatio: 1.08 },
+  hero: { min: 42, max: 78, lineHeightRatio: 1.02 },
+  sectionTitle: { min: 26, max: 36, lineHeightRatio: 1.08 },
   body: { min: 15, max: 17, lineHeight: 24 },
   eyebrow: 12,
   kicker: 15,
@@ -70,8 +72,8 @@ export const GOLD_HAIRLINE_EDITORIAL = {
 export function homeSectionTitleSize(width, compact = false) {
   if (Platform.OS !== "web") return compact ? HOME_TYPE.sectionTitle.min : HOME_TYPE.sectionTitle.min + 2;
   if (width >= 1080) return HOME_TYPE.sectionTitle.max;
-  if (width >= 900) return 30;
-  if (width >= 560) return 28;
+  if (width >= 900) return 32;
+  if (width >= 560) return 29;
   return compact ? HOME_TYPE.sectionTitle.min : HOME_TYPE.sectionTitle.min + 2;
 }
 
@@ -79,9 +81,9 @@ export function homeSectionTitleSize(width, compact = false) {
 export function homeHeroTitleSize(width) {
   if (Platform.OS !== "web") return HOME_TYPE.hero.min;
   if (width >= 1200) return HOME_TYPE.hero.max;
-  if (width >= 1080) return 56;
-  if (width >= 900) return 48;
-  if (width >= 560) return 40;
+  if (width >= 1080) return 68;
+  if (width >= 900) return 56;
+  if (width >= 560) return 46;
   return HOME_TYPE.hero.min;
 }
 

@@ -6,6 +6,8 @@ import { useMemo } from "react";
 import { Platform, useWindowDimensions } from "react-native";
 
 export const KANKREG_BP = {
+  /** Below this, even a 2-up catalog grid can't fit content gracefully (e.g. iPhone SE @ 320). */
+  catalogSingleCol: 360,
   xs: 420,
   sm: 560,
   news: 760,
@@ -32,6 +34,10 @@ export function getCatalogGridColStyle(width) {
   }
   if (width >= KANKREG_BP.lg) {
     return { width: "33.333%", maxWidth: "33.333%", paddingHorizontal: pad, flexGrow: 0, flexShrink: 0 };
+  }
+  if (width < KANKREG_BP.catalogSingleCol) {
+    /** Extreme-narrow phones: a 2-up grid leaves too little room for card content. */
+    return { width: "100%", maxWidth: "100%", paddingHorizontal: pad, flexGrow: 0, flexShrink: 0 };
   }
   /** Phone & narrow tablet: 2-up grid (kankreg.html mobile catalog) */
   return { width: "50%", maxWidth: "50%", paddingHorizontal: pad, flexGrow: 0, flexShrink: 0 };

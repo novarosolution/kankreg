@@ -53,6 +53,7 @@ function SectionHeaderBase({
         },
         copy: {
           flex: centered ? undefined : 1,
+          width: centered ? "100%" : undefined,
           minWidth: 0,
           alignItems: centered ? "center" : "flex-start",
           gap: HOME_SPACE.xs,

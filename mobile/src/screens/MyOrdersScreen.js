@@ -804,7 +804,9 @@ export default function MyOrdersScreen({ navigation, route }) {
       else if (!isCancelledOrder(status)) inFlight += 1;
       totalSpent += Number(order?.totalPrice || 0);
     });
-    return { total, inFlight, delivered, totalSpent: Math.round(totalSpent) };
+    /** No rounding — formatINR already renders 2 decimals; rounding here just
+     *  silently drops paise (order shows ₹2,099.20, stat showed ₹2,099.00). */
+    return { total, inFlight, delivered, totalSpent };
   }, [orders]);
 
   const { activeOrders, historyOrders, visibleOrders } = useMemo(() => {

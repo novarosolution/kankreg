@@ -52,7 +52,7 @@ export default function NativeHomeHeroSlider({ navigation, heroSlides = [] }) {
                 />
                 <Text
                   style={[styles.trustText, isDark && styles.trustTextDark]}
-                  numberOfLines={1}
+                  numberOfLines={2}
                 >
                   {item.label}
                 </Text>
@@ -119,6 +119,7 @@ const styles = StyleSheet.create({
     fontSize: typography.caption - 1,
     color: KANKREG_PALETTE.inkSoft,
     letterSpacing: 0.05,
+    textAlign: "center",
   },
   trustTextDark: {
     color: "rgba(245,239,228,0.82)",

@@ -61,7 +61,15 @@ function withRoleGuard(Component, roleCheck) {
 
 const WrappedLogin = withPageTransition(CoreScreens.LoginScreen);
 const WrappedRegister = withPageTransition(CoreScreens.RegisterScreen);
-const WrappedFindLocation = withPageTransition(CoreScreens.FindLocationScreen);
+/** Native-only screen — the web registry (screenRegistryCore.web.js) deliberately
+ *  omits it for first-paint size, so eslint's static import/namespace check can't
+ *  see that this access never runs on that platform. Runtime-safe via the guard. */
+// eslint-disable-next-line import/namespace
+const FindLocationScreenComponent = CoreScreens.FindLocationScreen;
+const WrappedFindLocation =
+  Platform.OS !== "web" && FindLocationScreenComponent
+    ? withPageTransition(FindLocationScreenComponent)
+    : null;
 const WrappedHome = withPageTransition(CoreScreens.KankregHomeScreen);
 const WrappedShop = withPageTransition(LazyScreens.ShopScreen);
 const WrappedProduct = withPageTransition(LazyScreens.ProductScreen);

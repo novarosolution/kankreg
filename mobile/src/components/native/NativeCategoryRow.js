@@ -89,6 +89,8 @@ export default function NativeCategoryRow({ categories, products, onPress }) {
   }, [categories, safeProducts]);
 
   if (Platform.OS === "web" && !isMobileWeb) return null;
+  /** A single tile has no navigational value — skip the strip rather than show one tile in a wide empty card. */
+  if (tiles.length <= 1) return null;
 
   return (
     <View
