@@ -94,7 +94,7 @@ export function normalizeProduct(raw) {
   const mrp =
     Number.isFinite(mrpNum) && mrpNum > 0 ? mrpNum : null;
 
-  const id = raw._id ?? raw.id;
+  const id = String(raw._id ?? raw.id ?? "");
   const name = String(raw.name ?? "").trim() || "Untitled product";
   const description = String(raw.description ?? "").trim();
   const unit = String(raw.unit ?? "").trim() || "1 pc";

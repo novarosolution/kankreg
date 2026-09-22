@@ -96,7 +96,7 @@ export default function FindLocationScreen({ navigation, route }) {
   const pageBg = figmaPageBg(isDark);
   const gradColors = isDark
     ? [c.background, c.backgroundGradientEnd || "#14110F", c.background]
-    : ["#f8f2e8", FIGMA.paper, "#f3ead8"];
+    : ["#FFFFFF", "#FFFFFF", "#FFFFFF"];
 
   if (
     Platform.OS === "web" ||

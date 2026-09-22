@@ -8,12 +8,10 @@ import {
   View,
 } from "react-native";
 import Animated from "react-native-reanimated";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HomeCatalogGridCard } from "../home/HomeCatalogProductViews";
 import CatalogGridReveal from "./CatalogGridReveal";
-import HeroParallax from "../motion/HeroParallax";
 import SectionReveal from "../motion/SectionReveal";
 import { SectionHeader } from "../home/editorial";
 import PremiumButton from "../ui/PremiumButton";
@@ -34,13 +32,17 @@ import {
 } from "../../theme/homeEditorial";
 import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
-import { formatINR } from "../../utils/currency";
+import { formatINRWhole } from "../../utils/currency";
 import {
   getImageUriCandidates,
   getProductSectionImageUri,
   getProductThumbImageUri,
 } from "../../utils/image";
-import { PRODUCT_SCREEN, fillProductScreen } from "../../content/appContent";
+import {
+  PRODUCT_SCREEN,
+  STOREFRONT_COUPON_CODE,
+  STOREFRONT_COUPON_OFF,
+} from "../../content/appContent";
 import { getProductCardFlags } from "../../utils/productAvailability";
 import { getComingSoonImageBlurStyle } from "../../utils/comingSoonImageStyle";
 import ComingSoonProductOverlay from "../product/ComingSoonProductOverlay";
@@ -84,11 +86,11 @@ if (Platform.OS === "web") {
   cursor: pointer;
 }
 .${PRODUCT_BTN_CART_CLASS}:hover:not(:disabled) {
-  background: rgba(31, 77, 54, 0.06) !important;
+  background: #154C3C !important;
 }
 .${PRODUCT_BTN_BUY_CLASS}:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 10px 24px -8px rgba(160, 116, 26, 0.45) !important;
+  filter: brightness(0.97);
 }
 @media (prefers-reduced-motion: reduce) {
   .${PRODUCT_THUMB_CLASS}:hover,
@@ -98,30 +100,62 @@ if (Platform.OS === "web") {
   );
 }
 
+function parseVolumeLiters(label) {
+  const s = String(label || "")
+    .toLowerCase()
+    .replace(/,/g, "");
+  const ml = s.match(/([\d.]+)\s*ml/);
+  if (ml) return Number(ml[1]) / 1000;
+  const liters = s.match(/([\d.]+)\s*l(?:itre|iter|tr)?\b/);
+  if (liters) return Number(liters[1]);
+  return null;
+}
+
+function variantUnitPrice(label, price) {
+  const liters = parseVolumeLiters(label);
+  if (!liters || liters <= 0) return null;
+  return Math.round(Number(price || 0) / liters);
+}
+
+function variantDiscount(variant) {
+  const price = Number(variant?.price) || 0;
+  const mrp = Number(variant?.mrp) || 0;
+  if (!(mrp > price && mrp > 0)) return { mrp: null, pct: 0 };
+  return { mrp, pct: Math.max(0, Math.round((1 - price / mrp) * 100)) };
+}
+
 function renderStarRow(rating, size = 13) {
   const filled = Math.round(Math.min(5, Math.max(0, rating)));
   return (
-    <Text style={{ color: KANKREG_PALETTE.goldBright, fontSize: size, letterSpacing: 1.5 }}>
+    <Text style={{ color: "#F5C451", fontSize: size, letterSpacing: 0.4 }}>
       {"★".repeat(filled)}
       {"☆".repeat(5 - filled)}
     </Text>
   );
 }
 
-function ProductSizeCard({ variant, active, onPress, styles, isDark }) {
+function ProductSizeCard({ variant, active, onPress, styles }) {
   const lab = String(variant.label || "").trim();
-  const tag = String(variant.tag || "").trim();
+  const price = Number(variant.price) || 0;
+  const perLiter = variantUnitPrice(lab, price);
+  const { mrp, pct } = variantDiscount(variant);
   return (
     <Pressable
       className={Platform.OS === "web" ? PRODUCT_SIZE_CLASS : undefined}
-      style={[styles.sizeCard, active && styles.sizeCardActive, isDark && styles.sizeCardDark]}
+      style={[styles.sizeCard, active && styles.sizeCardActive]}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
     >
-      <Text style={[styles.sizeLabel, active && styles.sizeLabelActive]}>{lab}</Text>
-      <Text style={styles.sizePrice}>{formatINR(variant.price)}</Text>
-      {tag ? <Text style={styles.sizeTag}>{tag}</Text> : null}
+      <Text style={[styles.sizeLabel, active && styles.sizeLabelActive]} numberOfLines={2}>
+        {lab}
+      </Text>
+      <View style={styles.sizePriceRow}>
+        <Text style={[styles.sizePrice, active && styles.sizePriceActive]}>{formatINRWhole(price)}</Text>
+        {pct > 0 ? <Text style={styles.sizeOff}>{pct}% off</Text> : null}
+      </View>
+      {mrp ? <Text style={styles.sizeWas}>{formatINRWhole(mrp)}</Text> : null}
+      {perLiter ? <Text style={styles.sizeUnit}>{formatINRWhole(perLiter)}/L</Text> : null}
     </Pressable>
   );
 }
@@ -306,74 +340,109 @@ export default function WebProductView({
     }
     navigation.navigate("Shop");
   };
+  const handleShare = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const payload = { title: String(product?.name || "KankreG"), text: String(product?.name || ""), url };
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share(payload);
+        return;
+      }
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url || String(product?.name || ""));
+      }
+    } catch {
+      /* user cancelled share */
+    }
+  };
   const usageRituals = Array.isArray(product?.usageRituals) ? product.usageRituals.filter(Boolean) : [];
+  const couponPrice = Math.round(Number(displayPrice || 0) * (1 - STOREFRONT_COUPON_OFF));
+  const coinsEarned = Math.max(1, Math.round(Number(displayPrice || 0) / 20));
+  const qtyDisplay = Math.max(1, Number(quantity) || 0);
+  const descriptionText = String(product?.description || leadText || "").trim();
+  const kickerText = String(eyebrowText || "").trim();
+  const currentGalleryIndex = Math.max(
+    0,
+    galleryImages.findIndex((img) => img === (selectedImage || product.image))
+  );
+  const stepGallery = (dir) => {
+    if (galleryImages.length < 2) return;
+    const next = (currentGalleryIndex + dir + galleryImages.length) % galleryImages.length;
+    onSelectImage(galleryImages[next]);
+  };
 
   const renderGallery = () => (
     <View style={styles.gallery}>
-      <HeroParallax strength="subtle" maxScroll={360} dim={false} scale style={styles.heroParallax}>
-        <LinearGradient
-          colors={isDark ? ["#1a1410", "#14100c"] : ["#FFFDF6", "#F2E9D4"]}
-          start={{ x: 0.2, y: 0 }}
-          end={{ x: 0.8, y: 1 }}
-          style={[styles.heroStage, { height: heroImageHeight }]}
-        >
-          {heroImageUri && !imageFailed ? (
-            <Animated.View style={[styles.heroAnim, heroFadeStyle, { height: heroImageHeight }]}>
-              <View style={[styles.heroImageFrame, { height: heroImageHeight }]}>
-                <ProgressiveProductImage
-                  uri={heroImageUri}
-                  previewUri={heroPreviewUri}
-                  style={[
-                    styles.heroImageInner,
-                    { height: Math.max(180, heroImageHeight - 32) },
-                    isComingSoon && getComingSoonImageBlurStyle(),
-                  ]}
-                  contentFit="contain"
-                  priority="high"
-                  recyclingKey={heroImageUri}
-                  onError={onHeroImageError}
-                  rounded={14}
-                />
-              </View>
-            </Animated.View>
-          ) : (
-            <View style={styles.heroFallback}>
-              <Ionicons name="image-outline" size={sz.xxl} color={c.textMuted} />
-              <Text style={styles.heroFallbackText}>{PRODUCT_SCREEN.heroImageUnavailable}</Text>
+      <View style={[styles.heroStage, { height: Math.max(heroImageHeight, 420) }]}>
+        <View style={styles.heroZoom} pointerEvents="none">
+          <Ionicons name="search-outline" size={18} color={KANKREG_PALETTE.inkSoft} />
+        </View>
+        {heroImageUri && !imageFailed ? (
+          <Animated.View style={[styles.heroAnim, heroFadeStyle]}>
+            <View style={styles.heroImageFrame}>
+              <ProgressiveProductImage
+                uri={heroImageUri}
+                previewUri={heroPreviewUri}
+                style={[
+                  styles.heroImageInner,
+                  { height: Math.max(280, heroImageHeight - 24) },
+                  isComingSoon && getComingSoonImageBlurStyle(),
+                ]}
+                contentFit="contain"
+                priority="high"
+                recyclingKey={heroImageUri}
+                onError={onHeroImageError}
+                rounded={0}
+              />
             </View>
-          )}
-          {isComingSoon ? (
-            <ComingSoonProductOverlay note={comingSoonNote} isDark={isDark} variant="hero" />
-          ) : product.badgeText ? (
-            <View style={styles.heroBadgeBest}>
-              <Text style={styles.heroBadgeBestText} numberOfLines={2}>
-                {String(product.badgeText).toUpperCase()}
-              </Text>
-            </View>
-          ) : null}
-        </LinearGradient>
-      </HeroParallax>
+          </Animated.View>
+        ) : (
+          <View style={styles.heroFallback}>
+            <Ionicons name="image-outline" size={sz.xxl} color={c.textMuted} />
+            <Text style={styles.heroFallbackText}>{PRODUCT_SCREEN.heroImageUnavailable}</Text>
+          </View>
+        )}
+        {isComingSoon ? (
+          <ComingSoonProductOverlay note={comingSoonNote} isDark={isDark} variant="hero" />
+        ) : null}
+      </View>
       {galleryImages.length > 1 ? (
-        <View style={styles.thumbsRow}>
-          {galleryImages.map((img, idx) => {
-            const active = (selectedImage || product.image) === img;
-            return (
-              <TouchableOpacity
-                key={img}
-                className={Platform.OS === "web" ? PRODUCT_THUMB_CLASS : undefined}
-                style={[styles.thumb, active && styles.thumbActive]}
-                onPress={() => onSelectImage(img)}
-              >
-                <ThumbImage
-                  sourceUri={img}
-                  active={active}
-                  style={styles.thumbImage}
-                  fallbackStyle={styles.thumbFallback}
-                  mutedColor={c.textMuted}
-                />
-              </TouchableOpacity>
-            );
-          })}
+        <View style={styles.thumbsWrap}>
+          <Pressable
+            style={styles.thumbArrow}
+            onPress={() => stepGallery(-1)}
+            accessibilityLabel="Previous image"
+          >
+            <Ionicons name="chevron-back" size={18} color={KANKREG_PALETTE.inkSoft} />
+          </Pressable>
+          <View style={styles.thumbsRow}>
+            {galleryImages.map((img) => {
+              const active = (selectedImage || product.image) === img;
+              return (
+                <TouchableOpacity
+                  key={img}
+                  className={Platform.OS === "web" ? PRODUCT_THUMB_CLASS : undefined}
+                  style={[styles.thumb, active && styles.thumbActive]}
+                  onPress={() => onSelectImage(img)}
+                >
+                  <ThumbImage
+                    sourceUri={img}
+                    active={active}
+                    style={styles.thumbImage}
+                    fallbackStyle={styles.thumbFallback}
+                    mutedColor={c.textMuted}
+                  />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <Pressable
+            style={styles.thumbArrow}
+            onPress={() => stepGallery(1)}
+            accessibilityLabel="Next image"
+          >
+            <Ionicons name="chevron-forward" size={18} color={KANKREG_PALETTE.inkSoft} />
+          </Pressable>
         </View>
       ) : null}
     </View>
@@ -381,50 +450,63 @@ export default function WebProductView({
 
   const renderPurchaseBlock = () => (
     <>
-      <SectionReveal immediate delay={60} preset="fade-up">
-        <Text style={styles.eyebrow}>{eyebrowText}</Text>
+      <View style={styles.titleRow}>
         <Text style={[styles.title, isXs && styles.titleMobile, { color: ink }]}>{product.name}</Text>
+        <Pressable style={styles.shareBtn} onPress={handleShare} accessibilityLabel="Share product">
+          <Ionicons name="share-social-outline" size={20} color={KANKREG_PALETTE.inkSoft} />
+        </Pressable>
+      </View>
+      {kickerText ? (
+        <Text style={styles.kicker} numberOfLines={2}>
+          {kickerText}
+        </Text>
+      ) : null}
 
+      <View style={styles.ratePriceRow}>
         <View style={styles.rateRow}>
           {liveRatingAvg > 0 ? (
             <>
-              {renderStarRow(liveRatingAvg)}
+              {renderStarRow(liveRatingAvg, 14)}
               <Text style={styles.rateBold}>{liveRatingAvg.toFixed(1)}</Text>
               <Text style={styles.rateMuted}>
-                · {reviewCountDisplay} review{reviewCountDisplay === 1 ? "" : "s"}
+                ({reviewCountDisplay} review{reviewCountDisplay === 1 ? "" : "s"})
               </Text>
             </>
           ) : (
             <Text style={styles.rateMuted}>{PRODUCT_SCREEN.metaNoRatings}</Text>
           )}
         </View>
-
-        <View style={[styles.pricePanel, isDark && styles.pricePanelDark]}>
+        <View style={styles.priceStack}>
           <View style={styles.priceRowMain}>
-            <Text style={[styles.priceNow, { color: ink }]}>{formatINR(displayPrice)}</Text>
-            {showMrp && mrp ? <Text style={styles.priceWas}>{formatINR(mrp)}</Text> : null}
-            {offPct != null && offPct > 0 ? (
-              <Text style={styles.priceSave}>
-                {fillProductScreen(PRODUCT_SCREEN.savePctChip, { pct: String(offPct) })}
-              </Text>
-            ) : null}
+            <Text style={[styles.priceNow, { color: ink }]}>{formatINRWhole(displayPrice)}</Text>
+            {showMrp && mrp ? <Text style={styles.priceWas}>{formatINRWhole(mrp)}</Text> : null}
           </View>
-          {inCart ? (
-            <View style={styles.inBagPill}>
-              <Ionicons name="bag-check-outline" size={14} color={KANKREG_PALETTE.green} />
-              <Text style={styles.inBagPillText}>
-                {fillProductScreen(PRODUCT_SCREEN.inCartCount, { count: String(quantity) })}
-              </Text>
-            </View>
-          ) : null}
+          <Text style={styles.mrpNote}>MRP (Incl. of all taxes)</Text>
         </View>
+      </View>
 
-        {leadText ? <Text style={[styles.lead, { color: muted }]}>{leadText}</Text> : null}
-      </SectionReveal>
+      {Number(displayPrice) > 0 ? (
+        <View style={styles.coinsBanner}>
+          <Text style={styles.coinsIcon}>🪙</Text>
+          <Text style={styles.coinsText}>
+            Buy now & earn <Text style={styles.coinsStrong}>{coinsEarned}</Text> coins instantly
+          </Text>
+        </View>
+      ) : null}
+
+      {Number(displayPrice) > 0 ? (
+        <View style={styles.bestPriceRow}>
+          <Ionicons name="checkmark-circle" size={18} color="#2F8F4E" />
+          <Text style={styles.bestPriceText}>
+            Best Price {formatINRWhole(couponPrice)}{" "}
+            <Text style={styles.bestPriceCode}>with {STOREFRONT_COUPON_CODE}</Text>
+          </Text>
+        </View>
+      ) : null}
 
       {variants.length > 0 ? (
-        <SectionReveal immediate delay={140} preset="fade-up">
-          <Text style={styles.optLabel}>Select Size</Text>
+        <View>
+          <Text style={styles.optLabel}>Select Variant</Text>
           <View style={[styles.sizesRow, isXs && styles.sizesRowStack]}>
             {variants.map((v) => {
               const lab = String(v.label || "").trim();
@@ -436,69 +518,63 @@ export default function WebProductView({
                   active={active}
                   onPress={() => onSelectVariant(lab)}
                   styles={styles}
-                  isDark={isDark}
                 />
               );
             })}
           </View>
-        </SectionReveal>
+        </View>
       ) : null}
 
-      <SectionReveal immediate delay={200} preset="fade-up">
-          <View style={[styles.purchasePanel, isDark && styles.purchasePanelDark]}>
-            {isComingSoon ? (
-              <ComingSoonPurchasePanel note={comingSoonNote} isDark={isDark} ink={ink} muted={muted} />
-            ) : (
-            <View style={[styles.buyRow, isXs && styles.buyRowStack]}>
-              {!isOutOfStock && inCart ? (
-                <View style={[styles.qtyBox, isDark && styles.qtyBoxDark]}>
-                  <Pressable
-                    style={styles.qtyBtn}
-                    onPress={onRemoveFromCart}
-                    accessibilityLabel="Decrease quantity"
-                  >
-                    <Text style={styles.qtyBtnText}>−</Text>
-                  </Pressable>
-                  <Text style={[styles.qtyCount, { color: ink }]}>{quantity}</Text>
-                  <Pressable style={styles.qtyBtn} onPress={onAddToCart} accessibilityLabel="Increase quantity">
-                    <Text style={styles.qtyBtnText}>+</Text>
-                  </Pressable>
-                </View>
-              ) : null}
-              {!isOutOfStock && !inCart ? (
-                <Pressable
-                  className={Platform.OS === "web" ? PRODUCT_BTN_CART_CLASS : undefined}
-                  style={[styles.btnCart, isXs && styles.btnFull]}
-                  onPress={onAddToCart}
-                >
-                  <Ionicons name="bag-outline" size={16} color={KANKREG_PALETTE.green} style={styles.btnCartIcon} />
-                  <Text style={styles.btnCartText}>{PRODUCT_SCREEN.addToCart}</Text>
-                </Pressable>
-              ) : null}
-              {!isOutOfStock ? (
-                <Pressable
-                  className={Platform.OS === "web" ? PRODUCT_BTN_BUY_CLASS : undefined}
-                  style={[styles.btnBuy, isXs && styles.btnFull, inCart && styles.btnBuyInCart]}
-                  onPress={onBuyNow}
-                >
-                  <LinearGradient
-                    colors={["#D4A843", "#9A6B1F"]}
-                    style={styles.btnBuyGrad}
-                    start={{ x: 0, y: 0.5 }}
-                    end={{ x: 1, y: 0.5 }}
-                  >
-                    <Text style={styles.btnBuyText}>Buy now</Text>
-                  </LinearGradient>
-                </Pressable>
-              ) : (
-                <View style={[styles.btnBuy, styles.btnDisabled, isXs && styles.btnFull]}>
-                  <Text style={styles.btnOutOfStockText}>{PRODUCT_SCREEN.outOfStock}</Text>
-                </View>
-              )}
+      {isComingSoon ? (
+        <ComingSoonPurchasePanel note={comingSoonNote} isDark={isDark} ink={ink} muted={muted} />
+      ) : (
+        <View style={[styles.buyRow, isXs && styles.buyRowStack]}>
+          {!isOutOfStock ? (
+            <View style={styles.qtyBox}>
+              <Pressable
+                style={styles.qtyBtn}
+                onPress={inCart ? onRemoveFromCart : undefined}
+                accessibilityLabel="Decrease quantity"
+              >
+                <Text style={styles.qtyBtnText}>−</Text>
+              </Pressable>
+              <Text style={[styles.qtyCount, { color: ink }]}>{qtyDisplay}</Text>
+              <Pressable style={styles.qtyBtn} onPress={onAddToCart} accessibilityLabel="Increase quantity">
+                <Text style={styles.qtyBtnText}>+</Text>
+              </Pressable>
             </View>
-            )}
-          </View>
-        </SectionReveal>
+          ) : null}
+          {!isOutOfStock ? (
+            <Pressable
+              className={Platform.OS === "web" ? PRODUCT_BTN_CART_CLASS : undefined}
+              style={[styles.btnCart, isXs && styles.btnFull]}
+              onPress={onAddToCart}
+            >
+              <Text style={styles.btnCartText}>{PRODUCT_SCREEN.addToCart}</Text>
+            </Pressable>
+          ) : null}
+          {!isOutOfStock ? (
+            <Pressable
+              className={Platform.OS === "web" ? PRODUCT_BTN_BUY_CLASS : undefined}
+              style={[styles.btnBuy, isXs && styles.btnFull]}
+              onPress={onBuyNow}
+            >
+              <Text style={styles.btnBuyText}>Buy Now</Text>
+            </Pressable>
+          ) : (
+            <View style={[styles.btnBuy, styles.btnDisabled, isXs && styles.btnFull]}>
+              <Text style={styles.btnOutOfStockText}>{PRODUCT_SCREEN.outOfStock}</Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {descriptionText ? (
+        <View style={styles.descBlock}>
+          <Text style={styles.descTitle}>PRODUCT DESCRIPTION</Text>
+          <Text style={[styles.descBody, { color: muted }]}>{descriptionText}</Text>
+        </View>
+      ) : null}
 
       {trustChips.length > 0 ? (
         <View style={styles.trustRow}>
@@ -533,17 +609,6 @@ export default function WebProductView({
 
   return (
     <View style={styles.page}>
-      <LinearGradient
-        colors={
-          isDark
-            ? ["rgba(214, 173, 91, 0.05)", "transparent"]
-            : ["rgba(214, 173, 91, 0.1)", "transparent", "rgba(60, 98, 72, 0.04)"]
-        }
-        locations={[0, 0.45, 1]}
-        style={styles.pageWash}
-        pointerEvents="none"
-      />
-
       {!useProductSplit ? (
         <TouchableOpacity
           style={[styles.backFab, { top: Math.max(insets.top, spacing.sm) }]}
@@ -871,14 +936,7 @@ function createStyles(c, isDark) {
       alignSelf: "center",
       position: "relative",
       paddingBottom: HOME_SPACE.lg,
-    },
-    pageWash: {
-      position: "absolute",
-      top: 0,
-      left: -24,
-      right: -24,
-      height: 420,
-      zIndex: 0,
+      backgroundColor: isDark ? c.background : "#FFFFFF",
     },
     crumbRow: {
       flexDirection: "row",
@@ -956,28 +1014,39 @@ function createStyles(c, isDark) {
     },
     gallery: {
       width: "100%",
-      gap: 14,
+      gap: 16,
     },
-    heroParallax: {
+    thumbsWrap: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
       width: "100%",
+    },
+    thumbArrow: {
+      width: 32,
+      height: 72,
+      alignItems: "center",
+      justifyContent: "center",
+      ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
     },
     thumbsRow: {
+      flex: 1,
       flexDirection: "row",
-      flexWrap: "wrap",
+      flexWrap: "nowrap",
       gap: 10,
-      width: "100%",
+      overflow: "hidden",
     },
     thumb: {
-      width: 72,
-      height: 72,
+      width: 76,
+      height: 76,
       flexGrow: 0,
       flexShrink: 0,
-      borderRadius: 13,
+      borderRadius: 10,
       borderWidth: 1,
-      borderColor: KANKREG_PALETTE.line,
+      borderColor: "rgba(26, 40, 32, 0.12)",
       overflow: "hidden",
-      backgroundColor: isDark ? c.surfaceMuted : "#F2E9D4",
-      padding: 7,
+      backgroundColor: isDark ? c.surfaceMuted : "#FFFFFF",
+      padding: 4,
       ...Platform.select({
         web: {
           transition: "transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease",
@@ -987,10 +1056,10 @@ function createStyles(c, isDark) {
       }),
     },
     thumbActive: {
-      borderColor: KANKREG_PALETTE.gold,
-      ...platformShadow({ web: { boxShadow: "0 0 0 2px rgba(190, 138, 30, 0.18)" } }),
+      borderColor: KANKREG_PALETTE.green,
+      ...platformShadow({ web: { boxShadow: "0 0 0 1px rgba(26, 92, 72, 0.35)" } }),
     },
-    thumbImage: { width: "100%", height: "100%", borderRadius: 8 },
+    thumbImage: { width: "100%", height: "100%", borderRadius: 6 },
     thumbFallback: {
       alignItems: "center",
       justifyContent: "center",
@@ -1000,32 +1069,36 @@ function createStyles(c, isDark) {
       width: "100%",
       justifyContent: "center",
       alignItems: "center",
-      backgroundColor: isDark ? "#1a1410" : "#FFFDF6",
-      borderRadius: 24,
+      backgroundColor: isDark ? "#1a1410" : "#FFFFFF",
+      borderRadius: 0,
       overflow: "hidden",
       position: "relative",
-      minHeight: 240,
+      minHeight: 420,
+    },
+    heroZoom: {
+      position: "absolute",
+      top: 12,
+      left: 12,
+      zIndex: 4,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: "rgba(255,255,255,0.92)",
       borderWidth: 1,
-      borderColor: isDark ? c.border : "#F0E8D7",
-      ...platformShadow({
-        web: {
-          boxShadow: isDark
-            ? "0 24px 50px rgba(0,0,0,0.35)"
-            : "0 1px 2px rgba(60,40,15,0.05), 0 24px 50px rgba(80,60,25,0.07)",
-        },
-      }),
+      borderColor: "rgba(26, 40, 32, 0.1)",
+      alignItems: "center",
+      justifyContent: "center",
     },
     heroAnim: { width: "100%", height: "100%" },
     heroImageFrame: {
       width: "100%",
       height: "100%",
-      padding: 16,
+      padding: 8,
       justifyContent: "center",
       alignItems: "center",
     },
     heroImageInner: {
       width: "100%",
-      borderRadius: 14,
       backgroundColor: "transparent",
     },
     heroFallback: {
@@ -1070,26 +1143,61 @@ function createStyles(c, isDark) {
       color: KANKREG_PALETTE.green,
       marginBottom: 8,
     },
+    titleRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: 12,
+    },
+    shareBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: "center",
+      justifyContent: "center",
+      ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
+    },
     title: {
+      flex: 1,
       fontFamily: FONT_HEADING,
-      fontSize: 42,
-      lineHeight: 44,
+      fontSize: 32,
+      lineHeight: 38,
       fontWeight: "600",
-      letterSpacing: -0.5,
-      marginTop: 10,
-      marginBottom: 10,
+      letterSpacing: -0.3,
+      marginTop: 0,
+      marginBottom: 8,
       maxWidth: 560,
     },
     titleMobile: {
-      fontSize: 34,
-      lineHeight: 38,
+      fontSize: 26,
+      lineHeight: 32,
+    },
+    kicker: {
+      fontFamily: fonts.medium,
+      fontSize: 11,
+      letterSpacing: 0.8,
+      textTransform: "uppercase",
+      color: KANKREG_PALETTE.inkFaint,
+      lineHeight: 16,
+      marginBottom: 14,
+      maxWidth: 520,
+    },
+    ratePriceRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: 16,
+      flexWrap: "wrap",
+      marginBottom: 16,
     },
     rateRow: {
       flexDirection: "row",
       alignItems: "center",
       flexWrap: "wrap",
-      gap: 8,
-      marginBottom: 14,
+      gap: 6,
+      flex: 1,
+      minWidth: 160,
+      paddingTop: 8,
     },
     rateBold: {
       fontFamily: fonts.bold,
@@ -1101,58 +1209,20 @@ function createStyles(c, isDark) {
       fontSize: 13,
       color: KANKREG_PALETTE.inkFaint,
     },
+    priceStack: {
+      alignItems: "flex-end",
+    },
     priceRowMain: {
       flexDirection: "row",
       alignItems: "baseline",
       flexWrap: "wrap",
-      gap: 10,
-    },
-    pricePanel: {
-      marginTop: 4,
-      marginBottom: 4,
-      padding: 16,
-      borderRadius: 16,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: "rgba(201, 162, 39, 0.28)",
-      borderTopWidth: 2,
-      borderTopColor: KANKREG_PALETTE.gold,
-      backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(255, 253, 249, 0.96)",
-      gap: 10,
-      ...platformShadow({
-        web: {
-          boxShadow: isDark
-            ? "0 10px 28px rgba(0,0,0,0.22)"
-            : "0 8px 24px rgba(61, 42, 18, 0.06), inset 0 1px 0 rgba(255,255,255,0.92)",
-        },
-        default: {},
-      }),
-    },
-    pricePanelDark: {
-      borderColor: "rgba(232, 200, 90, 0.22)",
-      borderTopColor: "rgba(232, 200, 90, 0.55)",
-    },
-    inBagPill: {
-      alignSelf: "flex-start",
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-      paddingHorizontal: 10,
-      paddingVertical: 5,
-      borderRadius: radius.pill,
-      backgroundColor: "rgba(60, 98, 72, 0.1)",
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: "rgba(60, 98, 72, 0.18)",
-    },
-    inBagPillText: {
-      fontFamily: fonts.semibold,
-      fontSize: 12,
-      color: KANKREG_PALETTE.green,
+      gap: 8,
     },
     priceNow: {
       fontFamily: FONT_PRICE,
-      fontSize: 32,
-      fontWeight: "600",
-      letterSpacing: -0.4,
+      fontSize: 34,
+      fontWeight: "700",
+      letterSpacing: -0.6,
     },
     priceWas: {
       fontFamily: fonts.regular,
@@ -1160,15 +1230,48 @@ function createStyles(c, isDark) {
       color: KANKREG_PALETTE.inkFaint,
       textDecorationLine: "line-through",
     },
-    priceSave: {
+    mrpNote: {
+      fontFamily: fonts.regular,
+      fontSize: 11,
+      color: KANKREG_PALETTE.inkFaint,
+      marginTop: 2,
+    },
+    coinsBanner: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      backgroundColor: isDark ? "rgba(47, 143, 78, 0.16)" : "#EAF7D8",
+      borderRadius: 8,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      marginBottom: 12,
+    },
+    coinsIcon: {
+      fontSize: 16,
+    },
+    coinsText: {
+      flex: 1,
+      fontFamily: fonts.medium,
+      fontSize: 13,
+      color: KANKREG_PALETTE.greenDeep,
+    },
+    coinsStrong: {
       fontFamily: fonts.bold,
-      fontSize: 12,
-      color: KANKREG_PALETTE.green,
-      backgroundColor: "rgba(60,98,72,0.1)",
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-      borderRadius: radius.pill,
-      overflow: "hidden",
+    },
+    bestPriceRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      marginBottom: 6,
+    },
+    bestPriceText: {
+      fontFamily: fonts.bold,
+      fontSize: 14,
+      color: "#2F8F4E",
+    },
+    bestPriceCode: {
+      fontFamily: fonts.medium,
+      color: KANKREG_PALETTE.inkSoft,
     },
     lead: {
       fontSize: 15.5,
@@ -1179,33 +1282,36 @@ function createStyles(c, isDark) {
       maxWidth: 460,
     },
     optLabel: {
-      fontFamily: fonts.bold,
-      fontSize: 12,
-      letterSpacing: 1,
-      textTransform: "uppercase",
-      color: KANKREG_PALETTE.inkSoft,
-      marginTop: 20,
-      marginBottom: 11,
+      fontFamily: fonts.semibold,
+      fontSize: 14,
+      letterSpacing: 0,
+      textTransform: "none",
+      color: isDark ? "#f5efe4" : KANKREG_PALETTE.ink,
+      marginTop: 18,
+      marginBottom: 12,
     },
     sizesRow: {
       flexDirection: "row",
-      gap: 11,
-      marginBottom: 4,
+      gap: 10,
+      marginBottom: 18,
+      flexWrap: "wrap",
     },
     sizesRowStack: {
       flexDirection: "column",
     },
     sizeCard: {
-      flex: 1,
-      minWidth: 100,
-      borderWidth: 1.5,
-      borderColor: KANKREG_PALETTE.line,
-      borderRadius: 14,
-      paddingVertical: 13,
+      flexGrow: 1,
+      flexBasis: 110,
+      minWidth: 108,
+      maxWidth: 160,
+      borderWidth: 1,
+      borderColor: "rgba(26, 40, 32, 0.16)",
+      borderRadius: 10,
+      paddingVertical: 12,
       paddingHorizontal: 10,
-      alignItems: "center",
-      backgroundColor: isDark ? c.surface : KANKREG_CHROME.cream,
-      gap: 3,
+      alignItems: "flex-start",
+      backgroundColor: isDark ? c.surface : "#FFFFFF",
+      gap: 4,
     },
     sizeCardDark: {
       borderColor: c.border,
@@ -1213,21 +1319,45 @@ function createStyles(c, isDark) {
     },
     sizeCardActive: {
       borderColor: KANKREG_PALETTE.green,
-      backgroundColor: "rgba(31,77,54,0.05)",
+      backgroundColor: "rgba(26, 92, 72, 0.04)",
     },
     sizeLabel: {
       fontFamily: FONT_BODY_SEMIBOLD,
-      fontSize: 17,
+      fontSize: 13,
       fontWeight: "600",
-      /** Fixed dark ink was unreadable on the dark card background in dark mode. */
       color: isDark ? "#f5efe4" : KANKREG_PALETTE.ink,
     },
     sizeLabelActive: {
       color: KANKREG_PALETTE.green,
     },
+    sizePriceRow: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      flexWrap: "wrap",
+      gap: 6,
+    },
     sizePrice: {
-      fontFamily: fonts.medium,
-      fontSize: 12.5,
+      fontFamily: fonts.bold,
+      fontSize: 16,
+      color: isDark ? "#f5efe4" : KANKREG_PALETTE.ink,
+    },
+    sizePriceActive: {
+      color: KANKREG_PALETTE.green,
+    },
+    sizeOff: {
+      fontFamily: fonts.bold,
+      fontSize: 11,
+      color: "#2F8F4E",
+    },
+    sizeWas: {
+      fontFamily: fonts.regular,
+      fontSize: 11,
+      color: KANKREG_PALETTE.inkFaint,
+      textDecorationLine: "line-through",
+    },
+    sizeUnit: {
+      fontFamily: fonts.regular,
+      fontSize: 11,
       color: KANKREG_PALETTE.inkFaint,
     },
     sizeTag: {
@@ -1238,29 +1368,16 @@ function createStyles(c, isDark) {
     },
     buyRow: {
       flexDirection: "row",
-      gap: 13,
+      gap: 10,
       alignItems: "stretch",
       flexWrap: "wrap",
+      marginTop: 6,
     },
     purchasePanel: {
       marginTop: 20,
-      padding: 14,
-      borderRadius: 18,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: KANKREG_PALETTE.line,
-      backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "#FFFEFA",
-      ...platformShadow({
-        web: {
-          boxShadow: isDark
-            ? "0 12px 32px rgba(0,0,0,0.2)"
-            : "0 10px 28px rgba(61, 42, 18, 0.07)",
-        },
-        default: {},
-      }),
+      padding: 0,
     },
-    purchasePanelDark: {
-      borderColor: c.border,
-    },
+    purchasePanelDark: {},
     comingSoonPanel: {
       borderRadius: 16,
       overflow: "hidden",
@@ -1313,19 +1430,20 @@ function createStyles(c, isDark) {
     qtyBox: {
       flexDirection: "row",
       alignItems: "center",
-      borderWidth: 1.5,
-      borderColor: KANKREG_PALETTE.line,
-      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: "rgba(26, 40, 32, 0.18)",
+      borderRadius: 999,
       overflow: "hidden",
-      backgroundColor: isDark ? c.surface : "#FFFEFA",
+      backgroundColor: isDark ? c.surface : "#FFFFFF",
+      height: 48,
     },
     qtyBoxDark: {
       borderColor: c.border,
       backgroundColor: "rgba(255,255,255,0.03)",
     },
     qtyBtn: {
-      width: 46,
-      height: 54,
+      width: 42,
+      height: 48,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -1335,47 +1453,47 @@ function createStyles(c, isDark) {
       fontFamily: fonts.regular,
     },
     qtyCount: {
-      width: 40,
+      width: 28,
       textAlign: "center",
       fontFamily: FONT_BODY_SEMIBOLD,
       fontWeight: "700",
-      fontSize: 16,
+      fontSize: 15,
     },
     btnCart: {
       flex: 1,
-      minWidth: 148,
-      minHeight: 54,
+      minWidth: 140,
+      minHeight: 48,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
       gap: 8,
-      borderWidth: 1.5,
-      borderColor: KANKREG_PALETTE.green,
-      borderRadius: 14,
-      backgroundColor: isDark ? "rgba(31,77,54,0.08)" : "rgba(31,77,54,0.04)",
-      paddingHorizontal: 16,
+      borderWidth: 0,
+      borderRadius: 999,
+      backgroundColor: KANKREG_PALETTE.green,
+      paddingHorizontal: 18,
     },
     btnCartIcon: {
       marginTop: 1,
     },
     btnCartText: {
       fontFamily: fonts.bold,
-      fontSize: 14.5,
-      color: KANKREG_PALETTE.green,
+      fontSize: 15,
+      color: "#FFFFFF",
       letterSpacing: 0.15,
     },
     btnBuy: {
-      flex: 1.2,
-      minWidth: 150,
-      minHeight: 54,
-      borderRadius: 14,
+      flex: 1,
+      minWidth: 132,
+      minHeight: 48,
+      borderRadius: 999,
       overflow: "hidden",
-      ...platformShadow({
-        web: { boxShadow: "0 10px 24px rgba(160, 116, 26, 0.32)" },
-      }),
+      backgroundColor: "#F0C419",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 18,
     },
     btnBuyInCart: {
-      flex: 1.4,
+      flex: 1,
     },
     btnBuyGrad: {
       flex: 1,
@@ -1385,9 +1503,9 @@ function createStyles(c, isDark) {
     },
     btnBuyText: {
       fontFamily: fonts.bold,
-      fontSize: 15.5,
-      color: "#FFF9EC",
-      letterSpacing: 0.2,
+      fontSize: 15,
+      color: "#1A2B22",
+      letterSpacing: 0.15,
     },
     btnOutOfStockText: {
       fontFamily: fonts.semibold,
@@ -1402,6 +1520,23 @@ function createStyles(c, isDark) {
     },
     btnDisabled: {
       opacity: 0.5,
+    },
+    descBlock: {
+      marginTop: 28,
+      paddingTop: 8,
+      gap: 10,
+    },
+    descTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 13,
+      letterSpacing: 0.6,
+      color: isDark ? "#f5efe4" : KANKREG_PALETTE.ink,
+    },
+    descBody: {
+      fontFamily: fonts.regular,
+      fontSize: 14.5,
+      lineHeight: 24,
+      maxWidth: 560,
     },
     trustRow: {
       flexDirection: "row",

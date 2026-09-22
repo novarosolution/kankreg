@@ -8,13 +8,23 @@ import { fonts } from "../../theme/tokens";
 import { routeMatchesNav } from "./kankregNav";
 
 const NAV_ICONS = {
-  Home: "home-outline",
+  ShopAll: "grid-outline",
   Shop: "storefront-outline",
+  ShopMenu: "storefront-outline",
+  Ghee: "water-outline",
+  Oils: "leaf-outline",
+  Atta: "nutrition-outline",
+  Deals: "pricetag-outline",
+  Combo: "gift-outline",
+  Blogs: "book-outline",
   About: "leaf-outline",
+  Privacy: "document-text-outline",
+  Terms: "document-outline",
   Rewards: "gift-outline",
   Account: "person-circle-outline",
   Admin: "shield-checkmark-outline",
   Delivery: "bicycle-outline",
+  Home: "home-outline",
 };
 
 /** kankreg.html `.mobile-nav` */

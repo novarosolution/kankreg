@@ -43,7 +43,7 @@ export function figmaEyebrow(isDark = false) {
     fontSize: 9,
     letterSpacing: 2.6,
     textTransform: "uppercase",
-    color: isDark ? FIGMA.goldBright : FIGMA.gold,
+    color: isDark ? FIGMA.goldBright : FIGMA.green,
   };
 }
 

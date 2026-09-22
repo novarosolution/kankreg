@@ -4,18 +4,18 @@ const homeViewConfigSchema = new mongoose.Schema(
   {
     heroTitle: {
       type: String,
-      default: "Pure Heritage in Every Drop",
+      default: "Har Roti Mein Shuddhata? Ab Hogi.",
       trim: true,
     },
     heroSubtitle: {
       type: String,
       default:
-        "Slow-churned from the milk of grass-fed cows — golden clarity and aroma rooted in tradition.",
+        "A2 Bilona ghee, wood-pressed oils and high-protein atta — farm to table.",
       trim: true,
     },
     primeSectionTitle: {
       type: String,
-      default: "Prime Products",
+      default: "Bilona-Churned Cow Ghee",
       trim: true,
     },
     productTypeTitle: {
@@ -59,6 +59,7 @@ const homeViewConfigSchema = new mongoose.Schema(
         url: { type: String, default: "", trim: true },
         title: { type: String, default: "", trim: true },
         subtitle: { type: String, default: "", trim: true },
+        cta: { type: String, default: "Shop now", trim: true },
         enabled: { type: Boolean, default: true },
       },
     ],

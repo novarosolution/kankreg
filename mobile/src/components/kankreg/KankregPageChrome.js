@@ -27,7 +27,7 @@ export function KankregSectionHead({ index, eyebrow, title, kicker, right }) {
     <View style={[styles.sectionHead, isXs && styles.sectionHeadStack]}>
       <View style={[styles.sectionLeft, isXs && styles.sectionLeftFull]}>
         {index != null ? (
-          <Text style={[styles.ix, { color: isDark ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.gold }]}>
+          <Text style={[styles.ix, { color: isDark ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.green }]}>
             {kankregSectionIndex(index)} {eyebrow ? eyebrow.split("—").pop()?.trim() || eyebrow : ""}
           </Text>
         ) : eyebrow ? (
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        opacity: 0.045,
+        opacity: 0,
         zIndex: 200,
         pointerEvents: "none",
       },

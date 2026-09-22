@@ -1,5 +1,5 @@
+const mongoose = require("mongoose");
 const Product = require("../models/Product");
-const cloudinary = require("../config/cloudinary");
 const {
   uploadOptimizedImage,
   isPayloadTooLarge,
@@ -96,10 +96,22 @@ function toBoolean(value, fallback) {
   return Boolean(value);
 }
 
+function serializeProduct(doc) {
+  if (!doc) return null;
+  const obj = typeof doc.toObject === "function" ? doc.toObject({ virtuals: true }) : { ...doc };
+  obj.id = String(obj._id || obj.id || "");
+  return obj;
+}
+
 async function getProducts(req, res, next) {
   try {
-    const products = await Product.find({ isPublished: { $ne: false } }).sort({ createdAt: -1 });
-    res.json(products);
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: "Catalog is starting. Try again in a moment." });
+    }
+    const products = await Product.find({ isPublished: { $ne: false } })
+      .sort({ createdAt: -1, homeOrder: 1 })
+      .lean();
+    res.json(products.map(serializeProduct));
   } catch (error) {
     next(error);
   }
@@ -108,11 +120,14 @@ async function getProducts(req, res, next) {
 async function getProductById(req, res, next) {
   try {
     const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({ message: "Product not found." });
+    }
     const product = await Product.findOne({ _id: id, isPublished: { $ne: false } });
     if (!product) {
       return res.status(404).json({ message: "Product not found." });
     }
-    res.json(product);
+    res.json(serializeProduct(product));
   } catch (error) {
     next(error);
   }
@@ -366,8 +381,8 @@ async function uploadProductImage(req, res, next) {
 
     res.status(201).json(uploaded);
   } catch (error) {
-    if (error.statusCode === 400) {
-      return res.status(400).json({ message: error.message });
+    if (error.statusCode === 400 || error.statusCode === 503) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     if (isPayloadTooLarge(error)) {
       return res.status(413).json({
@@ -381,6 +396,9 @@ async function uploadProductImage(req, res, next) {
 async function getProductReviews(req, res, next) {
   try {
     const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({ message: "Product not found." });
+    }
     const product = await Product.findById(id).select("name ratingAverage reviewCount reviews");
     if (!product) {
       return res.status(404).json({ message: "Product not found." });
@@ -403,6 +421,9 @@ async function getProductReviews(req, res, next) {
 async function createOrUpdateProductReview(req, res, next) {
   try {
     const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({ message: "Product not found." });
+    }
     const ratingNum = Number(req.body?.rating);
     const comment = String(req.body?.comment || "").trim();
     if (!Number.isFinite(ratingNum) || ratingNum < 1 || ratingNum > 5) {

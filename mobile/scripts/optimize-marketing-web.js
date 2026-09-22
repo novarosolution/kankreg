@@ -22,8 +22,8 @@ const marketingDir = path.join(root, "assets", "marketing");
 
 /** Minimum set of pre-generated web assets checked into the repo for CI skips. */
 const COMMITTED_WEB_ASSET_MARKERS = [
-  "hero-slide-kankreg-phone-hero-web-840.webp",
-  "hero-slide-kankreg-product-wide-web-1200.webp",
+  "hero-slide-kankreg-phone-hero-web-1200.webp",
+  "hero-slide-kankreg-product-wide-web-2400.webp",
   "home-hero-video-poster.webp",
   "timeline-brand-film-poster.webp",
 ];
@@ -206,12 +206,14 @@ async function main() {
 
   for (const name of PHONE_HERO_PNGS) {
     const base = name.replace(/\.png$/, "");
-    await toWebp(name, `${base}-web-840.webp`, 840, 78);
+    await toWebp(name, `${base}-web-840.webp`, 1080, 84);
+    await toWebp(name, `${base}-web-1200.webp`, 1200, 84);
   }
 
   for (const name of DESKTOP_HERO_PNGS) {
     const base = name.replace(/\.png$/, "");
-    await toWebp(name, `${base}-web-1200.webp`, 1200, 80);
+    await toWebp(name, `${base}-web-1200.webp`, 1920, 85);
+    await toWebp(name, `${base}-web-2400.webp`, 2400, 84);
   }
 
   for (const name of PROCESS_PNGS) {

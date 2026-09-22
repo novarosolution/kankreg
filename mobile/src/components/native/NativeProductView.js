@@ -567,7 +567,7 @@ export default function NativeProductView({
               contentContainerStyle={styles.relatedRail}
             >
               {relatedProducts.map((p, idx) => (
-                <View key={p.id} style={styles.relatedCard}>
+                <View key={p.id} style={[styles.relatedCard, { width: 214 }]}>
                   <NativeProductCard
                     product={p}
                     index={idx + 1}

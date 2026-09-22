@@ -108,6 +108,7 @@ export default function AdminHomeMediaEditor({
         url: "",
         title: "",
         subtitle: "",
+        cta: "Shop now",
         enabled: true,
       },
     ]);
@@ -358,6 +359,11 @@ export default function AdminHomeMediaEditor({
             label="Slide subtitle"
             value={slide.subtitle}
             onChangeText={(value) => updateSlide(slide.id, { subtitle: value })}
+          />
+          <PremiumInput
+            label="Button label"
+            value={slide.cta || "Shop now"}
+            onChangeText={(value) => updateSlide(slide.id, { cta: value })}
           />
           <AdminToggleRow
             title="Show on website"

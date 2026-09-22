@@ -21,7 +21,7 @@ const cardShadow = platformShadow({
 });
 
 /** Single premium native home slider + trust strip in one card. */
-export default function NativeHomeHeroSlider({ navigation, heroSlides = [] }) {
+export default function NativeHomeHeroSlider({ navigation, heroSlides = [], flush = false }) {
   const { isDark } = useTheme();
 
   const activeSlides = useMemo(() => getAppHeroSlides(heroSlides), [heroSlides]);
@@ -32,7 +32,7 @@ export default function NativeHomeHeroSlider({ navigation, heroSlides = [] }) {
   const openShop = () => navigation.navigate("Shop");
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, flush && styles.wrapFlush]}>
       <View style={[styles.card, isDark && styles.cardDark, cardShadow]}>
         <View style={styles.goldRail} pointerEvents="none" />
         <HeroMediaSlider
@@ -70,6 +70,9 @@ const styles = StyleSheet.create({
     width: "100%",
     paddingHorizontal: FIGMA.gutter,
     marginBottom: spacing.sm,
+  },
+  wrapFlush: {
+    paddingHorizontal: 0,
   },
   card: {
     borderRadius: FIGMA.radiusHero,

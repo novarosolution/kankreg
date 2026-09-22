@@ -123,7 +123,7 @@ function PremiumButtonBase({
   const onPrimaryColor = "#FFFCF8";
   const variantTextColor =
     isGhost || isOutline
-      ? isDark ? ALCHEMY.goldBright : ALCHEMY.brownInk
+      ? isDark ? ALCHEMY.goldBright : KANKREG_PALETTE.green
       : isSubtle
         ? c.textPrimary
         : isSecondary
@@ -136,10 +136,10 @@ function PremiumButtonBase({
     if (isSecondary)
       return isDark
         ? [c.secondaryBright, c.secondary, c.secondaryDark]
-        : [c.secondary, c.secondary, c.secondaryDark];
-    if (isGold) return ["#cba24e", KANKREG_PALETTE.gold, KANKREG_PALETTE.goldDeep];
-    if (isPrimary) return [KANKREG_PALETTE.ink, "#0d0a08", "#000000"];
-    return [ALCHEMY.goldBright, ALCHEMY.gold, ALCHEMY.brown];
+        : [KANKREG_PALETTE.green, KANKREG_PALETTE.green, KANKREG_PALETTE.greenDeep];
+    if (isGold) return [KANKREG_PALETTE.goldBright, KANKREG_PALETTE.gold, KANKREG_PALETTE.goldDeep];
+    if (isPrimary) return [KANKREG_PALETTE.green, KANKREG_PALETTE.green, KANKREG_PALETTE.greenDeep];
+    return [KANKREG_PALETTE.green, KANKREG_PALETTE.greenDeep, "#10382C"];
   }, [disabled, loading, isDanger, isSecondary, isGold, isPrimary, isDark, c.secondary, c.secondaryDark, c.secondaryBright]);
 
   const textNode = label != null

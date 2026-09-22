@@ -8,6 +8,7 @@ const { initSocketServer } = require("./src/realtime/socketHub");
 dotenv.config({ path: path.join(__dirname, ".env") });
 
 const connectDB = require("./src/config/db");
+const { applyCatalogSeed } = require("./scripts/seedCatalog");
 const { getProducts } = require("./src/controllers/productController");
 const { getPublicHomeViewConfig } = require("./src/controllers/homeViewController");
 const { loginUser, registerUser } = require("./src/controllers/userController");
@@ -17,6 +18,7 @@ const orderRoutes = require("./src/routes/orderRoutes");
 const productRoutes = require("./src/routes/productRoutes");
 const adminRoutes = require("./src/routes/adminRoutes");
 const deliveryRoutes = require("./src/routes/deliveryRoutes");
+const newsletterRoutes = require("./src/routes/newsletterRoutes");
 const { notFound, errorHandler } = require("./src/middleware/errorMiddleware");
 
 const app = express();
@@ -53,7 +55,7 @@ const corsOptions = {
     if (isAllowedOrigin(origin)) {
       return callback(null, true);
     }
-    return callback(new Error(`Not allowed by CORS: ${origin}`));
+    return callback(null, false);
   },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
@@ -68,9 +70,35 @@ app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
 /** Local dev only — serves bundled marketing photography for seeded product images until Cloudinary is configured. */
 app.use("/media/marketing", express.static(path.join(__dirname, "../mobile/assets/marketing")));
+/** Square product packshots (2000px PNG + 1200px WebP) for catalog seed / PDP until Cloudinary is configured. */
+app.use("/media/products", express.static(path.join(__dirname, "../mobile/assets/products")));
 
 app.get("/", (req, res) => {
   res.json({ message: "E-commerce API is running", ok: true });
+});
+
+app.get("/health", (req, res) => {
+  res.json({ ok: true, service: "kankreg-api" });
+});
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true, service: "kankreg-api" });
+});
+
+app.get("/ready", (req, res) => {
+  const mongoose = require("mongoose");
+  const ready = mongoose.connection.readyState === 1;
+  res.status(ready ? 200 : 503).json({
+    ok: ready,
+    mongo: ready ? "connected" : "disconnected",
+  });
+});
+app.get("/api/ready", (req, res) => {
+  const mongoose = require("mongoose");
+  const ready = mongoose.connection.readyState === 1;
+  res.status(ready ? 200 : 503).json({
+    ok: ready,
+    mongo: ready ? "connected" : "disconnected",
+  });
 });
 
 /* Register high-traffic routes directly (reliable on Express 5 + clear for debugging) */
@@ -93,6 +121,7 @@ mountApi("/orders", orderRoutes);
 mountApi("/products", productRoutes);
 mountApi("/admin", adminRoutes);
 mountApi("/delivery", deliveryRoutes);
+mountApi("/newsletter", newsletterRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
@@ -115,14 +144,36 @@ function startExpiredPaymentSweeper() {
 
 async function start() {
   await connectDB();
+  try {
+    const seeded = await applyCatalogSeed();
+    if (seeded.created || seeded.updated) {
+      console.log(`[dev] Catalog seed: ${seeded.created} created, ${seeded.updated || 0} updated.`);
+    }
+  } catch (err) {
+    console.warn(`[dev] Catalog seed skipped: ${err.message}`);
+  }
   startExpiredPaymentSweeper();
   const httpServer = http.createServer(app);
   initSocketServer(httpServer);
+  httpServer.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(`Port ${PORT} is already in use. Stop the other API process, then retry.`);
+      process.exit(1);
+    }
+    throw err;
+  });
   httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`Kankreg API on port ${PORT} (listening on 0.0.0.0)`);
     console.log("Try: GET http://127.0.0.1:" + PORT + "/products");
     console.log("Live: WebSocket /socket.io");
   });
+
+  const shutdown = () => {
+    httpServer.close(() => process.exit(0));
+    setTimeout(() => process.exit(0), 4000).unref();
+  };
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
 }
 
 start().catch((err) => {

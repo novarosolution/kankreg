@@ -2,16 +2,16 @@ import { KANKREG_PALETTE } from "./kankregWeb";
 
 /** Loading states — aligned with `reference/loading-states.html` tokens. */
 export const LOADING_THEME = {
-  shimmerLight: ["#ece3d2", "#f5eedd", "#ece3d2"],
+  shimmerLight: ["#F5F6F5", "#FFFFFF", "#F5F6F5"],
   shimmerDark: ["rgba(255,255,255,0.05)", "rgba(232,200,90,0.24)", "rgba(255,255,255,0.05)"],
-  skeletonBaseLight: "#ece3d2",
+  skeletonBaseLight: "#F5F6F5",
   skeletonBaseDark: "rgba(255,255,255,0.09)",
   skeletonBorderDark: "rgba(232,200,90,0.14)",
   paper2: KANKREG_PALETTE.paper2,
   gold: KANKREG_PALETTE.gold,
   goldBright: KANKREG_PALETTE.goldBright,
   goldDeep: KANKREG_PALETTE.goldDeep,
-  splashRadialLight: ["#ead9b2", "#b6985c", "#2a241e"],
+  splashRadialLight: ["#FFFFFF", "#F5F6F5", "#FFFFFF"],
   splashRadialDark: ["#2a241e", "#1a1714", "#050403"],
   shimmerDurationMs: 1500,
   ringDurationMs: 1000,

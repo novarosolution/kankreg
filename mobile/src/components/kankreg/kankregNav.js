@@ -21,7 +21,15 @@ export const ADMIN_ROUTES = new Set([
 const ROUTE_GROUPS = {
   Home: ["Home"],
   Shop: ["Shop"],
+  ShopAll: ["Shop"],
+  ShopMenu: ["Shop"],
+  Ghee: ["Shop"],
+  Oils: ["Shop"],
+  Atta: ["Shop"],
+  Deals: ["Shop"],
+  Combo: ["Shop"],
   About: ["About", "Privacy", "Terms"],
+  Blogs: ["About", "Privacy", "Terms"],
   Product: ["Product"],
   Cart: ["Cart"],
   Checkout: ["Checkout"],
@@ -33,35 +41,56 @@ const ROUTE_GROUPS = {
   Auth: ["Login", "Register"],
 };
 
-const NAV_HANDLERS = {
-  Home: ({ go }) => () => go("Home"),
-  Shop: ({ go }) => () => go("Shop"),
-  About: ({ go }) => () => go("About"),
-  Product: ({ goProduct }) => goProduct,
-  Cart: ({ go }) => () => go("Cart", true),
-  Checkout: ({ go }) => () => go("Checkout", true),
-  Orders: ({ go }) => () => go("MyOrders", true),
-  Rewards: ({ go }) => () => go("RedeemRewards", true),
-  Account: ({ go }) => () => go("Profile", true),
-  Admin: ({ go }) => () => go("AdminDashboard", true),
-  Delivery: ({ go }) => () => go("DeliveryDashboard", true),
-};
-
-export function routeMatchesNav(navKey, routeName) {
-  if (!routeName) return false;
-  if (navKey === routeName) return true;
-  return (ROUTE_GROUPS[navKey] || []).includes(routeName);
+function bindItem(item, go) {
+  const children = Array.isArray(item.children)
+    ? item.children.map((child) => bindItem(child, go))
+    : undefined;
+  return {
+    ...item,
+    children,
+    onPress: () => {
+      if (item.route) {
+        go(item.route, Boolean(item.requiresAuth), item.params);
+      }
+    },
+  };
 }
 
-export function buildKankregNavItems({ go, goProduct, user }) {
-  const ctx = { go, goProduct, user };
+export function routeMatchesNav(navKey, routeName, routeParams) {
+  if (!routeName) return false;
+  if (navKey === routeName) return true;
+  if (!(ROUTE_GROUPS[navKey] || []).includes(routeName)) return false;
+
+  const category = String(routeParams?.category || "").trim().toLowerCase();
+  const pill = String(routeParams?.pill || "").trim();
+  const query = String(routeParams?.q || "").trim().toLowerCase();
+
+  if (navKey === "Ghee") return category.includes("ghee");
+  if (navKey === "Oils") return category.includes("oil");
+  if (navKey === "Atta") return category.includes("atta");
+  if (navKey === "Deals") return pill === "On sale";
+  if (navKey === "Combo") return query.includes("combo") || category.includes("combo");
+  if (navKey === "ShopAll") {
+    return routeName === "Shop" && !category && pill !== "On sale" && !query.includes("combo");
+  }
+  if (navKey === "ShopMenu") return routeName === "Shop";
+  return true;
+}
+
+export function flattenNavItems(items = []) {
+  return items.flatMap((item) => (item.children?.length ? [item, ...item.children] : [item]));
+}
+
+export function buildKankregNavItems({ go, user }) {
   const roleItems = [];
   if (user?.isAdmin) {
     const { key, label } = KANKREG_ROLE_NAV_ITEMS.admin;
     roleItems.push({
       key,
       label,
-      onPress: NAV_HANDLERS.Admin(ctx),
+      route: "AdminDashboard",
+      requiresAuth: true,
+      onPress: () => go("AdminDashboard", true),
     });
   }
   if (user?.isDeliveryPartner) {
@@ -69,15 +98,10 @@ export function buildKankregNavItems({ go, goProduct, user }) {
     roleItems.push({
       key,
       label,
-      onPress: NAV_HANDLERS.Delivery(ctx),
+      route: "DeliveryDashboard",
+      requiresAuth: true,
+      onPress: () => go("DeliveryDashboard", true),
     });
   }
-  return [
-    ...KANKREG_WEB_NAV_ITEMS.map(({ key, label }) => ({
-      key,
-      label,
-      onPress: NAV_HANDLERS[key](ctx),
-    })),
-    ...roleItems,
-  ];
+  return [...KANKREG_WEB_NAV_ITEMS.map((item) => bindItem(item, go)), ...roleItems];
 }

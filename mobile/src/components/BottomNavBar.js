@@ -184,7 +184,7 @@ export default function BottomNavBar() {
         styles.tabBar,
         {
           paddingBottom: Math.max(6, (insets.bottom || 0) + 4),
-          backgroundColor: isDark ? "rgba(20,17,15,0.96)" : "rgba(255,253,248,0.96)",
+          backgroundColor: isDark ? "rgba(20,17,15,0.96)" : "#FFFFFF",
           borderTopColor: isDark ? semantic.border.subtle : FIGMA.line,
         },
       ]}

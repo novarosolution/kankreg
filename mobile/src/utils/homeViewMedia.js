@@ -33,6 +33,7 @@ export function normalizeHeroSlide(slide, index = 0) {
     url,
     title: asTrimmedString(slide.title),
     subtitle: asTrimmedString(slide.subtitle),
+    cta: asTrimmedString(slide.cta, "Shop now") || "Shop now",
     enabled: slide.enabled !== false,
   };
 }

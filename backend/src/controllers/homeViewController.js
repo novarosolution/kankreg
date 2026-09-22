@@ -43,12 +43,17 @@ function logHomeViewDbError(err) {
 
 /** Public read — never 500 when defaults can be served in memory. */
 async function getPublicHomeViewPayload() {
-  const existing = await HomeViewConfig.findOne().lean();
-  if (existing) return existing;
-
   try {
-    const created = await HomeViewConfig.create({});
-    return created.toObject();
+    const existing = await HomeViewConfig.findOne().lean();
+    if (existing) return existing;
+
+    try {
+      const created = await HomeViewConfig.create({});
+      return created.toObject();
+    } catch (err) {
+      logHomeViewDbError(err);
+      return buildDefaultHomeViewConfig();
+    }
   } catch (err) {
     logHomeViewDbError(err);
     return buildDefaultHomeViewConfig();

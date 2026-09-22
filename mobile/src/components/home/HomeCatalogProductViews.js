@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import PremiumProductCard from "../PremiumProductCard";
+import StorefrontProductCard from "../StorefrontProductCard";
 import {
   HOME_SPACE,
   HOME_TYPE,
@@ -337,33 +337,14 @@ export const HomeCatalogGridCard = memo(function HomeCatalogGridCard({
   variant = "default",
 }) {
   const card = (
-    variant === "editorial" && Platform.OS === "web" ? (
-      <HomeEditorialProductCard
-        product={item}
-        imagePriority={idx < 4 ? "high" : "normal"}
-        isOutOfStock={isOutOfStock}
-        isComingSoon={isComingSoon}
-        comingSoonNote={comingSoonNote}
-        quantity={quantity}
-        onPress={() => navigation.navigate("Product", { productId: item.id })}
-        onAddToCart={onAddToCart}
-        onRemoveFromCart={onRemoveFromCart}
-      />
-    ) : (
-      <PremiumProductCard
-        index={idx}
-        compact={compact}
-        imagePriority={idx < 4 ? "high" : "normal"}
-        isOutOfStock={isOutOfStock}
-        isComingSoon={isComingSoon}
-        comingSoonNote={comingSoonNote}
-        product={item}
-        onPress={() => navigation.navigate("Product", { productId: item.id })}
-        quantity={quantity}
-        onAddToCart={onAddToCart}
-        onRemoveFromCart={onRemoveFromCart}
-      />
-    )
+    <StorefrontProductCard
+      product={item}
+      isOutOfStock={isOutOfStock}
+      isComingSoon={isComingSoon}
+      comingSoonNote={comingSoonNote}
+      onPress={() => navigation.navigate("Product", { productId: item.id })}
+      onAddToCart={onAddToCart}
+    />
   );
 
   return <View style={[styles?.productGridCell, catalogGridColStyle]}>{card}</View>;

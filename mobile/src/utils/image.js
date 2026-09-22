@@ -310,15 +310,16 @@ export function optimizeDisplayImageUrl(rawUri, { width = 960, quality = "auto" 
 
 /** Tiny LQIP URL — bundled `-preview-48.webp` or Cloudinary w_48. */
 export function getPreviewImageUri(rawUri, { width = 48, quality = "auto:low" } = {}) {
-  const raw = String(rawUri || "").trim();
-  if (!raw) return "";
-
-  if (typeof raw === "number" || (typeof raw === "object" && raw?.uri)) {
-    return getPreviewImageUri(typeof raw === "number" ? resolveBundledModuleSrc(raw) : raw.uri, {
-      width,
-      quality,
-    });
+  if (rawUri == null || rawUri === "") return "";
+  if (typeof rawUri === "number") {
+    return getPreviewImageUri(resolveBundledModuleSrc(rawUri), { width, quality });
   }
+  if (typeof rawUri === "object" && rawUri?.uri) {
+    return getPreviewImageUri(rawUri.uri, { width, quality });
+  }
+
+  const raw = String(rawUri).trim();
+  if (!raw) return "";
 
   const full = optimizeDisplayImageUrl(raw, { width: 1200, quality: "auto:good" });
   if (!full) return "";
@@ -335,11 +336,15 @@ export function getPreviewImageUri(rawUri, { width = 48, quality = "auto:low" } 
 
 /** Full-quality display URL with optional width cap. */
 export function getDisplayImageUri(rawUri, { width = 960, quality = "auto:good" } = {}) {
-  const raw = String(rawUri || "").trim();
-  if (!raw) return "";
-  if (typeof raw === "number") {
-    return resolveBundledModuleSrc(raw) || "";
+  if (rawUri == null || rawUri === "") return "";
+  if (typeof rawUri === "number") {
+    return resolveBundledModuleSrc(rawUri) || "";
   }
+  if (typeof rawUri === "object" && rawUri?.uri) {
+    return getDisplayImageUri(rawUri.uri, { width, quality });
+  }
+  const raw = String(rawUri).trim();
+  if (!raw) return "";
   return optimizeDisplayImageUrl(raw, { width, quality }) || resolveImageUri(raw) || raw;
 }
 

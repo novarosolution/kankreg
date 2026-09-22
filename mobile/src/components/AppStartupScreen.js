@@ -27,8 +27,8 @@ export default function AppStartupScreen({
     () => (isDark ? LOADING_THEME.splashRadialDark : LOADING_THEME.splashRadialLight),
     [isDark]
   );
-  const textPrimary = isDark ? "rgba(245,239,228,0.9)" : "rgba(255,255,255,0.85)";
-  const textMuted = isDark ? "rgba(245,239,228,0.62)" : "rgba(255,255,255,0.7)";
+  const textPrimary = isDark ? "rgba(245,239,228,0.9)" : "#1A2B22";
+  const textMuted = isDark ? "rgba(245,239,228,0.62)" : "#4A5C53";
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>

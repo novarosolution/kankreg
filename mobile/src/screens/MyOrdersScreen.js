@@ -4,7 +4,6 @@ import {
   Platform,
   RefreshControl,
   StyleSheet,
-  Text,
   View} from "react-native";
 import SectionReveal from "../components/motion/SectionReveal";
 import KankregScrollPage from "../components/kankreg/KankregScrollPage";

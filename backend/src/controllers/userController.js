@@ -77,7 +77,8 @@ function serializePublicUser(user) {
 
 async function registerUser(req, res, next) {
   try {
-    const { name, email, password, phone } = req.body;
+    const { name, password, phone } = req.body;
+    const email = String(req.body?.email || "").trim().toLowerCase();
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Name, email, and password are required." });
@@ -115,7 +116,8 @@ async function registerUser(req, res, next) {
 
 async function loginUser(req, res, next) {
   try {
-    const { email, password } = req.body;
+    const password = req.body?.password;
+    const email = String(req.body?.email || "").trim().toLowerCase();
 
     if (!email || !password) {
       return res.status(400).json({ message: "Email and password are required." });
@@ -271,8 +273,8 @@ async function uploadUserAvatar(req, res, next) {
 
     res.json(serializePublicUser(user));
   } catch (error) {
-    if (error.statusCode === 400) {
-      return res.status(400).json({ message: error.message });
+    if (error.statusCode === 400 || error.statusCode === 503) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     if (isPayloadTooLarge(error)) {
       return res.status(413).json({

@@ -50,15 +50,15 @@ export default function ShopCatalogHero({ summary, compact = false }) {
       <LinearGradient
         colors={
           isDark
-            ? ["rgba(232, 200, 90, 0.12)", "rgba(28, 25, 23, 0.96)"]
-            : ["rgba(255, 252, 246, 0.98)", "rgba(255, 247, 229, 0.55)"]
+            ? ["rgba(26, 92, 72, 0.22)", "rgba(28, 25, 23, 0.96)"]
+            : ["#FFFFFF", "#FFFFFF"]
         }
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFillObject}
       />
       <LinearGradient
-        colors={isDark ? [t.accent, "rgba(201, 162, 39, 0.2)", "transparent"] : [t.accent, "rgba(116, 79, 28, 0.12)", "transparent"]}
+        colors={isDark ? [t.accent, "rgba(228, 197, 106, 0.2)", "transparent"] : [t.accent, "rgba(26, 92, 72, 0.12)", "transparent"]}
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
         style={styles.topAccent}
@@ -105,6 +105,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     overflow: "hidden",
     gap: spacing.sm,
+    backgroundColor: "#FFFFFF",
   },
   wrapCompact: {
     padding: spacing.sm + 4,

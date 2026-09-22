@@ -16,7 +16,7 @@ export const HOME_SPACE = {
   /** Gap between major home blocks inside `KankregPageWrap`.
    *  Deliberately larger than the shared `spacing.xxl` token — home sections read as
    *  distinct editorial "chapters" and want more air than a typical form/list gap. */
-  section: 72,
+  section: 40,
 };
 
 /** Single source: vertical gap between web home sections (categories → grid → story). */

@@ -398,7 +398,9 @@ function HeroSlideCard({
   const captionZone = isPhoneBand ? slide.captionZone || "bottom" : "bottom";
   const showTextOverlay =
     !isCompact && captionMode === "overlay" && Boolean(slide.title || slide.subtitle);
-  const phoneCtaOnly = isPhoneBand && captionMode === "baked";
+  const ctaLabel = String(slide.cta || "Shop now").trim() || "Shop now";
+  const showSlideCta = Boolean((showCta || isApp) && onCta && ctaLabel);
+  const phoneCtaOnly = isPhoneBand && (captionMode === "baked" || captionMode === "cta-only");
   const scrimMuted = homeHeroScrimMuted();
   const heroTitleSize = isMobileWebTop
     ? Math.min(28, homeHeroTitleSize(layoutWidth))
@@ -461,7 +463,7 @@ function HeroSlideCard({
         phoneCtaOnly={phoneCtaOnly}
       />
 
-      {showTextOverlay || (showCta && slide.cta) ? (
+      {showTextOverlay || showSlideCta ? (
         <View
           style={[
             styles.slideCaption,
@@ -546,12 +548,6 @@ function HeroSlideCard({
                   {slide.subtitle}
                 </Text>
               ) : null}
-              {isApp && slide.cta ? (
-                <View style={styles.appCtaPill} pointerEvents="none">
-                  <Text style={styles.appCtaText}>{slide.cta}</Text>
-                  <Ionicons name="arrow-forward" size={icon.xs - 1} color={KANKREG_PALETTE.goldBright} />
-                </View>
-              ) : null}
             </View>
           ) : (
             <>
@@ -616,26 +612,37 @@ function HeroSlideCard({
               ) : null}
             </>
           )}
-          {showCta && slide.cta ? (
+          {showSlideCta ? (
             <Pressable
               onPress={onCta}
               style={({ hovered, focused, pressed }) => [
-                useGoldCta ? styles.ctaPillGold : styles.ctaPill,
-                (isBanner || isTop) && !captionLeft && styles.ctaPillCenter,
-                captionLeft && styles.ctaPillStart,
+                isApp ? styles.appCtaPill : useGoldCta ? styles.ctaPillGold : styles.ctaPill,
+                !isApp && (isBanner || isTop) && !captionLeft && styles.ctaPillCenter,
+                !isApp && captionLeft && styles.ctaPillStart,
                 isNative && styles.ctaPillNative,
-                useGoldCta && !captionLeft && styles.ctaPillGoldCenter,
-                useGoldCta && captionLeft && styles.ctaPillGoldStart,
-                isPhoneBand && styles.ctaPillPhone,
-                phoneCtaOnly && styles.ctaPillPhoneFloating,
+                !isApp && useGoldCta && !captionLeft && styles.ctaPillGoldCenter,
+                !isApp && useGoldCta && captionLeft && styles.ctaPillGoldStart,
+                !isApp && isPhoneBand && styles.ctaPillPhone,
+                !isApp && phoneCtaOnly && styles.ctaPillPhoneFloating,
                 pressed && Platform.OS !== "web" ? styles.ctaPillPressed : null,
-                hovered && Platform.OS === "web" ? (useGoldCta ? styles.ctaPillGoldHover : styles.ctaPillHover) : null,
+                hovered && Platform.OS === "web"
+                  ? isApp
+                    ? styles.appCtaPillHover
+                    : useGoldCta
+                      ? styles.ctaPillGoldHover
+                      : styles.ctaPillHover
+                  : null,
                 focused && Platform.OS === "web" ? styles.ctaFocus : null,
               ]}
               accessibilityRole="button"
-              accessibilityLabel={slide.cta}
+              accessibilityLabel={ctaLabel}
             >
-              <Text style={useGoldCta ? styles.ctaTextGold : styles.ctaText}>{slide.cta}</Text>
+              <Text style={isApp ? styles.appCtaText : useGoldCta ? styles.ctaTextGold : styles.ctaText}>
+                {ctaLabel}
+              </Text>
+              {isApp ? (
+                <Ionicons name="arrow-forward" size={icon.xs - 1} color={KANKREG_PALETTE.goldBright} />
+              ) : null}
             </Pressable>
           ) : null}
         </View>
@@ -928,7 +935,7 @@ export default function HeroMediaSlider({
                   isCompact={isCompact}
                   isApp={isApp}
                   isMobileWebTop={isMobileWebTop}
-                  showCta={isBanner && !isCompact && !isApp}
+                  showCta={isBanner && !isCompact}
                   onCta={onPress}
                   reducedMotion={reducedMotion}
                   editorialEyebrow={editorialEyebrow}
@@ -1448,6 +1455,10 @@ const styles = StyleSheet.create({
     borderColor: "rgba(214, 173, 91, 0.45)",
     backgroundColor: "rgba(0,0,0,0.28)",
     alignSelf: "flex-start",
+  },
+  appCtaPillHover: {
+    backgroundColor: "rgba(0,0,0,0.42)",
+    borderColor: "rgba(214, 173, 91, 0.7)",
   },
   appCtaText: {
     fontFamily: fonts.semibold,

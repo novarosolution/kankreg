@@ -35,7 +35,7 @@ export const HOME_HERO_PRODUCT_WIDE_HEIGHT_PER_WIDTH = 821 / 1915;
 /** Landscape product hero — `imgs/ChatGPT Image Jun 10, 2026, 06_44_25 PM.png` (1915×821). */
 export const HOME_HERO_PRODUCT_SLIDE = {
   key: "web-hero-product",
-  image: require("../../assets/marketing/hero-slide-kankreg-product-wide-web-1200.webp"),
+  image: require("../../assets/marketing/hero-slide-kankreg-product-wide-web-2400.webp"),
   title: "The benchmark of purity",
   subtitle: "A2 Kankrej cow ghee — Bilona method, farm to table.",
   cta: "Shop ghee",
@@ -54,7 +54,7 @@ export const HOME_HERO_WEB_SLIDER_SLIDES = [
   {
     key: "web-hero-ghee",
     /** Desktop slide 2 — `imgs/ChatGPT Image Jun 10, 2026, 06_45_06 PM.png` (1915×821). */
-    image: require("../../assets/marketing/hero-slide-kankreg-web-02-web-1200.webp"),
+    image: require("../../assets/marketing/hero-slide-kankreg-web-02-web-2400.webp"),
     title: "Pure A2 Kankrej ghee",
     subtitle: "Hand-churned Bilona ghee — grainy, golden, and honest.",
     cta: "Shop ghee",
@@ -66,7 +66,7 @@ export const HOME_HERO_WEB_SLIDER_SLIDES = [
   {
     key: "web-hero-craft",
     /** Desktop slide 3 — `imgs/ChatGPT Image Jun 10, 2026, 06_53_12 PM.png` (1915×821). */
-    image: require("../../assets/marketing/hero-slide-kankreg-hero-03-web-1200.webp"),
+    image: require("../../assets/marketing/hero-slide-kankreg-hero-03-web-2400.webp"),
     title: "A golden touch on every meal",
     subtitle:
       "Pure Bilona ghee over steaming dal-chawal — from grass-fed Kankrej cows to your family table.",
@@ -80,7 +80,7 @@ export const HOME_HERO_WEB_SLIDER_SLIDES = [
   {
     key: "web-hero-pure",
     /** Desktop slide 4 — `imgs/ChatGPT Image Jun 10, 2026, 06_59_11 PM.png` (1915×821). Copy is baked into the artwork. */
-    image: require("../../assets/marketing/hero-slide-kankreg-web-04-web-1200.webp"),
+    image: require("../../assets/marketing/hero-slide-kankreg-web-04-web-2400.webp"),
     title: "",
     subtitle: "",
     cta: "Shop ghee",
@@ -105,7 +105,7 @@ export const HOME_HERO_WEB_SLIDER_SLIDES = [
  */
 export const HOME_HERO_PRODUCT_PHONE_SLIDE = {
   key: "phone-hero-product",
-  image: require("../../assets/marketing/hero-slide-kankreg-phone-hero-web-840.webp"),
+  image: require("../../assets/marketing/hero-slide-kankreg-phone-hero-web-1200.webp"),
   title: "The benchmark of purity",
   subtitle: "A2 Kankrej cow ghee — Bilona method, farm to table.",
   cta: "Shop ghee",
@@ -127,7 +127,7 @@ export const HOME_HERO_MOBILE_SLIDER_SLIDES = [
   HOME_HERO_PRODUCT_PHONE_SLIDE,
   {
     key: "phone-hero-jar",
-    image: require("../../assets/marketing/hero-slide-kankreg-phone-02-web-840.webp"),
+    image: require("../../assets/marketing/hero-slide-kankreg-phone-02-web-1200.webp"),
     title: "Pure A2 Kankrej ghee",
     subtitle: "Hand-churned Bilona ghee — grainy, golden, and honest.",
     cta: "Shop ghee",
@@ -141,7 +141,7 @@ export const HOME_HERO_MOBILE_SLIDER_SLIDES = [
   },
   {
     key: "phone-hero-meal",
-    image: require("../../assets/marketing/hero-slide-kankreg-phone-03-web-840.webp"),
+    image: require("../../assets/marketing/hero-slide-kankreg-phone-03-web-1200.webp"),
     title: "A golden touch on every meal",
     subtitle:
       "Pure Bilona ghee over steaming khichdi — from grass-fed Kankrej cows to your family table.",
@@ -156,7 +156,7 @@ export const HOME_HERO_MOBILE_SLIDER_SLIDES = [
   },
   {
     key: "phone-hero-purity",
-    image: require("../../assets/marketing/hero-slide-kankreg-phone-04-web-840.webp"),
+    image: require("../../assets/marketing/hero-slide-kankreg-phone-04-web-1200.webp"),
     title: "",
     subtitle: "",
     cta: "Shop ghee",

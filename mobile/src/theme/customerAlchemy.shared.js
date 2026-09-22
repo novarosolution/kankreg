@@ -8,7 +8,7 @@ export const ALCHEMY = {
   cream: KANKREG_PALETTE.paper,
   creamDeep: KANKREG_PALETTE.paper2,
   creamAlt: KANKREG_PALETTE.card,
-  creamAltDeep: "#f8f2e8",
+  creamAltDeep: "#F5F6F5",
   creamHighlight: KANKREG_PALETTE.card,
   ivory: "#ffffff",
   pearl: KANKREG_PALETTE.paper2,
@@ -23,9 +23,9 @@ export const ALCHEMY = {
   pillInactive: KANKREG_PALETTE.lineSoft,
   cardBeige: KANKREG_PALETTE.paper,
   cardBg: KANKREG_PALETTE.card,
-  line: "rgba(169, 119, 46, 0.35)",
-  lineStrong: "rgba(138, 95, 34, 0.45)",
-  veil: "rgba(255, 253, 248, 0.85)",
+  line: "rgba(26, 92, 72, 0.22)",
+  lineStrong: "rgba(26, 92, 72, 0.38)",
+  veil: "rgba(255, 255, 255, 0.88)",
   green: KANKREG_PALETTE.green,
   danger: KANKREG_PALETTE.danger,
 };
@@ -36,7 +36,7 @@ export function getCustomerShellGradient(isDark, themeColors) {
   if (isDark) {
     return ["#050403", "#0B0806", "#17120F", c.backgroundGradientEnd];
   }
-  return [KANKREG_PALETTE.card, KANKREG_PALETTE.paper, KANKREG_PALETTE.paper2, "#e8e3d8"];
+  return ["#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"];
 }
 
 export function getAlchemyPalette(themeColors, isDark) {
@@ -46,11 +46,11 @@ export function getAlchemyPalette(themeColors, isDark) {
     cardBorder: isDark ? c.border : KANKREG_PALETTE.line,
     line: isDark ? c.dividerSoft || c.border : ALCHEMY.line,
     lineStrong: isDark ? c.borderStrong : ALCHEMY.lineStrong,
-    goldSoft: isDark ? c.primarySoft : ALCHEMY.goldSoft,
-    goldRing: isDark ? c.primaryBorder : ALCHEMY.gold,
-    glowPrimary: c.heroGlow || (isDark ? "rgba(214, 173, 91, 0.16)" : "rgba(214, 173, 91, 0.12)"),
+    goldSoft: isDark ? c.primarySoft : "rgba(26, 92, 72, 0.1)",
+    goldRing: isDark ? c.primaryBorder : KANKREG_PALETTE.green,
+    glowPrimary: c.heroGlow || (isDark ? "rgba(228, 197, 106, 0.16)" : "rgba(26, 92, 72, 0.08)"),
     glowSecondary:
-      c.heroGlowSecondary || (isDark ? "rgba(60, 98, 72, 0.1)" : "rgba(60, 98, 72, 0.06)"),
+      c.heroGlowSecondary || (isDark ? "rgba(26, 92, 72, 0.12)" : "rgba(26, 92, 72, 0.05)"),
   };
 }
 

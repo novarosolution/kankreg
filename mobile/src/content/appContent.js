@@ -18,7 +18,7 @@ export const BRAND_LOGO_SIZE = {
   /** Logo height — width follows `BRAND_LOGO_ASPECT` (full wordmark + tagline). */
   headerCompact: 36,
   /** Web top bar. */
-  headerDefault: 44,
+  headerDefault: 48,
   /** Native home header. */
   homeTopBar: 40,
   /** Home hero block. */
@@ -28,11 +28,11 @@ export const BRAND_LOGO_SIZE = {
   authHero: 58,
   startup: 88,
 };
-export const APP_TAGLINE = "The benchmark of purity";
-export const APP_SPLASH_TAGLINE = "The benchmark of purity";
-export const APP_WORDMARK_SUBLINE = "Premium essentials";
+export const APP_TAGLINE = "Pure A2 ghee, wood-pressed oils & staples";
+export const APP_SPLASH_TAGLINE = "Pure A2 ghee, wood-pressed oils & staples";
+export const APP_WORDMARK_SUBLINE = "Farm to table";
 export const APP_HERO_KICKER = `${APP_DISPLAY_NAME} · ${APP_WORDMARK_SUBLINE}`;
-export const SEARCH_PLACEHOLDER = "Search KankreG — ghee, staples…";
+export const SEARCH_PLACEHOLDER = "Search ghee, oils, atta…";
 export const SUPPORT_EMAIL_DISPLAY = "support@kankreg.app";
 
 /** Digital product partner — linked from customer footers. */
@@ -80,9 +80,9 @@ export const PAYMENT_METHODS = [
 ];
 
 /** Fallback hero when API is offline — also seed defaults for new HomeViewConfig documents. */
-export const HOME_HERO_TITLE_DEFAULT = "Pure Heritage in Every Drop";
+export const HOME_HERO_TITLE_DEFAULT = "Har Roti Mein Shuddhata? Ab Hogi.";
 export const HOME_HERO_SUBTITLE_DEFAULT =
-  "Slow-churned from the milk of grass-fed cows — golden clarity and aroma rooted in tradition.";
+  "A2 Bilona ghee, wood-pressed oils and high-protein atta — farm to table.";
 
 /** Premium ghee story blocks — import from `gheeHomeContent.js` (not re-exported here to keep bundle lean). */
 export const HOME_HERO_BANNER = {
@@ -122,16 +122,15 @@ export const HOME_SCREEN_UI = {
   },
   bestsellers: {
     titleFallback: "Bestsellers",
-    action: "See all",
-    webEyebrow: "Catalog",
+    action: "View all",
+    webEyebrow: "Shop",
     webAction: "View all",
-    /** Serif display line under the home grid eyebrow. */
-    webSectionTitle: "Chosen for your table",
+    webSectionTitle: "Bilona-Churned Cow Ghee",
   },
   comingSoon: {
     stripEyebrow: "Launching soon",
     stripTitle: "Next from KankreG",
-    stripBody: "Visible on home and shop with a blurred photo, red veil, and Coming soon label until launch.",
+    stripBody: "These jars are on the way — preview them here until they go live.",
   },
   timelineVideo: {
     eyebrow: "Behind the craft",
@@ -181,8 +180,8 @@ export const HOME_SCREEN_UI = {
     "Crafted with care",
   ],
   empty: {
-    productsTitle: "No products yet",
-    productsDescription: "New arrivals will appear here soon.",
+    productsTitle: "The kitchen is stocking up",
+    productsDescription: "Ghee, oils and atta will appear here as soon as the catalog is online.",
     productsCta: "Browse shop",
     categoriesTitle: "No categories yet",
     categoriesDescription: "Collections appear when products are added.",
@@ -200,10 +199,8 @@ export const HOME_SCREEN_UI = {
     showWebHero: true,
     heroEyebrow: "Artisanal · A2 · Bilona",
     showHeroTrustChips: true,
-    /** Premium ghee story blocks (process, benefits, testimonials) on web home */
-    showGheePremiumSections: true,
-    /** Instagram-style community rail after Our Story video */
-    showCommunitySection: true,
+    showGheePremiumSections: false,
+    showCommunitySection: false,
     welcomeTag: "",
     heroStats: [],
     showStatsStrip: false,
@@ -223,10 +220,209 @@ export const HOME_WORDMARK_TAGLINE = APP_TAGLINE;
 
 /** Trust strip under the hero (icon = Ionicons name). */
 export const HOME_TRUST_STRIP = [
-  { key: "pure", label: "100% Pure", icon: "shield-checkmark-outline" },
-  { key: "a2", label: "A2 Desi", icon: "leaf-outline" },
-  { key: "clean", label: "No Preservatives", icon: "sparkles-outline" },
+  { key: "bilona", label: "Bilona churned", icon: "water-outline" },
+  { key: "a2", label: "A2 Desi cow ghee", icon: "leaf-outline" },
+  { key: "wood", label: "Wood-pressed oils", icon: "flask-outline" },
+  { key: "farm", label: "Farm to table", icon: "home-outline" },
 ];
+
+/** Photo merchandising tiles when the live catalog is empty. */
+export const HOME_SHOP_COLLECTIONS = {
+  eyebrow: "The range",
+  title: "Farm to table, by collection",
+  items: [
+    {
+      key: "ghee",
+      title: "A2 Bilona Ghee",
+      subtitle: "Hand-churned Kankrej cow ghee",
+      category: "Ghee",
+      imageKey: "ghee",
+    },
+    {
+      key: "oils",
+      title: "Wood-Pressed Oils",
+      subtitle: "Native seeds, slow pressed",
+      category: "Oils",
+      imageKey: "oils",
+    },
+    {
+      key: "atta",
+      title: "High Protein Atta",
+      subtitle: "Stone-ground everyday grains",
+      category: "Atta",
+      imageKey: "atta",
+    },
+  ],
+};
+
+/** Home quality-proof band (four cream cards). */
+export const HOME_QUALITY_PROOF = {
+  title: "Only Purity Makes The Cut",
+  cards: [
+    {
+      key: "lab",
+      title: "In-House Lab Testing According to FSSAI Parameters",
+      body: "Unlike others, we don’t outsource safety.",
+      imageKey: "team",
+    },
+    {
+      key: "checks",
+      title: "40+ Quality Checks. Every Single Batch.",
+      body: "Fatty acid profile. Texture. Moisture. Adulteration. Nothing gets missed.",
+      imageKey: "scope",
+    },
+    {
+      key: "extent",
+      title: "Extensive Quality Checks",
+      body: "We test at sourcing, processing, and packing. For purity, aroma, and nutrition.",
+      imageKey: "pour",
+    },
+    {
+      key: "proof",
+      title: "See the Proof. Don’t Just Trust Us.",
+      body: "Lab reports for every batch. Because real trust is built on transparency.",
+      imageKey: "report",
+    },
+  ],
+};
+
+/** Home native-ingredients photo cards. */
+export const HOME_NATIVE_INGREDIENTS = {
+  title: "Native Ingredients. No Substitutes.",
+  cards: [
+    {
+      key: "land",
+      title: "From Native Geographies to Ideal Growing Seasons",
+      body: "We take care of every factor when sourcing local ingredients.",
+      imageKey: "land",
+      tone: "light",
+    },
+    {
+      key: "look",
+      title: "What Do We Look For?",
+      body: "Not high yield. Not lower cost. Just flavour, nutrition, and soul.",
+      imageKey: "look",
+      tone: "dark",
+    },
+    {
+      key: "cut",
+      title: "Impurities, Out. Goodness, In.",
+      body: "Only the best seeds and the purest A2 milk make the cut.",
+      imageKey: "cut",
+      tone: "dark",
+    },
+    {
+      key: "herd",
+      title: "A2 Milk of Desi Cows, Seeds from Rain-Fed Regions.",
+      body: "We dare you to find better local ingredients.",
+      imageKey: "herd",
+      tone: "green",
+    },
+  ],
+};
+
+/** Home “why choose” icon row. */
+export const HOME_WHY_CHOOSE = {
+  title: "Why Choose KankreG?",
+  items: [
+    {
+      key: "sourcing",
+      icon: "tree",
+      title: "Native Sourcing",
+      body: "Highest quality raw material from native regions all over India.",
+    },
+    {
+      key: "process",
+      icon: "churn",
+      title: "Traditional Processing",
+      body: "Minimally processed using time-tested Bilona methods, made better. For maximum nutrition.",
+    },
+    {
+      key: "checks",
+      icon: "clipboard",
+      title: "Extensive Quality Checks",
+      body: "Everything goes through 40+ lab tests, so you get only what is best.",
+    },
+    {
+      key: "rural",
+      icon: "tractor",
+      title: "Better Rural Lives",
+      body: "Farmer families are empowered with every KankreG product you buy.",
+    },
+  ],
+};
+
+/** Anveshan-style campaign slider + circular category rail on home. */
+export const STOREFRONT_HERO_SLIDES = [
+  {
+    id: "ghee",
+    badge: "New launch",
+    kicker: "Har Roti Mein",
+    title: "Shuddhata?",
+    italic: "Ab Hogi.",
+    subtitle: "Introducing A2 Bilona Ghee | Farm to Table",
+    pill: "Your Family's Purity Solution",
+    cta: "Shop Ghee",
+    shopParams: { category: "Ghee" },
+    imageKey: "product",
+  },
+  {
+    id: "jar",
+    badge: "Bilona",
+    kicker: "Har Thal Mein",
+    title: "Asli ghee?",
+    italic: "Ab Hoga.",
+    subtitle: "A2 Kankrej Bilona Ghee | Hand-churned",
+    pill: "Grainy. Golden. Honest.",
+    cta: "Shop Ghee",
+    shopParams: { category: "Ghee" },
+    imageKey: "jar",
+  },
+  {
+    id: "meal",
+    badge: "Farm to table",
+    kicker: "Har Plate Mein",
+    title: "Golden touch?",
+    italic: "Ab Hoga.",
+    subtitle: "A spoon of Bilona ghee over every warm meal",
+    pill: "From pasture to your table",
+    cta: "Shop Ghee",
+    shopParams: { category: "Ghee" },
+    imageKey: "meal",
+  },
+  {
+    id: "pure",
+    badge: "100% Pure",
+    kicker: "Har Ghar Mein",
+    title: "Pure craft?",
+    italic: "Ab Hogi.",
+    subtitle: "Small-batch A2 Kankrej ghee — nothing rushed, nothing added",
+    pill: "Bilona method · Glass bottled",
+    cta: "Shop Ghee",
+    shopParams: { category: "Ghee" },
+    imageKey: "pure",
+  },
+];
+
+export const STOREFRONT_CATEGORIES = [
+  { key: "Ghee", label: "Ghee", icon: "water-outline", category: "Ghee" },
+  { key: "Oil", label: "Oil", icon: "flask-outline", category: "Oils" },
+  { key: "Atta", label: "Atta", icon: "nutrition-outline", category: "Atta" },
+  { key: "All", label: "All", icon: "grid-outline", params: { clearCategory: true, pill: "All" } },
+];
+
+export const STOREFRONT_COUPON_CODE = "PURE15";
+export const STOREFRONT_COUPON_OFF = 0.15;
+
+export const STOREFRONT_COLLECTION_TITLES = {
+  Ghee: "Bilona-Churned Cow Ghee",
+  Oils: "Wood-Pressed Oils",
+  Oil: "Wood-Pressed Oils",
+  Atta: "High Protein Atta",
+  Wellness: "Superfoods",
+  Combo: "Healthy Combos",
+  Featured: "Featured products",
+};
 
 /**
  * Animated stats strip (count-up). `target` numeric, `prefix` and `suffix` cosmetic,
@@ -401,13 +597,13 @@ export const KANKREG_NAV_ITEMS = [
   { key: "Account", label: "Account" },
 ];
 
-/** Desktop web header — marketing site nav (no checkout/product deep links). */
+/** Desktop web header — Anveshan-style storefront nav. */
 export const KANKREG_WEB_NAV_ITEMS = [
-  { key: "Home", label: "Home" },
-  { key: "Shop", label: "Shop" },
-  { key: "About", label: "About" },
-  { key: "Rewards", label: "Rewards" },
-  { key: "Account", label: "Account" },
+  { key: "ShopAll", label: "All Products", route: "Shop", params: { clearCategory: true, pill: "All" } },
+  { key: "Ghee", label: "A2 Ghee", route: "Shop", params: { category: "Ghee" } },
+  { key: "Oils", label: "Wood-Pressed Oils", route: "Shop", params: { category: "Oils" } },
+  { key: "Atta", label: "Atta", route: "Shop", params: { category: "Atta" } },
+  { key: "About", label: "Our story", route: "About" },
 ];
 
 /** About page — editorial marketing copy (web-first, works on native). */
@@ -419,9 +615,9 @@ export const ABOUT_SCREEN_UI = {
   },
   hero: {
     kicker: "Since day one",
-    title: "Quietly premium essentials for Indian kitchens",
+    title: "A2 Bilona ghee and pantry staples, from our farms to your kitchen",
     lead:
-      "KankreG began with a simple promise: heritage-quality ghee and staples, sourced with care, priced honestly, and delivered with live tracking you can trust.",
+      "KankreG makes Bilona-churned A2 ghee, wood-pressed oils and high-protein atta — sourced in Gujarat, bottled in small batches, and delivered with live tracking.",
     ctaPrimary: "Shop the collection",
     ctaSecondary: "How we craft",
     badge: "Family-owned · Gujarat",
@@ -564,53 +760,68 @@ export const KANKREG_ROLE_NAV_ITEMS = {
   delivery: { key: "Delivery", label: "Delivery" },
 };
 
-/** kankreg.html `.foot` — newsletter + columns + legal (routes optional). */
+/** Storefront footer — dark green pastoral chrome. */
 export const KANKREG_FOOTER_NEWSLETTER = {
-  showOnWeb: false,
-  title: "Join the list",
-  body: "First access to new drops, member-only offers, and 100 bonus points on signup.",
-  placeholder: "your@email.com",
+  showOnWeb: true,
+  title: "Subscribe to our newsletter",
+  body: "",
+  placeholder: "Email",
   cta: "Subscribe",
   successMessage: "Thanks — you're on the list.",
 };
 
 export const KANKREG_FOOTER_TAGLINE = APP_TAGLINE;
 
+export const KANKREG_FOOTER_COMPANY = {
+  corporate: "Corporate Office — Ahmedabad, Gujarat",
+  registered: "Registered / packing — Banaskantha, Gujarat",
+  grievanceLabel: "Grievance Redressal Officer:",
+  grievanceName: "KankreG Customer Care",
+  grievanceMailto: SUPPORT_EMAIL_DISPLAY,
+};
+
 export const KANKREG_FOOTER_COLUMNS = [
   {
-    title: "Shop",
+    title: "Services",
     links: [
-      { label: "New arrivals", route: "Shop", params: { pill: "New in" } },
-      { label: "Bestsellers", route: "Shop" },
-      { label: "On sale", route: "Shop", params: { pill: "On sale" } },
-      { label: "Gift cards", route: "Shop" },
+      { label: "Shop", route: "Shop", params: { clearCategory: true, pill: "All" } },
+      { label: "Track Your Order", route: "MyOrders", requiresAuth: true },
+      { label: "Our Story", route: "About" },
+      { label: "Contact Us", route: "Support", requiresAuth: true },
     ],
   },
   {
-    title: "Account",
+    title: "Policies",
     links: [
-      { label: "My orders", route: "MyOrders", requiresAuth: true },
-      { label: "Rewards", route: "RedeemRewards", requiresAuth: true },
-      { label: "Addresses", route: "ManageAddress", requiresAuth: true },
-      { label: "Support", route: "Support", requiresAuth: true },
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      { label: "About", route: "About" },
-      { label: "Careers", route: "About" },
-      { label: "Privacy", route: "Privacy" },
-      { label: "Terms", route: "Terms" },
+      { label: "Privacy Policy", route: "Privacy" },
+      { label: "Shipping Policy", route: "Terms" },
+      { label: "Refund Policy", route: "Terms" },
+      { label: "Terms of Service", route: "Terms" },
+      { label: "Sitemap", route: "Shop", params: { clearCategory: true, pill: "All" } },
     ],
   },
 ];
 
-export const KANKREG_FOOTER_COPYRIGHT = "© 2025 kankreg. Crafted in India.";
+export const KANKREG_FOOTER_HELP = {
+  title: "Need help?",
+  contactLabel: "Contact Us",
+  downloadTitle: "Download App",
+  googlePlayLabel: "GET IT ON\nGoogle Play",
+  appStoreLabel: "Download on the\nApp Store",
+  social: [
+    { key: "facebook", icon: "logo-facebook", label: "Facebook", url: "" },
+    { key: "instagram", icon: "logo-instagram", label: "Instagram", url: "" },
+    { key: "email", icon: "mail", label: "Email", mailto: SUPPORT_EMAIL_DISPLAY },
+    { key: "x", icon: "logo-twitter", label: "X", url: "" },
+  ],
+};
+
+export const KANKREG_FOOTER_COPYRIGHT = `Copyright © ${new Date().getFullYear()}, KankreG. Crafted in India.`;
 
 /** Native header: announce + topbar (no fixed announce on very small native optional). */
 export const KANKREG_ANNOUNCE_COPY = {
-  delivery: "Free delivery over ₹1,499",
+  promo: "Pure Desi Ghee & Oils At 15% OFF | Use Code: PURE15",
+  delivery: "Pure Desi Ghee & Oils At 15% OFF | Use Code: PURE15",
   rewards: "",
   seasonCta: "",
 };
@@ -631,7 +842,7 @@ export const CART_UI = {
   pageTitle: "Shopping cart",
   checkoutTitle: "Checkout",
   emptyTitle: "Your cart is empty",
-  emptyDescription: "Discover heritage ghee, staples, and curated picks — add something you love.",
+  emptyDescription: "Add Bilona ghee, wood-pressed oils, or atta to get started.",
   browseCta: "Browse shop",
   itemsSectionLabel: "Your items",
   summaryTitle: "Order summary",
@@ -672,16 +883,16 @@ export const CART_ADDRESS = {
 
 /** Shop catalog — `ShopScreen.js` + `ShopPageChrome.js`. */
 export const SHOP_SCREEN_UI = {
-  pageEyebrow: "Catalog",
+  pageEyebrow: "Shop",
   pageTitle: "Shop",
-  pageTitleWide: "Shop everything",
-  pageSubtitle: "Hand-churned Bilona ghee, A2 dairy & curated staples — delivered fresh.",
-  searchPlaceholder: "Search ghee, staples, wellness…",
+  pageTitleWide: "All products",
+  pageSubtitle: "Bilona-churned cow ghee, wood-pressed oils and high-protein atta.",
+  searchPlaceholder: "Search ghee, oils, atta…",
   refineTitle: "Refine",
   resetFilters: "Reset",
   sortA11y: "Change sort order",
   filterSort: "Sort by",
-  categoryRailTitle: "Browse by category",
+  categoryRailTitle: "Shop by category",
   showingPrefix: "Showing",
   showingOf: "of",
   showingSuffix: "products",
@@ -700,23 +911,41 @@ export const SHOP_SCREEN_UI = {
   filterPrice: "Price",
   priceMin: "₹500",
   priceMax: "₹8,000",
-  collectionPills: ["All", "New in", "On sale", "Premium", "Coming soon"],
+  collectionPills: ["All", "New in", "On sale"],
   sortOptions: [
     { key: "featured", label: "Featured" },
     { key: "price-asc", label: "Price ↑" },
     { key: "price-desc", label: "Price ↓" },
     { key: "newest", label: "Newest" },
   ],
+  collections: {
+    Ghee: {
+      eyebrow: "A2 · Bilona",
+      title: "A2 Bilona Ghee",
+      subtitle: "Hand-churned from grass-fed Kankrej cows — grainy, golden, and farm to table.",
+      placeholder: "Search ghee…",
+    },
+    Oils: {
+      eyebrow: "Wood pressed",
+      title: "Wood-Pressed Oils",
+      subtitle: "Cold crushed, unrefined oils for everyday cooking.",
+    },
+    Atta: {
+      eyebrow: "Stone milled",
+      title: "High Protein Atta",
+      subtitle: "Slow-milled atta for rotis with real grain and flavour.",
+    },
+  },
   hero: {
-    eyebrow: "KankreG catalog",
-    title: "Farm-fresh A2, curated for your kitchen",
-    body: "Browse Bilona ghee, dairy staples, and wellness picks — filter by category, price, or what’s launching next.",
+    eyebrow: "KankreG kitchen",
+    title: "Bilona-churned cow ghee & pantry staples",
+    body: "Shop A2 ghee, wood-pressed oils and atta.",
     totalLabel: "Products",
     inStockLabel: "In stock",
     comingSoonLabel: "Coming soon",
     onSaleLabel: "On sale",
   },
-  trustLine: "Secure checkout · Authentic A2 · Free delivery over ₹1,499",
+  trustLine: "",
   trustBadges: [
     { icon: "leaf-outline", label: "Grass-fed A2" },
     { icon: "flame-outline", label: "Bilona churned" },

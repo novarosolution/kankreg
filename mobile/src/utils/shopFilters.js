@@ -9,6 +9,10 @@ const CATEGORY_ALIASES = {
   lifestyle: ["lifestyle"],
   accessories: ["accessories"],
   general: ["general"],
+  ghee: ["ghee", "a2 ghee", "a2 kankrej", "bilona"],
+  oils: ["oils", "oil", "wood-pressed oils", "wood pressed oils"],
+  atta: ["atta", "flour"],
+  combo: ["combo", "healthy combo", "gift"],
 };
 
 export const SHOP_PRICE_PRESETS = [
@@ -26,10 +30,21 @@ function normalizeCategoryLabel(value) {
     .replace(/\s+/g, " ");
 }
 
+export function getProductShopCategory(product) {
+  const raw = String(product?.category || "").trim();
+  if (!raw) return "";
+  const key = normalizeCategoryLabel(raw);
+  if (key === "oil" || key === "oils" || key === "wood-pressed oils" || key === "wood pressed oils") {
+    return "Oils";
+  }
+  if (key === "ghee" || key === "a2 ghee") return "Ghee";
+  if (key === "atta" || key === "flour") return "Atta";
+  return raw;
+}
+
 export function getProductCategoryLabels(product) {
-  const cat = String(product?.category || "").trim();
-  const type = String(product?.productType || "").trim();
-  return [...new Set([cat, type].filter(Boolean))];
+  const cat = getProductShopCategory(product);
+  return cat ? [cat] : [];
 }
 
 /** Match selected shop categories (from chips / home deep links). */

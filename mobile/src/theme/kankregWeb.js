@@ -4,28 +4,35 @@
  */
 
 export const KANKREG_PALETTE = {
-  ink: "#19140f",
-  inkSoft: "#574d42",
-  inkFaint: "#6B5E50",
-  paper: "#f5efe4",
-  paper2: "#ece3d2",
-  card: "#fffdf8",
-  line: "#e3d8c4",
-  lineSoft: "#eee5d5",
-  gold: "#a9772e",
-  goldBright: "#d6ad5b",
-  goldDeep: "#8a5f22",
-  green: "#3c6248",
-  danger: "#a8442f",
+  ink: "#1A2B22",
+  inkSoft: "#4A5C53",
+  inkFaint: "#6B7A72",
+  paper: "#FFFFFF",
+  paper2: "#F5F6F5",
+  card: "#FFFFFF",
+  line: "rgba(26, 92, 72, 0.14)",
+  lineSoft: "rgba(26, 92, 72, 0.08)",
+  gold: "#E4C56A",
+  goldBright: "#EED77A",
+  goldDeep: "#C4A24A",
+  green: "#1A5C48",
+  greenDeep: "#154C3C",
+  danger: "#A8442F",
 };
 
 /** Web chrome — matches kankreg homepage screenshot (announce, header, trust band, CTAs). */
 export const KANKREG_CHROME = {
-  /** Top announce strip — dark forest green */
-  announceBg: "#1B3022",
-  /** Nav topbar + trust band — warm off-white cream */
-  cream: "#FDF9F0",
-  topbarBg: "#FDF9F0",
+  /** Top announce strip — forest green storefront bar */
+  announceBg: "#1A5C48",
+  /** Full-bleed storefront footer */
+  footerBg: "#1A5C48",
+  footerGold: "#E4C56A",
+  footerOnGreen: "#F3EEE4",
+  /** Nav topbar — white like a retail storefront */
+  cream: "#FFFFFF",
+  topbarBg: "#FFFFFF",
+  navInk: "#2F3F36",
+  navAccent: "#2F8F4E",
   buttonAccent: "#A67C37",
   buttonAccentHover: "#B88A45",
   onAccent: "#FFFFFF",
@@ -57,12 +64,12 @@ export function getKankregSurfaces(isDark, c) {
     textSoft: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft,
     textMuted: isDark ? c.textMuted : KANKREG_PALETTE.inkFaint,
     border: isDark ? c.border : KANKREG_PALETTE.line,
-    borderSubtle: isDark ? "rgba(232, 200, 90, 0.18)" : KANKREG_PALETTE.lineSoft,
+    borderSubtle: isDark ? "rgba(26, 92, 72, 0.28)" : KANKREG_PALETTE.lineSoft,
     inkBar: isDark ? c.surfaceMuted : KANKREG_PALETTE.ink,
     pillInactive: isDark ? "rgba(255,255,255,0.06)" : KANKREG_PALETTE.paper2,
-    gold: isDark ? c.primary : KANKREG_PALETTE.gold,
-    goldBright: isDark ? c.primaryBright : KANKREG_PALETTE.goldBright,
-    goldDeep: isDark ? c.primaryDark : KANKREG_PALETTE.goldDeep,
+    gold: isDark ? c.primary : KANKREG_PALETTE.green,
+    goldBright: isDark ? c.primaryBright : KANKREG_CHROME.footerGold,
+    goldDeep: isDark ? c.primaryDark : KANKREG_PALETTE.greenDeep,
     cardShadow: isDark
       ? "0 14px 38px -20px rgba(0,0,0,0.45)"
       : "0 1px 2px rgba(25,20,15,.04), 0 14px 38px -20px rgba(25,20,15,.28)",

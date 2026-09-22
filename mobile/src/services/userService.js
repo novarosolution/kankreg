@@ -48,6 +48,9 @@ export const fetchMySupportThread = (_token) => apiGet("/users/support-thread");
 export const sendMySupportMessage = (_token, message) =>
   apiPost("/users/support-thread/messages", { message });
 
+export const subscribeNewsletter = (email) =>
+  apiPost("/newsletter/subscribe", { email }, { auth: false });
+
 export const fetchRewardsCatalog = (subtotal) => {
   const qs =
     subtotal !== undefined &&

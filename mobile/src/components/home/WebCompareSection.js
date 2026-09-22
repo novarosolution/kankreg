@@ -21,6 +21,7 @@ import { getHomePhoneBleed } from "../../utils/homeSectionBleed";
 
 function CompareRow({ row, oursLabel, ordinaryLabel, isDark, ink, muted, index }) {
   const oursImage = resolveImageSource(row.oursImage);
+  const ordinaryImage = resolveImageSource(row.ordinaryImage);
 
   return (
     <ScrollFadeUp index={index} delay={index * 50} preset="fade-up">
@@ -30,9 +31,13 @@ function CompareRow({ row, oursLabel, ordinaryLabel, isDark, ink, muted, index }
         </Text>
         <View style={styles.rowCells}>
           <View style={[styles.cell, styles.cellOrdinary, isDark && styles.cellOrdinaryDark]}>
-            <View style={[styles.cellCross, isDark && styles.cellCrossDark]}>
-              <Ionicons name="close" size={icon.xs} color={isDark ? "rgba(245,239,228,0.55)" : KANKREG_PALETTE.inkFaint} />
-            </View>
+            {ordinaryImage ? (
+              <Image source={ordinaryImage} style={styles.cellThumb} contentFit="cover" cachePolicy="memory-disk" />
+            ) : (
+              <View style={[styles.cellCross, isDark && styles.cellCrossDark]}>
+                <Ionicons name="close" size={icon.xs} color={isDark ? "rgba(245,239,228,0.55)" : KANKREG_PALETTE.inkFaint} />
+              </View>
+            )}
             <View style={styles.cellTextCol}>
               <Text style={[styles.cellKicker, { color: isDark ? "rgba(245,239,228,0.42)" : KANKREG_PALETTE.inkFaint }]} numberOfLines={1}>
                 {ordinaryLabel}

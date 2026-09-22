@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { getMaxOrderQuantity, isProductPurchasable } from "../utils/productAvailability";
+import { getMaxOrderQuantity, isProductComingSoon, isProductPurchasable } from "../utils/productAvailability";
 import { useAuth } from "./AuthContext";
 import { useToastSafe } from "./ToastContext";
 import { fetchMyCart, replaceMyCart } from "../services/userService";
@@ -17,31 +17,48 @@ export function CartProvider({ children }) {
 
   const addToCart = useCallback(
     (product) => {
-      if (!isProductPurchasable(product)) {
+      if (isProductComingSoon(product)) {
+        toastInfo("This item is launching soon.", { title: "Coming soon" });
         return;
       }
+      if (!isProductPurchasable(product)) {
+        toastInfo("This item is unavailable.", { title: "Can't add" });
+        return;
+      }
+      const maxQty = getMaxOrderQuantity(product);
+      if (maxQty < 1) {
+        toastInfo("This item is out of stock.", { title: "Sold out" });
+        return;
+      }
+
+      let didAdd = false;
+      let hitLimit = false;
       setCartItems((currentItems) => {
         const key = cartLineKey(product);
         const existingItem = currentItems.find((item) => cartLineKey(item) === key);
-        const maxQty = getMaxOrderQuantity(product);
 
         if (existingItem) {
           const nextQty = existingItem.quantity + 1;
-          if (maxQty > 0 && nextQty > maxQty) {
-            toastInfo(`Only ${maxQty} in stock for this item.`, { title: "Stock limit" });
+          if (nextQty > maxQty) {
+            hitLimit = true;
             return currentItems;
           }
+          didAdd = true;
           return currentItems.map((item) =>
             cartLineKey(item) === key ? { ...item, quantity: nextQty } : item
           );
         }
 
-        if (maxQty < 1) {
-          return currentItems;
-        }
-
+        didAdd = true;
         return [...currentItems, { ...product, quantity: 1 }];
       });
+
+      if (hitLimit) {
+        toastInfo(`Only ${maxQty} in stock for this item.`, { title: "Stock limit" });
+        return;
+      }
+      if (!didAdd) return;
+
       const name = String(product?.name || "Item").trim();
       toastSuccess(`${name.length > 32 ? name.slice(0, 31) + "…" : name} added to bag`, {
         title: "Added to bag",

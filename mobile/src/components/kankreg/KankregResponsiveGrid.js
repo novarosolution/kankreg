@@ -6,7 +6,11 @@ import { useKankregLayout } from "../../theme/kankregBreakpoints";
  * Flex-wrap grid matching kankreg.html `.pgrid` / `.reward-grid` breakpoints.
  */
 export default function KankregResponsiveGrid({ children, variant = "catalog", style }) {
-  const { catalogGridCol, statCols, isXs, catalogCardCompact } = useKankregLayout();
+  const { catalogGridCol, statCols, isXs, catalogCardCompact, width } = useKankregLayout();
+  const shopCol =
+    width >= 1100
+      ? { width: "33.333%", maxWidth: "33.333%", paddingHorizontal: 10, flexGrow: 0, flexShrink: 0 }
+      : catalogGridCol;
   const colStyle =
     variant === "stats"
       ? {
@@ -15,9 +19,11 @@ export default function KankregResponsiveGrid({ children, variant = "catalog", s
           minWidth: isXs ? "100%" : variant === "stats" && statCols === 4 ? 180 : 140,
           paddingHorizontal: 6,
         }
-      : catalogGridCol;
+      : variant === "shop"
+        ? shopCol
+        : catalogGridCol;
 
-  const gridMargin = variant === "catalog" && (isXs || catalogCardCompact) ? -5 : -9;
+  const gridMargin = (variant === "catalog" || variant === "shop") && (isXs || catalogCardCompact) ? -5 : -9;
 
   const renderCell = (child, key) => (
     <View key={key} style={[styles.cell, colStyle, catalogCardCompact && styles.cellCompact]}>
@@ -27,7 +33,12 @@ export default function KankregResponsiveGrid({ children, variant = "catalog", s
 
   /** Center a trailing row that doesn't fill all columns instead of leaving it
    *  stuck to the left with a dead empty gap beside it. */
-  const columns = variant === "catalog" ? Math.round(100 / parseFloat(colStyle.width || "100")) : 1;
+  const columns =
+    variant === "shop"
+      ? Math.round(100 / parseFloat(colStyle.width || "33.333"))
+      : variant === "catalog"
+        ? Math.round(100 / parseFloat(colStyle.width || "100"))
+        : 1;
   const childArray = React.Children.toArray(children).filter(Boolean);
   const orphanCount = columns > 1 ? childArray.length % columns : 0;
 

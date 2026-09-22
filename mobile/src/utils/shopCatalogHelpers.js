@@ -43,7 +43,11 @@ export function getShopCategoryCounts(products = []) {
   }
   return [...map.entries()]
     .map(([label, count]) => ({ label, count }))
-    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+    .sort((a, b) => {
+      const order = { Ghee: 0, Oils: 1, Atta: 2 };
+      const d = (order[a.label] ?? 9) - (order[b.label] ?? 9);
+      return d || a.label.localeCompare(b.label);
+    });
 }
 
 export function isProductPremiumFlag(p) {

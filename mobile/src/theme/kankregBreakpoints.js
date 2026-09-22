@@ -29,6 +29,9 @@ export function getKankregBreakpoint(width) {
 /** Product/catalog grid column width style for flex-wrap grids */
 export function getCatalogGridColStyle(width) {
   const pad = width < KANKREG_BP.xs ? 5 : width < KANKREG_BP.sm ? 7 : 9;
+  if (width >= 1280) {
+    return { width: "20%", maxWidth: "20%", paddingHorizontal: pad, flexGrow: 0, flexShrink: 0 };
+  }
   if (width >= KANKREG_BP.xl) {
     return { width: "25%", maxWidth: "25%", paddingHorizontal: pad, flexGrow: 0, flexShrink: 0 };
   }

@@ -27,18 +27,18 @@ export function customerPanel(c, shadowPremium, isDark) {
           borderTopColor: "rgba(232, 200, 90, 0.5)",
         }
       : {
-          backgroundColor: ALCHEMY.ivory,
-          borderColor: ALCHEMY.lineStrong,
-          borderTopColor: ALCHEMY.gold,
+          backgroundColor: "#FFFFFF",
+          borderColor: ALCHEMY.line,
+          borderTopColor: ALCHEMY.green,
         }),
     ...Platform.select({
       web: {
         backgroundImage: isDark
           ? undefined
-          : "linear-gradient(180deg, rgba(255,255,255,0.86), rgba(255,253,250,0.96))",
+          : "none",
         boxShadow: isDark
           ? "0 22px 50px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.04)"
-          : "0 18px 40px rgba(61, 42, 18, 0.09), inset 0 1px 0 rgba(255,255,255,0.92)",
+          : "0 8px 24px rgba(26, 92, 72, 0.06)",
         transition: "box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease",
       },
       default: {},

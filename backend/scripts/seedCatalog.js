@@ -1,8 +1,8 @@
 /**
  * Local dev only — seeds a realistic KankreG ghee catalog so the UI can be reviewed
- * with real content instead of empty states. Images are served from the app's own
- * bundled marketing photography via the /media/marketing static route (server.js)
- * until Cloudinary credentials are configured.
+ * with real content instead of empty states. Product packshots are served from
+ * /media/products (square 1200–2000px). Lifestyle / gallery extras still use
+ * /media/marketing until Cloudinary credentials are configured.
  *
  * Run: node scripts/seedCatalog.js
  */
@@ -13,8 +13,10 @@ dotenv.config({ path: path.join(__dirname, "../.env") });
 const connectDB = require("../src/config/db");
 const Product = require("../src/models/Product");
 
-const MEDIA_BASE = process.env.SEED_MEDIA_BASE || "http://127.0.0.1:5001/media/marketing";
-const img = (file) => `${MEDIA_BASE}/${file}`;
+const MARKETING_BASE = process.env.SEED_MEDIA_BASE || "http://127.0.0.1:5001/media/marketing";
+const PRODUCT_BASE = process.env.SEED_PRODUCT_MEDIA_BASE || "http://127.0.0.1:5001/media/products";
+const img = (file) => `${MARKETING_BASE}/${file}`;
+const productImg = (file) => `${PRODUCT_BASE}/${file}`;
 
 const TRUST_CHIPS = [
   { icon: "shield-checkmark-outline", label: "100% Pure" },
@@ -52,17 +54,15 @@ const NUTRITION = {
 const products = [
   {
     name: "A2 Kankrej Bilona Ghee",
-    /** No mrp here on purpose: this product has 3 independently-priced size variants
-     *  (see `variants` below) and the schema has no per-variant mrp, so a single
-     *  top-level mrp would show a misleading "% off" against whichever variant the
-     *  shopper picks (already caught once: 250ml showed a false "Save 71%" against
-     *  the 1L variant's discount). Only set mrp on single-price/single-variant products. */
+    /** No mrp here on purpose: this product has 3 independently-priced size variants. */
     price: 1499,
-    image: img("hero-slide-kankreg-product-wide-web-1200.webp"),
+    ratingAverage: 4.9,
+    reviewCount: 1941,
+    image: productImg("product-ghee-classic-jar-1200.webp"),
     images: [
+      productImg("product-ghee-classic-jar-1200.webp"),
+      productImg("product-ghee-classic-jar.png"),
       img("hero-slide-kankreg-product-wide-web-1200.webp"),
-      img("hero-slide-kankreg-phone-hero-web-840.webp"),
-      img("hero-slide-kankreg-web-02-web-1200.webp"),
     ],
     lifestyleImage: img("hero-slide-kankreg-hero-03-web-1200.webp"),
     description:
@@ -143,10 +143,11 @@ const products = [
     /** Landscape "-web-1200" assets only — the PDP hero frame is wide, and the
      *  portrait "phone-*" bundles (840px, shot for the vertical home hero) letterbox
      *  badly inside it, leaving a small image adrift in a lot of blank card. */
-    image: img("hero-slide-kankreg-web-04-web-1200.webp"),
+    image: productImg("product-ghee-giftbox-1200.webp"),
     images: [
-      img("hero-slide-kankreg-web-04-web-1200.webp"),
-      img("hero-slide-kankreg-product-wide-web-1200.webp"),
+      productImg("product-ghee-giftbox-1200.webp"),
+      productImg("product-ghee-giftbox.png"),
+      productImg("product-ghee-classic-jar-1200.webp"),
     ],
     lifestyleImage: img("hero-slide-kankreg-hero-03-web-1200.webp"),
     description:
@@ -164,6 +165,8 @@ const products = [
     isSpecial: true,
     inStock: true,
     stockQty: 60,
+    ratingAverage: 4.9,
+    reviewCount: 580,
     badgeText: "GIFT READY",
     variants: [{ label: "1 L", price: 1599, tag: "Gift box" }],
     usps: [
@@ -195,8 +198,15 @@ const products = [
   {
     name: "A2 Kankrej Bilona Ghee — Trial Pack",
     price: 249,
-    image: img("hero-slide-kankreg-web-02-web-1200.webp"),
-    images: [img("hero-slide-kankreg-web-02-web-1200.webp")],
+    mrp: 299,
+    ratingAverage: 4.8,
+    reviewCount: 312,
+    isNewLaunch: true,
+    image: productImg("product-ghee-trial-100ml-1200.webp"),
+    images: [
+      productImg("product-ghee-trial-100ml-1200.webp"),
+      productImg("product-ghee-trial-100ml.png"),
+    ],
     description:
       "A small 100 ml jar of our hand-churned A2 Bilona ghee — perfect for first-time tasting before committing to a full size.",
     category: "Ghee",
@@ -219,26 +229,103 @@ const products = [
     deliveryBody: "Dispatched within 24 hours.",
     nutrition: NUTRITION,
   },
+  {
+    name: "Wood-Pressed Groundnut Oil — 1L",
+    price: 650,
+    mrp: 750,
+    ratingAverage: 4.8,
+    reviewCount: 640,
+    image: productImg("product-groundnut-oil-1l-1200.webp"),
+    images: [
+      productImg("product-groundnut-oil-1l-1200.webp"),
+      productImg("product-groundnut-oil-1l.png"),
+    ],
+    description:
+      "Cold wood-pressed groundnut oil — nutty, unrefined, and made in small batches for everyday cooking.",
+    category: "Oils",
+    homeSection: "Prime Products",
+    productType: "Oil",
+    showOnHome: true,
+    isPublished: true,
+    homeOrder: 4,
+    brand: "KankreG",
+    sku: "KG-OIL-GROUNDNUT-1L",
+    unit: "1 L",
+    eta: "2-3 days",
+    isSpecial: true,
+    inStock: true,
+    stockQty: 90,
+    badgeText: "WOOD PRESSED",
+    variants: [{ label: "1 L", price: 650, tag: "" }],
+    trustChips: TRUST_CHIPS,
+    highlights: ["Wood-pressed", "Unrefined", "Small-batch"],
+    deliveryTitle: "Free delivery over ₹1,499",
+    deliveryBody: "Dispatched within 24 hours.",
+    nutrition: NUTRITION,
+  },
+  {
+    name: "High Protein Atta — 5 kg",
+    price: 420,
+    mrp: 480,
+    ratingAverage: 4.7,
+    reviewCount: 210,
+    image: productImg("product-atta-5kg-1200.webp"),
+    images: [
+      productImg("product-atta-5kg-1200.webp"),
+      productImg("product-atta-5kg.png"),
+    ],
+    description:
+      "Stone-ground high-protein atta for soft rotis with a hearty, farm-fresh flavour.",
+    category: "Atta",
+    homeSection: "Prime Products",
+    productType: "Atta",
+    showOnHome: true,
+    isPublished: true,
+    homeOrder: 5,
+    brand: "KankreG",
+    sku: "KG-ATTA-5KG",
+    unit: "5 kg",
+    eta: "2-3 days",
+    inStock: true,
+    stockQty: 75,
+    badgeText: "HIGH PROTEIN",
+    variants: [{ label: "5 kg", price: 420, tag: "" }],
+    trustChips: TRUST_CHIPS,
+    highlights: ["Stone-ground", "High protein", "Farm-fresh"],
+    deliveryTitle: "Free delivery over ₹1,499",
+    deliveryBody: "Dispatched within 24 hours.",
+    nutrition: NUTRITION,
+  },
 ];
 
-async function seed() {
-  await connectDB();
+async function applyCatalogSeed() {
   let created = 0;
-  let skipped = 0;
+  let updated = 0;
   for (const p of products) {
     const exists = await Product.findOne({ sku: p.sku });
     if (exists) {
-      skipped += 1;
+      await Product.updateOne({ sku: p.sku }, { $set: p });
+      updated += 1;
       continue;
     }
     await Product.create(p);
     created += 1;
   }
+  return { created, updated, skipped: updated };
+}
+
+async function seed() {
+  await connectDB();
+  const { created, skipped } = await applyCatalogSeed();
   console.log(`Seed complete: ${created} created, ${skipped} already existed.`);
   process.exit(0);
 }
 
-seed().catch((err) => {
-  console.error("Seed failed:", err);
-  process.exit(1);
-});
+if (require.main === module) {
+  seed().catch((err) => {
+    console.error("Seed failed:", err);
+    process.exit(1);
+  });
+}
+
+module.exports = { applyCatalogSeed };

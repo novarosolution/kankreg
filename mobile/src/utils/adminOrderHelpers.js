@@ -1,6 +1,5 @@
 import { Platform, Alert } from "react-native";
 import { formatOrderPublicRef } from "../content/appContent";
-import { formatINR } from "./currency";
 import { getOrderStatusLabel } from "./orderStatus";
 
 export const ADMIN_ORDER_TABS = [

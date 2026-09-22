@@ -1,14 +1,13 @@
 import { Platform } from "react-native";
-import { ALCHEMY } from "./customerAlchemy";
 import { KANKREG_CHROME } from "./kankregWeb";
 import { WEB_DISPLAY_FONT_STACK } from "./webFonts";
 
-/** Fixed top bar height on web (kankreg.html `.topbar` ≈ 76px). */
-export const WEB_HEADER_HEIGHT = 76;
+/** Fixed top bar height on web (storefront header). */
+export const WEB_HEADER_HEIGHT = 64;
 /** Slim in-flow header on native — bottom tab bar handles primary nav. */
 export const NATIVE_HEADER_HEIGHT = 52;
-/** kankreg.html `.announce` strip */
-export const WEB_ANNOUNCE_HEIGHT = 34;
+/** Promo announce strip */
+export const WEB_ANNOUNCE_HEIGHT = 36;
 /** Announce + sticky topbar — use for page scroll padding. */
 export const WEB_CHROME_TOP = WEB_HEADER_HEIGHT + WEB_ANNOUNCE_HEIGHT;
 /** Shared top offset for sticky page chrome below fixed header. */
@@ -67,7 +66,7 @@ export function injectWebDocumentMeta() {
     "description",
     "KankreG — premium A2 ghee and artisan pantry goods, delivered fresh to your door."
   );
-  ensureMeta("theme-color", KANKREG_CHROME.cream);
+  ensureMeta("theme-color", KANKREG_CHROME.announceBg);
   ensureMeta("color-scheme", "light dark");
 }
 
@@ -90,10 +89,9 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
     html.style.background = backgroundSolid || "#0A0908";
     html.style.colorScheme = "dark";
   } else {
-    const g = `radial-gradient(1100px 560px at 88% -8%, rgba(214, 173, 91, 0.12), transparent 60%), radial-gradient(900px 500px at -8% 108%, rgba(60, 98, 72, 0.06), transparent 55%), ${KANKREG_CHROME.cream}`;
-    body.style.background = g;
+    body.style.background = "#FFFFFF";
     body.style.backgroundAttachment = "scroll";
-    html.style.background = g;
+    html.style.background = "#FFFFFF";
     html.style.colorScheme = "light";
   }
 

@@ -29,6 +29,14 @@ function toDataUri(imageBase64, mimeType) {
  * @returns {{ url, publicId, width, height, bytes, purpose }}
  */
 async function uploadOptimizedImage({ imageBase64, mimeType, purpose = "product" }) {
+  if (!cloudinary.isConfigured?.()) {
+    const err = new Error(
+      "Image upload is unavailable until Cloudinary is configured (CLOUDINARY_URL or CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET)."
+    );
+    err.statusCode = 503;
+    throw err;
+  }
+
   if (!imageBase64 || typeof imageBase64 !== "string") {
     const err = new Error("imageBase64 is required.");
     err.statusCode = 400;

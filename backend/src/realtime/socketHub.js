@@ -40,7 +40,7 @@ function initSocketServer(httpServer) {
     cors: {
       origin(origin, callback) {
         if (isAllowedOrigin(origin)) return callback(null, true);
-        return callback(new Error(`Not allowed by CORS: ${origin}`));
+        return callback(null, false);
       },
       credentials: true,
     },

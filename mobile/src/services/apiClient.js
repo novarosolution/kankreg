@@ -123,6 +123,15 @@ async function refreshAccessToken() {
   return refreshInFlight;
 }
 
+const DEFAULT_TIMEOUT_MS = 15000;
+
+function networkError(err) {
+  if (err?.name === "AbortError" || err?.code === "TIMEOUT") {
+    return new Error("The server took too long to respond. Try again.");
+  }
+  return new Error("Cannot reach the server. Check that the API is running.");
+}
+
 async function doFetch(path, options, token) {
   const headers = { ...(options.headers || {}) };
   if (!headers["Content-Type"] && options.body && typeof options.body === "string") {
@@ -131,7 +140,21 @@ async function doFetch(path, options, token) {
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
-  return fetch(buildUrl(path), { ...options, headers });
+  const { timeoutMs, signal: givenSignal, ...rest } = options;
+  const ms = Number(timeoutMs) > 0 ? Number(timeoutMs) : DEFAULT_TIMEOUT_MS;
+  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), ms) : null;
+  try {
+    return await fetch(buildUrl(path), {
+      ...rest,
+      headers,
+      signal: givenSignal || controller?.signal,
+    });
+  } catch (err) {
+    throw networkError(err);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 /**
@@ -210,13 +233,24 @@ export function apiDelete(path, options = {}) {
   return apiRequest(path, { ...options, method: "DELETE" });
 }
 
-/** Lightweight connectivity probe — GET / on server root (no auth). */
+/** Lightweight connectivity probe — GET /health then GET / (no auth). */
 export async function checkApiHealth() {
   try {
     const base = getApiBaseUrl().replace(/\/api\/?$/i, "");
-    const response = await fetch(`${base}/`, { method: "GET" });
-    const data = await readJson(response);
-    return Boolean(response.ok && data?.ok);
+    const urls = [`${base}/health`, `${base}/`];
+    for (const url of urls) {
+      try {
+        const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+        const timer = controller ? setTimeout(() => controller.abort(), 8000) : null;
+        const response = await fetch(url, { method: "GET", signal: controller?.signal });
+        if (timer) clearTimeout(timer);
+        const data = await readJson(response);
+        if (response.ok && (data?.ok === true || data?.message)) return true;
+      } catch {
+        /* try next probe */
+      }
+    }
+    return false;
   } catch {
     return false;
   }

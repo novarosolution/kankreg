@@ -67,9 +67,9 @@ export default function NativeCategoryRow({ categories, products, onPress }) {
   const { isDark, colors: c } = useTheme();
   const { isMobileWeb, pageGutterClamp } = useKankregLayout();
   const stripGutter = isMobileWeb ? pageGutterClamp : FIGMA.gutter;
-  const safeProducts = Array.isArray(products) ? products : [];
   const tiles = useMemo(() => {
     if (Array.isArray(categories) && categories.length) return categories;
+    const safeProducts = Array.isArray(products) ? products : [];
     const labels = [
       ...new Set(
         safeProducts
@@ -86,7 +86,7 @@ export default function NativeCategoryRow({ categories, products, onPress }) {
         label,
       };
     });
-  }, [categories, safeProducts]);
+  }, [categories, products]);
 
   if (Platform.OS === "web" && !isMobileWeb) return null;
   /** A single tile has no navigational value — skip the strip rather than show one tile in a wide empty card. */

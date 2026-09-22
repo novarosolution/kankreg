@@ -160,6 +160,10 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isNewLaunch: {
+      type: Boolean,
+      default: false,
+    },
     /** Visible in catalog but not purchasable — admin launch teaser. */
     comingSoon: {
       type: Boolean,
@@ -300,5 +304,15 @@ const productSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+productSchema.set("toJSON", {
+  virtuals: true,
+  versionKey: false,
+  transform(_doc, ret) {
+    ret.id = String(ret._id);
+    return ret;
+  },
+});
+productSchema.set("toObject", { virtuals: true });
 
 module.exports = mongoose.model("Product", productSchema);

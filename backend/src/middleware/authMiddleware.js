@@ -10,6 +10,10 @@ async function protect(req, res, next) {
     }
 
     const token = authHeader.split(" ")[1];
+    if (!process.env.JWT_SECRET) {
+      console.error("[auth] JWT_SECRET is not configured.");
+      return res.status(500).json({ message: "Server misconfigured." });
+    }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     if (decoded.type === "refresh") {
       return res.status(401).json({ message: "Refresh token cannot be used as access token." });
